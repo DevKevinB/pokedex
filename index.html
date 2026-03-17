@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
-    <title>Pokédex OS v11.1</title>
+    <title>Pokédex OS v12.0</title>
     <style>
         :root { --p-primary: #d32f2f; --p-dark: #b71c1c; --bg-color: #121212; --panel-bg: #1e1e1e; --pc-cyan: #00e5ff; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -236,7 +236,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 11.1 - FULL SCREEN BATTLE FOLDER</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 12.0 - THE PWA & GEN 1 UPDATE</div>
         </div>
     </div>
 </div>
@@ -258,7 +258,7 @@
                 </div>
                 <div style="position:relative;">
                     <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;">
-                    <img class="throw-ball" id="battle-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
+                    <img class="throw-ball" id="battle-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="left: 40px;">
                 </div>
             </div>
 
@@ -274,8 +274,7 @@
         
         <div class="battle-controls">
             <div class="battle-log" id="battle-log">WILD POKEMON APPEARED!</div>
-            <div class="moves-grid" id="battle-moves">
-                </div>
+            <div class="moves-grid" id="battle-moves"></div>
         </div>
     </div>
 </div>
@@ -309,15 +308,13 @@
 </div>
 
 <script>
-    // --- GLOBAL STATE ---
+    // --- GLOBAL STATE & SAFE LOAD ---
     let audioCtx = null; let cryAudio = null; let galleryTimer = null; 
-    let currentPlayer = 1; let isCatching = false; let appMode = 'dex'; // 'dex' | 'battle'
+    let currentPlayer = 1; let isCatching = false; let appMode = 'dex'; 
     
-    // Dex State
     let curId = 25; let isShiny = false; let curData = null; let curSpeciesData = null;
-    const maxPokemon = 151; // Gen 1 Core
+    const maxPokemon = 151; // PWA GEN 1 HARD LIMIT
     
-    // Safe Data Load
     let caughtData = { 1: [], 2: [] };
     try {
         caughtData[1] = JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [];
@@ -353,7 +350,6 @@
         return multiplier;
     }
 
-    // --- BATTLE STATE ---
     let battleState = {
         isSparkle: false,
         player: { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '' },
@@ -361,14 +357,24 @@
         isBattling: false
     };
 
-    // --- AUDIO ---
-    function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    // --- PWA SAFE AUDIO SYNTHESIZER ---
+    function initAudio() { 
+        try {
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        } catch(e) { console.warn("Audio Context blocked by iOS PWA."); }
+    }
+    
     function playBeep(freq, type, duration, vol=0.1) {
         if(!audioCtx) return;
-        let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+        try {
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
     }
     function soundShake() { playBeep(150, 'square', 0.1, 0.2); }
     function soundCatch() { playBeep(600, 'sine', 0.1); setTimeout(()=>playBeep(800, 'sine', 0.3), 100); }
@@ -386,15 +392,16 @@
             loadPoke(25);
         }, 500);
     }
-    function triggerVibration(duration = 40) { if (navigator.vibrate) navigator.vibrate(duration); }
+    function triggerVibration(duration = 40) { try { if (navigator.vibrate) navigator.vibrate(duration); } catch(e){} }
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     function logMsg(msg) { document.getElementById('battle-log').innerText = msg; }
 
-    // --- MODE SWITCHING ---
+    // --- BATTLE FOLDER SWITCHING ---
     function exitBattleMode() {
         appMode = 'dex'; battleState.isBattling = false;
         document.getElementById('sparkle-modal').style.display = 'none';
-        document.getElementById('battle-container').classList.remove('active'); // Slides down
+        document.getElementById('battle-container').classList.remove('active'); 
+        if (curId) loadPoke(curId); // Safely refresh dex view
     }
 
     function initBattleMode() {
@@ -403,7 +410,7 @@
         openPC('battle'); 
     }
 
-    // --- PC LOGIC ---
+    // --- PC LOGIC (GEN 1 SECURED) ---
     let pcContext = 'dex'; 
     function openPC(context = 'dex') {
         if(isCatching) return;
@@ -480,7 +487,7 @@
     }
 
     function startBattleUI() {
-        document.getElementById('battle-container').classList.add('active'); // Slides up
+        document.getElementById('battle-container').classList.add('active'); 
         battleState.isBattling = true;
         
         document.getElementById('player-name').innerText = battleState.player.name;
@@ -543,7 +550,6 @@
             await sleep(1500);
             logMsg(`AUTO-CATCHING ${battleState.wild.name.toUpperCase()}...`);
             
-            // Battle Auto-Catch Animation
             const sprite = document.getElementById('wild-sprite');
             const ball = document.getElementById('battle-throw-ball');
             const msg = document.getElementById('battle-catch-msg');
@@ -564,8 +570,7 @@
             await sleep(2000);
             msg.style.opacity = 0; ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)'; sprite.classList.remove('sucked-in');
             
-            alert("VICTORY! Pokémon was added to your PC Box.");
-            exitBattleMode();
+            alert("VICTORY! Pokémon was added to your PC Box."); exitBattleMode();
             
         } else if (battleState.player.hp <= 0) {
             battleState.isBattling = false; logMsg(`YOUR POKÉMON FAINTED...`); triggerVibration([500]);
@@ -576,23 +581,32 @@
     }
 
     // =========================================================
-    // --- MAIN POKEDEX LOGIC (Safe API Handling) ---
+    // --- MAIN POKEDEX LOGIC (PWA SAFE) ---
     // =========================================================
 
-    function stopAllAudio() { window.speechSynthesis.cancel(); if (cryAudio) { cryAudio.pause(); cryAudio.currentTime = 0; } document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; }
+    function stopAllAudio() { 
+        try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch(e){}
+        if (cryAudio) { cryAudio.pause(); cryAudio.currentTime = 0; } 
+        document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; 
+    }
 
     function toggleVoice() {
         if (!curData || isCatching || appMode === 'battle') return;
-        if (window.speechSynthesis.speaking) stopAllAudio(); 
-        else {
-            stopAllAudio(); 
-            setTimeout(() => {
-                let utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('desc').innerText}`); utter.pitch = 0.5; utter.rate = 0.9;
-                utter.onstart = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🛑</span> STOP'; };
-                utter.onend = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; };
-                window.speechSynthesis.speak(utter);
-            }, 50);
-        }
+        try {
+            if (!('speechSynthesis' in window)) { alert("Voice restricted by iOS PWA."); return; }
+            if (window.speechSynthesis.speaking) {
+                stopAllAudio(); 
+            } else {
+                stopAllAudio(); 
+                setTimeout(() => {
+                    let utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('desc').innerText}`); utter.pitch = 0.5; utter.rate = 0.9;
+                    utter.onstart = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🛑</span> STOP'; };
+                    utter.onend = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; };
+                    utter.onerror = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; };
+                    window.speechSynthesis.speak(utter);
+                }, 50);
+            }
+        } catch(e) { console.warn("TTS blocked"); }
     }
 
     function playCry() { if(isCatching || appMode === 'battle') return; stopAllAudio(); if(cryAudio) { cryAudio.volume = 0.5; cryAudio.play().catch(e => toggleVoice()); } else toggleVoice(); }
@@ -643,21 +657,31 @@
 
     async function loadPoke(idOrName) {
         if (!idOrName || isCatching || appMode === 'battle') return;
-        stopAllAudio(); clearInterval(galleryTimer); document.getElementById('search').blur(); document.getElementById('poke-sprite').style.opacity = 0;
+        stopAllAudio(); clearInterval(galleryTimer); setScanning(true); document.getElementById('search').blur(); document.getElementById('poke-sprite').style.opacity = 0;
         
         try {
             const searchTarget = idOrName.toString().toLowerCase().trim().replace(/\s+/g, '-');
             const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${searchTarget}`);
-            if(!res.ok) throw "Not found";
-            curData = await res.json(); curId = curData.id;
+            if(!res.ok) throw new Error("NOT_FOUND");
+            curData = await res.json(); 
             
+            // GEN 1 HARD LIMIT BLOCK
+            if(curData.id > maxPokemon) throw new Error("GEN_1_ONLY");
+            
+            curId = curData.id;
             const sRes = await fetch(curData.species?.url); curSpeciesData = await sRes.json();
             
             updateUISafe(); loadEvolutionsSafe(curSpeciesData?.evolution_chain?.url); setupGallerySafe(); updateCatchUI();
         } catch (e) {
-            console.error(e); document.getElementById('poke-name').innerText = "ERROR"; document.getElementById('desc').innerText = "Data missing.";
+            console.error("Fetch Error:", e); 
+            if(e.message === "GEN_1_ONLY") {
+                document.getElementById('poke-name').innerText = "GEN 1 ONLY"; document.getElementById('desc').innerText = "This OS is locked to the original 151 Pokémon.";
+            } else {
+                document.getElementById('poke-name').innerText = "ERROR"; document.getElementById('desc').innerText = "Data missing or API error.";
+            }
+            document.getElementById('id-text').innerText = "#---"; document.getElementById('types').innerHTML = ""; document.getElementById('stats-area').innerHTML = "";
         }
-        setTimeout(() => { document.getElementById('poke-sprite').style.opacity = 1; }, 600);
+        setTimeout(() => { setScanning(false); document.getElementById('poke-sprite').style.opacity = 1; }, 600);
     }
 
     async function loadEvolutionsSafe(url) {
@@ -667,8 +691,13 @@
             const res = await fetch(url); const data = await res.json(); let chain = []; let curr = data.chain;
             do {
                 let sUrl = curr.species?.url; if(!sUrl) break;
-                let id = sUrl.split('/').filter(Boolean).pop();
-                chain.push({ name: curr.species.name, id: id }); curr = curr.evolves_to?.[0]; 
+                let id = parseInt(sUrl.split('/').filter(Boolean).pop());
+                
+                // GEN 1 EVOLUTION CULLING (e.g. Stops Crobat)
+                if (id <= maxPokemon) {
+                    chain.push({ name: curr.species.name, id: id }); 
+                }
+                curr = curr.evolves_to?.[0]; 
             } while (curr);
             evoBox.innerHTML = chain.map((poke, index) => `${index > 0 ? '<div class="evo-arrow">▶</div>' : ''}<div class="evo-item" onclick="loadPoke(${poke.id}); toggleSheet();"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.id}.png"><span>${poke.name}</span></div>`).join('');
         } catch (e) { evoBox.innerHTML = '<span style="color:#777; font-size:10px;">DNA ERROR</span>'; }
