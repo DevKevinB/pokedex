@@ -5,158 +5,148 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Pokédex">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/188/188918.png">
-
-    <title>Pokédex Pro</title>
+    <title>ULTIMATE POKEDEX</title>
     <style>
-        :root {
-            --p-red: #ff1c1c;
-            --p-dark: #8b0000;
-            --p-blue: #00ccff;
-            --type-color: #232323;
-        }
-
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background: #000; font-family: 'Helvetica Neue', sans-serif;
+        :root { --p-red: #dc0a2d; --p-dark: #8b0000; --p-blue: #00ccff; --glass: rgba(255,255,255,0.15); }
+        
+        body, html { 
+            margin: 0; padding: 0; height: 100vh; width: 100vw;
+            background: #000; font-family: 'SF Pro Display', -apple-system, sans-serif;
             overflow: hidden; color: white;
         }
 
-        .pokedex-case {
-            width: 100%; height: 100%;
+        /* The Pokedex Case */
+        .pokedex {
+            height: 100%; display: flex; flex-direction: column;
             background: var(--p-red);
-            display: flex; flex-direction: column;
             padding-top: env(safe-area-inset-top);
             box-sizing: border-box;
             border-left: 10px solid var(--p-dark);
+            position: relative;
         }
 
-        /* Top Header */
+        /* Header / Top Lights */
         .header {
-            padding: 10px 20px;
-            display: flex; align-items: center; gap: 15px;
+            display: flex; align-items: center; padding: 10px 20px; gap: 10px;
             background: linear-gradient(to bottom, var(--p-red), var(--p-dark));
-            border-bottom: 4px solid black;
+            border-bottom: 3px solid #333;
+        }
+        .big-blue {
+            width: 45px; height: 45px; background: radial-gradient(circle at 30% 30%, #fff, var(--p-blue));
+            border: 4px solid white; border-radius: 50%; box-shadow: 0 0 15px var(--p-blue);
         }
 
-        .big-blue-light {
-            width: 50px; height: 50px;
-            background: radial-gradient(circle at 30% 30%, #fff, var(--p-blue));
-            border: 4px solid white; border-radius: 50%;
-            box-shadow: 0 0 15px var(--p-blue);
+        /* The Main LCD Screen */
+        .screen-frame {
+            background: #dedede; margin: 10px 15px; border-radius: 10px 10px 10px 40px;
+            padding: 15px; flex: 1; display: flex; flex-direction: column;
+            border: 4px solid #444; overflow: hidden;
+            box-shadow: inset 5px 5px 15px rgba(0,0,0,0.4);
         }
 
-        /* The Internal Screen */
-        .screen-outer {
-            background: #dedede; margin: 15px; border-radius: 10px 10px 10px 50px;
-            padding: 15px; flex-grow: 1; display: flex; flex-direction: column;
-            border: 4px solid #444; box-shadow: inset 5px 5px 10px rgba(0,0,0,0.3);
+        #lcd {
+            background: #232323; border-radius: 8px; flex: 1;
+            display: flex; flex-direction: column; padding: 12px;
+            overflow-y: auto; position: relative; transition: background 0.5s;
         }
 
-        #screen {
-            background: var(--type-color); border-radius: 10px; flex-grow: 1;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 15px; overflow-y: auto; transition: background 0.5s;
-            border: 3px solid #222;
-        }
-
-        #poke-img { 
-            width: 180px; height: 180px; 
-            filter: drop-shadow(5px 5px 15px rgba(0,0,0,0.5));
-            transition: transform 0.3s;
-        }
-
-        .shiny-sparkle { position: absolute; top: 10px; right: 10px; font-size: 24px; display: none; }
-
-        #name-plate {
-            background: #333; color: #ffcc00; font-weight: 900;
-            padding: 5px 20px; border-radius: 5px; font-size: 22px;
-            margin: 10px 0; border: 2px solid #555; text-transform: uppercase;
-        }
-
-        /* Stats & Info */
-        .info-row { display: flex; gap: 20px; margin-bottom: 10px; font-size: 14px; font-weight: bold;}
+        /* Title Area */
+        #poke-id-name { font-size: 22px; font-weight: 900; color: #ffcc00; text-transform: uppercase; margin: 0; text-shadow: 2px 2px 0px #000; }
         
-        .stats-box { width: 100%; }
-        .stat-bar { background: rgba(255,255,255,0.2); height: 10px; border-radius: 5px; margin: 4px 0; overflow: hidden; }
-        .fill { background: lime; height: 100%; width: 0%; transition: width 1s; }
+        /* Image Display */
+        .img-container {
+            height: 160px; width: 100%; display: flex; justify-content: center; align-items: center;
+            position: relative; margin: 10px 0;
+        }
+        #poke-sprite { height: 150px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); transition: opacity 0.3s; }
 
-        /* Controls */
-        .keypad {
-            background: var(--p-dark);
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 10px; padding: 20px;
-            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        /* Tags Row */
+        .tags { display: flex; gap: 8px; margin-bottom: 10px; justify-content: center; }
+        .tag { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; background: var(--glass); border: 1px solid rgba(255,255,255,0.3); }
+
+        /* Scrollable Data Box - Fixed Cutoff! */
+        .data-scroll {
+            flex: 1; background: rgba(0,0,0,0.3); border-radius: 10px;
+            padding: 10px; font-size: 13px; line-height: 1.4;
+            overflow-y: scroll; border: 1px solid #444;
         }
 
-        input {
-            grid-column: span 3; padding: 15px; border-radius: 10px;
-            border: none; font-size: 18px; text-align: center; font-weight: bold;
-        }
+        .stat-label { font-size: 10px; color: #aaa; margin-top: 8px; display: flex; justify-content: space-between; }
+        .stat-bar { height: 6px; background: #444; border-radius: 3px; overflow: hidden; margin-top: 2px; }
+        .stat-fill { height: 100%; background: #4caf50; width: 0%; transition: width 1s; }
 
+        /* Controls Area */
+        .controls {
+            background: var(--p-dark); display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 8px; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom));
+        }
+        input { grid-column: span 3; padding: 14px; border-radius: 8px; border: none; font-size: 16px; text-align: center; font-weight: bold; background: #fff; color: #000; }
+        
         button {
-            background: #333; color: white; border: none; padding: 15px 5px;
-            border-radius: 10px; font-weight: bold; font-size: 12px;
-            box-shadow: 0 4px #000; cursor: pointer;
+            padding: 12px 5px; border: none; border-radius: 8px; background: #333; color: white;
+            font-weight: bold; font-size: 11px; box-shadow: 0 4px #000; active: transform: translateY(2px);
         }
-
-        button:active { transform: translateY(2px); box-shadow: 0 1px #000; }
-
-        .btn-yellow { background: #ffcc00; color: black; }
-        .btn-blue { background: var(--p-blue); color: black; }
+        .btn-yellow { background: #feca1b; color: #000; }
+        .btn-blue { background: var(--p-blue); color: #000; }
         .btn-shiny { background: linear-gradient(45deg, #ff00ff, #ffee00); color: black; }
+        .btn-nav { font-size: 18px; }
     </style>
 </head>
 <body>
 
-<div class="pokedex-case">
+<div class="pokedex">
     <div class="header">
-        <div class="big-blue-light"></div>
-        <div style="width:15px;height:15px;background:#ff1c1c;border-radius:50%;border:2px solid black"></div>
-        <div style="width:15px;height:15px;background:#ffcc00;border-radius:50%;border:2px solid black"></div>
-        <div style="width:15px;height:15px;background:#4caf50;border-radius:50%;border:2px solid black"></div>
+        <div class="big-blue"></div>
+        <div style="width:12px;height:12px;background:#ff0000;border-radius:50%;border:2px solid black"></div>
+        <div style="width:12px;height:12px;background:#ffcc00;border-radius:50%;border:2px solid black"></div>
+        <div style="width:12px;height:12px;background:#00ff00;border-radius:50%;border:2px solid black"></div>
     </div>
 
-    <div class="screen-outer">
-        <div id="screen">
-            <div id="name-plate">#??? ???</div>
-            <div style="position:relative">
-                <div id="shiny-icon" class="shiny-sparkle">✨</div>
-                <img id="poke-img" src="" alt="">
-            </div>
+    <div class="screen-frame">
+        <div id="lcd">
+            <p id="poke-id-name">#025 PIKACHU</p>
             
-            <div class="info-row">
-                <span id="height">HT: --</span>
-                <span id="weight">WT: --</span>
+            <div class="img-container">
+                <img id="poke-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
             </div>
 
-            <div id="poke-desc" style="font-size: 12px; margin-bottom: 10px; font-style: italic;">...</div>
+            <div class="tags" id="types"></div>
 
-            <div class="stats-box" id="stats"></div>
+            <div class="data-scroll">
+                <div id="desc" style="margin-bottom:10px; font-style:italic; color:#ffcc00;"></div>
+                <div style="display:flex; justify-content:space-around; margin-bottom:10px; font-size:11px; color:#aaa;">
+                    <span id="ht">HT: 0.4m</span>
+                    <span id="wt">WT: 6.0kg</span>
+                </div>
+                <div id="stats-area"></div>
+                <div id="abilities" style="margin-top:10px; font-size:10px; color: #00ccff;"></div>
+            </div>
         </div>
     </div>
 
-    <div class="keypad">
+    <div class="controls">
         <input type="text" id="search" placeholder="NAME OR NUMBER" onkeydown="if(event.key==='Enter') loadPoke(this.value)">
         
-        <button onclick="nav(-1)">⬅️ PREV</button>
+        <button class="btn-nav" onclick="nav(-1)">◀</button>
         <button class="btn-blue" onclick="speak()">🔊 VOICE</button>
-        <button onclick="nav(1)">NEXT ➡️</button>
+        <button class="btn-nav" onclick="nav(1)">▶</button>
         
         <button class="btn-shiny" onclick="toggleShiny()">✨ SHINY</button>
-        <button class="btn-yellow" style="grid-column: span 2;" onclick="randomPoke()">RANDOM POKÉMON ❓</button>
+        <button class="btn-yellow" style="grid-column: span 2;" onclick="randomPoke()">RANDOM ❓</button>
     </div>
 </div>
 
 <script>
-    let curId = 1;
+    let curId = 25;
     let isShiny = false;
-    let currentData = null;
-    let description = "";
+    let curData = null;
+    let images = [];
+    let imgIdx = 0;
+    let timer = null;
 
     const typeColors = {
-        fire: '#e62200', water: '#0073ff', grass: '#3fa129', electric: '#ffcc00',
+        fire: '#e62200', water: '#0073ff', grass: '#3fa129', electric: '#eec900',
         ice: '#00d4ff', fighting: '#82351f', poison: '#913991', ground: '#bf9926',
         flying: '#8295fe', psychic: '#ff42a1', bug: '#91a119', rock: '#a18719',
         ghost: '#5252a1', dragon: '#5200de', dark: '#423529', steel: '#828291',
@@ -164,67 +154,89 @@
     };
 
     async function loadPoke(idOrName) {
+        clearInterval(timer);
         try {
             const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${idOrName.toString().toLowerCase()}`);
-            if(!res.ok) return;
+            if(!res.ok) throw "Not found";
             const data = await res.json();
-            currentData = data;
+            curData = data;
             curId = data.id;
 
             const sRes = await fetch(data.species.url);
             const sData = await sRes.json();
 
-            // Colors
-            const mainType = data.types[0].type.name;
-            document.getElementById('screen').style.backgroundColor = typeColors[mainType] || '#232323';
+            // Set Type Color LCD Glow
+            const type = data.types[0].type.name;
+            document.getElementById('lcd').style.boxShadow = `inset 0 0 40px ${typeColors[type] || '#000'}`;
 
-            // Details
-            document.getElementById('name-plate').innerText = `#${data.id} ${data.name}`;
-            document.getElementById('height').innerText = `HT: ${data.height / 10}m`;
-            document.getElementById('weight').innerText = `WT: ${data.weight / 10}kg`;
+            // Name & Basics
+            document.getElementById('poke-id-name').innerText = `#${data.id.toString().padStart(3, '0')} ${data.name}`;
+            document.getElementById('ht').innerText = `HT: ${data.height / 10}m`;
+            document.getElementById('wt').innerText = `WT: ${data.weight / 10}kg`;
             
+            // Text Desc
             const entry = sData.flavor_text_entries.find(e => e.language.name === 'en');
-            description = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "Data encrypted.";
-            document.getElementById('poke-desc').innerText = description;
+            document.getElementById('desc').innerText = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "Missing data.";
+
+            // Types
+            document.getElementById('types').innerHTML = data.types.map(t => `<span class="tag" style="background:${typeColors[t.type.name]}">${t.type.name}</span>`).join('');
 
             // Stats
-            document.getElementById('stats').innerHTML = data.stats.map(s => `
-                <div style="font-size:9px; text-align:left">${s.stat.name.toUpperCase()}</div>
-                <div class="stat-bar"><div class="fill" style="width:${(s.base_stat/200)*100}%"></div></div>
+            document.getElementById('stats-area').innerHTML = data.stats.map(s => `
+                <div class="stat-label"><span>${s.stat.name.toUpperCase()}</span><span>${s.base_stat}</span></div>
+                <div class="stat-bar"><div class="stat-fill" style="width:${(s.base_stat/200)*100}%"></div></div>
             `).join('');
 
-            updateImage();
-        } catch (e) { console.log(e); }
-    }
+            // Abilities
+            document.getElementById('abilities').innerText = "ABILITIES: " + data.abilities.map(a => a.ability.name.toUpperCase()).join(', ');
 
-    function updateImage() {
-        const img = document.getElementById('poke-img');
-        const icon = document.getElementById('shiny-icon');
-        if (isShiny) {
-            img.src = currentData.sprites.front_shiny || currentData.sprites.front_default;
-            icon.style.display = 'block';
-            img.style.transform = "scale(1.2)";
-        } else {
-            img.src = currentData.sprites.other['official-artwork'].front_default;
-            icon.style.display = 'none';
-            img.style.transform = "scale(1)";
+            // Setup Image Gallery
+            setupGallery();
+        } catch (e) {
+            document.getElementById('poke-id-name').innerText = "NOT FOUND!";
         }
     }
 
-    function toggleShiny() { isShiny = !isShiny; updateImage(); }
+    function setupGallery() {
+        images = [
+            curData.sprites.other['official-artwork'].front_default,
+            curData.sprites.front_default,
+            curData.sprites.back_default
+        ].filter(i => i !== null);
+
+        if(isShiny) {
+            images = [
+                curData.sprites.front_shiny,
+                curData.sprites.back_shiny
+            ].filter(i => i !== null);
+        }
+
+        imgIdx = 0;
+        document.getElementById('poke-sprite').src = images[imgIdx];
+        
+        timer = setInterval(() => {
+            imgIdx = (imgIdx + 1) % images.length;
+            const el = document.getElementById('poke-sprite');
+            el.style.opacity = 0;
+            setTimeout(() => {
+                el.src = images[imgIdx];
+                el.style.opacity = 1;
+            }, 300);
+        }, 3000);
+    }
+
+    function toggleShiny() { isShiny = !isShiny; setupGallery(); }
     function nav(amt) { curId += amt; if(curId < 1) curId = 1; loadPoke(curId); }
-    function randomPoke() { loadPoke(Math.floor(Math.random() * 1000) + 1); }
+    function randomPoke() { loadPoke(Math.floor(Math.random() * 1010) + 1); }
     
     function speak() {
         window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(`${currentData.name}. ${description}`);
-        utter.pitch = 0.8; // Deep robotic voice
+        const utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('desc').innerText}`);
         utter.rate = 1;
         window.speechSynthesis.speak(utter);
     }
 
-    // Load Charizard to start
-    loadPoke(6);
+    loadPoke(25);
 </script>
 
 </body>
