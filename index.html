@@ -6,11 +6,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
-    <title>Pokédex OS v12.0</title>
+    <title>Pokédex OS v13.0</title>
     <style>
         :root { --p-primary: #d32f2f; --p-dark: #b71c1c; --bg-color: #121212; --panel-bg: #1e1e1e; --pc-cyan: #00e5ff; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; height: 100dvh; width: 100vw; background: var(--bg-color); font-family: 'SF Pro Display', -apple-system, sans-serif; overflow: hidden; color: white; touch-action: pan-y; }
+        body, html { margin: 0; padding: 0; height: 100dvh; width: 100vw; background: var(--bg-color); font-family: 'SF Pro Display', -apple-system, sans-serif; overflow: hidden; color: white; touch-action: none; }
 
         /* --- BOOT SCREEN --- */
         #boot-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #8bac0f; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #0f380f; font-family: 'Courier New', Courier, monospace; font-weight: bold; transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
@@ -40,7 +40,7 @@
         #poke-id { font-size: 16px; color: rgba(255,255,255,0.7); font-weight: 800; letter-spacing: 2px; display: flex; justify-content: center; align-items: center; gap: 8px;}
         .caught-icon { width: 16px; height: 16px; display: none; filter: drop-shadow(0 0 5px rgba(255,255,255,0.8));}
         #poke-name { font-size: 32px; font-weight: 900; margin: -2px 0 5px 0; text-transform: uppercase; text-shadow: 0 4px 10px rgba(0,0,0,0.5);}
-        .tags { display: flex; gap: 8px; justify-content: center; }
+        .tags { display: flex; gap: 8px; justify-content: center; margin-top: 5px; min-height: 24px;}
         .tag { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
         .img-container { height: 180px; width: 100%; display: flex; justify-content: center; align-items: center; position: relative; z-index: 2; }
@@ -60,19 +60,19 @@
         /* TOOLBAR */
         .toolbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 20px; z-index: 10; margin-top: 10px; }
         input { grid-column: span 4; padding: 14px; border-radius: 12px; border: none; font-size: 14px; text-align: center; font-weight: bold; background: rgba(255,255,255,0.1); color: white; margin-bottom: 5px; }
-        button.tool-btn { padding: 12px 0; border: none; border-radius: 12px; background: var(--panel-bg); color: white; font-weight: 800; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s; cursor: pointer; }
+        button.tool-btn { padding: 12px 0; border: none; border-radius: 12px; background: var(--panel-bg); color: white; font-weight: 800; font-size: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s; cursor: pointer; }
         button.tool-btn:active { transform: scale(0.95); }
         .btn-icon { font-size: 18px; }
         .btn-catch { grid-column: span 2; background: linear-gradient(135deg, #ff416c, #ff4b2b) !important; color: white;}
         .btn-catch.owned { background: linear-gradient(135deg, #11998e, #38ef7d) !important; }
 
-        /* ITEM DRAWER */
-        #ball-drawer { position: absolute; bottom: -100px; left: 0; width: 100%; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 20px; border-top: 2px solid #444; transition: bottom 0.3s ease-out; z-index: 30; box-shadow: 0 -10px 20px rgba(0,0,0,0.5);}
+        /* ITEM DRAWER (UPDATED FOR 4 BALLS) */
+        #ball-drawer { position: absolute; bottom: -120px; left: 0; width: 100%; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 15px 10px calc(15px + env(safe-area-inset-bottom)) 10px; border-top: 2px solid #444; transition: bottom 0.3s ease-out; z-index: 30; box-shadow: 0 -10px 20px rgba(0,0,0,0.5);}
         #ball-drawer.open { bottom: 0; }
-        .ball-opt { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: transform 0.2s; }
+        .ball-opt { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: transform 0.2s; text-align: center;}
         .ball-opt:active { transform: scale(0.9); }
-        .ball-opt img { width: 50px; height: 50px; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));}
-        .ball-opt span { font-size: 10px; font-weight: 900; color: #fff;}
+        .ball-opt img { width: 45px; height: 45px; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));}
+        .ball-opt span { font-size: 9px; font-weight: 900; color: #fff; text-transform: uppercase;}
         .ball-opt small { font-size: 8px; color: #aaa; }
 
         /* BOTTOM SHEET */
@@ -86,7 +86,7 @@
         
         h3 { font-size: 14px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin: 25px 0 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
         h3:first-child { margin-top: 0; }
-        .desc-text { font-size: 16px; line-height: 1.5; color: #eee; font-style: italic; border-left: 3px solid var(--p-primary); padding-left: 15px; transition: border-color 0.5s;}
+        .desc-text { font-size: 16px; line-height: 1.5; color: #eee; font-style: italic; border-left: 3px solid var(--p-primary); padding-left: 15px; transition: border-color 0.5s; min-height: 48px;}
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .info-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; font-size: 12px; color: #aaa; }
         .info-box strong { display: block; color: #fff; font-size: 14px; margin-top: 4px; text-transform: capitalize;}
@@ -106,7 +106,7 @@
         #battle-container { position: fixed; top: 100dvh; left: 0; width: 100vw; height: 100dvh; z-index: 500; display: flex; flex-direction: column; background: #222; transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         #battle-container.active { top: 0; }
         
-        .battle-header { background: #111; padding: env(safe-area-inset-top) 20px 15px 20px; display: flex; align-items: center; border-bottom: 4px solid #444; color: #fff; font-weight: 900; letter-spacing: 2px;}
+        .battle-header { background: #111; padding: calc(env(safe-area-inset-top) + 10px) 20px 15px 20px; display: flex; align-items: center; border-bottom: 4px solid #444; color: #fff; font-weight: 900; letter-spacing: 2px;}
         .btn-escape { background: #333; color: #fff; border: 2px solid #555; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-right: 15px; box-shadow: 0 4px 0 #111;}
         .btn-escape:active { transform: translateY(4px); box-shadow: 0 0 0 #111;}
 
@@ -217,9 +217,10 @@
     </div>
 
     <div id="ball-drawer">
-        <div class="ball-opt" onclick="executeCatch(1, 'poke-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"><span>POKÉBALL</span><small>1x</small></div>
-        <div class="ball-opt" onclick="executeCatch(1.5, 'great-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png"><span>GREAT BALL</span><small>1.5x</small></div>
-        <div class="ball-opt" onclick="executeCatch(2, 'ultra-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png"><span>ULTRA BALL</span><small>2x</small></div>
+        <div class="ball-opt" onclick="executeCatch(1, 'poke-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"><span>POKÉBALL</span><small>1x RATE</small></div>
+        <div class="ball-opt" onclick="executeCatch(1.5, 'great-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png"><span>GREAT BALL</span><small>1.5x RATE</small></div>
+        <div class="ball-opt" onclick="executeCatch(2, 'ultra-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png"><span>ULTRA BALL</span><small>2x RATE</small></div>
+        <div class="ball-opt" onclick="executeCatch(99, 'master-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png"><span>LEGEND BALL</span><small>90% CATCH</small></div>
     </div>
 
     <div class="bottom-sheet" id="data-sheet">
@@ -236,7 +237,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 12.0 - THE PWA & GEN 1 UPDATE</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 13.0 - THE PWA & GEN 1 UPDATE</div>
         </div>
     </div>
 </div>
@@ -313,17 +314,16 @@
     let currentPlayer = 1; let isCatching = false; let appMode = 'dex'; 
     
     let curId = 25; let isShiny = false; let curData = null; let curSpeciesData = null;
-    const maxPokemon = 151; // PWA GEN 1 HARD LIMIT
+    const maxPokemon = 151; // GEN 1 HARD LIMIT
     
     let caughtData = { 1: [], 2: [] };
     try {
         caughtData[1] = JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [];
         caughtData[2] = JSON.parse(localStorage.getItem('pokedex_caught_p2')) || [];
-    } catch(e) { console.warn("Save corrupted."); }
+    } catch(e) { console.warn("Save data reset due to strict privacy settings."); }
 
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
     
-    // Core Type Logic
     const typeChart = {
         normal: { w: ['fighting'], r: [], i: ['ghost'] }, fire: { w: ['water', 'ground', 'rock'], r: ['fire', 'grass', 'ice', 'bug', 'fairy'], i: [] },
         water: { w: ['electric', 'grass'], r: ['fire', 'water', 'ice', 'steel'], i: [] }, grass: { w: ['fire', 'ice', 'poison', 'flying', 'bug'], r: ['water', 'electric', 'grass', 'ground'], i: [] },
@@ -360,13 +360,10 @@
     // --- PWA SAFE AUDIO SYNTHESIZER ---
     function initAudio() { 
         try {
-            if(!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-            }
+            if(!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
             if (audioCtx.state === 'suspended') audioCtx.resume();
-        } catch(e) { console.warn("Audio Context blocked by iOS PWA."); }
+        } catch(e) { console.warn("Audio Context blocked."); }
     }
-    
     function playBeep(freq, type, duration, vol=0.1) {
         if(!audioCtx) return;
         try {
@@ -396,12 +393,27 @@
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     function logMsg(msg) { document.getElementById('battle-log').innerText = msg; }
 
+    // --- CUSTOM TIMEOUT FETCH (Prevents "LOADING" screen of death) ---
+    const apiFetch = async (url, timeoutMs = 8000) => {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(id);
+            if (!response.ok) throw new Error("API Error: " + response.status);
+            return await response.json();
+        } catch (e) {
+            clearTimeout(id);
+            throw new Error(e.name === 'AbortError' ? "NETWORK_TIMEOUT" : "NOT_FOUND");
+        }
+    };
+
     // --- BATTLE FOLDER SWITCHING ---
     function exitBattleMode() {
         appMode = 'dex'; battleState.isBattling = false;
         document.getElementById('sparkle-modal').style.display = 'none';
         document.getElementById('battle-container').classList.remove('active'); 
-        if (curId) loadPoke(curId); // Safely refresh dex view
+        if (curId) loadPoke(curId); // Refresh dex to ensure stable state
     }
 
     function initBattleMode() {
@@ -435,7 +447,6 @@
                 html += `<div class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3, '0')}</span></div>`;
             }
         }
-        
         grid.innerHTML = html; document.getElementById('pc-modal').style.display = 'flex';
     }
     
@@ -459,11 +470,14 @@
             await Promise.all([ loadFighterData('player', battleState.player.id), loadFighterData('wild', battleState.wild.id) ]);
             document.getElementById('loading-modal').style.display = 'none';
             startBattleUI();
-        } catch(e) { alert("Error loading battle data."); exitBattleMode(); }
+        } catch(e) { 
+            document.getElementById('loading-modal').style.display = 'none';
+            alert("Error loading battle data. Network issue?"); exitBattleMode(); 
+        }
     }
 
     async function loadFighterData(target, id) {
-        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`); const data = await res.json(); const obj = battleState[target];
+        const data = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${id}`); const obj = battleState[target];
         obj.name = data.name; obj.types = data.types;
         
         obj.maxHp = Math.floor((data.stats.find(s=>s.stat.name==='hp')?.base_stat || 50 * 2 * 50)/100 + 50 + 10); obj.hp = obj.maxHp;
@@ -478,8 +492,10 @@
         validMoves.sort(() => 0.5 - Math.random()); validMoves = validMoves.slice(0, 4);
         
         const movePromises = validMoves.map(async m => {
-            const mRes = await fetch(m.move.url); const mData = await mRes.json();
-            return { name: mData.name.replace('-', ' '), power: mData.power || 40, type: mData.type.name };
+            try {
+                const mData = await apiFetch(m.move.url);
+                return { name: mData.name.replace('-', ' '), power: mData.power || 40, type: mData.type.name };
+            } catch(e) { return { name: 'Tackle', power: 40, type: 'normal' }; }
         });
         
         obj.moves = await Promise.all(movePromises);
@@ -581,7 +597,7 @@
     }
 
     // =========================================================
-    // --- MAIN POKEDEX LOGIC (PWA SAFE) ---
+    // --- MAIN POKEDEX LOGIC (PWA SAFE & TIMEOUT PROTECTED) ---
     // =========================================================
 
     function stopAllAudio() { 
@@ -593,10 +609,9 @@
     function toggleVoice() {
         if (!curData || isCatching || appMode === 'battle') return;
         try {
-            if (!('speechSynthesis' in window)) { alert("Voice restricted by iOS PWA."); return; }
-            if (window.speechSynthesis.speaking) {
-                stopAllAudio(); 
-            } else {
+            if (!('speechSynthesis' in window)) return;
+            if (window.speechSynthesis.speaking) { stopAllAudio(); } 
+            else {
                 stopAllAudio(); 
                 setTimeout(() => {
                     let utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('desc').innerText}`); utter.pitch = 0.5; utter.rate = 0.9;
@@ -606,7 +621,7 @@
                     window.speechSynthesis.speak(utter);
                 }, 50);
             }
-        } catch(e) { console.warn("TTS blocked"); }
+        } catch(e) {}
     }
 
     function playCry() { if(isCatching || appMode === 'battle') return; stopAllAudio(); if(cryAudio) { cryAudio.volume = 0.5; cryAudio.play().catch(e => toggleVoice()); } else toggleVoice(); }
@@ -627,7 +642,17 @@
         
         setTimeout(() => {
             sprite.classList.add('sucked-in'); playBeep(400, 'sine', 0.3); 
-            const baseRate = curSpeciesData?.capture_rate ?? 45; const catchProbability = (baseRate * ballModifier) / 255; const isSuccess = Math.random() < catchProbability; const shakes = isSuccess ? 3 : Math.floor(Math.random() * 3) + 1; 
+            
+            let isSuccess = false;
+            if (ballName === 'master-ball') {
+                isSuccess = Math.random() < 0.90; // 90% flat catch rate
+            } else {
+                const baseRate = curSpeciesData?.capture_rate ?? 45; 
+                const catchProbability = (baseRate * ballModifier) / 255; 
+                isSuccess = Math.random() < catchProbability; 
+            }
+            
+            const shakes = isSuccess ? 3 : Math.floor(Math.random() * 3) + 1; 
             
             let shakeCount = 0;
             let shakeInterval = setInterval(() => {
@@ -661,25 +686,32 @@
         
         try {
             const searchTarget = idOrName.toString().toLowerCase().trim().replace(/\s+/g, '-');
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${searchTarget}`);
-            if(!res.ok) throw new Error("NOT_FOUND");
-            curData = await res.json(); 
+            
+            // Replaces basic fetch with our strict Timeout Fetch
+            curData = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${searchTarget}`); 
             
             // GEN 1 HARD LIMIT BLOCK
             if(curData.id > maxPokemon) throw new Error("GEN_1_ONLY");
             
             curId = curData.id;
-            const sRes = await fetch(curData.species?.url); curSpeciesData = await sRes.json();
+            
+            if (curData.species?.url) {
+                curSpeciesData = await apiFetch(curData.species.url); 
+            }
             
             updateUISafe(); loadEvolutionsSafe(curSpeciesData?.evolution_chain?.url); setupGallerySafe(); updateCatchUI();
         } catch (e) {
-            console.error("Fetch Error:", e); 
+            console.error("Master Fetch Error:", e); 
             if(e.message === "GEN_1_ONLY") {
                 document.getElementById('poke-name').innerText = "GEN 1 ONLY"; document.getElementById('desc').innerText = "This OS is locked to the original 151 Pokémon.";
+            } else if(e.message === "NETWORK_TIMEOUT") {
+                document.getElementById('poke-name').innerText = "TIMEOUT"; document.getElementById('desc').innerText = "API Server took too long to respond. Try again.";
             } else {
-                document.getElementById('poke-name').innerText = "ERROR"; document.getElementById('desc').innerText = "Data missing or API error.";
+                document.getElementById('poke-name').innerText = "ERROR"; document.getElementById('desc').innerText = "Data missing or API offline.";
             }
             document.getElementById('id-text').innerText = "#---"; document.getElementById('types').innerHTML = ""; document.getElementById('stats-area').innerHTML = "";
+            document.getElementById('poke-sprite').src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
+            document.getElementById('bg-glow').style.background = `radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)`;
         }
         setTimeout(() => { setScanning(false); document.getElementById('poke-sprite').style.opacity = 1; }, 600);
     }
@@ -688,15 +720,13 @@
         const evoBox = document.getElementById('evo-chain'); evoBox.innerHTML = '<span style="color:#777; font-size:10px;">ANALYZING DNA...</span>';
         if(!url) { evoBox.innerHTML = '<span style="color:#777; font-size:10px;">NO DATA</span>'; return; }
         try {
-            const res = await fetch(url); const data = await res.json(); let chain = []; let curr = data.chain;
+            const data = await apiFetch(url); let chain = []; let curr = data.chain;
             do {
                 let sUrl = curr.species?.url; if(!sUrl) break;
                 let id = parseInt(sUrl.split('/').filter(Boolean).pop());
                 
-                // GEN 1 EVOLUTION CULLING (e.g. Stops Crobat)
-                if (id <= maxPokemon) {
-                    chain.push({ name: curr.species.name, id: id }); 
-                }
+                // GEN 1 EVOLUTION CULLING (e.g. Stops Crobat appearing after Golbat)
+                if (id <= maxPokemon) { chain.push({ name: curr.species.name, id: id }); }
                 curr = curr.evolves_to?.[0]; 
             } while (curr);
             evoBox.innerHTML = chain.map((poke, index) => `${index > 0 ? '<div class="evo-arrow">▶</div>' : ''}<div class="evo-item" onclick="loadPoke(${poke.id}); toggleSheet();"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.id}.png"><span>${poke.name}</span></div>`).join('');
@@ -735,7 +765,7 @@
         clearInterval(galleryTimer); 
         let imgs = [curData.sprites?.other?.['official-artwork']?.front_default, curData.sprites?.front_default].filter(i=>i);
         if(isShiny) imgs = [curData.sprites?.other?.['official-artwork']?.front_shiny || curData.sprites?.front_shiny, curData.sprites?.front_shiny].filter(i=>i);
-        if(imgs.length === 0) imgs = ['https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png']; // Fallback
+        if(imgs.length === 0) imgs = ['https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png']; 
         
         let idx = 0; document.getElementById('poke-sprite').src = imgs[idx];
         if (imgs.length > 1) {
@@ -752,8 +782,20 @@
     function nav(amt) { if(isCatching || appMode==='battle') return; curId += amt; if(curId < 1) curId = maxPokemon; if(curId > maxPokemon) curId = 1; loadPoke(curId); triggerVibration(); }
     function toggleSheet() { if(isCatching || appMode==='battle') return; document.getElementById('data-sheet').classList.toggle('open'); }
 
+    // --- SWIPE GESTURES (Fixed for Safari "Back" Nav) ---
     let touchStartX = 0; let touchStartY = 0; const appBody = document.getElementById('app-body');
     appBody.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, {passive: true});
+    
+    // Prevent default scrolling only when a significant swipe is detected
+    appBody.addEventListener('touchmove', e => {
+        if(isCatching || appMode==='battle') return;
+        let diffX = e.changedTouches[0].screenX - touchStartX;
+        let diffY = e.changedTouches[0].screenY - touchStartY;
+        if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+            e.preventDefault(); // STOPS Safari's native "Go Back" page swipe
+        }
+    }, {passive: false});
+
     appBody.addEventListener('touchend', e => {
         if(isCatching || appMode==='battle') return;
         let diffX = e.changedTouches[0].screenX - touchStartX; let diffY = e.changedTouches[0].screenY - touchStartY;
