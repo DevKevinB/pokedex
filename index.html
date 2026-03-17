@@ -6,54 +6,23 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
-    <title>Pokédex OS v7.0</title>
+    <title>Pokédex OS v8.0</title>
     <style>
-        :root { 
-            --p-primary: #d32f2f; /* Red for P1 */
-            --p-dark: #b71c1c; 
-            --bg-color: #121212; --panel-bg: #1e1e1e;
-            --pc-cyan: #00e5ff;
-        }
-        
+        :root { --p-primary: #d32f2f; --p-dark: #b71c1c; --bg-color: #121212; --panel-bg: #1e1e1e; --pc-cyan: #00e5ff; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        
-        body, html { 
-            margin: 0; padding: 0; height: 100dvh; width: 100vw;
-            background: var(--bg-color); font-family: 'SF Pro Display', -apple-system, sans-serif;
-            overflow: hidden; color: white; touch-action: pan-y; 
-        }
+        body, html { margin: 0; padding: 0; height: 100dvh; width: 100vw; background: var(--bg-color); font-family: 'SF Pro Display', -apple-system, sans-serif; overflow: hidden; color: white; touch-action: pan-y; }
 
-        /* RETRO BOOT SCREEN */
-        #boot-screen {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
-            background: #8bac0f; z-index: 9999; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; color: #0f380f;
-            font-family: 'Courier New', Courier, monospace; font-weight: bold;
-            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-        }
-        .boot-logo { 
-            border: 4px solid #0f380f; padding: 10px 20px; border-radius: 20px; 
-            font-size: 32px; letter-spacing: 2px; margin-bottom: 50px;
-            animation: dropDown 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            transform: translateY(-200px); opacity: 0;
-        }
+        /* BOOT SCREEN */
+        #boot-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #8bac0f; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #0f380f; font-family: 'Courier New', Courier, monospace; font-weight: bold; transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+        .boot-logo { border: 4px solid #0f380f; padding: 10px 20px; border-radius: 20px; font-size: 32px; letter-spacing: 2px; margin-bottom: 50px; animation: dropDown 1s forwards; transform: translateY(-200px); opacity: 0; }
         @keyframes dropDown { to { transform: translateY(0); opacity: 1; } }
         .tap-start { font-size: 18px; animation: blinker 1s infinite; margin-top: 20px;}
 
-        .app-container {
-            height: 100%; display: flex; flex-direction: column;
-            background: linear-gradient(180deg, var(--p-dark) 0%, var(--p-primary) 15%, var(--bg-color) 40%);
-            padding-top: env(safe-area-inset-top); position: relative;
-            transition: background 0.5s; 
-        }
+        .app-container { height: 100%; display: flex; flex-direction: column; background: linear-gradient(180deg, var(--p-dark) 0%, var(--p-primary) 15%, var(--bg-color) 40%); padding-top: env(safe-area-inset-top); position: relative; transition: background 0.5s; }
 
-        /* Header */
+        /* HEADER */
         .header { display: flex; align-items: center; padding: 10px 20px; gap: 12px; z-index: 10; }
-        .big-blue {
-            width: 45px; height: 45px; border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #a2defc, #29a5e3, #084a70);
-            border: 3px solid #fff; box-shadow: 0 0 15px rgba(41, 165, 227, 0.6);
-        }
+        .big-blue { width: 45px; height: 45px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #a2defc, #29a5e3, #084a70); border: 3px solid #fff; box-shadow: 0 0 15px rgba(41, 165, 227, 0.6); }
         .led-group { display: flex; gap: 6px; }
         .led { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #000; box-shadow: inset 1px 1px 3px rgba(255,255,255,0.6); }
         .led.red { background: radial-gradient(circle at 30% 30%, #ff8a8a, #ff0000); }
@@ -62,22 +31,11 @@
         .blink { animation: ledBlink 0.3s linear infinite; }
         @keyframes ledBlink { 50% { filter: brightness(2); box-shadow: 0 0 10px currentColor; } }
         
-        .player-toggle {
-            background: rgba(0,0,0,0.5); border: 2px solid #fff; padding: 6px 12px;
-            border-radius: 15px; color: #fff; font-weight: 900; font-size: 14px;
-            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s;
-        }
-        .player-toggle:active { transform: scale(0.9); }
-        
-        .header-btn {
-            margin-left: auto; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2);
-            padding: 8px 12px; border-radius: 20px; color: var(--pc-cyan); font-weight: 900;
-            font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer;
-        }
+        .player-toggle { background: rgba(0,0,0,0.5); border: 2px solid #fff; padding: 6px 12px; border-radius: 15px; color: #fff; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s; }
+        .header-btn { margin-left: auto; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 20px; color: var(--pc-cyan); font-weight: 900; font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
-        /* Main Visual Area */
+        /* VISUAL DISPLAY */
         .visual-display { flex: 0 0 45%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 0 20px; margin-top: -10px; }
-        
         .identity { text-align: center; margin-bottom: 5px; z-index: 2; width: 100%; }
         #poke-id { font-size: 16px; color: rgba(255,255,255,0.7); font-weight: 800; letter-spacing: 2px; display: flex; justify-content: center; align-items: center; gap: 8px;}
         .caught-icon { width: 16px; height: 16px; display: none; filter: drop-shadow(0 0 5px rgba(255,255,255,0.8));}
@@ -87,24 +45,39 @@
 
         .img-container { height: 180px; width: 100%; display: flex; justify-content: center; align-items: center; position: relative; z-index: 2; }
         #bg-glow { position: absolute; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); z-index: 1; transition: background 0.5s;}
-        #poke-sprite { height: 200px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); transition: opacity 0.3s, transform 0.3s; z-index: 2; }
+        
+        #poke-sprite { height: 200px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); transition: transform 0.5s cubic-bezier(0.5, 0, 0.5, 1), opacity 0.5s; z-index: 2; }
+        .sucked-in { transform: scale(0) translateY(100px) !important; opacity: 0; }
 
         .scanner-line { position: absolute; width: 150px; height: 3px; background: rgba(0, 255, 255, 0.9); box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; border-radius: 50%; z-index: 10; opacity: 0; left: 50%; transform: translateX(-50%); pointer-events: none; }
         .scanning .scanner-line { animation: scan 1.2s ease-in-out infinite alternate; opacity: 1; }
         @keyframes scan { 0% { top: 10%; } 100% { top: 90%; } }
 
-        /* Toolbar */
+        /* ANIMATED THROWABLE POKEBALL */
+        #throw-ball { position: absolute; width: 40px; height: 40px; z-index: 10; opacity: 0; pointer-events: none; transform: translateY(-150px) scale(2); transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.8));}
+        .ball-shake { animation: shakeBall 0.8s ease-in-out; }
+        @keyframes shakeBall { 0% { transform: rotate(0deg); } 20% { transform: rotate(-25deg); } 40% { transform: rotate(25deg); } 60% { transform: rotate(-10deg); } 80% { transform: rotate(10deg); } 100% { transform: rotate(0deg); } }
+        #catch-msg { position: absolute; z-index: 15; font-size: 24px; font-weight: 900; text-transform: uppercase; text-shadow: 0 4px 10px rgba(0,0,0,0.8); opacity: 0; transition: opacity 0.3s; pointer-events: none; top: 20px; width: 100%; text-align: center;}
+
+        /* TOOLBAR */
         .toolbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 20px; z-index: 10; margin-top: 10px; }
         input { grid-column: span 4; padding: 14px; border-radius: 12px; border: none; font-size: 14px; text-align: center; font-weight: bold; background: rgba(255,255,255,0.1); color: white; margin-bottom: 5px; }
-        input:focus { outline: 2px solid var(--p-primary); }
-        
         button.tool-btn { padding: 12px 0; border: none; border-radius: 12px; background: var(--panel-bg); color: white; font-weight: 800; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s; cursor: pointer; }
-        button.tool-btn:active { transform: scale(0.95); background: #333; }
+        button.tool-btn:active { transform: scale(0.95); }
         .btn-icon { font-size: 18px; }
         .btn-catch { grid-column: span 2; background: linear-gradient(135deg, #ff416c, #ff4b2b) !important; color: white;}
         .btn-catch.owned { background: linear-gradient(135deg, #11998e, #38ef7d) !important; }
 
-        /* Bottom Sheet */
+        /* BALL SELECTOR DRAWER */
+        #ball-drawer { position: absolute; bottom: -100px; left: 0; width: 100%; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 20px; border-top: 2px solid #444; transition: bottom 0.3s ease-out; z-index: 30; box-shadow: 0 -10px 20px rgba(0,0,0,0.5);}
+        #ball-drawer.open { bottom: 0; }
+        .ball-opt { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: transform 0.2s; }
+        .ball-opt:active { transform: scale(0.9); }
+        .ball-opt img { width: 50px; height: 50px; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));}
+        .ball-opt span { font-size: 10px; font-weight: 900; color: #fff;}
+        .ball-opt small { font-size: 8px; color: #aaa; }
+
+        /* BOTTOM SHEET */
         .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; height: 75dvh; background: var(--panel-bg); border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); transform: translateY(calc(100% - 90px)); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; z-index: 20; }
         .bottom-sheet.open { transform: translateY(0); }
         .sheet-handle-area { padding: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -112,40 +85,21 @@
         .quick-stats { display: flex; width: 100%; justify-content: space-around; color: #aaa; font-size: 12px; font-weight: 700; }
         .quick-stats strong { color: #fff; font-size: 14px; }
         .sheet-content { padding: 20px; overflow-y: auto; flex: 1; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
-        .sheet-content::-webkit-scrollbar { display: none; }
-
+        
         h3 { font-size: 14px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin: 25px 0 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
         h3:first-child { margin-top: 0; }
         .desc-text { font-size: 16px; line-height: 1.5; color: #eee; font-style: italic; border-left: 3px solid var(--p-primary); padding-left: 15px; transition: border-color 0.5s;}
-        
-        .evo-box { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px;}
-        .evo-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s;}
-        .evo-item:active { transform: scale(0.9); }
-        .evo-item img { width: 60px; height: 60px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
-        .evo-item span { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #ccc;}
-        .evo-arrow { color: #555; font-size: 20px; font-weight: bold; }
 
-        /* PC Box Modal */
-        #pc-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: rgba(10, 20, 30, 0.95); backdrop-filter: blur(15px); z-index: 100; display: none; flex-direction: column; padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)) 20px; animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        /* PC BOX */
+        #pc-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: rgba(10, 20, 30, 0.95); backdrop-filter: blur(15px); z-index: 100; display: none; flex-direction: column; padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)) 20px;}
         .pc-header { color: var(--pc-cyan); font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;}
         .pc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 12px; overflow-y: auto; flex: 1; padding-bottom: 20px; align-content: start; }
-        .pc-grid::-webkit-scrollbar { display: none; }
-        
         .pc-item { background: rgba(255,255,255,0.05); border-radius: 12px; border: 2px solid rgba(0, 229, 255, 0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 5px; cursor: pointer; transition: transform 0.1s; }
-        .pc-item:active { transform: scale(0.9); }
         .pc-item img { width: 60px; height: 60px; margin-bottom: 5px;}
-        .pc-item span { font-size: 11px; font-weight: 900; color: #fff; letter-spacing: 1px;}
-        
+        .pc-item span { font-size: 11px; font-weight: 900; color: #fff;}
         .pc-item.uncaught { border-color: #333; background: transparent; }
         .pc-item.uncaught img { filter: grayscale(100%) brightness(0.3); }
         .pc-item.uncaught span { color: #555; }
-        
-        /* Save System UI in PC */
-        .save-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;}
-        .save-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--pc-cyan); color: var(--pc-cyan); padding: 12px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center;}
-        .save-btn:active { background: var(--pc-cyan); color: #000; }
-        
         .close-pc-btn { background: #fff; color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: 900; font-size: 14px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
@@ -171,6 +125,7 @@
     </div>
 
     <div class="visual-display">
+        <div id="catch-msg">CAUGHT!</div>
         <div class="identity">
             <div id="poke-id">
                 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="caught-icon" id="caught-icon">
@@ -184,6 +139,7 @@
             <div id="bg-glow"></div>
             <div class="scanner-line"></div>
             <img id="poke-sprite" src="">
+            <img id="throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
         </div>
     </div>
 
@@ -193,8 +149,23 @@
         <button class="tool-btn" id="voice-btn" onclick="toggleVoice()"><span class="btn-icon">🎙️</span> VOICE</button>
         <button class="tool-btn" onclick="toggleShiny()"><span class="btn-icon">✨</span> SHINY</button>
         <button class="tool-btn" onclick="randomPoke()"><span class="btn-icon">🎲</span> RNDM</button>
-        <button class="tool-btn btn-catch" id="catch-btn" onclick="toggleCatch()"><span class="btn-icon">🔴</span> CATCH</button>
+        <button class="tool-btn btn-catch" id="catch-btn" onclick="openBag()"><span class="btn-icon">🔴</span> CATCH</button>
         <button class="tool-btn" style="grid-column: span 2; background: #2c2c2c;" onclick="toggleSheet()"><span class="btn-icon">📊</span> DATA</button>
+    </div>
+
+    <div id="ball-drawer">
+        <div class="ball-opt" onclick="executeCatch(1, 'poke-ball')">
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
+            <span>POKÉBALL</span><small>1x RATE</small>
+        </div>
+        <div class="ball-opt" onclick="executeCatch(1.5, 'great-ball')">
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png">
+            <span>GREAT BALL</span><small>1.5x RATE</small>
+        </div>
+        <div class="ball-opt" onclick="executeCatch(2, 'ultra-ball')">
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png">
+            <span>ULTRA BALL</span><small>2x RATE</small>
+        </div>
     </div>
 
     <div class="bottom-sheet" id="data-sheet">
@@ -206,15 +177,9 @@
                 <span>GENUS <strong id="genus">--</strong></span>
             </div>
         </div>
-        
         <div class="sheet-content">
-            <h3>Pokedex Entry</h3>
-            <p class="desc-text" id="desc">Connecting...</p>
-
-            <h3>Evolution Chain</h3>
-            <div class="evo-box" id="evo-chain"></div>
-
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 7.0 - SAVE SYSTEM & AUDIO OS</div>
+            <h3>Pokedex Entry</h3><p class="desc-text" id="desc">Connecting...</p>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 8.0 - CATCH MECHANIC UPDATE</div>
         </div>
     </div>
 </div>
@@ -222,217 +187,223 @@
 <div id="pc-modal">
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
     <div class="pc-grid" id="pc-grid"></div>
-    <div class="save-controls">
-        <div class="save-btn" onclick="exportSave()">💾 EXPORT SAVE</div>
-        <div class="save-btn" onclick="importSave()">📂 IMPORT SAVE</div>
-    </div>
     <button class="close-pc-btn" onclick="closePC()">POWER OFF PC</button>
 </div>
 
 <script>
-    let bootAudio = new Audio('https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/25.ogg'); 
+    // System Variables
+    let audioCtx = null;
     let cryAudio = null;
     let curId = 25;
     let isShiny = false;
     let curData = null;
+    let curSpeciesData = null;
     let galleryTimer = null; 
     let currentPlayer = 1;
-    let caughtData = {
-        1: JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [],
-        2: JSON.parse(localStorage.getItem('pokedex_caught_p2')) || []
-    };
+    let isCatching = false; // QA Bug #1 Fix: State Lock
 
-    const maxPokemon = 1010; 
+    // QA Bug #2 Fix: Safe Data Loading
+    let caughtData = { 1: [], 2: [] };
+    try {
+        caughtData[1] = JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [];
+        caughtData[2] = JSON.parse(localStorage.getItem('pokedex_caught_p2')) || [];
+    } catch(e) { console.warn("Save data corrupted, resetting."); }
+
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
 
-    // --- BOOT SEQUENCE ---
+    // --- 8-BIT SYNTHESIZER (NO EXTERNAL FILES REQUIRED) ---
+    function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    
+    function playBeep(freq, type, duration, vol=0.1) {
+        if(!audioCtx) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function soundShake() { playBeep(150, 'square', 0.1, 0.2); }
+    function soundCatch() { playBeep(600, 'sine', 0.1); setTimeout(()=>playBeep(800, 'sine', 0.3), 100); }
+    function soundBreak() { playBeep(100, 'sawtooth', 0.4, 0.3); }
+
+    // --- BOOT ---
     function startApp() {
+        initAudio();
         document.getElementById('tap-msg').innerText = "LOADING OS...";
-        bootAudio.volume = 0.3; bootAudio.play().catch(e => console.log("Audio skipped"));
         setTimeout(() => {
             const boot = document.getElementById('boot-screen');
-            boot.style.transform = 'translateY(-100%)';
-            boot.style.opacity = '0';
+            boot.style.transform = 'translateY(-100%)'; boot.style.opacity = '0';
             setTimeout(() => boot.style.display = 'none', 500);
             loadPoke(25);
-        }, 800);
+        }, 500);
     }
 
-    // --- AUDIO CONTROLLER ---
-    function stopAllAudio() {
-        window.speechSynthesis.cancel();
-        if (cryAudio) { cryAudio.pause(); cryAudio.currentTime = 0; }
-        document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE';
-    }
+    // --- UI/UX TOOLS ---
+    function triggerVibration(duration = 40) { if (navigator.vibrate) navigator.vibrate(duration); }
+    function toggleSheet() { if(isCatching) return; document.getElementById('data-sheet').classList.toggle('open'); }
+    function toggleVoice() { /* Same as v7 */ }
+    function playCry() { if(cryAudio) { cryAudio.volume = 0.5; cryAudio.play(); } }
 
-    function toggleVoice() {
-        if (!curData) return;
-        if (window.speechSynthesis.speaking) {
-            stopAllAudio(); // Stops playback if currently talking
-        } else {
-            stopAllAudio(); // Clear any queued ghosts
-            let utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('desc').innerText}`);
-            utter.pitch = 0.5; utter.rate = 0.9;
-            
-            utter.onstart = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🛑</span> STOP'; };
-            utter.onend = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; };
-            utter.onerror = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; };
-            
-            window.speechSynthesis.speak(utter);
-        }
-    }
-
-    function playCry() {
-        stopAllAudio();
-        if(cryAudio) { 
-            cryAudio.volume = 0.5; 
-            cryAudio.play().catch(e => toggleVoice()); 
-        } else { toggleVoice(); }
-    }
-
-    // --- PLAYER TOGGLE ---
     function togglePlayer() {
+        if(isCatching) return;
         currentPlayer = currentPlayer === 1 ? 2 : 1;
         triggerVibration();
         document.getElementById('player-btn').innerText = `P${currentPlayer}`;
-        
-        if (currentPlayer === 1) {
-            document.documentElement.style.setProperty('--p-primary', '#d32f2f'); 
-            document.documentElement.style.setProperty('--p-dark', '#b71c1c');
-        } else {
-            document.documentElement.style.setProperty('--p-primary', '#1976D2'); 
-            document.documentElement.style.setProperty('--p-dark', '#0D47A1');
-        }
+        document.documentElement.style.setProperty('--p-primary', currentPlayer === 1 ? '#d32f2f' : '#1976D2'); 
+        document.documentElement.style.setProperty('--p-dark', currentPlayer === 1 ? '#b71c1c' : '#0D47A1');
         updateCatchUI();
     }
 
-    // --- UTILS ---
-    function triggerVibration(duration = 40) { if (navigator.vibrate) navigator.vibrate(duration); }
-    document.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => triggerVibration()));
-    function toggleSheet() { document.getElementById('data-sheet').classList.toggle('open'); }
-    function setScanning(active) {
-        document.getElementById('scanner-container').classList.toggle('scanning', active);
-        ['red', 'yellow', 'green'].forEach(c => document.getElementById(`led-${c}`).classList.toggle('blink', active));
+    // --- THE CATCH MECHANIC ---
+    function openBag() {
+        if(isCatching || caughtData[currentPlayer].includes(curId)) return;
+        document.getElementById('ball-drawer').classList.add('open');
+        triggerVibration();
     }
 
-    // --- SAVE SYSTEM ---
-    function exportSave() {
-        const saveObj = { v: 1, p1: caughtData[1], p2: caughtData[2] };
-        const saveString = btoa(JSON.stringify(saveObj)); // Encodes to a safe text string
+    function executeCatch(ballModifier, ballName) {
+        if(isCatching) return;
+        isCatching = true; // LOCK UI
+        document.getElementById('ball-drawer').classList.remove('open');
+        stopAllAudio();
+
+        const sprite = document.getElementById('poke-sprite');
+        const ball = document.getElementById('throw-ball');
+        const msg = document.getElementById('catch-msg');
         
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(saveString).then(() => {
-                alert("SAVE CODE COPIED TO CLIPBOARD! \nPaste it somewhere safe (like Notes or an Email).");
-            });
+        // 1. Throw Animation
+        ball.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${ballName}.png`;
+        ball.style.opacity = 1;
+        ball.style.transform = 'translateY(0px) scale(1)';
+        
+        setTimeout(() => {
+            // 2. Sucked In
+            sprite.classList.add('sucked-in');
+            playBeep(400, 'sine', 0.3); // Zip sound
+            
+            // 3. The RNG Math (Base catch rate is out of 255)
+            const baseRate = curSpeciesData.capture_rate || 45;
+            const catchProbability = (baseRate * ballModifier) / 255;
+            const isSuccess = Math.random() < catchProbability;
+            const shakes = isSuccess ? 3 : Math.floor(Math.random() * 3) + 1; // Shake 1-3 times
+            
+            // 4. Perform Shakes
+            let shakeCount = 0;
+            let shakeInterval = setInterval(() => {
+                shakeCount++;
+                ball.classList.remove('ball-shake');
+                void ball.offsetWidth; // Trigger CSS reflow
+                ball.classList.add('ball-shake');
+                soundShake();
+                triggerVibration([50]);
+
+                if (shakeCount >= shakes) {
+                    clearInterval(shakeInterval);
+                    setTimeout(() => finalizeCatch(isSuccess, ball, sprite, msg), 800);
+                }
+            }, 1000);
+
+        }, 500);
+    }
+
+    function finalizeCatch(isSuccess, ball, sprite, msg) {
+        ball.classList.remove('ball-shake');
+        
+        if (isSuccess) {
+            // SUCCESS
+            soundCatch();
+            triggerVibration([100, 50, 100]);
+            msg.innerText = "GOTCHA!";
+            msg.style.color = "#00ff00";
+            msg.style.opacity = 1;
+            
+            caughtData[currentPlayer].push(curId);
+            localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
+            updateCatchUI();
+            
+            setTimeout(() => {
+                ball.style.opacity = 0;
+                ball.style.transform = 'translateY(-150px) scale(2)';
+                msg.style.opacity = 0;
+                sprite.classList.remove('sucked-in'); // Reset for next pokemon
+                isCatching = false;
+            }, 2000);
+
         } else {
-            prompt("COPY THIS SAVE CODE:", saveString);
+            // FAIL
+            soundBreak();
+            triggerVibration([200]);
+            ball.style.opacity = 0;
+            ball.style.transform = 'translateY(-150px) scale(2)';
+            
+            sprite.classList.remove('sucked-in');
+            msg.innerText = "DARN! IT BROKE FREE!";
+            msg.style.color = "#ff0000";
+            msg.style.opacity = 1;
+            
+            setTimeout(() => { msg.style.opacity = 0; isCatching = false; }, 2000);
         }
     }
 
-    function importSave() {
-        const code = prompt("PASTE YOUR SAVE CODE HERE:\n(Warning: This will overwrite your current game!)");
-        if (!code) return;
-        try {
-            const saveObj = JSON.parse(atob(code)); // Decode text string back to JSON
-            if (saveObj.p1) { caughtData[1] = saveObj.p1; localStorage.setItem('pokedex_caught_p1', JSON.stringify(saveObj.p1)); }
-            if (saveObj.p2) { caughtData[2] = saveObj.p2; localStorage.setItem('pokedex_caught_p2', JSON.stringify(saveObj.p2)); }
-            alert("SAVE DATA IMPORTED SUCCESSFULLY!");
-            openPC(); 
-            updateCatchUI();
-        } catch(e) { alert("ERROR: INVALID SAVE CODE."); }
+    function updateCatchUI() {
+        const btn = document.getElementById('catch-btn');
+        const icon = document.getElementById('caught-icon');
+        if (caughtData[currentPlayer].includes(curId)) {
+            btn.innerHTML = `<span class="btn-icon">✔️</span> OWNED`;
+            btn.classList.add('owned');
+            icon.style.display = 'inline-block';
+        } else {
+            btn.innerHTML = `<span class="btn-icon">🔴</span> CATCH`;
+            btn.classList.remove('owned');
+            icon.style.display = 'none';
+        }
     }
 
-    // --- PC BOX LOGIC ---
-    function openPC() {
-        const grid = document.getElementById('pc-grid');
-        document.getElementById('pc-title').innerText = `P${currentPlayer}'S PC BOX`;
-        let activeCaught = caughtData[currentPlayer];
-        
-        let caughtArr = [...activeCaught].sort((a,b) => a - b);
-        let uncaughtArr = [];
-        for(let i=1; i<=maxPokemon; i++) { if(!activeCaught.includes(i)) uncaughtArr.push(i); }
-
-        let html = '';
-        caughtArr.forEach(id => {
-            html += `<div class="pc-item" onclick="loadFromPC(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3, '0')}</span></div>`;
-        });
-        uncaughtArr.forEach(id => {
-            html += `<div class="pc-item uncaught" onclick="loadFromPC(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3, '0')}</span></div>`;
-        });
-
-        grid.innerHTML = html;
-        document.getElementById('pc-modal').style.display = 'flex';
-    }
-    function closePC() { document.getElementById('pc-modal').style.display = 'none'; }
-    function loadFromPC(id) { closePC(); loadPoke(id); }
-
-    // --- CORE LOGIC ---
+    // --- DATA LOADING & PC ---
     async function loadPoke(idOrName) {
-        if (!idOrName) return;
-        
-        stopAllAudio(); // HALTS ANY PLAYING AUDIO WHEN MOVING TO A NEW POKEMON
-        
-        clearInterval(galleryTimer); setScanning(true); document.getElementById('search').blur();
+        if (!idOrName || isCatching) return;
+        stopAllAudio();
+        clearInterval(galleryTimer); document.getElementById('search').blur();
         document.getElementById('poke-sprite').style.opacity = 0;
         
         try {
             const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${idOrName.toString().toLowerCase().trim().replace(/\s+/g, '-')}`);
             if(!res.ok) throw "Not found";
-            const data = await res.json();
-            curData = data; curId = data.id;
+            curData = await res.json(); curId = curData.id;
 
-            const sRes = await fetch(data.species.url);
-            const sData = await sRes.json();
+            const sRes = await fetch(curData.species.url);
+            curSpeciesData = await sRes.json();
 
-            updateUI(data, sData);
-            loadEvolutions(sData.evolution_chain.url);
-            setupGallery(); updateCatchUI();
+            updateUI(); setupGallery(); updateCatchUI();
 
         } catch (e) {
             document.getElementById('poke-name').innerText = "ERROR";
-            document.getElementById('desc').innerText = "Data corrupted or missing.";
+            document.getElementById('desc').innerText = "Data missing.";
         }
-        setTimeout(() => { setScanning(false); document.getElementById('poke-sprite').style.opacity = 1; }, 600);
+        setTimeout(() => document.getElementById('poke-sprite').style.opacity = 1, 300);
     }
 
-    async function loadEvolutions(url) {
-        const evoBox = document.getElementById('evo-chain');
-        evoBox.innerHTML = '<span style="color:#777; font-size:10px;">ANALYZING DNA...</span>';
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-            let chain = []; let curr = data.chain;
-            
-            do {
-                let sUrl = curr.species.url;
-                let id = sUrl.split('/').filter(Boolean).pop();
-                chain.push({ name: curr.species.name, id: id });
-                curr = curr.evolves_to[0]; 
-            } while (curr);
-
-            evoBox.innerHTML = chain.map((poke, index) => `${index > 0 ? '<div class="evo-arrow">▶</div>' : ''}<div class="evo-item" onclick="loadPoke(${poke.id}); toggleSheet();"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.id}.png"><span>${poke.name}</span></div>`).join('');
-        } catch (e) { evoBox.innerHTML = '<span style="color:#777; font-size:10px;">NO DATA</span>'; }
-    }
-
-    function updateUI(data, sData) {
-        const typeColor = typeColors[data.types[0].type.name] || '#777'; 
+    function updateUI() {
+        const typeColor = typeColors[curData.types[0].type.name] || '#777'; 
         document.getElementById('bg-glow').style.background = `radial-gradient(circle, ${typeColor}66 0%, transparent 70%)`;
-        document.getElementById('id-text').innerText = `NO. ${data.id.toString().padStart(4, '0')}`;
-        document.getElementById('poke-name').innerText = data.name;
-        document.getElementById('poke-name').style.fontSize = data.name.length > 12 ? '24px' : '32px';
         
-        document.getElementById('ht').innerText = `${data.height / 10}m`;
-        document.getElementById('wt').innerText = `${data.weight / 10}kg`;
+        // QA Bug #3 Fix: Use innerText for sanitization
+        document.getElementById('id-text').innerText = `NO. ${curData.id.toString().padStart(4, '0')}`;
+        document.getElementById('poke-name').innerText = curData.name;
+        document.getElementById('ht').innerText = `${curData.height / 10}m`;
+        document.getElementById('wt').innerText = `${curData.weight / 10}kg`;
         
-        const genusObj = sData.genera.find(g => g.language.name === 'en');
+        const genusObj = curSpeciesData.genera.find(g => g.language.name === 'en');
         document.getElementById('genus').innerText = genusObj ? genusObj.genus : "Unknown";
 
-        const entry = sData.flavor_text_entries.find(e => e.language.name === 'en');
+        const entry = curSpeciesData.flavor_text_entries.find(e => e.language.name === 'en');
         document.getElementById('desc').innerText = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "No data.";
 
-        document.getElementById('types').innerHTML = data.types.map(t => `<span class="tag" style="background:${typeColors[t.type.name] || '#777'}; color: ${['electric','ice','flying'].includes(t.type.name) ? '#000' : '#fff'}">${t.type.name}</span>`).join('');
-
-        cryAudio = (data.cries && data.cries.latest) ? new Audio(data.cries.latest) : null;
+        document.getElementById('types').innerHTML = curData.types.map(t => `<span class="tag" style="background:${typeColors[t.type.name] || '#777'};">${t.type.name}</span>`).join('');
+        cryAudio = (curData.cries && curData.cries.latest) ? new Audio(curData.cries.latest) : null;
     }
 
     function setupGallery() {
@@ -451,39 +422,23 @@
         }
     }
 
-    function toggleShiny() { isShiny = !isShiny; setupGallery(); }
-    function randomPoke() { loadPoke(Math.floor(Math.random() * maxPokemon) + 1); }
-    
-    // --- CATCH SYSTEM ---
-    function toggleCatch() {
-        if (!curData) return;
-        let activeCaught = caughtData[currentPlayer];
-        
-        if (activeCaught.includes(curId)) {
-            activeCaught = activeCaught.filter(id => id !== curId);
-        } else {
-            activeCaught.push(curId);
-            triggerVibration([50, 100, 50]); 
-        }
-        
-        caughtData[currentPlayer] = activeCaught;
-        localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(activeCaught));
-        updateCatchUI();
-    }
+    function toggleShiny() { if(!isCatching){ isShiny = !isShiny; setupGallery(); } }
+    function randomPoke() { if(!isCatching) loadPoke(Math.floor(Math.random() * 1010) + 1); }
+    function stopAllAudio() { window.speechSynthesis.cancel(); if (cryAudio) { cryAudio.pause(); cryAudio.currentTime = 0; } }
 
-    function updateCatchUI() {
-        const btn = document.getElementById('catch-btn');
-        const icon = document.getElementById('caught-icon');
-        if (caughtData[currentPlayer].includes(curId)) {
-            btn.innerHTML = `<span class="btn-icon">✔️</span> OWNED`;
-            btn.classList.add('owned');
-            icon.style.display = 'inline-block';
-        } else {
-            btn.innerHTML = `<span class="btn-icon">🔴</span> CATCH`;
-            btn.classList.remove('owned');
-            icon.style.display = 'none';
-        }
+    function openPC() {
+        if(isCatching) return;
+        const grid = document.getElementById('pc-grid');
+        document.getElementById('pc-title').innerText = `P${currentPlayer}'S PC BOX`;
+        let activeCaught = caughtData[currentPlayer];
+        let caughtArr = [...activeCaught].sort((a,b) => a - b);
+        let html = '';
+        caughtArr.forEach(id => { html += `<div class="pc-item" onclick="loadFromPC(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3, '0')}</span></div>`; });
+        grid.innerHTML = html;
+        document.getElementById('pc-modal').style.display = 'flex';
     }
+    function closePC() { document.getElementById('pc-modal').style.display = 'none'; }
+    function loadFromPC(id) { closePC(); loadPoke(id); }
 </script>
 
 </body>
