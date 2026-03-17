@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
-    <title>Pokédex OS v9.0</title>
+    <title>Pokédex OS v10.0</title>
     <style>
         :root { --p-primary: #d32f2f; --p-dark: #b71c1c; --bg-color: #121212; --panel-bg: #1e1e1e; --pc-cyan: #00e5ff; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -53,7 +53,7 @@
         .scanning .scanner-line { animation: scan 1.2s ease-in-out infinite alternate; opacity: 1; }
         @keyframes scan { 0% { top: 10%; } 100% { top: 90%; } }
 
-        /* ANIMATED THROWABLE POKEBALL */
+        /* CATCH MECHANIC */
         #throw-ball { position: absolute; width: 40px; height: 40px; z-index: 10; opacity: 0; pointer-events: none; transform: translateY(-150px) scale(2); transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.8));}
         .ball-shake { animation: shakeBall 0.8s ease-in-out; }
         @keyframes shakeBall { 0% { transform: rotate(0deg); } 20% { transform: rotate(-25deg); } 40% { transform: rotate(25deg); } 60% { transform: rotate(-10deg); } 80% { transform: rotate(10deg); } 100% { transform: rotate(0deg); } }
@@ -68,7 +68,7 @@
         .btn-catch { grid-column: span 2; background: linear-gradient(135deg, #ff416c, #ff4b2b) !important; color: white;}
         .btn-catch.owned { background: linear-gradient(135deg, #11998e, #38ef7d) !important; }
 
-        /* BALL SELECTOR DRAWER */
+        /* ITEM DRAWER */
         #ball-drawer { position: absolute; bottom: -100px; left: 0; width: 100%; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 20px; border-top: 2px solid #444; transition: bottom 0.3s ease-out; z-index: 30; box-shadow: 0 -10px 20px rgba(0,0,0,0.5);}
         #ball-drawer.open { bottom: 0; }
         .ball-opt { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: transform 0.2s; }
@@ -77,7 +77,7 @@
         .ball-opt span { font-size: 10px; font-weight: 900; color: #fff;}
         .ball-opt small { font-size: 8px; color: #aaa; }
 
-        /* BOTTOM SHEET & DATA UI */
+        /* BOTTOM SHEET DATA PANEL */
         .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; height: 75dvh; background: var(--panel-bg); border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); transform: translateY(calc(100% - 90px)); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; z-index: 20; }
         .bottom-sheet.open { transform: translateY(0); }
         .sheet-handle-area { padding: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -107,7 +107,7 @@
         .evo-item span { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #ccc;}
         .evo-arrow { color: #555; font-size: 20px; font-weight: bold; }
 
-        /* PC BOX & SAVES */
+        /* PC BOX */
         #pc-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: rgba(10, 20, 30, 0.95); backdrop-filter: blur(15px); z-index: 100; display: none; flex-direction: column; padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)) 20px;}
         .pc-header { color: var(--pc-cyan); font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;}
         .pc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 12px; overflow-y: auto; flex: 1; padding-bottom: 20px; align-content: start; }
@@ -215,7 +215,7 @@
             <h3>Evolution Chain</h3>
             <div class="evo-box" id="evo-chain"></div>
 
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 9.0 - THE ULTIMATE UPDATE</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 10.0 - MASTER EDITION</div>
         </div>
     </div>
 </div>
@@ -231,7 +231,7 @@
 </div>
 
 <script>
-    // System Variables
+    // --- SYSTEM VARIABLES ---
     let audioCtx = null;
     let cryAudio = null;
     let curId = 25;
@@ -242,16 +242,19 @@
     let currentPlayer = 1;
     let isCatching = false; 
 
+    // Limiting to Gen 1 (151) to guarantee fluid 60FPS DOM rendering in PC Box
+    const maxPokemon = 151; 
+    
+    // QA Feature: Safe Local Storage Loading
     let caughtData = { 1: [], 2: [] };
     try {
         caughtData[1] = JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [];
         caughtData[2] = JSON.parse(localStorage.getItem('pokedex_caught_p2')) || [];
     } catch(e) { console.warn("Save data corrupted, resetting."); }
 
-    const maxPokemon = 1010;
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
 
-    // --- 8-BIT SYNTHESIZER ---
+    // --- 8-BIT AUDIO SYNTHESIZER ---
     function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
     
     function playBeep(freq, type, duration, vol=0.1) {
@@ -269,7 +272,7 @@
     function soundCatch() { playBeep(600, 'sine', 0.1); setTimeout(()=>playBeep(800, 'sine', 0.3), 100); }
     function soundBreak() { playBeep(100, 'sawtooth', 0.4, 0.3); }
 
-    // --- BOOT ---
+    // --- BOOT SEQUENCE ---
     function startApp() {
         initAudio();
         document.getElementById('tap-msg').innerText = "LOADING OS...";
@@ -289,7 +292,7 @@
         ['red', 'yellow', 'green'].forEach(c => document.getElementById(`led-${c}`).classList.toggle('blink', active));
     }
 
-    // --- AUDIO CONTROLLER ---
+    // --- QA FEATURE: BULLETPROOF AUDIO CONTROLLER ---
     function stopAllAudio() {
         window.speechSynthesis.cancel();
         if (cryAudio) { cryAudio.pause(); cryAudio.currentTime = 0; }
@@ -302,15 +305,24 @@
             stopAllAudio(); 
         } else {
             stopAllAudio(); 
-            let utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('desc').innerText}`);
-            utter.pitch = 0.5; utter.rate = 0.9;
-            utter.onstart = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🛑</span> STOP'; };
-            utter.onend = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; };
-            window.speechSynthesis.speak(utter);
+            // Ensures TTS resets state on iOS Safari
+            setTimeout(() => {
+                let utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('desc').innerText}`);
+                utter.pitch = 0.5; utter.rate = 0.9;
+                utter.onstart = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🛑</span> STOP'; };
+                utter.onend = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; };
+                utter.onerror = () => { document.getElementById('voice-btn').innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; };
+                window.speechSynthesis.speak(utter);
+            }, 50);
         }
     }
 
-    function playCry() { if(isCatching) return; stopAllAudio(); if(cryAudio) { cryAudio.volume = 0.5; cryAudio.play().catch(e => toggleVoice()); } else { toggleVoice(); } }
+    function playCry() { 
+        if(isCatching) return; 
+        stopAllAudio(); 
+        if(cryAudio) { cryAudio.volume = 0.5; cryAudio.play().catch(e => toggleVoice()); } 
+        else { toggleVoice(); } 
+    }
 
     function togglePlayer() {
         if(isCatching) return;
@@ -370,7 +382,6 @@
 
     function finalizeCatch(isSuccess, ball, sprite, msg) {
         ball.classList.remove('ball-shake');
-        
         if (isSuccess) {
             soundCatch(); triggerVibration([100, 50, 100]);
             msg.innerText = "GOTCHA!"; msg.style.color = "#00ff00"; msg.style.opacity = 1;
@@ -389,7 +400,6 @@
             ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)';
             sprite.classList.remove('sucked-in');
             msg.innerText = "DARN! IT BROKE FREE!"; msg.style.color = "#ff0000"; msg.style.opacity = 1;
-            
             setTimeout(() => { msg.style.opacity = 0; isCatching = false; }, 2000);
         }
     }
@@ -408,7 +418,7 @@
         }
     }
 
-    // --- DATA LOADING ---
+    // --- CORE DATA LOADING ---
     async function loadPoke(idOrName) {
         if (!idOrName || isCatching) return;
         stopAllAudio();
@@ -430,15 +440,19 @@
             updateCatchUI();
 
         } catch (e) {
+            console.error("Fetch Error:", e);
             document.getElementById('poke-name').innerText = "ERROR";
-            document.getElementById('desc').innerText = "Data missing.";
+            document.getElementById('desc').innerText = "Data missing or API error.";
         }
         setTimeout(() => { setScanning(false); document.getElementById('poke-sprite').style.opacity = 1; }, 600);
     }
 
+    // QA FEATURE: Bulletproof Evolution Loader
     async function loadEvolutions(url) {
         const evoBox = document.getElementById('evo-chain');
         evoBox.innerHTML = '<span style="color:#777; font-size:10px;">ANALYZING DNA...</span>';
+        if(!url) { evoBox.innerHTML = '<span style="color:#777; font-size:10px;">NO EVOLUTION DATA</span>'; return; }
+        
         try {
             const res = await fetch(url);
             const data = await res.json();
@@ -452,40 +466,48 @@
             } while (curr);
 
             evoBox.innerHTML = chain.map((poke, index) => `${index > 0 ? '<div class="evo-arrow">▶</div>' : ''}<div class="evo-item" onclick="loadPoke(${poke.id}); toggleSheet();"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.id}.png"><span>${poke.name}</span></div>`).join('');
-        } catch (e) { evoBox.innerHTML = '<span style="color:#777; font-size:10px;">NO DATA</span>'; }
+        } catch (e) { 
+            console.error("Evolution Error:", e);
+            evoBox.innerHTML = '<span style="color:#777; font-size:10px;">DNA ERROR</span>'; 
+        }
     }
 
+    // QA FEATURE: Bulletproof UI Updater
     function updateUI() {
-        const typeColor = typeColors[curData.types[0].type.name] || '#777'; 
-        document.getElementById('bg-glow').style.background = `radial-gradient(circle, ${typeColor}66 0%, transparent 70%)`;
-        
-        document.getElementById('id-text').innerText = `NO. ${curData.id.toString().padStart(4, '0')}`;
-        document.getElementById('poke-name').innerText = curData.name;
-        document.getElementById('poke-name').style.fontSize = curData.name.length > 12 ? '24px' : '32px';
-        
-        document.getElementById('ht').innerText = `${curData.height / 10}m`;
-        document.getElementById('wt').innerText = `${curData.weight / 10}kg`;
-        document.getElementById('base-exp').innerText = curData.base_experience;
-        
-        const genusObj = curSpeciesData.genera.find(g => g.language.name === 'en');
-        document.getElementById('genus').innerText = genusObj ? genusObj.genus : "Unknown";
+        try {
+            const typeColor = typeColors[curData.types[0].type.name] || '#777'; 
+            document.getElementById('bg-glow').style.background = `radial-gradient(circle, ${typeColor}66 0%, transparent 70%)`;
+            
+            document.getElementById('id-text').innerText = `NO. ${curData.id.toString().padStart(4, '0')}`;
+            document.getElementById('poke-name').innerText = curData.name;
+            document.getElementById('poke-name').style.fontSize = curData.name.length > 12 ? '24px' : '32px';
+            
+            document.getElementById('ht').innerText = `${curData.height / 10}m`;
+            document.getElementById('wt').innerText = `${curData.weight / 10}kg`;
+            document.getElementById('base-exp').innerText = curData.base_experience || '--';
+            
+            const genusObj = curSpeciesData.genera.find(g => g.language.name === 'en');
+            document.getElementById('genus').innerText = genusObj ? genusObj.genus : "Unknown";
 
-        const entry = curSpeciesData.flavor_text_entries.find(e => e.language.name === 'en');
-        document.getElementById('desc').innerText = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "No data.";
+            const entry = curSpeciesData.flavor_text_entries.find(e => e.language.name === 'en');
+            document.getElementById('desc').innerText = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "No data.";
 
-        document.getElementById('types').innerHTML = curData.types.map(t => `<span class="tag" style="background:${typeColors[t.type.name] || '#777'}; color: ${['electric','ice','flying'].includes(t.type.name) ? '#000' : '#fff'}">${t.type.name}</span>`).join('');
-        
-        document.getElementById('abilities').innerHTML = curData.abilities.map(a => a.ability.name.replace('-', ' ')).join('<br>');
+            document.getElementById('types').innerHTML = curData.types.map(t => `<span class="tag" style="background:${typeColors[t.type.name] || '#777'}; color: ${['electric','ice','flying'].includes(t.type.name) ? '#000' : '#fff'}">${t.type.name}</span>`).join('');
+            
+            document.getElementById('abilities').innerHTML = curData.abilities.map(a => a.ability.name.replace('-', ' ')).join('<br>');
 
-        const maxStat = 255; 
-        document.getElementById('stats-area').innerHTML = curData.stats.map(s => {
-            let statName = s.stat.name.toUpperCase().replace('SPECIAL-', 'SP. ');
-            let percent = (s.base_stat / maxStat) * 100;
-            let barColor = s.base_stat > 90 ? '#4caf50' : s.base_stat > 50 ? '#ffeb3b' : '#f44336';
-            return `<div class="stat-row"><div class="stat-name">${statName}</div><div class="stat-val">${s.base_stat}</div><div class="stat-bar-bg"><div class="stat-bar-fill" style="width: ${percent}%; background: ${barColor}"></div></div></div>`;
-        }).join('');
+            const maxStat = 255; 
+            document.getElementById('stats-area').innerHTML = curData.stats.map(s => {
+                let statName = s.stat.name.toUpperCase().replace('SPECIAL-', 'SP. ');
+                let percent = (s.base_stat / maxStat) * 100;
+                let barColor = s.base_stat > 90 ? '#4caf50' : s.base_stat > 50 ? '#ffeb3b' : '#f44336';
+                return `<div class="stat-row"><div class="stat-name">${statName}</div><div class="stat-val">${s.base_stat}</div><div class="stat-bar-bg"><div class="stat-bar-fill" style="width: ${percent}%; background: ${barColor}"></div></div></div>`;
+            }).join('');
 
-        cryAudio = (curData.cries && curData.cries.latest) ? new Audio(curData.cries.latest) : null;
+            cryAudio = (curData.cries && curData.cries.latest) ? new Audio(curData.cries.latest) : null;
+        } catch(e) {
+            console.error("UI Render Error:", e);
+        }
     }
 
     function setupGallery() {
@@ -504,9 +526,9 @@
         }
     }
 
-    function toggleShiny() { if(!isCatching){ isShiny = !isShiny; setupGallery(); } }
-    function randomPoke() { if(!isCatching) loadPoke(Math.floor(Math.random() * maxPokemon) + 1); }
-    function nav(amt) { if(isCatching) return; curId += amt; if(curId < 1) curId = maxPokemon; if(curId > maxPokemon) curId = 1; loadPoke(curId); }
+    function toggleShiny() { if(!isCatching){ isShiny = !isShiny; setupGallery(); triggerVibration(); } }
+    function randomPoke() { if(!isCatching) loadPoke(Math.floor(Math.random() * maxPokemon) + 1); triggerVibration(); }
+    function nav(amt) { if(isCatching) return; curId += amt; if(curId < 1) curId = maxPokemon; if(curId > maxPokemon) curId = 1; loadPoke(curId); triggerVibration(); }
 
     // --- SWIPE GESTURES ---
     let touchStartX = 0; let touchStartY = 0;
@@ -520,24 +542,27 @@
         else if (Math.abs(diffY) > 80 && Math.abs(diffY) > Math.abs(diffX)) { if (diffY < 0) document.getElementById('data-sheet').classList.add('open'); else document.getElementById('data-sheet').classList.remove('open'); }
     }, {passive: true});
 
-    // --- PC BOX & SAVES ---
+    // --- QA FEATURE: OPTIMIZED PC BOX ---
     function openPC() {
         if(isCatching) return;
         const grid = document.getElementById('pc-grid');
         document.getElementById('pc-title').innerText = `P${currentPlayer}'S PC BOX`;
         let activeCaught = caughtData[currentPlayer];
         
-        let caughtArr = [...activeCaught].sort((a,b) => a - b);
-        let uncaughtArr = [];
-        for(let i=1; i<=maxPokemon; i++) { if(!activeCaught.includes(i)) uncaughtArr.push(i); }
-
         let html = '';
-        caughtArr.forEach(id => { html += `<div class="pc-item" onclick="loadFromPC(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3, '0')}</span></div>`; });
-        uncaughtArr.forEach(id => { html += `<div class="pc-item uncaught" onclick="loadFromPC(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3, '0')}</span></div>`; });
+        // Sequentially prints 1-151 to guarantee exact numerical order visually
+        for (let i = 1; i <= maxPokemon; i++) {
+            if (activeCaught.includes(i)) {
+                html += `<div class="pc-item" onclick="loadFromPC(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3, '0')}</span></div>`;
+            } else {
+                html += `<div class="pc-item uncaught" onclick="loadFromPC(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3, '0')}</span></div>`;
+            }
+        }
         
         grid.innerHTML = html;
         document.getElementById('pc-modal').style.display = 'flex';
     }
+    
     function closePC() { document.getElementById('pc-modal').style.display = 'none'; }
     function loadFromPC(id) { closePC(); loadPoke(id); }
 
