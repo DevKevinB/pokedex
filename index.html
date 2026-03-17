@@ -6,20 +6,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
-    <title>Pokédex OS v3.0</title>
+    <title>Pokédex OS v5.0</title>
     <style>
         :root { 
             --p-red: #d32f2f; --p-dark: #b71c1c; 
             --bg-color: #121212; --panel-bg: #1e1e1e;
+            --pc-cyan: #00e5ff;
         }
         
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         
-        /* Using dvh fixes the Safari bottom-bar clipping issue */
         body, html { 
             margin: 0; padding: 0; height: 100dvh; width: 100vw;
             background: var(--bg-color); font-family: 'SF Pro Display', -apple-system, sans-serif;
-            overflow: hidden; color: white;
+            overflow: hidden; color: white; touch-action: pan-y; 
         }
 
         .app-container {
@@ -29,11 +29,8 @@
             position: relative;
         }
 
-        /* Tighter, Cleaner Header */
-        .header {
-            display: flex; align-items: center; padding: 10px 20px; gap: 15px;
-            z-index: 10;
-        }
+        /* Header */
+        .header { display: flex; align-items: center; padding: 10px 20px; gap: 15px; z-index: 10; }
         .big-blue {
             width: 45px; height: 45px; border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #a2defc, #29a5e3, #084a70);
@@ -46,6 +43,14 @@
         .led.green { background: radial-gradient(circle at 30% 30%, #8aff8a, #00ff00); }
         .blink { animation: blinker 0.3s linear infinite; }
         @keyframes blinker { 50% { filter: brightness(2); box-shadow: 0 0 10px currentColor; } }
+        
+        .header-btn {
+            margin-left: auto; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 15px; border-radius: 20px; color: var(--pc-cyan); font-weight: 900;
+            font-size: 12px; backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex; align-items: center; gap: 5px; cursor: pointer;
+        }
+        .header-btn:active { transform: scale(0.95); background: rgba(0,0,0,0.6); }
 
         /* Main Visual Area */
         .visual-display {
@@ -53,9 +58,10 @@
             position: relative; padding: 0 20px; margin-top: -10px;
         }
         
-        .identity { text-align: center; margin-bottom: 10px; z-index: 2; }
-        #poke-id { font-size: 16px; color: rgba(255,255,255,0.7); font-weight: 800; letter-spacing: 2px;}
-        #poke-name { font-size: 36px; font-weight: 900; margin: -5px 0 5px 0; text-transform: uppercase; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .identity { text-align: center; margin-bottom: 10px; z-index: 2; width: 100%; }
+        #poke-id { font-size: 16px; color: rgba(255,255,255,0.7); font-weight: 800; letter-spacing: 2px; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .caught-icon { width: 16px; height: 16px; display: none; filter: drop-shadow(0 0 5px rgba(255,255,255,0.8));}
+        #poke-name { font-size: 32px; font-weight: 900; margin: -2px 0 5px 0; text-transform: uppercase; text-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
         .tags { display: flex; gap: 8px; justify-content: center; }
         .tag { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
@@ -66,33 +72,45 @@
         #bg-glow { position: absolute; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); z-index: 1; transition: background 0.5s;}
         #poke-sprite { height: 220px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); transition: opacity 0.3s, transform 0.3s; z-index: 2; }
 
-        /* Thumb-Zone Controls */
+        /* Laser Scanner */
+        .scanner-line {
+            position: absolute; width: 150px; height: 3px; background: rgba(0, 255, 255, 0.9);
+            box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; border-radius: 50%;
+            z-index: 10; opacity: 0; left: 50%; transform: translateX(-50%); pointer-events: none;
+        }
+        .scanning .scanner-line { animation: scan 1.2s ease-in-out infinite alternate; opacity: 1; }
+        @keyframes scan { 0% { top: 10%; } 100% { top: 90%; } }
+
+        /* Toolbar */
         .toolbar {
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
             padding: 0 20px; z-index: 10; margin-top: 10px;
         }
         input { 
-            grid-column: span 4; padding: 12px; border-radius: 12px; border: none; 
+            grid-column: span 4; padding: 14px; border-radius: 12px; border: none; 
             font-size: 14px; text-align: center; font-weight: bold; background: rgba(255,255,255,0.1); 
-            color: white; backdrop-filter: blur(5px); margin-bottom: 5px;
+            color: white; backdrop-filter: blur(5px); margin-bottom: 5px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
         }
         input::placeholder { color: rgba(255,255,255,0.5); }
         input:focus { outline: 2px solid var(--p-red); background: rgba(255,255,255,0.2); }
         
-        button {
+        button.tool-btn {
             padding: 12px 0; border: none; border-radius: 12px; background: var(--panel-bg); color: white;
-            font-weight: 800; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s, background 0.2s;
+            font-weight: 800; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s, background 0.2s; cursor: pointer;
         }
-        button:active { transform: scale(0.95); background: #333; }
+        button.tool-btn:active { transform: scale(0.95); background: #333; }
         .btn-icon { font-size: 18px; }
+        
+        .btn-catch { grid-column: span 2; background: linear-gradient(135deg, #ff416c, #ff4b2b) !important; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
+        .btn-catch.owned { background: linear-gradient(135deg, #11998e, #38ef7d) !important; }
 
-        /* Sliding Bottom Drawer (The Data Sheet) */
+        /* Bottom Sheet */
         .bottom-sheet {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 75dvh;
             background: var(--panel-bg); border-radius: 30px 30px 0 0;
             box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-            transform: translateY(calc(100% - 90px)); /* Shows just the handle and basic info by default */
+            transform: translateY(calc(100% - 90px)); 
             transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
             display: flex; flex-direction: column; z-index: 20;
         }
@@ -108,7 +126,6 @@
         .sheet-content { padding: 20px; overflow-y: auto; flex: 1; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
         .sheet-content::-webkit-scrollbar { display: none; }
 
-        /* Detail Typography */
         h3 { font-size: 14px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin: 25px 0 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
         h3:first-child { margin-top: 0; }
         
@@ -125,11 +142,46 @@
         .info-box strong { display: block; color: #fff; font-size: 14px; margin-top: 4px; text-transform: capitalize;}
         
         .version-tag { text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;}
+
+        /* PC Box Modal */
+        #pc-modal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+            background: rgba(10, 20, 30, 0.95); backdrop-filter: blur(15px);
+            z-index: 100; display: none; flex-direction: column;
+            padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)) 20px;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        .pc-header { color: var(--pc-cyan); font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);}
+        .pc-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            gap: 12px; overflow-y: auto; flex: 1; padding-bottom: 20px; align-content: start;
+        }
+        .pc-grid::-webkit-scrollbar { display: none; }
+        
+        .pc-item {
+            background: rgba(255,255,255,0.05); border-radius: 12px;
+            border: 2px solid rgba(0, 229, 255, 0.2);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px 5px; cursor: pointer; transition: transform 0.1s, background 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .pc-item:active { transform: scale(0.9); background: rgba(0, 229, 255, 0.2); }
+        .pc-item img { width: 60px; height: 60px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8)); margin-bottom: 5px;}
+        .pc-item span { font-size: 11px; font-weight: 900; color: #fff; letter-spacing: 1px;}
+        
+        .close-pc-btn {
+            background: #fff; color: #000; border: none; padding: 18px;
+            border-radius: 12px; font-weight: 900; font-size: 14px; margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(255,255,255,0.2); cursor: pointer; letter-spacing: 1px;
+        }
+        .close-pc-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app-container" id="app-body">
     <div class="header">
         <div class="big-blue"></div>
         <div class="led-group">
@@ -137,30 +189,37 @@
             <div class="led yellow" id="led-yellow"></div>
             <div class="led green" id="led-green"></div>
         </div>
+        <div style="flex: 1;"></div>
+        <button class="header-btn" onclick="openPC()">💻 PC BOX</button>
     </div>
 
-    <div class="visual-display">
+    <div class="visual-display" id="swipe-zone">
         <div class="identity">
-            <div id="poke-id">#---</div>
+            <div id="poke-id">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="caught-icon" id="caught-icon">
+                <span id="id-text">#---</span>
+            </div>
             <div id="poke-name">LOADING</div>
             <div class="tags" id="types"></div>
         </div>
         
-        <div class="img-container">
+        <div class="img-container" id="scanner-container">
             <div id="bg-glow"></div>
+            <div class="scanner-line"></div>
             <img id="poke-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
         </div>
     </div>
 
     <div class="toolbar">
         <input type="text" id="search" placeholder="Search by Name or ID..." onkeydown="if(event.key==='Enter') loadPoke(this.value)">
-        <button onclick="nav(-1)"><span class="btn-icon">◀</span> PREV</button>
-        <button onclick="playCry()"><span class="btn-icon">💥</span> CRY</button>
-        <button onclick="readAloud()"><span class="btn-icon">🎙️</span> VOICE</button>
-        <button onclick="nav(1)"><span class="btn-icon">▶</span> NEXT</button>
         
-        <button onclick="randomPoke()" style="grid-column: span 2; background: #2c2c2c;"><span class="btn-icon">🎲</span> RANDOM</button>
-        <button onclick="toggleShiny()" style="grid-column: span 2; background: #2c2c2c;"><span class="btn-icon">✨</span> SHINY</button>
+        <button class="tool-btn" onclick="playCry()"><span class="btn-icon">💥</span> CRY</button>
+        <button class="tool-btn" onclick="readAloud()"><span class="btn-icon">🎙️</span> VOICE</button>
+        <button class="tool-btn" onclick="toggleShiny()"><span class="btn-icon">✨</span> SHINY</button>
+        <button class="tool-btn" onclick="randomPoke()"><span class="btn-icon">🎲</span> RNDM</button>
+        
+        <button class="tool-btn btn-catch" id="catch-btn" onclick="toggleCatch()"><span class="btn-icon">🔴</span> CATCH</button>
+        <button class="tool-btn" style="grid-column: span 2; background: #2c2c2c;" onclick="toggleSheet()"><span class="btn-icon">📊</span> VIEW DATA</button>
     </div>
 
     <div class="bottom-sheet" id="data-sheet">
@@ -185,9 +244,16 @@
             <h3>Base Stats</h3>
             <div id="stats-area"></div>
             
-            <div class="version-tag">VERSION 3.0 - UX EDITION</div>
+            <div class="version-tag">VERSION 5.0 - PC BOX EDITION</div>
         </div>
     </div>
+</div>
+
+<div id="pc-modal">
+    <div class="pc-header">BILL'S PC</div>
+    <div class="pc-grid" id="pc-grid">
+        </div>
+    <button class="close-pc-btn" onclick="closePC()">POWER OFF PC</button>
 </div>
 
 <script>
@@ -196,8 +262,11 @@
     let curData = null;
     let images = [];
     let imgIdx = 0;
-    let timer = null;
+    let galleryTimer = null; 
     let cryAudio = null;
+    
+    // Feature: Local Storage CATCH system
+    let caughtPokemon = JSON.parse(localStorage.getItem('pokedex_caught')) || [];
 
     const typeColors = {
         fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535',
@@ -207,27 +276,63 @@
         fairy: '#fdb9e9', normal: '#a4acaf'
     };
 
-    // UI Interactions
-    function toggleSheet() {
-        document.getElementById('data-sheet').classList.toggle('open');
+    // --- UTILS & UI ---
+    function triggerVibration(duration = 40) {
+        if (navigator.vibrate) navigator.vibrate(duration);
     }
+    document.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => triggerVibration()));
 
-    function setLEDs(active) {
+    function toggleSheet() { document.getElementById('data-sheet').classList.toggle('open'); }
+
+    function setScanning(active) {
+        const scanner = document.getElementById('scanner-container');
+        active ? scanner.classList.add('scanning') : scanner.classList.remove('scanning');
+        
         ['red', 'yellow', 'green'].forEach(c => {
             const el = document.getElementById(`led-${c}`);
             active ? el.classList.add('blink') : el.classList.remove('blink');
         });
     }
 
-    // Core Logic
+    // --- PC BOX LOGIC ---
+    function openPC() {
+        const grid = document.getElementById('pc-grid');
+        if (caughtPokemon.length === 0) {
+            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: rgba(255,255,255,0.5); margin-top: 50px; font-weight: bold;">BOX IS EMPTY.<br><br>GO CATCH 'EM!</div>`;
+        } else {
+            // Sort collection by numeric ID so it stays organized
+            const sorted = [...caughtPokemon].sort((a,b) => a - b);
+            grid.innerHTML = sorted.map(id => `
+                <div class="pc-item" onclick="loadFromPC(${id})">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy">
+                    <span>#${id.toString().padStart(3, '0')}</span>
+                </div>
+            `).join('');
+        }
+        document.getElementById('pc-modal').style.display = 'flex';
+    }
+
+    function closePC() {
+        document.getElementById('pc-modal').style.display = 'none';
+    }
+
+    function loadFromPC(id) {
+        closePC();
+        loadPoke(id);
+    }
+
+    // --- CORE LOGIC ---
     async function loadPoke(idOrName) {
         if (!idOrName) return;
-        clearInterval(timer);
-        setLEDs(true);
-        document.getElementById('search').blur(); // Dismiss mobile keyboard
+        const searchTarget = idOrName.toString().toLowerCase().trim().replace(/\s+/g, '-');
+        
+        clearInterval(galleryTimer); 
+        setScanning(true);
+        document.getElementById('search').blur();
+        document.getElementById('poke-sprite').style.opacity = 0;
         
         try {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${idOrName.toString().toLowerCase()}`);
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${searchTarget}`);
             if(!res.ok) throw "Not found";
             const data = await res.json();
             curData = data;
@@ -238,22 +343,31 @@
 
             updateUI(data, sData);
             setupGallery();
+            updateCatchUI();
 
         } catch (e) {
             document.getElementById('poke-name').innerText = "NOT FOUND";
             document.getElementById('desc').innerText = "Database error. Please check spelling or ID.";
+            document.getElementById('id-text').innerText = "#---";
+            document.getElementById('types').innerHTML = "";
+            document.getElementById('caught-icon').style.display = 'none';
         }
-        setTimeout(() => setLEDs(false), 500);
+        setTimeout(() => {
+            setScanning(false);
+            document.getElementById('poke-sprite').style.opacity = 1;
+        }, 800);
     }
 
     function updateUI(data, sData) {
         const primaryType = data.types[0].type.name;
-        const color = typeColors[primaryType] || '#fff';
+        const color = typeColors[primaryType] || '#777'; 
         
         document.getElementById('bg-glow').style.background = `radial-gradient(circle, ${color}66 0%, transparent 70%)`;
-
-        document.getElementById('poke-id').innerText = `NO. ${data.id.toString().padStart(4, '0')}`;
-        document.getElementById('poke-name').innerText = data.name;
+        document.getElementById('id-text').innerText = `NO. ${data.id.toString().padStart(4, '0')}`;
+        
+        const nameEl = document.getElementById('poke-name');
+        nameEl.innerText = data.name;
+        nameEl.style.fontSize = data.name.length > 12 ? '24px' : '32px';
         
         document.getElementById('ht').innerText = `${data.height / 10}m`;
         document.getElementById('wt').innerText = `${data.weight / 10}kg`;
@@ -266,13 +380,12 @@
         document.getElementById('desc').innerText = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "No data.";
 
         document.getElementById('types').innerHTML = data.types.map(t => 
-            `<span class="tag" style="background:${typeColors[t.type.name]}; color: ${['electric','ice','flying'].includes(t.type.name) ? '#000' : '#fff'}">${t.type.name}</span>`
+            `<span class="tag" style="background:${typeColors[t.type.name] || '#777'}; color: ${['electric','ice','flying'].includes(t.type.name) ? '#000' : '#fff'}">${t.type.name}</span>`
         ).join('');
 
         document.getElementById('abilities').innerHTML = data.abilities.map(a => a.ability.name.replace('-', ' ')).join('<br>');
 
-        // Stat Bars
-        const maxStat = 255; // Blissey HP is highest base stat
+        const maxStat = 255; 
         document.getElementById('stats-area').innerHTML = data.stats.map(s => {
             let statName = s.stat.name.toUpperCase().replace('SPECIAL-', 'SP. ');
             let percent = (s.base_stat / maxStat) * 100;
@@ -288,10 +401,12 @@
             `;
         }).join('');
 
+        cryAudio = null;
         if(data.cries && data.cries.latest) { cryAudio = new Audio(data.cries.latest); }
     }
 
     function setupGallery() {
+        clearInterval(galleryTimer); 
         images = [
             curData.sprites.other['official-artwork'].front_default,
             curData.sprites.front_default
@@ -307,44 +422,90 @@
         imgIdx = 0;
         document.getElementById('poke-sprite').src = images[imgIdx];
         
-        timer = setInterval(() => {
-            imgIdx = (imgIdx + 1) % images.length;
-            const el = document.getElementById('poke-sprite');
-            el.style.transform = "scale(0.95)"; el.style.opacity = 0;
-            setTimeout(() => {
-                el.src = images[imgIdx];
-                el.style.transform = "scale(1)"; el.style.opacity = 1;
-            }, 300);
-        }, 3500);
+        if (images.length > 1) {
+            galleryTimer = setInterval(() => {
+                imgIdx = (imgIdx + 1) % images.length;
+                const el = document.getElementById('poke-sprite');
+                el.style.transform = "scale(0.95)"; el.style.opacity = 0.5;
+                setTimeout(() => {
+                    el.src = images[imgIdx];
+                    el.style.transform = "scale(1)"; el.style.opacity = 1;
+                }, 200);
+            }, 4000);
+        }
     }
 
     function toggleShiny() { isShiny = !isShiny; setupGallery(); }
-    function nav(amt) { curId += amt; if(curId < 1) curId = 1; loadPoke(curId); }
+    function nav(amt) { curId += amt; if(curId < 1) curId = 1010; if(curId > 1010) curId = 1; loadPoke(curId); }
     function randomPoke() { loadPoke(Math.floor(Math.random() * 1010) + 1); }
     
+    // --- CATCH SYSTEM ---
+    function toggleCatch() {
+        if (!curData) return;
+        if (caughtPokemon.includes(curId)) {
+            caughtPokemon = caughtPokemon.filter(id => id !== curId);
+        } else {
+            caughtPokemon.push(curId);
+            triggerVibration([50, 100, 50]); 
+        }
+        localStorage.setItem('pokedex_caught', JSON.stringify(caughtPokemon));
+        updateCatchUI();
+    }
+
+    function updateCatchUI() {
+        const btn = document.getElementById('catch-btn');
+        const icon = document.getElementById('caught-icon');
+        if (caughtPokemon.includes(curId)) {
+            btn.innerHTML = `<span class="btn-icon">✔️</span> OWNED`;
+            btn.classList.add('owned');
+            icon.style.display = 'inline-block';
+        } else {
+            btn.innerHTML = `<span class="btn-icon">🔴</span> CATCH`;
+            btn.classList.remove('owned');
+            icon.style.display = 'none';
+        }
+    }
+
     function playCry() {
-        if(cryAudio) { cryAudio.volume = 0.5; cryAudio.play(); }
+        if(cryAudio) { 
+            cryAudio.volume = 0.5; 
+            cryAudio.play().catch(e => readAloud()); 
+        } else {
+            readAloud(); 
+        }
     }
 
     function readAloud() {
         if (!curData) return;
         window.speechSynthesis.cancel();
-        
-        const name = curData.name;
-        const genus = document.getElementById('genus').innerText;
-        const desc = document.getElementById('desc').innerText;
-        
-        const text = `${name}. ${genus}. ${desc}`;
+        const text = `${curData.name}. ${document.getElementById('genus').innerText}. ${document.getElementById('desc').innerText}`;
         const utter = new SpeechSynthesisUtterance(text);
-        
-        // This is the "Professor" tweak: deeper pitch, slightly slower rate
-        utter.pitch = 0.5; 
-        utter.rate = 0.9;
-        
+        utter.pitch = 0.5; utter.rate = 0.9;
         window.speechSynthesis.speak(utter);
     }
 
-    // Init
+    // --- SWIPE GESTURES ---
+    let touchStartX = 0; let touchStartY = 0;
+    const appBody = document.getElementById('app-body');
+    
+    appBody.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, {passive: true});
+
+    appBody.addEventListener('touchend', e => {
+        let touchEndX = e.changedTouches[0].screenX;
+        let touchEndY = e.changedTouches[0].screenY;
+        let diffX = touchEndX - touchStartX; let diffY = touchEndY - touchStartY;
+
+        if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX < 0) nav(1); else nav(-1);
+        } else if (Math.abs(diffY) > 80 && Math.abs(diffY) > Math.abs(diffX)) {
+            if (diffY < 0) document.getElementById('data-sheet').classList.add('open'); 
+            else document.getElementById('data-sheet').classList.remove('open');        
+        }
+    }, {passive: true});
+
     window.onload = () => setTimeout(() => loadPoke(25), 300);
 </script>
 
