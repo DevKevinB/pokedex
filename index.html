@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/188/188918.png">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
     <title>ULTIMATE POKEDEX</title>
     <style>
-        :root { --p-red: #dc0a2d; --p-dark: #8b0000; --p-blue: #00ccff; --glass: rgba(255,255,255,0.15); }
+        :root { 
+            --p-red: #c82030; --p-dark: #8b0000; --p-blue: #29a5e3; 
+            --glass: rgba(255,255,255,0.15); --lcd-bg: #1e2024;
+        }
+        
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         
         body, html { 
             margin: 0; padding: 0; height: 100vh; width: 100vw;
@@ -16,124 +21,203 @@
             overflow: hidden; color: white;
         }
 
-        /* The Pokedex Case */
+        /* Physical Device Styling */
         .pokedex {
             height: 100%; display: flex; flex-direction: column;
-            background: var(--p-red);
+            background: linear-gradient(135deg, #e33545 0%, var(--p-red) 50%, #9e1422 100%);
             padding-top: env(safe-area-inset-top);
-            box-sizing: border-box;
-            border-left: 10px solid var(--p-dark);
+            border-left: 12px solid #5a0a14;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.3), inset 10px 10px 20px rgba(255,255,255,0.2);
             position: relative;
         }
 
-        /* Header / Top Lights */
+        /* Top Indicator Lights */
         .header {
-            display: flex; align-items: center; padding: 10px 20px; gap: 10px;
-            background: linear-gradient(to bottom, var(--p-red), var(--p-dark));
-            border-bottom: 3px solid #333;
+            display: flex; align-items: center; padding: 15px 20px; gap: 15px;
+            background: rgba(0,0,0,0.1); border-bottom: 4px solid #5a0a14;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .lens-border {
+            width: 60px; height: 60px; background: #fff; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
         .big-blue {
-            width: 45px; height: 45px; background: radial-gradient(circle at 30% 30%, #fff, var(--p-blue));
-            border: 4px solid white; border-radius: 50%; box-shadow: 0 0 15px var(--p-blue);
+            width: 50px; height: 50px; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #a2defc, var(--p-blue), #084a70);
+            border: 2px solid #222; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            transition: box-shadow 0.3s;
         }
+        .led { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #222; box-shadow: inset 2px 2px 4px rgba(255,255,255,0.6); }
+        .led.red { background: radial-gradient(circle at 30% 30%, #ff8a8a, #ff0000, #8a0000); }
+        .led.yellow { background: radial-gradient(circle at 30% 30%, #ffe68a, #ffcc00, #8a6e00); }
+        .led.green { background: radial-gradient(circle at 30% 30%, #8aff8a, #00ff00, #008a00); }
+        .blink { animation: blinker 0.4s linear infinite; }
+        @keyframes blinker { 50% { filter: brightness(2.5); box-shadow: 0 0 15px currentColor; } }
 
-        /* The Main LCD Screen */
+        /* Main Screen Cutout */
         .screen-frame {
-            background: #dedede; margin: 10px 15px; border-radius: 10px 10px 10px 40px;
-            padding: 15px; flex: 1; display: flex; flex-direction: column;
-            border: 4px solid #444; overflow: hidden;
-            box-shadow: inset 5px 5px 15px rgba(0,0,0,0.4);
+            background: #d4d4d4; margin: 20px; border-radius: 15px 15px 15px 50px;
+            padding: 20px; flex: 1; display: flex; flex-direction: column;
+            border: 3px solid #666; position: relative;
+            box-shadow: inset 4px 4px 10px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
         }
 
+        /* LCD Display */
         #lcd {
-            background: #232323; border-radius: 8px; flex: 1;
-            display: flex; flex-direction: column; padding: 12px;
-            overflow-y: auto; position: relative; transition: background 0.5s;
+            background: var(--lcd-bg); border-radius: 10px; flex: 1;
+            display: flex; flex-direction: column; padding: 15px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            position: relative; transition: box-shadow 0.5s;
+            animation: turnOn 0.8s ease-out;
         }
+        @keyframes turnOn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* Title Area */
-        #poke-id-name { font-size: 22px; font-weight: 900; color: #ffcc00; text-transform: uppercase; margin: 0; text-shadow: 2px 2px 0px #000; }
+        /* Typography & Layout */
+        #poke-id-name { font-size: 24px; font-weight: 900; color: #fff; letter-spacing: 1px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        #genus { font-size: 12px; color: #aaa; text-transform: uppercase; margin-bottom: 10px; font-weight: bold; }
         
-        /* Image Display */
+        /* Image Gallery */
         .img-container {
-            height: 160px; width: 100%; display: flex; justify-content: center; align-items: center;
-            position: relative; margin: 10px 0;
+            height: 180px; width: 100%; display: flex; justify-content: center; align-items: center;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 10px; margin-bottom: 10px; position: relative;
         }
-        #poke-sprite { height: 150px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); transition: opacity 0.3s; }
+        #poke-sprite { height: 160px; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.6)); transition: opacity 0.4s; }
 
-        /* Tags Row */
-        .tags { display: flex; gap: 8px; margin-bottom: 10px; justify-content: center; }
-        .tag { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; background: var(--glass); border: 1px solid rgba(255,255,255,0.3); }
-
-        /* Scrollable Data Box - Fixed Cutoff! */
+        /* Scrollable Data Area */
         .data-scroll {
-            flex: 1; background: rgba(0,0,0,0.3); border-radius: 10px;
-            padding: 10px; font-size: 13px; line-height: 1.4;
-            overflow-y: scroll; border: 1px solid #444;
+            flex: 1; background: rgba(0,0,0,0.4); border-radius: 8px;
+            padding: 12px; font-size: 14px; line-height: 1.5;
+            overflow-y: scroll; border: 1px solid #333;
         }
+        .data-scroll::-webkit-scrollbar { display: none; }
 
-        .stat-label { font-size: 10px; color: #aaa; margin-top: 8px; display: flex; justify-content: space-between; }
-        .stat-bar { height: 6px; background: #444; border-radius: 3px; overflow: hidden; margin-top: 2px; }
-        .stat-fill { height: 100%; background: #4caf50; width: 0%; transition: width 1s; }
+        .tags { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .tag { padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; border: 1px solid rgba(0,0,0,0.5); text-shadow: 1px 1px 0 rgba(0,0,0,0.5); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
-        /* Controls Area */
+        .desc-box { font-style: italic; color: #ddd; margin-bottom: 15px; border-left: 3px solid #ffcc00; padding-left: 10px; }
+        
+        .matchups { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #555; }
+        .matchup-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .matchup-label { font-size: 10px; color: #888; width: 50px; font-weight: bold; text-transform: uppercase; }
+
+        /* Controls */
         .controls {
-            background: var(--p-dark); display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 8px; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom));
+            background: #2a0308; display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 10px; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            border-top: 4px solid #111; box-shadow: 0 -5px 15px rgba(0,0,0,0.4);
         }
-        input { grid-column: span 3; padding: 14px; border-radius: 8px; border: none; font-size: 16px; text-align: center; font-weight: bold; background: #fff; color: #000; }
+        input { 
+            grid-column: span 4; padding: 15px; border-radius: 8px; border: 2px solid #555; 
+            font-size: 16px; text-align: center; font-weight: bold; background: #fff; 
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+        }
+        input:focus { outline: none; border-color: var(--p-blue); }
         
         button {
-            padding: 12px 5px; border: none; border-radius: 8px; background: #333; color: white;
-            font-weight: bold; font-size: 11px; box-shadow: 0 4px #000; active: transform: translateY(2px);
+            padding: 15px 5px; border: none; border-radius: 8px; background: #444; color: white;
+            font-weight: 900; font-size: 12px; text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 6px #222, 0 8px 10px rgba(0,0,0,0.4); transition: transform 0.1s, box-shadow 0.1s;
         }
-        .btn-yellow { background: #feca1b; color: #000; }
-        .btn-blue { background: var(--p-blue); color: #000; }
-        .btn-shiny { background: linear-gradient(45deg, #ff00ff, #ffee00); color: black; }
-        .btn-nav { font-size: 18px; }
+        button:active { transform: translateY(4px); box-shadow: 0 2px #222, 0 3px 5px rgba(0,0,0,0.4); }
+        
+        .btn-nav { font-size: 20px; background: #333; }
+        .btn-blue { background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%); color: #000; box-shadow: 0 6px #008eb3; }
+        .btn-blue:active { box-shadow: 0 2px #008eb3; }
+        .btn-yellow { background: linear-gradient(to bottom, #f6d365 0%, #fda085 100%); color: #000; box-shadow: 0 6px #c46812; grid-column: span 2; }
+        .btn-yellow:active { box-shadow: 0 2px #c46812; }
+        .btn-shiny { background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); color: black; box-shadow: 0 6px #a8627e;}
+        .btn-shiny:active { box-shadow: 0 2px #a8627e; }
+        .btn-card { background: linear-gradient(to bottom, #d4fc79 0%, #96e6a1 100%); color: black; box-shadow: 0 6px #52a35d; grid-column: span 2;}
+        .btn-card:active { box-shadow: 0 2px #52a35d; }
+
+        /* Pokemon Card Modal View */
+        #card-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 100; display: none;
+            justify-content: center; align-items: center; flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+        .tcg-card {
+            width: 85%; max-width: 350px; aspect-ratio: 2.5/3.5;
+            background: #e8e8e8; border-radius: 15px; padding: 15px;
+            box-shadow: 0 0 30px rgba(255,255,255,0.2), 0 20px 50px rgba(0,0,0,0.5);
+            border: 10px solid #ffd700; position: relative;
+            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-image: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.3) 100%);
+        }
+        .tcg-card.show { transform: scale(1); }
+        .tcg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: black; font-weight: 900; font-size: 22px;}
+        .tcg-hp { color: #d00; font-size: 18px; }
+        .tcg-img-box { background: linear-gradient(to bottom, #888, #444); border: 4px solid #bba14f; height: 180px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
+        .tcg-img-box img { height: 160px; filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.5)); }
+        .tcg-moves { margin-top: 15px; color: black; }
+        .tcg-move { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ccc; font-weight: bold; }
+        .close-btn { margin-top: 30px; padding: 15px 30px; border-radius: 30px; font-size: 16px; background: #fff; color: #000; border: none; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer;}
     </style>
 </head>
 <body>
 
 <div class="pokedex">
     <div class="header">
-        <div class="big-blue"></div>
-        <div style="width:12px;height:12px;background:#ff0000;border-radius:50%;border:2px solid black"></div>
-        <div style="width:12px;height:12px;background:#ffcc00;border-radius:50%;border:2px solid black"></div>
-        <div style="width:12px;height:12px;background:#00ff00;border-radius:50%;border:2px solid black"></div>
+        <div class="lens-border"><div class="big-blue" id="main-lens"></div></div>
+        <div class="led red" id="led-red"></div>
+        <div class="led yellow" id="led-yellow"></div>
+        <div class="led green" id="led-green"></div>
     </div>
 
     <div class="screen-frame">
         <div id="lcd">
-            <p id="poke-id-name">#025 PIKACHU</p>
+            <h1 id="poke-id-name">BOOTING...</h1>
+            <div id="genus">SYSTEM INITIALIZING</div>
             
             <div class="img-container">
-                <img id="poke-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
+                <img id="poke-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
             </div>
 
             <div class="tags" id="types"></div>
 
             <div class="data-scroll">
-                <div id="desc" style="margin-bottom:10px; font-style:italic; color:#ffcc00;"></div>
-                <div style="display:flex; justify-content:space-around; margin-bottom:10px; font-size:11px; color:#aaa;">
-                    <span id="ht">HT: 0.4m</span>
-                    <span id="wt">WT: 6.0kg</span>
+                <div class="desc-box" id="desc">Connecting to PokeAPI network...</div>
+                
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:12px; color:#ccc; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 5px;">
+                    <span id="ht">HT: --</span>
+                    <span id="wt">WT: --</span>
+                    <span id="base-exp">EXP: --</span>
                 </div>
-                <div id="stats-area"></div>
-                <div id="abilities" style="margin-top:10px; font-size:10px; color: #00ccff;"></div>
+                
+                <div class="matchups" id="matchups">
+                    </div>
             </div>
         </div>
     </div>
 
     <div class="controls">
-        <input type="text" id="search" placeholder="NAME OR NUMBER" onkeydown="if(event.key==='Enter') loadPoke(this.value)">
+        <input type="text" id="search" placeholder="ENTER NAME OR NUMBER" onkeydown="if(event.key==='Enter') loadPoke(this.value)">
         
         <button class="btn-nav" onclick="nav(-1)">◀</button>
-        <button class="btn-blue" onclick="speak()">🔊 VOICE</button>
+        <button class="btn-blue" onclick="playAudio()">🔊 CRY</button>
+        <button class="btn-shiny" onclick="toggleShiny()">✨ SHINY</button>
         <button class="btn-nav" onclick="nav(1)">▶</button>
         
-        <button class="btn-shiny" onclick="toggleShiny()">✨ SHINY</button>
-        <button class="btn-yellow" style="grid-column: span 2;" onclick="randomPoke()">RANDOM ❓</button>
+        <button class="btn-card" onclick="openCard()">🃏 VIEW CARD</button>
+        <button class="btn-yellow" onclick="randomPoke()">🎲 RANDOM</button>
+    </div>
+
+    <div id="card-modal">
+        <div class="tcg-card" id="tcg-card">
+            <div class="tcg-header">
+                <span id="tcg-name">Pikachu</span>
+                <span class="tcg-hp" id="tcg-hp">HP 60</span>
+            </div>
+            <div class="tcg-img-box">
+                <img id="tcg-img" src="">
+            </div>
+            <div class="tcg-moves" id="tcg-moves">
+                </div>
+        </div>
+        <button class="close-btn" onclick="closeCard()">CLOSE X</button>
     </div>
 </div>
 
@@ -144,17 +228,40 @@
     let images = [];
     let imgIdx = 0;
     let timer = null;
+    let cryAudio = null;
 
     const typeColors = {
-        fire: '#e62200', water: '#0073ff', grass: '#3fa129', electric: '#eec900',
-        ice: '#00d4ff', fighting: '#82351f', poison: '#913991', ground: '#bf9926',
-        flying: '#8295fe', psychic: '#ff42a1', bug: '#91a119', rock: '#a18719',
-        ghost: '#5252a1', dragon: '#5200de', dark: '#423529', steel: '#828291',
-        fairy: '#ff91ff', normal: '#a1a173'
+        fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535',
+        ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842',
+        flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21',
+        ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8',
+        fairy: '#fdb9e9', normal: '#a4acaf'
     };
 
+    function triggerVibration() {
+        if (navigator.vibrate) navigator.vibrate(50);
+    }
+
+    // Attach vibration to all buttons
+    document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', triggerVibration);
+    });
+
+    function setLEDs(active) {
+        const leds = ['red', 'yellow', 'green'];
+        leds.forEach(color => {
+            const el = document.getElementById(`led-${color}`);
+            if (active) el.classList.add('blink');
+            else el.classList.remove('blink');
+        });
+    }
+
     async function loadPoke(idOrName) {
+        if (!idOrName) return;
         clearInterval(timer);
+        setLEDs(true);
+        document.getElementById('search').blur(); // Close keyboard on mobile
+        
         try {
             const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${idOrName.toString().toLowerCase()}`);
             if(!res.ok) throw "Not found";
@@ -162,38 +269,62 @@
             curData = data;
             curId = data.id;
 
+            // Fetch Species Data (Lore)
             const sRes = await fetch(data.species.url);
             const sData = await sRes.json();
 
-            // Set Type Color LCD Glow
-            const type = data.types[0].type.name;
-            document.getElementById('lcd').style.boxShadow = `inset 0 0 40px ${typeColors[type] || '#000'}`;
+            // Fetch Primary Type Data (Matchups)
+            const typeRes = await fetch(data.types[0].type.url);
+            const typeData = await typeRes.json();
 
-            // Name & Basics
-            document.getElementById('poke-id-name').innerText = `#${data.id.toString().padStart(3, '0')} ${data.name}`;
-            document.getElementById('ht').innerText = `HT: ${data.height / 10}m`;
-            document.getElementById('wt').innerText = `WT: ${data.weight / 10}kg`;
-            
-            // Text Desc
-            const entry = sData.flavor_text_entries.find(e => e.language.name === 'en');
-            document.getElementById('desc').innerText = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "Missing data.";
-
-            // Types
-            document.getElementById('types').innerHTML = data.types.map(t => `<span class="tag" style="background:${typeColors[t.type.name]}">${t.type.name}</span>`).join('');
-
-            // Stats
-            document.getElementById('stats-area').innerHTML = data.stats.map(s => `
-                <div class="stat-label"><span>${s.stat.name.toUpperCase()}</span><span>${s.base_stat}</span></div>
-                <div class="stat-bar"><div class="stat-fill" style="width:${(s.base_stat/200)*100}%"></div></div>
-            `).join('');
-
-            // Abilities
-            document.getElementById('abilities').innerText = "ABILITIES: " + data.abilities.map(a => a.ability.name.toUpperCase()).join(', ');
-
-            // Setup Image Gallery
+            // Update UI
+            updateUI(data, sData, typeData);
             setupGallery();
+
         } catch (e) {
-            document.getElementById('poke-id-name').innerText = "NOT FOUND!";
+            document.getElementById('poke-id-name').innerText = "ERROR 404";
+            document.getElementById('desc').innerText = "Pokémon not found in database. Check spelling or ID.";
+        }
+        setTimeout(() => setLEDs(false), 500);
+    }
+
+    function updateUI(data, sData, typeData) {
+        // Theme color glow
+        const primaryType = data.types[0].type.name;
+        const themeColor = typeColors[primaryType] || '#fff';
+        document.getElementById('lcd').style.boxShadow = `inset 0 0 40px ${themeColor}40`;
+        document.getElementById('main-lens').style.boxShadow = `0 0 20px ${themeColor}`;
+
+        // Basic Info
+        document.getElementById('poke-id-name').innerText = `#${data.id.toString().padStart(3, '0')} ${data.name.toUpperCase()}`;
+        document.getElementById('ht').innerText = `HT: ${data.height / 10}m`;
+        document.getElementById('wt').innerText = `WT: ${data.weight / 10}kg`;
+        document.getElementById('base-exp').innerText = `EXP: ${data.base_experience}`;
+
+        // Lore / Genus
+        const genusObj = sData.genera.find(g => g.language.name === 'en');
+        document.getElementById('genus').innerText = genusObj ? genusObj.genus : "Unknown Classification";
+
+        const entry = sData.flavor_text_entries.find(e => e.language.name === 'en');
+        document.getElementById('desc').innerText = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "No data available.";
+
+        // Tags
+        document.getElementById('types').innerHTML = data.types.map(t => 
+            `<span class="tag" style="background:${typeColors[t.type.name]}; color: ${['electric','ice','flying'].includes(t.type.name) ? '#000' : '#fff'}">${t.type.name}</span>`
+        ).join('');
+
+        // Matchups (Strengths & Weaknesses)
+        const weaknesses = typeData.damage_relations.double_damage_from.map(t => `<span class="tag" style="background:${typeColors[t.name]}">${t.name}</span>`).slice(0, 3).join('') || '--';
+        const strengths = typeData.damage_relations.double_damage_to.map(t => `<span class="tag" style="background:${typeColors[t.name]}">${t.name}</span>`).slice(0, 3).join('') || '--';
+
+        document.getElementById('matchups').innerHTML = `
+            <div class="matchup-row"><span class="matchup-label">WEAK:</span> <div class="tags" style="margin:0">${weaknesses}</div></div>
+            <div class="matchup-row"><span class="matchup-label">STRONG:</span> <div class="tags" style="margin:0">${strengths}</div></div>
+        `;
+
+        // Preload Audio
+        if(data.cries && data.cries.latest) {
+            cryAudio = new Audio(data.cries.latest);
         }
     }
 
@@ -206,6 +337,7 @@
 
         if(isShiny) {
             images = [
+                curData.sprites.other['official-artwork'].front_shiny || curData.sprites.front_shiny,
                 curData.sprites.front_shiny,
                 curData.sprites.back_shiny
             ].filter(i => i !== null);
@@ -221,22 +353,57 @@
             setTimeout(() => {
                 el.src = images[imgIdx];
                 el.style.opacity = 1;
-            }, 300);
-        }, 3000);
+            }, 400); // Smoother fade
+        }, 3500);
     }
 
     function toggleShiny() { isShiny = !isShiny; setupGallery(); }
     function nav(amt) { curId += amt; if(curId < 1) curId = 1; loadPoke(curId); }
     function randomPoke() { loadPoke(Math.floor(Math.random() * 1010) + 1); }
     
-    function speak() {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('desc').innerText}`);
-        utter.rate = 1;
-        window.speechSynthesis.speak(utter);
+    function playAudio() {
+        if(cryAudio) {
+            cryAudio.volume = 0.5;
+            cryAudio.play();
+        } else {
+            // Fallback to voice if API cry fails
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(`${curData.name}. ${document.getElementById('genus').innerText}.`);
+            window.speechSynthesis.speak(utter);
+        }
     }
 
-    loadPoke(25);
+    // Card Modal Functions
+    function openCard() {
+        if(!curData) return;
+        document.getElementById('card-modal').style.display = 'flex';
+        
+        // Populate Card
+        document.getElementById('tcg-name').innerText = curData.name.toUpperCase();
+        const hpStat = curData.stats.find(s => s.stat.name === 'hp');
+        document.getElementById('tcg-hp').innerText = `HP ${hpStat ? hpStat.base_stat : 50}`;
+        document.getElementById('tcg-img').src = images[0];
+        
+        // Grab first two moves for the card
+        const movesHTML = curData.moves.slice(0, 2).map(m => `
+            <div class="tcg-move">
+                <span>${m.move.name.replace('-', ' ').toUpperCase()}</span>
+                <span>${Math.floor(Math.random() * 50) + 10}</span>
+            </div>
+        `).join('');
+        document.getElementById('tcg-moves').innerHTML = movesHTML;
+
+        // Trigger animation
+        setTimeout(() => document.getElementById('tcg-card').classList.add('show'), 10);
+    }
+
+    function closeCard() {
+        document.getElementById('tcg-card').classList.remove('show');
+        setTimeout(() => document.getElementById('card-modal').style.display = 'none', 300);
+    }
+
+    // Init
+    window.onload = () => setTimeout(() => loadPoke(25), 500);
 </script>
 
 </body>
