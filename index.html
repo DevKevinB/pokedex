@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
-    <title>Pokédex OS v16.0</title>
+    <title>Pokédex OS v15.1</title>
     <style>
         :root { --p-primary: #d32f2f; --p-dark: #b71c1c; --bg-color: #121212; --panel-bg: #1e1e1e; --pc-cyan: #00e5ff; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -100,7 +100,7 @@
         .stat-val { width: 30px; font-size: 12px; font-weight: bold; text-align: right; margin-right: 10px; }
         .stat-bar-bg { flex: 1; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
         .stat-bar-fill { height: 100%; width: 0%; border-radius: 3px; transition: width 1s ease-out; }
-        .evo-box { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; flex-wrap: wrap;}
+        .evo-box { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px;}
         .evo-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s;}
         .evo-item:active { transform: scale(0.9); }
         .evo-item img { width: 60px; height: 60px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
@@ -247,7 +247,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 16.0 - THE NATIONAL DEX UPDATE</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 15.1 - HOTFIX</div>
         </div>
     </div>
 </div>
@@ -324,13 +324,13 @@
     let currentPlayer = 1; let isCatching = false; let appMode = 'dex'; 
     
     let curId = 25; let isShiny = false; let curData = null; let curSpeciesData = null;
-    const maxPokemon = 1025; // NATIONAL DEX LIMIT
+    const maxPokemon = 151; 
     
     let caughtData = { 1: [], 2: [] };
     try {
         caughtData[1] = JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [];
         caughtData[2] = JSON.parse(localStorage.getItem('pokedex_caught_p2')) || [];
-    } catch(e) { console.warn("Save data reset due to strict privacy settings."); }
+    } catch(e) { console.warn("Save corrupted."); }
 
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
     
@@ -425,6 +425,10 @@
         }, 500);
     }
     function triggerVibration(duration = 40) { try { if (navigator.vibrate) navigator.vibrate(duration); } catch(e){} }
+    
+    // RESTORED TOGGLESHEET HOTFIX
+    function toggleSheet() { if(isCatching || appMode === 'battle') return; document.getElementById('data-sheet').classList.toggle('open'); }
+    
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     function logMsg(msg) { document.getElementById('battle-log').innerText = msg; }
 
@@ -433,7 +437,7 @@
         appMode = 'dex'; battleState.isBattling = false;
         document.getElementById('sparkle-modal').style.display = 'none';
         document.getElementById('battle-container').classList.remove('active'); 
-        if (curId) loadPoke(curId); // Refresh dex to ensure stable state
+        if (curId) loadPoke(curId); 
     }
 
     function initBattleMode() {
@@ -442,7 +446,7 @@
         openPC('battle'); 
     }
 
-    // --- PC LOGIC (NATIONAL DEX SECURED) ---
+    // --- PC LOGIC (GEN 1 SECURED) ---
     let pcContext = 'dex'; 
     function openPC(context = 'dex') {
         if(isCatching) return;
@@ -723,7 +727,7 @@
             
             curData = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${searchTarget}`); 
             
-            if(curData.id > maxPokemon) throw new Error("DEX_LIMIT");
+            if(curData.id > maxPokemon) throw new Error("GEN_1_ONLY");
             
             curId = curData.id;
             
@@ -736,8 +740,8 @@
             console.error("Master Fetch Error:", e); 
             setScanning(false);
             
-            if(e.message === "DEX_LIMIT") {
-                document.getElementById('poke-name').innerText = "DEX LIMIT"; document.getElementById('desc').innerText = `This OS is locked to the first ${maxPokemon} Pokémon.`;
+            if(e.message === "GEN_1_ONLY") {
+                document.getElementById('poke-name').innerText = "GEN 1 ONLY"; document.getElementById('desc').innerText = "This OS is locked to the original 151 Pokémon.";
             } else if(e.message === "NETWORK_TIMEOUT") {
                 document.getElementById('poke-name').innerText = "TIMEOUT"; document.getElementById('desc').innerText = "API Server took too long to respond. Try again.";
             } else {
@@ -850,3 +854,4 @@
 
 </body>
 </html>
+
