@@ -202,6 +202,20 @@
 
         /* --- BONUS: CONFETTI --- */
         @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1} 100%{transform:translateY(100dvh) rotate(720deg) scale(0.3);opacity:0} }
+
+        /* --- QUICK WIN: NICKNAME --- */
+        #nick-sub { font-size:12px; color:rgba(255,255,255,0.45); font-style:italic; margin-top:-4px; margin-bottom:3px; letter-spacing:1px; min-height:16px; text-transform:uppercase; }
+        #rename-btn { display:none; cursor:pointer; font-size:14px; background:none; border:none; padding:0; line-height:1; vertical-align:middle; }
+
+        /* --- QUICK WIN: SHINY HUNT COUNTER --- */
+        #shiny-count { display:block; font-size:8px; color:#ffcc00; font-weight:900; letter-spacing:0.5px; min-height:10px; }
+
+        /* --- QUICK WIN: BATTLE STREAK --- */
+        #battle-streak { margin-left:auto; font-size:13px; font-weight:900; color:#ff9800; letter-spacing:1px; }
+
+        /* --- QUICK WIN: GIFT MODE --- */
+        .pc-item.gift-mode-item { border-color:#ff9800; animation:giftPulse 0.9s ease-in-out infinite alternate; }
+        @keyframes giftPulse { from{box-shadow:0 0 4px rgba(255,152,0,0.3)} to{box-shadow:0 0 14px rgba(255,152,0,0.9)} }
     </style>
 </head>
 <body>
@@ -241,7 +255,11 @@
                 <span id="fave-icon" style="display:none; font-size:14px; line-height:1;">❤️</span>
                 <span id="daily-badge" style="display:none; background:#ffcc00; color:#000; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px; letter-spacing:1px;">TODAY</span>
             </div>
-            <div id="poke-name">LOADING</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                <div id="poke-name">LOADING</div>
+                <button id="rename-btn" onclick="renameCurrentPokemon()" title="Rename">✏️</button>
+            </div>
+            <div id="nick-sub"></div>
             <div class="tags" id="types"></div>
         </div>
 
@@ -257,7 +275,7 @@
         <input type="text" id="search" placeholder="Search Name or ID..." onkeydown="if(event.key==='Enter') loadPoke(this.value)">
         <button class="tool-btn" onclick="playCry()"><span class="btn-icon">💥</span> CRY</button>
         <button class="tool-btn" id="voice-btn" onclick="toggleVoice()"><span class="btn-icon">🎙️</span> VOICE</button>
-        <button class="tool-btn" onclick="toggleShiny()"><span class="btn-icon">✨</span> SHINY</button>
+        <button class="tool-btn" onclick="toggleShiny()"><span class="btn-icon">✨</span> SHINY<span id="shiny-count"></span></button>
         <button class="tool-btn" onclick="randomPoke()"><span class="btn-icon">🎲</span> RNDM</button>
         <button class="tool-btn btn-catch" id="catch-btn" onclick="openBag()"><span class="btn-icon">🔴</span> CATCH</button>
         <button class="tool-btn" id="fave-btn" onclick="toggleFave()" style="opacity:0.4;"><span class="btn-icon">🤍</span> FAVE</button>
@@ -303,6 +321,7 @@
     <div class="battle-header">
         <button class="btn-escape" onclick="exitBattleMode()">🔙 ESCAPE</button>
         <span>BATTLE ARENA</span>
+        <span id="battle-streak">🔥 0</span>
     </div>
 
     <div class="battle-view">
@@ -358,6 +377,7 @@
     <div class="save-controls" id="save-controls">
         <div class="save-btn" onclick="exportSave()">💾 EXPORT</div>
         <div class="save-btn" onclick="importSave()">📂 IMPORT</div>
+        <div class="save-btn" id="gift-btn" onclick="toggleGiftMode()" style="grid-column:span 2;">🎁 GIFT TO P2</div>
     </div>
     <button class="close-pc-btn" onclick="closePC()">CANCEL / CLOSE PC</button>
 </div>
@@ -379,6 +399,17 @@
     </div>
 </div>
 
+<div class="overlay-screen" id="gift-modal">
+    <div class="modal-box">
+        <div style="font-size:40px; margin-bottom:10px;">🎁</div>
+        <h2 id="gift-title" style="margin:0 0 10px 0; font-weight:900; color:#ff9800;">SEND A GIFT?</h2>
+        <p id="gift-body" style="font-size:13px; color:#ccc; margin:0 0 5px 0;"></p>
+        <p style="font-size:11px; color:#777; margin:0;">Both players will have this Pokémon!</p>
+        <button class="btn-large" style="background:linear-gradient(135deg,#ff9800,#ff5722); color:#fff;" onclick="confirmGift()">SEND GIFT! 🎁</button>
+        <button class="btn-large btn-danger" onclick="cancelGift()">CANCEL</button>
+    </div>
+</div>
+
 <script>
     // --- GLOBAL STATE & SAFE LOAD ---
     let audioCtx = null; let cryAudio = null; let galleryTimer = null;
@@ -396,7 +427,12 @@
     let caughtData = { 1: [], 2: [] };
     let favesData = { 1: [], 2: [] };
     let battleRecord = { 1: { w: 0, l: 0 }, 2: { w: 0, l: 0 } };
-    let currentGenFilter = 0; // 0=ALL, -1=FAVES, 1-9=generation number
+    let battleStreak = { 1: 0, 2: 0 };   // Feature 5: win streak
+    let shinyHuntCount = { 1: 0, 2: 0 }; // Feature 10: shiny hunt counter
+    let nicknameData = { 1: {}, 2: {} };  // Feature 4: nicknames {pokeId: 'NICKNAME'}
+    let giftModeActive = false;           // Feature 3: gift mode state
+    let pendingGiftId = null;
+    let currentGenFilter = 0;
     try {
         caughtData[1] = JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [];
         caughtData[2] = JSON.parse(localStorage.getItem('pokedex_caught_p2')) || [];
@@ -404,6 +440,12 @@
         favesData[2] = JSON.parse(localStorage.getItem('pokedex_faves_p2')) || [];
         battleRecord[1] = JSON.parse(localStorage.getItem('pokedex_record_p1')) || { w: 0, l: 0 };
         battleRecord[2] = JSON.parse(localStorage.getItem('pokedex_record_p2')) || { w: 0, l: 0 };
+        battleStreak[1] = JSON.parse(localStorage.getItem('pokedex_streak_p1')) || 0;
+        battleStreak[2] = JSON.parse(localStorage.getItem('pokedex_streak_p2')) || 0;
+        shinyHuntCount[1] = JSON.parse(localStorage.getItem('pokedex_shiny_p1')) || 0;
+        shinyHuntCount[2] = JSON.parse(localStorage.getItem('pokedex_shiny_p2')) || 0;
+        nicknameData[1] = JSON.parse(localStorage.getItem('pokedex_nicks_p1')) || {};
+        nicknameData[2] = JSON.parse(localStorage.getItem('pokedex_nicks_p2')) || {};
     } catch(e) { console.warn("Save corrupted or blocked by PWA settings."); }
 
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
@@ -547,6 +589,118 @@
     }
     function closeTypePopup() { document.getElementById('type-popup').classList.remove('open'); }
 
+    // =========================================================
+    // --- QUICK WIN FEATURES ---
+    // =========================================================
+
+    // --- FEATURE 5: BATTLE WIN STREAK ---
+    function updateStreakDisplay() {
+        const el = document.getElementById('battle-streak');
+        if (el) el.innerText = `🔥 ${battleStreak[currentPlayer]}`;
+    }
+
+    // --- FEATURE 10: SHINY HUNT COUNTER ---
+    function updateShinyCount() {
+        const el = document.getElementById('shiny-count');
+        if (!el) return;
+        const count = shinyHuntCount[currentPlayer];
+        el.innerText = count > 0 ? `${count} seen` : '';
+    }
+    function incrementShinyCount() {
+        shinyHuntCount[currentPlayer]++;
+        localStorage.setItem(`pokedex_shiny_p${currentPlayer}`, JSON.stringify(shinyHuntCount[currentPlayer]));
+        updateShinyCount();
+    }
+    function resetShinyCount() {
+        shinyHuntCount[currentPlayer] = 0;
+        localStorage.setItem(`pokedex_shiny_p${currentPlayer}`, '0');
+        updateShinyCount();
+    }
+
+    // --- FEATURE 4: NICKNAME SYSTEM ---
+    function updateNicknameDisplay() {
+        if (!curData) return;
+        const nick = nicknameData[currentPlayer][curId];
+        const nameEl = document.getElementById('poke-name');
+        const subEl  = document.getElementById('nick-sub');
+        const renBtn = document.getElementById('rename-btn');
+        const isCaught = caughtData[currentPlayer].includes(curId);
+        if (nick) {
+            nameEl.innerText = nick;
+            nameEl.style.fontSize = nick.length > 10 ? '22px' : '30px';
+            subEl.innerText = curData.name.toUpperCase();
+        } else {
+            nameEl.innerText = curData.name;
+            nameEl.style.fontSize = curData.name.length > 12 ? '24px' : '32px';
+            subEl.innerText = '';
+        }
+        if (renBtn) renBtn.style.display = isCaught ? 'inline' : 'none';
+    }
+    function promptNickname(pokeName, pokeId) {
+        // Don't prompt if they already named it
+        if (nicknameData[currentPlayer][pokeId]) return;
+        const nick = prompt(`Give ${pokeName.toUpperCase()} a nickname?\n(leave blank to skip)`);
+        if (nick && nick.trim()) {
+            nicknameData[currentPlayer][pokeId] = nick.trim().toUpperCase().slice(0, 12);
+            localStorage.setItem(`pokedex_nicks_p${currentPlayer}`, JSON.stringify(nicknameData[currentPlayer]));
+            updateNicknameDisplay();
+        }
+    }
+    function renameCurrentPokemon() {
+        if (!curData || isCatching || appMode === 'battle') return;
+        const current = nicknameData[currentPlayer][curId] || '';
+        const nick = prompt(`Rename ${curData.name.toUpperCase()}:\n(leave blank to remove nickname)`, current);
+        if (nick === null) return; // cancelled
+        if (nick.trim()) {
+            nicknameData[currentPlayer][curId] = nick.trim().toUpperCase().slice(0, 12);
+        } else {
+            delete nicknameData[currentPlayer][curId];
+        }
+        localStorage.setItem(`pokedex_nicks_p${currentPlayer}`, JSON.stringify(nicknameData[currentPlayer]));
+        updateNicknameDisplay();
+        triggerVibration();
+    }
+
+    // --- FEATURE 3: P1 ↔ P2 GIFTING ---
+    function toggleGiftMode() {
+        giftModeActive = !giftModeActive;
+        const otherPlayer = currentPlayer === 1 ? 2 : 1;
+        const btn = document.getElementById('gift-btn');
+        const instr = document.getElementById('pc-instruction');
+        if (giftModeActive) {
+            btn.innerText = '❌ CANCEL GIFT';
+            btn.style.background = 'rgba(255,100,0,0.25)';
+            btn.style.borderColor = '#ff9800';
+            if (instr && pcContext !== 'battle') instr.innerText = `TAP A POKÉMON TO GIFT IT TO P${otherPlayer}`;
+        } else {
+            btn.innerText = `🎁 GIFT TO P${otherPlayer}`;
+            btn.style.background = '';
+            btn.style.borderColor = '';
+            if (instr) instr.innerText = '';
+        }
+        renderPCGrid();
+    }
+    function confirmGift() {
+        const otherPlayer = currentPlayer === 1 ? 2 : 1;
+        if (pendingGiftId && !caughtData[otherPlayer].includes(pendingGiftId)) {
+            caughtData[otherPlayer].push(pendingGiftId);
+            localStorage.setItem(`pokedex_caught_p${otherPlayer}`, JSON.stringify(caughtData[otherPlayer]));
+        }
+        document.getElementById('gift-modal').style.display = 'none';
+        launchConfetti(); triggerVibration([100, 50, 200]);
+        // Reset gift mode
+        giftModeActive = false; pendingGiftId = null;
+        const btn = document.getElementById('gift-btn');
+        if (btn) { btn.innerText = `🎁 GIFT TO P${otherPlayer}`; btn.style.background = ''; btn.style.borderColor = ''; }
+        document.getElementById('pc-instruction').innerText = '';
+        renderPCGrid();
+        alert(`🎁 GIFT SENT! P${otherPlayer} now has this Pokémon!`);
+    }
+    function cancelGift() {
+        document.getElementById('gift-modal').style.display = 'none';
+        pendingGiftId = null;
+    }
+
     // --- BOOT & UTILS ---
     function startApp() {
         initAudio(); document.getElementById('tap-msg').innerText = "LOADING OS...";
@@ -590,7 +744,8 @@
         pcContext = context; currentGenFilter = 0;
         document.getElementById('pc-title').innerText = `P${currentPlayer}'S PC BOX`;
         const rec = battleRecord[currentPlayer];
-        document.getElementById('pc-record').innerText = `W: ${rec.w} | L: ${rec.l}`;
+        const streak = battleStreak[currentPlayer];
+        document.getElementById('pc-record').innerText = `W: ${rec.w} | L: ${rec.l}${streak > 1 ? `  🔥 ${streak} STREAK` : ''}`;
         if (context === 'battle') {
             document.getElementById('pc-instruction').innerText = "SELECT YOUR FIGHTER";
             document.getElementById('save-controls').style.display = 'none';
@@ -599,6 +754,15 @@
             document.getElementById('save-controls').style.display = 'grid';
         }
         document.querySelectorAll('.gen-filter-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
+        // Feature 3: reset gift mode and update label for correct other player
+        giftModeActive = false; pendingGiftId = null;
+        const otherP = currentPlayer === 1 ? 2 : 1;
+        const giftBtn = document.getElementById('gift-btn');
+        if (giftBtn) { giftBtn.innerText = `🎁 GIFT TO P${otherP}`; giftBtn.style.background = ''; giftBtn.style.borderColor = ''; }
+        // Hide gift button in battle context (no gifting during fighter select)
+        if (document.getElementById('save-controls')) {
+            document.getElementById('save-controls').style.display = context === 'battle' ? 'none' : 'grid';
+        }
         renderPCGrid();
         document.getElementById('pc-modal').style.display = 'flex';
     }
@@ -624,7 +788,10 @@
                 html = `<div style="grid-column:1/-1;text-align:center;color:#555;padding:40px 20px;font-size:12px;font-weight:900;">NO FAVORITES YET<br><br>Catch a Pokémon, then tap ❤️ FAVE!</div>`;
             } else {
                 faved.forEach(id => {
-                    html += `<div class="pc-item faved" onclick="handlePCSelect(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3,'0')}</span></div>`;
+                    const nick = nicknameData[currentPlayer][id];
+                    const label = nick ? `<span style="color:#ffcc00;font-size:9px;">${nick}</span>` : `<span>#${id.toString().padStart(3,'0')}</span>`;
+                    const giftClass = giftModeActive ? ' gift-mode-item' : '';
+                    html += `<div class="pc-item faved${giftClass}" onclick="handlePCSelect(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy">${label}</div>`;
                 });
             }
         } else {
@@ -634,7 +801,10 @@
                 const isCaught = activeCaught.includes(i);
                 const isFaved  = activeFaves.includes(i);
                 if (isCaught) {
-                    html += `<div class="pc-item${isFaved ? ' faved' : ''}" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3,'0')}</span></div>`;
+                    const classes = ['pc-item', isFaved ? 'faved' : '', giftModeActive ? 'gift-mode-item' : ''].filter(Boolean).join(' ');
+                    const nick = nicknameData[currentPlayer][i];
+                    const label = nick ? `<span style="color:#ffcc00;font-size:9px;">${nick}</span>` : `<span>#${i.toString().padStart(3,'0')}</span>`;
+                    html += `<div class="${classes}" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy">${label}</div>`;
                 } else if (pcContext === 'dex') {
                     html += `<div class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3,'0')}</span></div>`;
                 }
@@ -649,6 +819,15 @@
     }
 
     function handlePCSelect(id) {
+        // Feature 3: intercept tap when gift mode is active
+        if (giftModeActive) {
+            pendingGiftId = id;
+            const otherPlayer = currentPlayer === 1 ? 2 : 1;
+            document.getElementById('gift-title').innerText = `GIFT #${id.toString().padStart(3,'0')} TO P${otherPlayer}?`;
+            document.getElementById('gift-body').innerText = `P${currentPlayer} will share this Pokémon with P${otherPlayer}.`;
+            document.getElementById('gift-modal').style.display = 'flex';
+            return;
+        }
         closePC();
         if (pcContext === 'dex') { loadPoke(id); }
         else if (pcContext === 'battle') { battleState.player.id = id; document.getElementById('sparkle-modal').style.display = 'flex'; }
@@ -712,6 +891,7 @@
 
         document.getElementById('battle-moves').innerHTML = battleState.player.moves.map((m, i) => `<button class="move-btn" onclick="executeTurn(${i})">${m.name}<span class="type-badge" style="background:${typeColors[m.type] || '#777'}">${m.type}</span></button>`).join('');
         logMsg(`WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
+        updateStreakDisplay();
         enableMoves(true);
     }
 
@@ -780,9 +960,15 @@
                 caughtData[currentPlayer].push(battleState.wild.id);
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
             }
-            // FEATURE 3: Track battle win
+            // Feature 3 (record) + Feature 5 (streak)
             battleRecord[currentPlayer].w++;
             localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
+            battleStreak[currentPlayer]++;
+            localStorage.setItem(`pokedex_streak_p${currentPlayer}`, JSON.stringify(battleStreak[currentPlayer]));
+            // Nickname prompt for the newly caught wild pokemon
+            if (!nicknameData[currentPlayer][battleState.wild.id]) {
+                setTimeout(() => promptNickname(battleState.wild.name, battleState.wild.id), 600);
+            }
 
             await sleep(2000);
             msg.style.opacity = 0; ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)'; sprite.classList.remove('sucked-in');
@@ -791,9 +977,11 @@
 
         } else if (battleState.player.hp <= 0) {
             battleState.isBattling = false; logMsg(`YOUR POKÉMON FAINTED...`); triggerVibration([500]);
-            // FEATURE 3: Track battle loss
+            // Feature 3 (record) + Feature 5 (streak reset on loss)
             battleRecord[currentPlayer].l++;
             localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
+            battleStreak[currentPlayer] = 0;
+            localStorage.setItem(`pokedex_streak_p${currentPlayer}`, '0');
             await sleep(2000); alert("DEFEAT! The wild Pokémon got away..."); exitBattleMode();
         } else {
             logMsg(`What will ${battleState.player.name.toUpperCase()} do?`); enableMoves(true);
@@ -842,7 +1030,9 @@
         document.getElementById('player-btn').innerText = `P${currentPlayer}`;
         document.documentElement.style.setProperty('--p-primary', currentPlayer === 1 ? '#d32f2f' : '#1976D2');
         document.documentElement.style.setProperty('--p-dark', currentPlayer === 1 ? '#b71c1c' : '#0D47A1');
-        updateCatchUI(); // also calls updateFaveUI + updateCompletionBar
+        updateCatchUI(); // also calls updateFaveUI + updateCompletionBar + updateNicknameDisplay
+        updateShinyCount();
+        updateStreakDisplay();
     }
 
     // FIX: openBag() had no way to close the drawer once opened except by selecting a ball.
@@ -894,7 +1084,13 @@
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
             }
             updateCatchUI();
-            setTimeout(() => { ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)'; msg.style.opacity = 0; sprite.classList.remove('sucked-in'); isCatching = false; }, 2000);
+            setTimeout(() => {
+                ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)';
+                msg.style.opacity = 0; sprite.classList.remove('sucked-in'); isCatching = false;
+                // Feature 4: nickname prompt + Feature 10: reset shiny counter if caught while shiny
+                if (isShiny) resetShinyCount();
+                promptNickname(curData?.name || 'POKEMON', curId);
+            }, 2000);
         } else {
             soundBreak(); triggerVibration([200]); ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)'; sprite.classList.remove('sucked-in'); msg.innerText = "DARN! IT BROKE FREE!"; msg.style.color = "#ff0000"; msg.style.opacity = 1;
             setTimeout(() => { msg.style.opacity = 0; isCatching = false; }, 2000);
@@ -907,6 +1103,7 @@
         else { btn.innerHTML = `<span class="btn-icon">🔴</span> CATCH`; btn.classList.remove('owned'); icon.style.display = 'none'; }
         updateFaveUI();
         updateCompletionBar();
+        updateNicknameDisplay(); // Feature 4: sync rename button visibility
     }
 
     async function loadPoke(idOrName) {
@@ -932,9 +1129,11 @@
             }
 
             updateUISafe();
+            updateNicknameDisplay(); // Feature 4
             loadEvolutionsSafe(curSpeciesData?.evolution_chain?.url);
             setupGallerySafe();
             updateCatchUI();
+            incrementShinyCount(); // Feature 10: every new pokemon viewed counts
         } catch (e) {
             console.error("loadPoke error:", e);
             if(e.message === "OUT_OF_RANGE") {
@@ -985,8 +1184,7 @@
             const typeColor = typeColors[curData.types?.[0]?.type?.name] || '#777';
             document.getElementById('bg-glow').style.background = `radial-gradient(circle, ${typeColor}66 0%, transparent 70%)`;
             document.getElementById('id-text').innerText = `NO. ${curData.id.toString().padStart(4, '0')}`;
-            document.getElementById('poke-name').innerText = curData.name;
-            document.getElementById('poke-name').style.fontSize = curData.name.length > 12 ? '24px' : '32px';
+            // poke-name display is managed by updateNicknameDisplay() called after updateUISafe()
             document.getElementById('ht').innerText = `${(curData.height || 0) / 10}m`;
             document.getElementById('wt').innerText = `${(curData.weight || 0) / 10}kg`;
             document.getElementById('base-exp').innerText = curData.base_experience || '--';
@@ -1060,7 +1258,15 @@
     }, {passive: true});
 
     function exportSave() {
-        const saveObj = { v: 2, p1: caughtData[1], p2: caughtData[2], f1: favesData[1], f2: favesData[2], r1: battleRecord[1], r2: battleRecord[2] };
+        const saveObj = {
+            v: 3,
+            p1: caughtData[1], p2: caughtData[2],
+            f1: favesData[1],  f2: favesData[2],
+            r1: battleRecord[1], r2: battleRecord[2],
+            s1: battleStreak[1], s2: battleStreak[2],
+            h1: shinyHuntCount[1], h2: shinyHuntCount[2],
+            n1: nicknameData[1], n2: nicknameData[2]
+        };
         const saveString = btoa(JSON.stringify(saveObj));
         if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(saveString).then(() => { alert("SAVE CODE COPIED!"); }); }
         else { prompt("COPY THIS SAVE CODE:", saveString); }
@@ -1075,12 +1281,20 @@
             if (s.f2) { favesData[2] = s.f2; localStorage.setItem('pokedex_faves_p2', JSON.stringify(s.f2)); }
             if (s.r1) { battleRecord[1] = s.r1; localStorage.setItem('pokedex_record_p1', JSON.stringify(s.r1)); }
             if (s.r2) { battleRecord[2] = s.r2; localStorage.setItem('pokedex_record_p2', JSON.stringify(s.r2)); }
+            if (s.s1 != null) { battleStreak[1] = s.s1; localStorage.setItem('pokedex_streak_p1', JSON.stringify(s.s1)); }
+            if (s.s2 != null) { battleStreak[2] = s.s2; localStorage.setItem('pokedex_streak_p2', JSON.stringify(s.s2)); }
+            if (s.h1 != null) { shinyHuntCount[1] = s.h1; localStorage.setItem('pokedex_shiny_p1', JSON.stringify(s.h1)); }
+            if (s.h2 != null) { shinyHuntCount[2] = s.h2; localStorage.setItem('pokedex_shiny_p2', JSON.stringify(s.h2)); }
+            if (s.n1) { nicknameData[1] = s.n1; localStorage.setItem('pokedex_nicks_p1', JSON.stringify(s.n1)); }
+            if (s.n2) { nicknameData[2] = s.n2; localStorage.setItem('pokedex_nicks_p2', JSON.stringify(s.n2)); }
             alert("SAVE IMPORTED!"); openPC('dex'); updateCatchUI();
         } catch(e) { alert("ERROR: INVALID CODE."); }
     }
 
     // --- INIT ---
     updateCompletionBar();
+    updateShinyCount();
+    updateStreakDisplay();
 </script>
 
 </body>
