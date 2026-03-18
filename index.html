@@ -216,9 +216,47 @@
         /* --- QUICK WIN: GIFT MODE --- */
         .pc-item.gift-mode-item { border-color:#ff9800; animation:giftPulse 0.9s ease-in-out infinite alternate; }
         @keyframes giftPulse { from{box-shadow:0 0 4px rgba(255,152,0,0.3)} to{box-shadow:0 0 14px rgba(255,152,0,0.9)} }
+
+        /* --- SPRINT 1: AUTO-CRY indicator --- */
+        .auto-label { font-size:7px; color:var(--pc-cyan); letter-spacing:0.5px; display:block; min-height:9px; border-top:1px solid rgba(255,255,255,0.1); padding-top:3px; margin-top:2px; cursor:pointer; }
+
+        /* --- SPRINT 1: ACHIEVEMENT BADGES --- */
+        .badge-row { display:flex; gap:5px; overflow-x:auto; padding:4px 0 10px 0; scrollbar-width:none; flex-shrink:0; flex-wrap:wrap; justify-content:center; }
+        .badge-row::-webkit-scrollbar { display:none; }
+        .badge-item { width:40px; height:40px; background:rgba(0,0,0,0.3); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid #333; flex-shrink:0; position:relative; }
+        .badge-item.earned { border-color:#ffcc00; box-shadow:0 0 8px rgba(255,204,0,0.4); }
+        .badge-item.unearned { filter:grayscale(100%) brightness(0.35); }
+        #badge-section { flex-shrink:0; }
+        #badge-section-title { font-size:10px; color:#aaa; font-weight:900; text-align:center; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+        #badge-toast { position:fixed; top:calc(env(safe-area-inset-top) + 60px); left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#ffcc00,#ff9800); color:#000; padding:10px 20px; border-radius:20px; font-size:13px; font-weight:900; z-index:5000; pointer-events:none; opacity:0; transition:opacity 0.3s; white-space:nowrap; box-shadow:0 4px 15px rgba(0,0,0,0.5); text-transform:uppercase; letter-spacing:1px; }
+        #badge-toast.show { opacity:1; }
+
+        /* --- SPRINT 1: WHO'S THAT POKEMON --- */
+        #wtp-modal { position:fixed; top:0; left:0; width:100vw; height:100dvh; background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); z-index:3000; display:none; flex-direction:column; align-items:center; padding:calc(env(safe-area-inset-top) + 10px) 20px calc(20px + env(safe-area-inset-bottom)) 20px; overflow-y:auto; }
+        .wtp-title { font-size:18px; font-weight:900; color:#ffcc00; text-align:center; letter-spacing:2px; text-transform:uppercase; text-shadow:0 2px 10px rgba(255,204,0,0.5); margin-bottom:4px; width:100%; }
+        .wtp-score { font-size:13px; color:#aaa; font-weight:700; text-align:center; margin-bottom:8px; }
+        .wtp-sprite-box { width:170px; height:170px; display:flex; align-items:center; justify-content:center; margin:0 auto; }
+        #wtp-sprite { max-width:150px; max-height:150px; filter:brightness(0); transition:filter 0.6s ease-out; }
+        #wtp-sprite.revealed { filter:brightness(1) drop-shadow(0 0 20px #ffcc00); }
+        .wtp-choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-top:14px; }
+        .wtp-btn { background:#1e1e2e; border:2px solid #444; color:#fff; padding:13px 8px; border-radius:12px; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; cursor:pointer; transition:background 0.2s, border-color 0.2s; }
+        .wtp-btn:active { transform:scale(0.97); }
+        .wtp-btn.correct { background:#1a5c1a; border-color:#4caf50; color:#4caf50; }
+        .wtp-btn.wrong { background:#5c1a1a; border-color:#f44336; color:#f44336; }
+        .wtp-result { font-size:17px; font-weight:900; text-align:center; margin-top:10px; min-height:24px; text-transform:uppercase; letter-spacing:1px; }
+        .wtp-next-btn { margin-top:12px; background:linear-gradient(135deg,#4caf50,#2196f3); color:#fff; border:none; padding:14px 40px; border-radius:14px; font-size:15px; font-weight:900; cursor:pointer; display:none; box-shadow:0 4px 15px rgba(0,0,0,0.3); }
+        .wtp-exit-btn { align-self:flex-end; background:rgba(255,255,255,0.1); border:1px solid #444; color:#aaa; padding:7px 13px; border-radius:10px; font-size:12px; font-weight:900; cursor:pointer; margin-bottom:8px; }
+        #wtp-loading { font-size:14px; color:#aaa; text-align:center; font-weight:700; padding:20px; }
+
+        /* --- SPRINT 1: PC SORT --- */
+        .pc-sort-row { display:flex; gap:5px; padding-bottom:6px; margin-bottom:2px; flex-shrink:0; }
+        .pc-sort-btn { background:rgba(255,255,255,0.05); border:1px solid #444; color:#aaa; padding:5px 9px; border-radius:8px; font-size:10px; font-weight:900; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+        .pc-sort-btn.active { background:rgba(255,204,0,0.15); color:#ffcc00; border-color:#ffcc00; }
     </style>
 </head>
 <body>
+
+<div id="badge-toast"></div>
 
 <div id="boot-screen" onclick="startApp()">
     <div class="boot-logo">POKÉDEX OS</div>
@@ -273,13 +311,14 @@
 
     <div class="toolbar">
         <input type="text" id="search" placeholder="Search Name or ID..." onkeydown="if(event.key==='Enter') loadPoke(this.value)">
-        <button class="tool-btn" onclick="playCry()"><span class="btn-icon">💥</span> CRY</button>
+        <button class="tool-btn" id="cry-btn" onclick="playCry()"><span class="btn-icon" id="cry-icon">🔊</span> CRY<span class="auto-label" id="auto-cry-label" onclick="event.stopPropagation(); toggleAutoCry();">AUTO ✓</span></button>
         <button class="tool-btn" id="voice-btn" onclick="toggleVoice()"><span class="btn-icon">🎙️</span> VOICE</button>
         <button class="tool-btn" onclick="toggleShiny()"><span class="btn-icon">✨</span> SHINY<span id="shiny-count"></span></button>
         <button class="tool-btn" onclick="randomPoke()"><span class="btn-icon">🎲</span> RNDM</button>
         <button class="tool-btn btn-catch" id="catch-btn" onclick="openBag()"><span class="btn-icon">🔴</span> CATCH</button>
         <button class="tool-btn" id="fave-btn" onclick="toggleFave()" style="opacity:0.4;"><span class="btn-icon">🤍</span> FAVE</button>
         <button class="tool-btn" style="background: #2c2c2c;" onclick="toggleSheet()"><span class="btn-icon">📊</span> DATA</button>
+        <button class="tool-btn" style="grid-column:span 4; background:linear-gradient(135deg,#f6d365,#fda085); color:#000; font-size:13px;" onclick="openWTP()"><span class="btn-icon">🎮</span> WHO'S THAT POKÉMON?</button>
     </div>
 
     <div id="ball-drawer">
@@ -359,6 +398,10 @@
 <div id="pc-modal">
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
     <div id="pc-record">W: 0 | L: 0</div>
+    <div id="badge-section">
+        <div id="badge-section-title">ACHIEVEMENTS</div>
+        <div class="badge-row" id="badge-row"></div>
+    </div>
     <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:6px; font-size:12px;" id="pc-instruction"></div>
     <div class="gen-filter-row" id="gen-filter-row">
         <button class="gen-filter-btn active" onclick="filterPC(0)">ALL</button>
@@ -372,6 +415,11 @@
         <button class="gen-filter-btn" onclick="filterPC(8)">GEN VIII</button>
         <button class="gen-filter-btn" onclick="filterPC(9)">GEN IX</button>
         <button class="gen-filter-btn" onclick="filterPC(-1)">❤️ FAVES</button>
+    </div>
+    <div class="pc-sort-row" id="pc-sort-row">
+        <button class="pc-sort-btn active" onclick="sortPC('dex')">📋 DEX ORDER</button>
+        <button class="pc-sort-btn" onclick="sortPC('newest')">⏰ NEWEST</button>
+        <button class="pc-sort-btn" onclick="sortPC('caught')">✅ CAUGHT FIRST</button>
     </div>
     <div class="pc-grid" id="pc-grid"></div>
     <div class="save-controls" id="save-controls">
@@ -410,10 +458,28 @@
     </div>
 </div>
 
+<!-- SPRINT 1: WHO'S THAT POKEMON GAME -->
+<div id="wtp-modal">
+    <button class="wtp-exit-btn" onclick="closeWTP()">✕ EXIT</button>
+    <div class="wtp-title">🎮 WHO'S THAT POKÉMON?</div>
+    <div class="wtp-score" id="wtp-score">SCORE: 0 / 0</div>
+    <div class="wtp-sprite-box">
+        <img id="wtp-sprite" src="" alt="">
+    </div>
+    <div id="wtp-loading">SCANNING...</div>
+    <div class="wtp-choices" id="wtp-choices"></div>
+    <div class="wtp-result" id="wtp-result"></div>
+    <button class="wtp-next-btn" id="wtp-next-btn" onclick="loadWTPQuestion()">NEXT ▶</button>
+</div>
+
 <script>
     // --- GLOBAL STATE & SAFE LOAD ---
     let audioCtx = null; let cryAudio = null; let galleryTimer = null;
     let currentPlayer = 1; let isCatching = false; let appMode = 'dex';
+    let autoCryEnabled = true;
+    let currentPCSort = 'dex';
+    let seenBadges = { 1: [], 2: [] };
+    let wtpState = { active: false, correct: 0, total: 0, currentId: null, currentData: null, choices: [], cryAudio: null };
 
     let curId = 1; let isShiny = false; let curData = null; let curSpeciesData = null;
     const maxPokemon = 1025; // ALL 1025 POKEMON
@@ -423,6 +489,22 @@
         1:{s:1,e:151}, 2:{s:152,e:251}, 3:{s:252,e:386}, 4:{s:387,e:493},
         5:{s:494,e:649}, 6:{s:650,e:721}, 7:{s:722,e:809}, 8:{s:810,e:905}, 9:{s:906,e:1025}
     };
+
+    // Sprint 1: Achievement Badge definitions
+    const BADGES = [
+        { id:'first_catch',  icon:'🏅', name:'FIRST CATCH',    desc:'Catch your first Pokémon',         check: p => caughtData[p].length >= 1 },
+        { id:'bug_catcher',  icon:'🐛', name:'BUG CATCHER',    desc:'Catch 10 Pokémon',                 check: p => caughtData[p].length >= 10 },
+        { id:'pokefan',      icon:'⭐', name:'POKÉFAN',        desc:'Catch 50 Pokémon',                 check: p => caughtData[p].length >= 50 },
+        { id:'pokemaniac',   icon:'💯', name:'POKÉMANIAC',     desc:'Catch 100 Pokémon',                check: p => caughtData[p].length >= 100 },
+        { id:'elite',        icon:'🏆', name:'ELITE TRAINER',  desc:'Catch 500 Pokémon',                check: p => caughtData[p].length >= 500 },
+        { id:'battle_debut', icon:'⚔️', name:'BATTLE DEBUT',  desc:'Win your first battle',            check: p => battleRecord[p].w >= 1 },
+        { id:'hot_streak',   icon:'🔥', name:'HOT STREAK',     desc:'Win 5 battles in a row',           check: p => battleStreak[p] >= 5 },
+        { id:'veteran',      icon:'🎖️', name:'VETERAN',       desc:'Win 20 battles',                   check: p => battleRecord[p].w >= 20 },
+        { id:'daily',        icon:'📅', name:'DAILY TRAINER',  desc:"Catch today's Pokémon",            check: p => caughtData[p].includes(getDailyPokemonId()) },
+        { id:'shiny_hunter', icon:'✨', name:'SHINY HUNTER',   desc:'View 50 Pokémon in shiny mode',    check: p => shinyHuntCount[p] >= 50 },
+        { id:'superfan',     icon:'❤️', name:'SUPER FAN',      desc:'Favorite 10 Pokémon',              check: p => favesData[p].length >= 10 },
+        { id:'namer',        icon:'✏️', name:'BEST FRIENDS',  desc:'Give a Pokémon a nickname',        check: p => Object.keys(nicknameData[p]).length >= 1 },
+    ];
 
     let caughtData = { 1: [], 2: [] };
     let favesData = { 1: [], 2: [] };
@@ -446,6 +528,8 @@
         shinyHuntCount[2] = JSON.parse(localStorage.getItem('pokedex_shiny_p2')) || 0;
         nicknameData[1] = JSON.parse(localStorage.getItem('pokedex_nicks_p1')) || {};
         nicknameData[2] = JSON.parse(localStorage.getItem('pokedex_nicks_p2')) || {};
+        seenBadges[1] = JSON.parse(localStorage.getItem('pokedex_badges_p1')) || [];
+        seenBadges[2] = JSON.parse(localStorage.getItem('pokedex_badges_p2')) || [];
     } catch(e) { console.warn("Save corrupted or blocked by PWA settings."); }
 
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
@@ -554,6 +638,7 @@
         else { favesData[currentPlayer].push(curId); }
         localStorage.setItem(`pokedex_faves_p${currentPlayer}`, JSON.stringify(favesData[currentPlayer]));
         updateFaveUI(); triggerVibration();
+        checkBadges(); // Sprint 1: check superfan badge
     }
     function updateFaveUI() {
         const btn = document.getElementById('fave-btn');
@@ -644,6 +729,7 @@
             nicknameData[currentPlayer][pokeId] = nick.trim().toUpperCase().slice(0, 12);
             localStorage.setItem(`pokedex_nicks_p${currentPlayer}`, JSON.stringify(nicknameData[currentPlayer]));
             updateNicknameDisplay();
+            checkBadges(); // Sprint 1: check namer badge
         }
     }
     function renameCurrentPokemon() {
@@ -701,6 +787,156 @@
         pendingGiftId = null;
     }
 
+    // =========================================================
+    // --- SPRINT 1 FEATURES ---
+    // =========================================================
+
+    // --- SPRINT 1 #1: AUTO-CRY ---
+    function toggleAutoCry() {
+        autoCryEnabled = !autoCryEnabled;
+        updateAutoCryUI();
+        triggerVibration(30);
+    }
+    function updateAutoCryUI() {
+        const icon = document.getElementById('cry-icon');
+        const label = document.getElementById('auto-cry-label');
+        if (icon) icon.innerText = autoCryEnabled ? '🔊' : '💥';
+        if (label) { label.innerText = autoCryEnabled ? 'AUTO ✓' : 'AUTO ✗'; label.style.color = autoCryEnabled ? '#00e5ff' : '#666'; }
+    }
+    function autoCrySafe() {
+        if (!autoCryEnabled || !cryAudio || isCatching || appMode !== 'dex') return;
+        cryAudio.volume = 0.4;
+        cryAudio.play().catch(() => {});
+    }
+
+    // --- SPRINT 1 #2: ACHIEVEMENT BADGES ---
+    function checkBadges(silent = false) {
+        const p = currentPlayer;
+        const newlyEarned = [];
+        BADGES.forEach(badge => {
+            if (!seenBadges[p].includes(badge.id) && badge.check(p)) {
+                seenBadges[p].push(badge.id);
+                if (!silent) newlyEarned.push(badge);
+            }
+        });
+        if (seenBadges[p].length > 0) localStorage.setItem(`pokedex_badges_p${p}`, JSON.stringify(seenBadges[p]));
+        newlyEarned.forEach((badge, i) => setTimeout(() => showBadgeToast(badge), i * 2800));
+    }
+    function showBadgeToast(badge) {
+        const toast = document.getElementById('badge-toast');
+        if (!toast) return;
+        toast.innerText = `${badge.icon} NEW BADGE: ${badge.name}!`;
+        toast.classList.add('show');
+        triggerVibration([50, 30, 100]);
+        setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+    function renderBadgeRow() {
+        const row = document.getElementById('badge-row');
+        if (!row) return;
+        const p = currentPlayer;
+        row.innerHTML = BADGES.map(badge => {
+            const earned = badge.check(p);
+            return `<div class="badge-item ${earned ? 'earned' : 'unearned'}" title="${badge.name}: ${badge.desc}">${badge.icon}</div>`;
+        }).join('');
+    }
+
+    // --- SPRINT 1 #3: WHO'S THAT POKÉMON ---
+    function openWTP() {
+        if (isCatching || appMode === 'battle') return;
+        initAudio();
+        wtpState.correct = 0; wtpState.total = 0; wtpState.active = true;
+        document.getElementById('wtp-modal').style.display = 'flex';
+        document.getElementById('wtp-score').innerText = 'SCORE: 0 / 0';
+        loadWTPQuestion();
+    }
+    function closeWTP() {
+        document.getElementById('wtp-modal').style.display = 'none';
+        wtpState.active = false;
+        if (wtpState.cryAudio) { wtpState.cryAudio.pause(); wtpState.cryAudio = null; }
+    }
+    async function loadWTPQuestion() {
+        const loadingEl = document.getElementById('wtp-loading');
+        const choicesEl = document.getElementById('wtp-choices');
+        const resultEl  = document.getElementById('wtp-result');
+        const nextBtn   = document.getElementById('wtp-next-btn');
+        const sprite    = document.getElementById('wtp-sprite');
+        loadingEl.style.display = 'block'; loadingEl.innerText = 'SCANNING POKÉMON...';
+        choicesEl.innerHTML = ''; resultEl.innerText = ''; nextBtn.style.display = 'none';
+        sprite.src = ''; sprite.className = '';
+        try {
+            const correctId = Math.floor(Math.random() * maxPokemon) + 1;
+            const wrongIds = [];
+            while (wrongIds.length < 3) {
+                const id = Math.floor(Math.random() * maxPokemon) + 1;
+                if (id !== correctId && !wrongIds.includes(id)) wrongIds.push(id);
+            }
+            const [correctData, w1, w2, w3] = await Promise.all([
+                apiFetch(`https://pokeapi.co/api/v2/pokemon/${correctId}`),
+                apiFetch(`https://pokeapi.co/api/v2/pokemon/${wrongIds[0]}`),
+                apiFetch(`https://pokeapi.co/api/v2/pokemon/${wrongIds[1]}`),
+                apiFetch(`https://pokeapi.co/api/v2/pokemon/${wrongIds[2]}`)
+            ]);
+            if (!wtpState.active) return;
+            wtpState.currentId = correctId; wtpState.currentData = correctData;
+            wtpState.choices = [
+                { name: correctData.name, correct: true },
+                { name: w1.name, correct: false },
+                { name: w2.name, correct: false },
+                { name: w3.name, correct: false }
+            ].sort(() => Math.random() - 0.5);
+            // Set silhouette sprite
+            const spriteUrl = correctData.sprites?.other?.['official-artwork']?.front_default || correctData.sprites?.front_default || '';
+            sprite.src = spriteUrl;
+            // Load cry
+            wtpState.cryAudio = correctData.cries?.latest ? new Audio(correctData.cries.latest) : null;
+            loadingEl.style.display = 'none';
+            choicesEl.innerHTML = wtpState.choices.map((c, i) =>
+                `<button class="wtp-btn" onclick="wtpAnswer(${i}, ${c.correct})">${c.name.replace(/-/g,' ').toUpperCase()}</button>`
+            ).join('');
+            wtpState.answering = true;
+        } catch(e) {
+            if (!wtpState.active) return;
+            loadingEl.innerText = 'NETWORK ERROR — RETRYING...';
+            setTimeout(() => { if (wtpState.active) loadWTPQuestion(); }, 2000);
+        }
+    }
+    function wtpAnswer(idx, isCorrect) {
+        if (!wtpState.answering) return;
+        wtpState.answering = false; wtpState.total++;
+        const btns = document.querySelectorAll('.wtp-btn');
+        const resultEl = document.getElementById('wtp-result');
+        const nextBtn  = document.getElementById('wtp-next-btn');
+        const sprite   = document.getElementById('wtp-sprite');
+        btns.forEach(btn => btn.disabled = true);
+        btns.forEach((btn, i) => {
+            if (wtpState.choices[i].correct) btn.classList.add('correct');
+            else if (i === idx && !isCorrect) btn.classList.add('wrong');
+        });
+        sprite.classList.add('revealed');
+        if (isCorrect) {
+            wtpState.correct++;
+            resultEl.style.color = '#4caf50'; resultEl.innerText = '✅ CORRECT!';
+            soundSuperHit(); triggerVibration([50, 30, 50]);
+        } else {
+            resultEl.style.color = '#f44336';
+            resultEl.innerText = `❌ IT WAS ${wtpState.currentData.name.replace(/-/g,' ').toUpperCase()}!`;
+            soundBreak(); triggerVibration([200]);
+        }
+        if (wtpState.cryAudio) { wtpState.cryAudio.volume = 0.5; wtpState.cryAudio.play().catch(()=>{}); }
+        document.getElementById('wtp-score').innerText = `SCORE: ${wtpState.correct} / ${wtpState.total}`;
+        nextBtn.style.display = 'block';
+    }
+
+    // --- SPRINT 1 #4: PC BOX SORT ---
+    function sortPC(mode) {
+        currentPCSort = mode;
+        document.querySelectorAll('.pc-sort-btn').forEach(btn => {
+            const m = btn.getAttribute('onclick').match(/sortPC\('(.+?)'\)/);
+            btn.classList.toggle('active', m && m[1] === mode);
+        });
+        renderPCGrid();
+    }
+
     // --- BOOT & UTILS ---
     function startApp() {
         initAudio(); document.getElementById('tap-msg').innerText = "LOADING OS...";
@@ -741,7 +977,8 @@
     let pcContext = 'dex';
     function openPC(context = 'dex') {
         if(isCatching) return;
-        pcContext = context; currentGenFilter = 0;
+        pcContext = context; currentGenFilter = 0; currentPCSort = 'dex';
+        document.querySelectorAll('.pc-sort-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
         document.getElementById('pc-title').innerText = `P${currentPlayer}'S PC BOX`;
         const rec = battleRecord[currentPlayer];
         const streak = battleStreak[currentPlayer];
@@ -763,6 +1000,7 @@
         if (document.getElementById('save-controls')) {
             document.getElementById('save-controls').style.display = context === 'battle' ? 'none' : 'grid';
         }
+        renderBadgeRow(); // Sprint 1: show achievement badges
         renderPCGrid();
         document.getElementById('pc-modal').style.display = 'flex';
     }
@@ -797,7 +1035,19 @@
         } else {
             const start = currentGenFilter > 0 ? GEN_RANGES[currentGenFilter].s : 1;
             const end   = currentGenFilter > 0 ? GEN_RANGES[currentGenFilter].e : maxPokemon;
-            for (let i = start; i <= end; i++) {
+            let ids = [];
+            for (let i = start; i <= end; i++) ids.push(i);
+            // Sprint 1: apply sort
+            if (currentPCSort === 'newest') {
+                const caughtIds   = ids.filter(id => activeCaught.includes(id)).sort((a,b) => activeCaught.indexOf(b) - activeCaught.indexOf(a));
+                const uncaughtIds = ids.filter(id => !activeCaught.includes(id));
+                ids = [...caughtIds, ...uncaughtIds];
+            } else if (currentPCSort === 'caught') {
+                const caughtIds   = ids.filter(id => activeCaught.includes(id));
+                const uncaughtIds = ids.filter(id => !activeCaught.includes(id));
+                ids = [...caughtIds, ...uncaughtIds];
+            }
+            for (const i of ids) {
                 const isCaught = activeCaught.includes(i);
                 const isFaved  = activeFaves.includes(i);
                 if (isCaught) {
@@ -965,6 +1215,7 @@
             localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
             battleStreak[currentPlayer]++;
             localStorage.setItem(`pokedex_streak_p${currentPlayer}`, JSON.stringify(battleStreak[currentPlayer]));
+            checkBadges(); // Sprint 1: award battle badges
             // Nickname prompt for the newly caught wild pokemon
             if (!nicknameData[currentPlayer][battleState.wild.id]) {
                 setTimeout(() => promptNickname(battleState.wild.name, battleState.wild.id), 600);
@@ -1084,6 +1335,7 @@
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
             }
             updateCatchUI();
+            checkBadges(); // Sprint 1: award any newly earned badges
             setTimeout(() => {
                 ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)';
                 msg.style.opacity = 0; sprite.classList.remove('sucked-in'); isCatching = false;
@@ -1153,7 +1405,8 @@
         setTimeout(() => {
             setScanning(false);
             document.getElementById('poke-sprite').style.opacity = 1;
-        }, 600);
+            autoCrySafe(); // Sprint 1: auto-play cry on browse
+        }, 700);
     }
 
     async function loadEvolutionsSafe(url) {
@@ -1295,6 +1548,8 @@
     updateCompletionBar();
     updateShinyCount();
     updateStreakDisplay();
+    updateAutoCryUI();       // Sprint 1: set CRY button state
+    checkBadges(true);       // Sprint 1: silently mark any pre-existing achievements
 </script>
 
 </body>
