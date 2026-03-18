@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
-    <title>Pokédex OS v15.0</title>
+    <title>Pokédex OS v16.0</title>
     <style>
         :root { --p-primary: #d32f2f; --p-dark: #b71c1c; --bg-color: #121212; --panel-bg: #1e1e1e; --pc-cyan: #00e5ff; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -59,8 +59,6 @@
 
         /* TOOLBAR */
         .toolbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 20px; z-index: 10; margin-top: 10px; }
-        
-        /* NEW NAV SEARCH ROW */
         .search-row { grid-column: span 4; display: flex; gap: 8px; margin-bottom: 5px; }
         .search-row input { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 14px; text-align: center; font-weight: bold; background: rgba(255,255,255,0.1); color: white; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);}
         .search-row input:focus { outline: 2px solid var(--p-primary); }
@@ -102,7 +100,7 @@
         .stat-val { width: 30px; font-size: 12px; font-weight: bold; text-align: right; margin-right: 10px; }
         .stat-bar-bg { flex: 1; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
         .stat-bar-fill { height: 100%; width: 0%; border-radius: 3px; transition: width 1s ease-out; }
-        .evo-box { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px;}
+        .evo-box { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; flex-wrap: wrap;}
         .evo-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s;}
         .evo-item:active { transform: scale(0.9); }
         .evo-item img { width: 60px; height: 60px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
@@ -249,7 +247,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 15.0 - UAT PASSED</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 16.0 - THE NATIONAL DEX UPDATE</div>
         </div>
     </div>
 </div>
@@ -326,7 +324,7 @@
     let currentPlayer = 1; let isCatching = false; let appMode = 'dex'; 
     
     let curId = 25; let isShiny = false; let curData = null; let curSpeciesData = null;
-    const maxPokemon = 151; // GEN 1 HARD LIMIT
+    const maxPokemon = 1025; // NATIONAL DEX LIMIT
     
     let caughtData = { 1: [], 2: [] };
     try {
@@ -385,7 +383,6 @@
         }
     };
 
-    // --- UAT FIX #1: RESTORE GLOBAL SET SCANNING ---
     function setScanning(active) {
         const scanner = document.getElementById('scanner-container');
         if(scanner) active ? scanner.classList.add('scanning') : scanner.classList.remove('scanning');
@@ -445,7 +442,7 @@
         openPC('battle'); 
     }
 
-    // --- PC LOGIC (GEN 1 SECURED) ---
+    // --- PC LOGIC (NATIONAL DEX SECURED) ---
     let pcContext = 'dex'; 
     function openPC(context = 'dex') {
         if(isCatching) return;
@@ -503,7 +500,6 @@
         const data = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${id}`); const obj = battleState[target];
         obj.name = data.name; obj.types = data.types;
         
-        // UAT FIX #6: Correct HP Operator Precedence Formula
         obj.maxHp = Math.floor(((data.stats.find(s=>s.stat.name==='hp')?.base_stat || 50) * 2 * 50)/100 + 50 + 10); obj.hp = obj.maxHp;
         
         obj.speed = data.stats.find(s=>s.stat.name==='speed')?.base_stat || 50;
@@ -622,7 +618,7 @@
     }
 
     // =========================================================
-    // --- MAIN POKEDEX LOGIC (PWA SAFE & TIMEOUT PROTECTED) ---
+    // --- MAIN POKEDEX LOGIC ---
     // =========================================================
 
     function stopAllAudio() { 
@@ -649,7 +645,6 @@
         } catch(e) {}
     }
 
-    // UAT FIX #4: Correct Audio Fallback
     function playCry() { 
         if(isCatching || appMode === 'battle') return; 
         stopAllAudio(); 
@@ -663,7 +658,6 @@
         updateCatchUI();
     }
 
-    // UAT FIX #7: Toggle Bag Close
     function openBag() { 
         if(isCatching || appMode === 'battle' || caughtData[currentPlayer].includes(curId)) return; 
         const drawer = document.getElementById('ball-drawer');
@@ -684,9 +678,8 @@
             sprite.classList.add('sucked-in'); playBeep(400, 'sine', 0.3); 
             
             let isSuccess = false;
-            // UAT FIX #3: Master ball Logic
             if (ballName === 'master-ball') {
-                isSuccess = true; // 100% flat catch rate
+                isSuccess = true; 
             } else {
                 const baseRate = curSpeciesData?.capture_rate ?? 45; 
                 const catchProbability = (baseRate * ballModifier) / 255; 
@@ -730,8 +723,7 @@
             
             curData = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${searchTarget}`); 
             
-            // GEN 1 HARD LIMIT BLOCK
-            if(curData.id > maxPokemon) throw new Error("GEN_1_ONLY");
+            if(curData.id > maxPokemon) throw new Error("DEX_LIMIT");
             
             curId = curData.id;
             
@@ -742,11 +734,10 @@
             updateUISafe(); loadEvolutionsSafe(curSpeciesData?.evolution_chain?.url); setupGallerySafe(); updateCatchUI();
         } catch (e) {
             console.error("Master Fetch Error:", e); 
-            // UAT FIX #5: Clear Scanner on Error
             setScanning(false);
             
-            if(e.message === "GEN_1_ONLY") {
-                document.getElementById('poke-name').innerText = "GEN 1 ONLY"; document.getElementById('desc').innerText = "This OS is locked to the original 151 Pokémon.";
+            if(e.message === "DEX_LIMIT") {
+                document.getElementById('poke-name').innerText = "DEX LIMIT"; document.getElementById('desc').innerText = `This OS is locked to the first ${maxPokemon} Pokémon.`;
             } else if(e.message === "NETWORK_TIMEOUT") {
                 document.getElementById('poke-name').innerText = "TIMEOUT"; document.getElementById('desc').innerText = "API Server took too long to respond. Try again.";
             } else {
@@ -768,11 +759,9 @@
                 let sUrl = curr.species?.url; if(!sUrl) break;
                 let id = parseInt(sUrl.split('/').filter(Boolean).pop());
                 
-                // GEN 1 EVOLUTION CULLING
                 if (id <= maxPokemon) { chain.push({ name: curr.species.name, id: id }); }
                 curr = curr.evolves_to?.[0]; 
             } while (curr);
-            // UAT FIX #8: Remove toggleSheet() to prevent unexpected UX closing
             evoBox.innerHTML = chain.map((poke, index) => `${index > 0 ? '<div class="evo-arrow">▶</div>' : ''}<div class="evo-item" onclick="loadPoke(${poke.id});"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.id}.png"><span>${poke.name}</span></div>`).join('');
         } catch (e) { evoBox.innerHTML = '<span style="color:#777; font-size:10px;">DNA ERROR</span>'; }
     }
@@ -809,7 +798,7 @@
         clearInterval(galleryTimer); 
         let imgs = [curData.sprites?.other?.['official-artwork']?.front_default, curData.sprites?.front_default].filter(i=>i);
         if(isShiny) imgs = [curData.sprites?.other?.['official-artwork']?.front_shiny || curData.sprites?.front_shiny, curData.sprites?.front_shiny].filter(i=>i);
-        if(imgs.length === 0) imgs = ['https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png']; // Fallback
+        if(imgs.length === 0) imgs = ['https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png']; 
         
         let idx = 0; document.getElementById('poke-sprite').src = imgs[idx];
         if (imgs.length > 1) {
@@ -824,9 +813,7 @@
     function toggleShiny() { if(!isCatching && appMode==='dex'){ isShiny = !isShiny; setupGallerySafe(); triggerVibration(); } }
     function randomPoke() { if(!isCatching && appMode==='dex') loadPoke(Math.floor(Math.random() * maxPokemon) + 1); triggerVibration(); }
     function nav(amt) { if(isCatching || appMode==='battle') return; curId += amt; if(curId < 1) curId = maxPokemon; if(curId > maxPokemon) curId = 1; loadPoke(curId); triggerVibration(); }
-    function toggleSheet() { if(isCatching || appMode==='battle') return; document.getElementById('data-sheet').classList.toggle('open'); }
 
-    // --- SWIPE GESTURES ---
     let touchStartX = 0; let touchStartY = 0; const appBody = document.getElementById('app-body');
     appBody.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, {passive: true});
     
