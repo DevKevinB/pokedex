@@ -252,6 +252,32 @@
         .pc-sort-row { display:flex; gap:5px; padding-bottom:6px; margin-bottom:2px; flex-shrink:0; }
         .pc-sort-btn { background:rgba(255,255,255,0.05); border:1px solid #444; color:#aaa; padding:5px 9px; border-radius:8px; font-size:10px; font-weight:900; cursor:pointer; white-space:nowrap; flex-shrink:0; }
         .pc-sort-btn.active { background:rgba(255,204,0,0.15); color:#ffcc00; border-color:#ffcc00; }
+
+        /* --- SPRINT 2: DAILY CHALLENGE STRIP --- */
+        #challenge-strip { display:flex; align-items:center; padding:3px 20px 5px 20px; gap:8px; flex-shrink:0; background:rgba(255,204,0,0.06); border-bottom:1px solid rgba(255,204,0,0.12); }
+        #challenge-strip.done { background:rgba(76,175,80,0.08); border-bottom-color:rgba(76,175,80,0.2); }
+        #challenge-icon { font-size:14px; flex-shrink:0; }
+        #challenge-label { font-size:10px; font-weight:900; color:#ffcc00; text-transform:uppercase; letter-spacing:0.5px; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        #challenge-strip.done #challenge-label { color:#4caf50; }
+        #challenge-prog { font-size:10px; font-weight:900; color:rgba(255,255,255,0.55); white-space:nowrap; }
+
+        /* --- SPRINT 2: MYSTERY EGG --- */
+        #egg-section { flex-shrink:0; margin-bottom:6px; }
+        .egg-section-title { font-size:10px; color:#aaa; font-weight:900; text-align:center; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+        .egg-card { background:rgba(255,204,0,0.06); border:2px solid rgba(255,204,0,0.25); border-radius:14px; padding:10px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:transform 0.1s; }
+        .egg-card:active { transform:scale(0.97); }
+        .egg-card.egg-hatched { border-color:rgba(76,175,80,0.4); cursor:default; }
+        .egg-progress-bg { flex:1; height:7px; background:#222; border-radius:4px; overflow:hidden; }
+        .egg-progress-fill { height:100%; background:linear-gradient(90deg,#ff9800,#ffcc00); border-radius:4px; transition:width 0.3s ease-out; }
+        @keyframes eggWiggle { 0%{transform:rotate(0)} 20%{transform:rotate(-18deg)} 50%{transform:rotate(18deg)} 75%{transform:rotate(-8deg)} 100%{transform:rotate(0)} }
+        .egg-wiggle { animation:eggWiggle 0.35s ease-in-out; }
+
+        /* --- SPRINT 2: STATUS EFFECTS --- */
+        .status-badge { font-size:9px; font-weight:900; padding:2px 6px; border-radius:5px; margin-top:3px; display:inline-block; text-transform:uppercase; letter-spacing:0.5px; }
+        .status-burn { background:#e64a19; color:#fff; }
+        .status-sleep { background:#6a1b9a; color:#fff; }
+        .status-paralysis { background:#f9a825; color:#000; }
+        .status-poison { background:#7b1fa2; color:#fff; }
     </style>
 </head>
 <body>
@@ -283,6 +309,13 @@
     <div class="completion-strip">
         <div class="comp-bar-bg"><div class="comp-bar-fill" id="comp-bar-fill"></div></div>
         <span id="comp-text">0 / 1025</span>
+    </div>
+
+    <!-- SPRINT 2: Daily Challenge Strip -->
+    <div id="challenge-strip">
+        <span id="challenge-icon">🎯</span>
+        <span id="challenge-label">LOADING CHALLENGE...</span>
+        <span id="challenge-prog"></span>
     </div>
 
     <div class="visual-display">
@@ -371,6 +404,7 @@
                 <div class="hp-box-wild">
                     <h3 class="pkmn-name" id="wild-name">WILD PKMN <span class="lvl">Lv50</span></h3>
                     <div class="hp-bar-container"><div class="hp-fill" id="wild-hp-bar"></div></div>
+                    <div id="wild-status-badge"></div>
                 </div>
                 <div style="position:relative;">
                     <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;">
@@ -384,6 +418,7 @@
                     <h3 class="pkmn-name" id="player-name">PLAYER PKMN <span class="lvl">Lv50</span></h3>
                     <div class="hp-bar-container"><div class="hp-fill" id="player-hp-bar"></div></div>
                     <div style="text-align: right; font-size: 10px; color: #000; font-weight: bold; margin-top:2px;" id="player-hp-text">100/100</div>
+                    <div id="player-status-badge"></div>
                 </div>
             </div>
         </div>
@@ -402,6 +437,8 @@
         <div id="badge-section-title">ACHIEVEMENTS</div>
         <div class="badge-row" id="badge-row"></div>
     </div>
+    <!-- SPRINT 2: Mystery Egg Section -->
+    <div id="egg-section"></div>
     <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:6px; font-size:12px;" id="pc-instruction"></div>
     <div class="gen-filter-row" id="gen-filter-row">
         <button class="gen-filter-btn active" onclick="filterPC(0)">ALL</button>
@@ -480,6 +517,8 @@
     let currentPCSort = 'dex';
     let seenBadges = { 1: [], 2: [] };
     let wtpState = { active: false, correct: 0, total: 0, currentId: null, currentData: null, choices: [], cryAudio: null };
+    let challengeData = { 1:{date:0,done:false,progress:0,totalCompleted:0}, 2:{date:0,done:false,progress:0,totalCompleted:0} };
+    let eggData = { 1:{date:0,taps:0,hatched:false,targetId:0,totalHatched:0}, 2:{date:0,taps:0,hatched:false,targetId:0,totalHatched:0} };
 
     let curId = 1; let isShiny = false; let curData = null; let curSpeciesData = null;
     const maxPokemon = 1025; // ALL 1025 POKEMON
@@ -504,6 +543,9 @@
         { id:'shiny_hunter', icon:'✨', name:'SHINY HUNTER',   desc:'View 50 Pokémon in shiny mode',    check: p => shinyHuntCount[p] >= 50 },
         { id:'superfan',     icon:'❤️', name:'SUPER FAN',      desc:'Favorite 10 Pokémon',              check: p => favesData[p].length >= 10 },
         { id:'namer',        icon:'✏️', name:'BEST FRIENDS',  desc:'Give a Pokémon a nickname',        check: p => Object.keys(nicknameData[p]).length >= 1 },
+        { id:'challenger',   icon:'🎯', name:'CHALLENGER',     desc:'Complete a daily challenge',       check: p => (challengeData[p].totalCompleted||0) >= 1 },
+        { id:'weekly_champ', icon:'📆', name:'WEEKLY CHAMP',   desc:'Complete 7 daily challenges',      check: p => (challengeData[p].totalCompleted||0) >= 7 },
+        { id:'egg_hatcher',  icon:'🥚', name:'EGG HATCHER',    desc:'Hatch a mystery egg',              check: p => (eggData[p].totalHatched||0) >= 1 },
     ];
 
     let caughtData = { 1: [], 2: [] };
@@ -530,6 +572,10 @@
         nicknameData[2] = JSON.parse(localStorage.getItem('pokedex_nicks_p2')) || {};
         seenBadges[1] = JSON.parse(localStorage.getItem('pokedex_badges_p1')) || [];
         seenBadges[2] = JSON.parse(localStorage.getItem('pokedex_badges_p2')) || [];
+        challengeData[1] = JSON.parse(localStorage.getItem('pokedex_challenge_p1')) || challengeData[1];
+        challengeData[2] = JSON.parse(localStorage.getItem('pokedex_challenge_p2')) || challengeData[2];
+        eggData[1] = JSON.parse(localStorage.getItem('pokedex_egg_p1')) || eggData[1];
+        eggData[2] = JSON.parse(localStorage.getItem('pokedex_egg_p2')) || eggData[2];
     } catch(e) { console.warn("Save corrupted or blocked by PWA settings."); }
 
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
@@ -562,9 +608,20 @@
 
     let battleState = {
         isSparkle: false,
-        player: { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '' },
-        wild: { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '' },
+        player: { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '', status: null, sleepTurns: 0 },
+        wild:   { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '', status: null, sleepTurns: 0 },
         isBattling: false
+    };
+
+    // Sprint 2 #8: status effect chance by move type
+    const STATUS_MOVE_EFFECTS = {
+        fire:     { status: 'burn',      chance: 0.10 },
+        electric: { status: 'paralysis', chance: 0.10 },
+        poison:   { status: 'poison',    chance: 0.30 },
+        grass:    { status: 'sleep',     chance: 0.10 },
+        psychic:  { status: 'sleep',     chance: 0.10 },
+        ghost:    { status: 'sleep',     chance: 0.10 },
+        ice:      { status: 'paralysis', chance: 0.10 },
     };
 
     // --- FETCH WITH ABORT TIMEOUT ---
@@ -927,6 +984,196 @@
         nextBtn.style.display = 'block';
     }
 
+    // =========================================================
+    // --- SPRINT 2 FEATURES ---
+    // =========================================================
+
+    // --- SPRINT 2 #7: DAILY CHALLENGE ---
+    const CHALLENGE_POOL = [
+        { type:'daily_pokemon', goal:1, text:"CATCH TODAY'S POKÉMON", icon:'📅' },
+        { type:'win_battles',   goal:3, text:'WIN 3 BATTLES',         icon:'⚔️' },
+        { type:'catch_any',     goal:3, text:'CATCH 3 POKÉMON',       icon:'🎯' },
+        { type:'win_battles',   goal:1, text:'WIN A BATTLE',          icon:'⚔️' },
+        { type:'catch_any',     goal:5, text:'CATCH 5 POKÉMON',       icon:'🎯' },
+        { type:'win_battles',   goal:5, text:'WIN 5 BATTLES',         icon:'🔥' },
+        { type:'daily_pokemon', goal:1, text:"CATCH TODAY'S POKÉMON", icon:'📅' },
+    ];
+    function getDailyChallenge() {
+        const day = Math.floor(Date.now() / 86400000);
+        return CHALLENGE_POOL[day % CHALLENGE_POOL.length];
+    }
+    function getOrResetChallenge(p) {
+        const today = Math.floor(Date.now() / 86400000);
+        if (challengeData[p].date !== today) {
+            challengeData[p] = { date: today, done: false, progress: 0, totalCompleted: challengeData[p].totalCompleted || 0 };
+            localStorage.setItem(`pokedex_challenge_p${p}`, JSON.stringify(challengeData[p]));
+        }
+    }
+    function renderChallengeStrip() {
+        const p = currentPlayer;
+        getOrResetChallenge(p);
+        const c = getDailyChallenge();
+        const d = challengeData[p];
+        const strip = document.getElementById('challenge-strip');
+        if (!strip) return;
+        if (d.done) {
+            strip.className = 'done';
+            document.getElementById('challenge-icon').innerText = '✅';
+            document.getElementById('challenge-label').innerText = 'CHALLENGE COMPLETE!';
+            document.getElementById('challenge-prog').innerText = '';
+        } else {
+            strip.className = '';
+            document.getElementById('challenge-icon').innerText = c.icon;
+            document.getElementById('challenge-label').innerText = c.text;
+            document.getElementById('challenge-prog').innerText = `${d.progress}/${c.goal}`;
+        }
+    }
+    function updateDailyChallenge(type) {
+        const p = currentPlayer;
+        getOrResetChallenge(p);
+        if (challengeData[p].done) return;
+        const c = getDailyChallenge();
+        if (c.type !== type) return;
+        challengeData[p].progress = Math.min(c.goal, challengeData[p].progress + 1);
+        if (challengeData[p].progress >= c.goal) {
+            challengeData[p].done = true;
+            challengeData[p].totalCompleted = (challengeData[p].totalCompleted || 0) + 1;
+            showBadgeToast({ icon: '🎯', name: 'DAILY CHALLENGE COMPLETE!' });
+            triggerVibration([100, 50, 200]);
+            launchConfetti();
+            checkBadges();
+        }
+        localStorage.setItem(`pokedex_challenge_p${p}`, JSON.stringify(challengeData[p]));
+        renderChallengeStrip();
+    }
+
+    // --- SPRINT 2 #5: MYSTERY EGG ---
+    function getEggTargetId(p) {
+        const day = Math.floor(Date.now() / 86400000);
+        return ((day * 137 + p * 31) % maxPokemon) + 1;
+    }
+    function resetEggIfNewDay(p) {
+        const today = Math.floor(Date.now() / 86400000);
+        if (eggData[p].date !== today) {
+            eggData[p] = { date: today, taps: 0, hatched: false, targetId: getEggTargetId(p), totalHatched: eggData[p].totalHatched || 0 };
+            localStorage.setItem(`pokedex_egg_p${p}`, JSON.stringify(eggData[p]));
+        }
+    }
+    function renderEggSection() {
+        const section = document.getElementById('egg-section');
+        if (!section) return;
+        if (pcContext === 'battle') { section.style.display = 'none'; return; }
+        section.style.display = '';
+        const p = currentPlayer;
+        resetEggIfNewDay(p);
+        const d = eggData[p];
+        const pct = Math.min(100, (d.taps / 10) * 100);
+        if (d.hatched) {
+            section.innerHTML = `<div class="egg-section-title">🥚 TODAY'S EGG</div>
+            <div class="egg-card egg-hatched">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${d.targetId}.png" style="width:55px;height:55px;flex-shrink:0;">
+                <div><div style="font-size:12px;font-weight:900;color:#4caf50;">🎉 HATCHED TODAY!</div>
+                <div style="font-size:10px;color:#aaa;margin-top:2px;">#${d.targetId.toString().padStart(3,'0')} · ADDED TO YOUR PC</div></div>
+            </div>`;
+        } else {
+            const warmth = d.taps === 0 ? 'TAP TO WARM IT UP!' : d.taps < 4 ? '🌡️ WARMING...' : d.taps < 8 ? "👀 IT'S MOVING!" : '💥 ALMOST!';
+            section.innerHTML = `<div class="egg-section-title">🥚 TODAY'S EGG</div>
+            <div class="egg-card" id="egg-card" onclick="tapEgg()">
+                <div style="font-size:44px;line-height:1;flex-shrink:0;">🥚</div>
+                <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:900;color:#ffcc00;">${warmth}</div>
+                    <div class="egg-progress-bg" style="margin-top:5px;"><div class="egg-progress-fill" style="width:${pct}%"></div></div>
+                    <div style="font-size:10px;color:#aaa;margin-top:3px;">${d.taps} / 10 TAPS</div>
+                </div>
+            </div>`;
+        }
+    }
+    function tapEgg() {
+        const p = currentPlayer;
+        resetEggIfNewDay(p);
+        if (eggData[p].hatched) return;
+        eggData[p].taps++;
+        triggerVibration(20);
+        const card = document.getElementById('egg-card');
+        if (card) { card.classList.add('egg-wiggle'); setTimeout(() => card.classList.remove('egg-wiggle'), 350); }
+        if (eggData[p].taps >= 10) {
+            hatchEgg(p);
+        } else {
+            localStorage.setItem(`pokedex_egg_p${p}`, JSON.stringify(eggData[p]));
+            renderEggSection();
+        }
+    }
+    async function hatchEgg(p) {
+        const targetId = eggData[p].targetId;
+        eggData[p].hatched = true;
+        eggData[p].totalHatched = (eggData[p].totalHatched || 0) + 1;
+        if (!caughtData[p].includes(targetId)) {
+            caughtData[p].push(targetId);
+            localStorage.setItem(`pokedex_caught_p${p}`, JSON.stringify(caughtData[p]));
+        }
+        localStorage.setItem(`pokedex_egg_p${p}`, JSON.stringify(eggData[p]));
+        launchConfetti(); triggerVibration([100, 50, 200]);
+        renderEggSection();
+        updateCompletionBar();
+        checkBadges();
+        showBadgeToast({ icon: '🥚', name: `EGG HATCHED! #${targetId.toString().padStart(3,'0')}` });
+    }
+
+    // --- SPRINT 2 #8: BATTLE STATUS EFFECTS ---
+    function renderStatusBadge(role) {
+        const el = document.getElementById(`${role}-status-badge`);
+        if (!el) return;
+        const obj = battleState[role];
+        if (!obj.status) { el.innerHTML = ''; return; }
+        const icons = { burn:'🔥', sleep:'💤', paralysis:'⚡', poison:'☠️' };
+        const cls   = { burn:'status-burn', sleep:'status-sleep', paralysis:'status-paralysis', poison:'status-poison' };
+        el.innerHTML = `<span class="status-badge ${cls[obj.status]}">${icons[obj.status]} ${obj.status.toUpperCase()}</span>`;
+    }
+    async function applyStatusEffects(role) {
+        const obj = battleState[role];
+        if (!obj.status) return false;
+        if (obj.status === 'sleep') {
+            if (obj.sleepTurns > 0) {
+                logMsg(`${obj.name.toUpperCase()} IS FAST ASLEEP! 💤`);
+                await sleep(900); obj.sleepTurns--;
+                return true;
+            } else {
+                obj.status = null; renderStatusBadge(role);
+                logMsg(`${obj.name.toUpperCase()} WOKE UP! 👀`); await sleep(800);
+                return false;
+            }
+        }
+        if (obj.status === 'paralysis') {
+            if (Math.random() < 0.25) {
+                logMsg(`${obj.name.toUpperCase()} IS PARALYZED! ⚡`); await sleep(800);
+                return true;
+            }
+        }
+        if (obj.status === 'burn') {
+            const dmg = Math.max(1, Math.floor(obj.maxHp / 8));
+            obj.hp -= dmg; updateHP(role);
+            logMsg(`${obj.name.toUpperCase()} IS HURT BY THE BURN! 🔥`); await sleep(800);
+        }
+        if (obj.status === 'poison') {
+            const dmg = Math.max(1, Math.floor(obj.maxHp / 8));
+            obj.hp -= dmg; updateHP(role);
+            logMsg(`${obj.name.toUpperCase()} IS HURT BY POISON! ☠️`); await sleep(800);
+        }
+        return false;
+    }
+    async function tryInflictStatus(defenderRole, move) {
+        const defender = battleState[defenderRole];
+        if (defender.status || defender.hp <= 0) return;
+        const effect = STATUS_MOVE_EFFECTS[move.type];
+        if (!effect || Math.random() >= effect.chance) return;
+        defender.status = effect.status;
+        if (effect.status === 'sleep') defender.sleepTurns = Math.floor(Math.random() * 3) + 1;
+        const msgs = { burn:'was BURNED', sleep:'fell ASLEEP', paralysis:'is PARALYZED', poison:'was POISONED' };
+        logMsg(`${defender.name.toUpperCase()} ${msgs[effect.status]}!`);
+        renderStatusBadge(defenderRole);
+        await sleep(900);
+    }
+
     // --- SPRINT 1 #4: PC BOX SORT ---
     function sortPC(mode) {
         currentPCSort = mode;
@@ -1000,7 +1247,8 @@
         if (document.getElementById('save-controls')) {
             document.getElementById('save-controls').style.display = context === 'battle' ? 'none' : 'grid';
         }
-        renderBadgeRow(); // Sprint 1: show achievement badges
+        renderBadgeRow();   // Sprint 1: show achievement badges
+        renderEggSection(); // Sprint 2: show daily egg
         renderPCGrid();
         document.getElementById('pc-modal').style.display = 'flex';
     }
@@ -1132,6 +1380,10 @@
     function startBattleUI() {
         document.getElementById('battle-container').classList.add('active');
         battleState.isBattling = true;
+        // Sprint 2: clear any leftover status badges
+        battleState.player.status = null; battleState.player.sleepTurns = 0;
+        battleState.wild.status   = null; battleState.wild.sleepTurns   = 0;
+        renderStatusBadge('player'); renderStatusBadge('wild');
 
         document.getElementById('player-name').innerText = battleState.player.name;
         document.getElementById('player-sprite').src = battleState.player.sprite; updateHP('player');
@@ -1155,17 +1407,30 @@
     function enableMoves(enabled) { document.querySelectorAll('.move-btn').forEach(btn => btn.disabled = !enabled); }
 
     async function executeTurn(playerMoveIdx) {
-        if(!battleState.isBattling) return; enableMoves(false);
+        if (!battleState.isBattling) return;
+        enableMoves(false);
         const playerMove = battleState.player.moves[playerMoveIdx];
-        const wildMove = battleState.wild.moves[Math.floor(Math.random() * battleState.wild.moves.length)];
-        const playerGoesFirst = battleState.player.speed >= battleState.wild.speed;
+        const wildMove   = battleState.wild.moves[Math.floor(Math.random() * battleState.wild.moves.length)];
+        // Sprint 2: paralysis halves speed for turn order
+        const effectivePlayerSpeed = battleState.player.status === 'paralysis' ? Math.floor(battleState.player.speed / 2) : battleState.player.speed;
+        const playerGoesFirst = effectivePlayerSpeed >= battleState.wild.speed;
 
         if (playerGoesFirst) {
-            await performAttack('player', 'wild', playerMove);
-            if (battleState.wild.hp > 0) await performAttack('wild', 'player', wildMove);
+            const skip1 = await applyStatusEffects('player');
+            if (battleState.player.hp <= 0) { checkWinCondition(); return; }
+            if (!skip1) await performAttack('player', 'wild', playerMove);
+            if (battleState.wild.hp <= 0 || battleState.player.hp <= 0) { checkWinCondition(); return; }
+            const skip2 = await applyStatusEffects('wild');
+            if (battleState.wild.hp <= 0) { checkWinCondition(); return; }
+            if (!skip2) await performAttack('wild', 'player', wildMove);
         } else {
-            await performAttack('wild', 'player', wildMove);
-            if (battleState.player.hp > 0) await performAttack('player', 'wild', playerMove);
+            const skip1 = await applyStatusEffects('wild');
+            if (battleState.wild.hp <= 0) { checkWinCondition(); return; }
+            if (!skip1) await performAttack('wild', 'player', wildMove);
+            if (battleState.player.hp <= 0 || battleState.wild.hp <= 0) { checkWinCondition(); return; }
+            const skip2 = await applyStatusEffects('player');
+            if (battleState.player.hp <= 0) { checkWinCondition(); return; }
+            if (!skip2) await performAttack('player', 'wild', playerMove);
         }
         checkWinCondition();
     }
@@ -1174,7 +1439,9 @@
         const attacker = battleState[attackerRole]; const defender = battleState[defenderRole];
         logMsg(`${attacker.name.toUpperCase()} used ${move.name.toUpperCase()}!`); await sleep(1000);
 
-        let damage = (((2 * 50 / 5 + 2) * move.power * (attacker.atk / defender.def)) / 50) + 2;
+        // Sprint 2: burn halves attack
+        const atkStat = attacker.status === 'burn' ? Math.floor(attacker.atk / 2) : attacker.atk;
+        let damage = (((2 * 50 / 5 + 2) * move.power * (atkStat / defender.def)) / 50) + 2;
         const typeMult = getTypeMultiplier(move.type, defender.types); damage *= typeMult;
         if (attackerRole === 'player' && battleState.isSparkle) damage *= 2.0;
 
@@ -1185,6 +1452,9 @@
         else if (typeMult < 1 && typeMult > 0) { soundHit(); logMsg("It's not very effective..."); await sleep(1000); }
         else if (typeMult === 0) { logMsg("It had no effect!"); await sleep(1000); }
         else { soundHit(); } await sleep(500);
+
+        // Sprint 2: try to inflict a status condition on the defender
+        await tryInflictStatus(defenderRole, move);
     }
 
     async function checkWinCondition() {
@@ -1209,12 +1479,14 @@
             if(!caughtData[currentPlayer].includes(battleState.wild.id)) {
                 caughtData[currentPlayer].push(battleState.wild.id);
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
+                updateDailyChallenge('catch_any'); // Sprint 2
             }
             // Feature 3 (record) + Feature 5 (streak)
             battleRecord[currentPlayer].w++;
             localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
             battleStreak[currentPlayer]++;
             localStorage.setItem(`pokedex_streak_p${currentPlayer}`, JSON.stringify(battleStreak[currentPlayer]));
+            updateDailyChallenge('win_battles'); // Sprint 2
             checkBadges(); // Sprint 1: award battle badges
             // Nickname prompt for the newly caught wild pokemon
             if (!nicknameData[currentPlayer][battleState.wild.id]) {
@@ -1284,6 +1556,7 @@
         updateCatchUI(); // also calls updateFaveUI + updateCompletionBar + updateNicknameDisplay
         updateShinyCount();
         updateStreakDisplay();
+        renderChallengeStrip(); // Sprint 2: show this player's challenge
     }
 
     // FIX: openBag() had no way to close the drawer once opened except by selecting a ball.
@@ -1333,6 +1606,8 @@
             if (!caughtData[currentPlayer].includes(curId)) {
                 caughtData[currentPlayer].push(curId);
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
+                updateDailyChallenge('catch_any'); // Sprint 2: count new catches
+                if (curId === getDailyPokemonId()) updateDailyChallenge('daily_pokemon');
             }
             updateCatchUI();
             checkBadges(); // Sprint 1: award any newly earned badges
@@ -1550,6 +1825,9 @@
     updateStreakDisplay();
     updateAutoCryUI();       // Sprint 1: set CRY button state
     checkBadges(true);       // Sprint 1: silently mark any pre-existing achievements
+    renderChallengeStrip();  // Sprint 2: show today's challenge
+    // Sprint 2: ensure egg state is seeded for today
+    resetEggIfNewDay(1); resetEggIfNewDay(2);
 </script>
 
 </body>
