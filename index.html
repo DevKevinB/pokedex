@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
-    <title>Pokédex OS v14.0</title>
+    <title>Pokédex OS v15.0</title>
     <style>
         :root { --p-primary: #d32f2f; --p-dark: #b71c1c; --bg-color: #121212; --panel-bg: #1e1e1e; --pc-cyan: #00e5ff; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -170,6 +170,38 @@
         .btn-reg { background: #eee; color: #000; }
         .btn-sparkle { background: linear-gradient(45deg, #ff00ff, #ffee00); color: #000; }
         .btn-danger { background: #ff4444; color: #fff; }
+
+        /* --- FEATURE 1: COMPLETION TRACKER --- */
+        .completion-strip { display:flex; align-items:center; padding:2px 20px 6px 20px; gap:10px; flex-shrink:0; }
+        .comp-bar-bg { flex:1; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; }
+        .comp-bar-fill { height:100%; width:0%; background:var(--pc-cyan); border-radius:2px; transition:width 0.6s ease-out; }
+        #comp-text { font-size:10px; font-weight:900; color:var(--pc-cyan); white-space:nowrap; min-width:65px; text-align:right; }
+
+        /* --- FEATURE 2: FAVORITES --- */
+        .pc-item.faved { border-color:#ff6b9d; box-shadow:0 0 8px rgba(255,107,157,0.4); }
+
+        /* --- FEATURE 3: BATTLE RECORD (in PC modal) --- */
+        #pc-record { text-align:center; color:#ffcc00; font-weight:900; font-size:12px; margin-bottom:8px; flex-shrink:0; }
+
+        /* --- FEATURE 6: GEN FILTER TABS --- */
+        .gen-filter-row { display:flex; gap:5px; overflow-x:auto; padding-bottom:8px; margin-bottom:8px; scrollbar-width:none; -ms-overflow-style:none; flex-shrink:0; touch-action:pan-x; }
+        .gen-filter-row::-webkit-scrollbar { display:none; }
+        .gen-filter-btn { background:rgba(255,255,255,0.05); border:1px solid #444; color:#aaa; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:900; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+        .gen-filter-btn.active { background:var(--pc-cyan); color:#000; border-color:var(--pc-cyan); }
+
+        /* --- FEATURE 5: TYPE MATCHUP POPUP --- */
+        #type-popup { position:fixed; top:0; left:0; width:100%; height:100%; z-index:200; display:flex; align-items:flex-end; background:rgba(0,0,0,0.55); opacity:0; pointer-events:none; transition:opacity 0.2s; }
+        #type-popup.open { opacity:1; pointer-events:all; }
+        .type-popup-card { width:100%; background:#1a1a1a; border-radius:20px 20px 0 0; border-top:3px solid #444; padding:20px 20px calc(20px + env(safe-area-inset-bottom)) 20px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.2,0.8,0.2,1); max-height:60dvh; overflow-y:auto; touch-action:pan-y; }
+        #type-popup.open .type-popup-card { transform:translateY(0); }
+        .type-popup-close { background:#333; border:none; color:#fff; width:30px; height:30px; border-radius:50%; font-size:14px; font-weight:900; cursor:pointer; float:right; }
+        #type-popup-title { font-size:18px; font-weight:900; color:#fff; margin-bottom:15px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .type-row { margin-bottom:12px; font-size:12px; color:#aaa; font-weight:700; }
+        .type-row strong { color:#fff; display:block; margin-bottom:5px; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; }
+        .type-tags-row { display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
+
+        /* --- BONUS: CONFETTI --- */
+        @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1} 100%{transform:translateY(100dvh) rotate(720deg) scale(0.3);opacity:0} }
     </style>
 </head>
 <body>
@@ -194,12 +226,20 @@
         <button class="header-btn" style="color: #ffcc00; border-color: #ffcc00;" onclick="initBattleMode()">⚔️ BTL</button>
     </div>
 
+    <!-- FEATURE 1: Completion Tracker Bar -->
+    <div class="completion-strip">
+        <div class="comp-bar-bg"><div class="comp-bar-fill" id="comp-bar-fill"></div></div>
+        <span id="comp-text">0 / 1025</span>
+    </div>
+
     <div class="visual-display">
         <div class="catch-msg" id="dex-catch-msg">CAUGHT!</div>
         <div class="identity">
             <div id="poke-id">
                 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="caught-icon" id="caught-icon">
                 <span id="id-text">#---</span>
+                <span id="fave-icon" style="display:none; font-size:14px; line-height:1;">❤️</span>
+                <span id="daily-badge" style="display:none; background:#ffcc00; color:#000; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px; letter-spacing:1px;">TODAY</span>
             </div>
             <div id="poke-name">LOADING</div>
             <div class="tags" id="types"></div>
@@ -220,7 +260,8 @@
         <button class="tool-btn" onclick="toggleShiny()"><span class="btn-icon">✨</span> SHINY</button>
         <button class="tool-btn" onclick="randomPoke()"><span class="btn-icon">🎲</span> RNDM</button>
         <button class="tool-btn btn-catch" id="catch-btn" onclick="openBag()"><span class="btn-icon">🔴</span> CATCH</button>
-        <button class="tool-btn" style="grid-column: span 2; background: #2c2c2c;" onclick="toggleSheet()"><span class="btn-icon">📊</span> DATA</button>
+        <button class="tool-btn" id="fave-btn" onclick="toggleFave()" style="opacity:0.4;"><span class="btn-icon">🤍</span> FAVE</button>
+        <button class="tool-btn" style="background: #2c2c2c;" onclick="toggleSheet()"><span class="btn-icon">📊</span> DATA</button>
     </div>
 
     <div id="ball-drawer">
@@ -244,8 +285,17 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 14.0 - UAT MASTER BUILD</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 15.0 — ALL 1025 POKÉMON</div>
         </div>
+    </div>
+</div>
+
+<!-- FEATURE 5: Type Matchup Helper Popup -->
+<div id="type-popup" onclick="closeTypePopup()">
+    <div class="type-popup-card" onclick="event.stopPropagation()">
+        <button class="type-popup-close" onclick="closeTypePopup()">✕</button>
+        <div id="type-popup-title"></div>
+        <div id="type-popup-content"></div>
     </div>
 </div>
 
@@ -289,7 +339,21 @@
 
 <div id="pc-modal">
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
-    <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:10px; font-size:12px;" id="pc-instruction"></div>
+    <div id="pc-record">W: 0 | L: 0</div>
+    <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:6px; font-size:12px;" id="pc-instruction"></div>
+    <div class="gen-filter-row" id="gen-filter-row">
+        <button class="gen-filter-btn active" onclick="filterPC(0)">ALL</button>
+        <button class="gen-filter-btn" onclick="filterPC(1)">GEN I</button>
+        <button class="gen-filter-btn" onclick="filterPC(2)">GEN II</button>
+        <button class="gen-filter-btn" onclick="filterPC(3)">GEN III</button>
+        <button class="gen-filter-btn" onclick="filterPC(4)">GEN IV</button>
+        <button class="gen-filter-btn" onclick="filterPC(5)">GEN V</button>
+        <button class="gen-filter-btn" onclick="filterPC(6)">GEN VI</button>
+        <button class="gen-filter-btn" onclick="filterPC(7)">GEN VII</button>
+        <button class="gen-filter-btn" onclick="filterPC(8)">GEN VIII</button>
+        <button class="gen-filter-btn" onclick="filterPC(9)">GEN IX</button>
+        <button class="gen-filter-btn" onclick="filterPC(-1)">❤️ FAVES</button>
+    </div>
     <div class="pc-grid" id="pc-grid"></div>
     <div class="save-controls" id="save-controls">
         <div class="save-btn" onclick="exportSave()">💾 EXPORT</div>
@@ -320,13 +384,26 @@
     let audioCtx = null; let cryAudio = null; let galleryTimer = null;
     let currentPlayer = 1; let isCatching = false; let appMode = 'dex';
 
-    let curId = 25; let isShiny = false; let curData = null; let curSpeciesData = null;
-    const maxPokemon = 151; // GEN 1 HARD LIMIT
+    let curId = 1; let isShiny = false; let curData = null; let curSpeciesData = null;
+    const maxPokemon = 1025; // ALL 1025 POKEMON
+
+    // Generation ID ranges
+    const GEN_RANGES = {
+        1:{s:1,e:151}, 2:{s:152,e:251}, 3:{s:252,e:386}, 4:{s:387,e:493},
+        5:{s:494,e:649}, 6:{s:650,e:721}, 7:{s:722,e:809}, 8:{s:810,e:905}, 9:{s:906,e:1025}
+    };
 
     let caughtData = { 1: [], 2: [] };
+    let favesData = { 1: [], 2: [] };
+    let battleRecord = { 1: { w: 0, l: 0 }, 2: { w: 0, l: 0 } };
+    let currentGenFilter = 0; // 0=ALL, -1=FAVES, 1-9=generation number
     try {
         caughtData[1] = JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [];
         caughtData[2] = JSON.parse(localStorage.getItem('pokedex_caught_p2')) || [];
+        favesData[1] = JSON.parse(localStorage.getItem('pokedex_faves_p1')) || [];
+        favesData[2] = JSON.parse(localStorage.getItem('pokedex_faves_p2')) || [];
+        battleRecord[1] = JSON.parse(localStorage.getItem('pokedex_record_p1')) || { w: 0, l: 0 };
+        battleRecord[2] = JSON.parse(localStorage.getItem('pokedex_record_p2')) || { w: 0, l: 0 };
     } catch(e) { console.warn("Save corrupted or blocked by PWA settings."); }
 
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
@@ -401,6 +478,75 @@
     function soundHit() { playBeep(200, 'sawtooth', 0.1, 0.3); }
     function soundSuperHit() { playBeep(400, 'square', 0.15, 0.3); }
 
+    // --- FEATURE 4: DAILY POKEMON ---
+    function getDailyPokemonId() {
+        return (Math.floor(Date.now() / 86400000) % maxPokemon) + 1;
+    }
+
+    // --- BONUS: CONFETTI ---
+    function launchConfetti() {
+        const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff922b','#cc5de8','#ff416c','#00e5ff'];
+        for (let i = 0; i < 45; i++) {
+            const el = document.createElement('div');
+            const size = 6 + Math.random() * 9;
+            el.style.cssText = `position:fixed;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};top:${5+Math.random()*35}%;left:${Math.random()*100}%;z-index:9001;pointer-events:none;animation:confettiFall ${0.8+Math.random()*1.4}s ease-in ${Math.random()*0.4}s forwards;`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+    }
+
+    // --- FEATURE 1: COMPLETION TRACKER ---
+    function updateCompletionBar() {
+        const count = caughtData[currentPlayer].length;
+        const pct = (count / maxPokemon) * 100;
+        document.getElementById('comp-bar-fill').style.width = pct + '%';
+        document.getElementById('comp-text').innerText = `${count} / ${maxPokemon}`;
+    }
+
+    // --- FEATURE 2: FAVORITES ---
+    function toggleFave() {
+        if (isCatching || appMode === 'battle') return;
+        if (!caughtData[currentPlayer].includes(curId)) return;
+        const idx = favesData[currentPlayer].indexOf(curId);
+        if (idx > -1) { favesData[currentPlayer].splice(idx, 1); }
+        else { favesData[currentPlayer].push(curId); }
+        localStorage.setItem(`pokedex_faves_p${currentPlayer}`, JSON.stringify(favesData[currentPlayer]));
+        updateFaveUI(); triggerVibration();
+    }
+    function updateFaveUI() {
+        const btn = document.getElementById('fave-btn');
+        const icon = document.getElementById('fave-icon');
+        if (!btn) return;
+        const isFaved = favesData[currentPlayer].includes(curId);
+        const isCaught = caughtData[currentPlayer].includes(curId);
+        btn.innerHTML = `<span class="btn-icon">${isFaved ? '❤️' : '🤍'}</span> FAVE`;
+        btn.style.background = isFaved ? 'linear-gradient(135deg, #ff6b9d, #c0392b)' : '';
+        btn.style.opacity = isCaught ? '1' : '0.4';
+        if (icon) icon.style.display = isFaved ? 'inline' : 'none';
+    }
+
+    // --- FEATURE 5: TYPE MATCHUP HELPER ---
+    function showTypeMatchup(type) {
+        if (!typeChart[type]) return;
+        const data = typeChart[type];
+        const strongVs = Object.entries(typeChart).filter(([t,d]) => d.w.includes(type)).map(([t]) => t);
+        const notVeryVs = Object.entries(typeChart).filter(([t,d]) => d.r.includes(type)).map(([t]) => t);
+        const noEffectVs = Object.entries(typeChart).filter(([t,d]) => d.i.includes(type)).map(([t]) => t);
+        const tag = t => `<span class="tag" style="background:${typeColors[t]||'#777'};font-size:10px;padding:3px 8px;">${t}</span>`;
+        document.getElementById('type-popup-title').innerHTML =
+            `<span class="tag" style="background:${typeColors[type]||'#777'};font-size:15px;padding:6px 14px;">${type.toUpperCase()}</span> TYPE`;
+        document.getElementById('type-popup-content').innerHTML = `
+            <div class="type-row"><strong>⚡ Weak to (takes 2×):</strong><div class="type-tags-row">${data.w.length ? data.w.map(tag).join('') : '<span style="color:#555">NONE</span>'}</div></div>
+            <div class="type-row"><strong>🛡️ Resists (takes ½×):</strong><div class="type-tags-row">${data.r.length ? data.r.map(tag).join('') : '<span style="color:#555">NONE</span>'}</div></div>
+            ${data.i.length ? `<div class="type-row"><strong>🚫 Immune to (takes 0×):</strong><div class="type-tags-row">${data.i.map(tag).join('')}</div></div>` : ''}
+            <div class="type-row"><strong>💪 Super Effective vs:</strong><div class="type-tags-row">${strongVs.length ? strongVs.map(tag).join('') : '<span style="color:#555">NONE</span>'}</div></div>
+            ${notVeryVs.length ? `<div class="type-row"><strong>👎 Not Very Effective vs:</strong><div class="type-tags-row">${notVeryVs.map(tag).join('')}</div></div>` : ''}
+            ${noEffectVs.length ? `<div class="type-row"><strong>❌ No Effect vs:</strong><div class="type-tags-row">${noEffectVs.map(tag).join('')}</div></div>` : ''}
+        `;
+        document.getElementById('type-popup').classList.add('open');
+    }
+    function closeTypePopup() { document.getElementById('type-popup').classList.remove('open'); }
+
     // --- BOOT & UTILS ---
     function startApp() {
         initAudio(); document.getElementById('tap-msg').innerText = "LOADING OS...";
@@ -408,7 +554,7 @@
             const boot = document.getElementById('boot-screen');
             boot.style.transform = 'translateY(-100%)'; boot.style.opacity = '0';
             setTimeout(() => boot.style.display = 'none', 500);
-            loadPoke(25);
+            loadPoke(getDailyPokemonId()); // FEATURE 4: load today's featured pokemon
         }, 500);
     }
     function triggerVibration(duration = 40) { try { if (navigator.vibrate) navigator.vibrate(duration); } catch(e){} }
@@ -437,13 +583,14 @@
         openPC('battle');
     }
 
-    // --- PC LOGIC (GEN 1 SECURED) ---
+    // --- PC LOGIC (FEATURE 3: BATTLE RECORD + FEATURE 6: GEN FILTER) ---
     let pcContext = 'dex';
     function openPC(context = 'dex') {
         if(isCatching) return;
-        pcContext = context; const grid = document.getElementById('pc-grid');
+        pcContext = context; currentGenFilter = 0;
         document.getElementById('pc-title').innerText = `P${currentPlayer}'S PC BOX`;
-
+        const rec = battleRecord[currentPlayer];
+        document.getElementById('pc-record').innerText = `W: ${rec.w} | L: ${rec.l}`;
         if (context === 'battle') {
             document.getElementById('pc-instruction').innerText = "SELECT YOUR FIGHTER";
             document.getElementById('save-controls').style.display = 'none';
@@ -451,18 +598,49 @@
             document.getElementById('pc-instruction').innerText = "";
             document.getElementById('save-controls').style.display = 'grid';
         }
+        document.querySelectorAll('.gen-filter-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
+        renderPCGrid();
+        document.getElementById('pc-modal').style.display = 'flex';
+    }
 
-        let activeCaught = caughtData[currentPlayer];
+    function filterPC(gen) {
+        currentGenFilter = gen;
+        document.querySelectorAll('.gen-filter-btn').forEach(btn => {
+            const m = btn.getAttribute('onclick').match(/-?\d+/);
+            btn.classList.toggle('active', m && parseInt(m[0]) === gen);
+        });
+        renderPCGrid();
+    }
+
+    function renderPCGrid() {
+        const grid = document.getElementById('pc-grid');
+        const activeCaught = caughtData[currentPlayer];
+        const activeFaves = favesData[currentPlayer];
         let html = '';
-
-        for (let i = 1; i <= maxPokemon; i++) {
-            if (activeCaught.includes(i)) {
-                html += `<div class="pc-item" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3, '0')}</span></div>`;
-            } else if (context === 'dex') {
-                html += `<div class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3, '0')}</span></div>`;
+        if (currentGenFilter === -1) {
+            // FAVES filter: only show favorited + caught pokemon
+            const faved = activeFaves.filter(id => activeCaught.includes(id));
+            if (faved.length === 0) {
+                html = `<div style="grid-column:1/-1;text-align:center;color:#555;padding:40px 20px;font-size:12px;font-weight:900;">NO FAVORITES YET<br><br>Catch a Pokémon, then tap ❤️ FAVE!</div>`;
+            } else {
+                faved.forEach(id => {
+                    html += `<div class="pc-item faved" onclick="handlePCSelect(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3,'0')}</span></div>`;
+                });
+            }
+        } else {
+            const start = currentGenFilter > 0 ? GEN_RANGES[currentGenFilter].s : 1;
+            const end   = currentGenFilter > 0 ? GEN_RANGES[currentGenFilter].e : maxPokemon;
+            for (let i = start; i <= end; i++) {
+                const isCaught = activeCaught.includes(i);
+                const isFaved  = activeFaves.includes(i);
+                if (isCaught) {
+                    html += `<div class="pc-item${isFaved ? ' faved' : ''}" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3,'0')}</span></div>`;
+                } else if (pcContext === 'dex') {
+                    html += `<div class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3,'0')}</span></div>`;
+                }
             }
         }
-        grid.innerHTML = html; document.getElementById('pc-modal').style.display = 'flex';
+        grid.innerHTML = html;
     }
 
     function closePC() {
@@ -595,13 +773,16 @@
             sprite.classList.add('sucked-in'); playBeep(400, 'sine', 0.3);
 
             await sleep(500);
-            soundCatch(); triggerVibration([100, 50, 100]);
+            soundCatch(); launchConfetti(); triggerVibration([100, 50, 100]);
             msg.style.opacity = 1;
 
             if(!caughtData[currentPlayer].includes(battleState.wild.id)) {
                 caughtData[currentPlayer].push(battleState.wild.id);
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
             }
+            // FEATURE 3: Track battle win
+            battleRecord[currentPlayer].w++;
+            localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
 
             await sleep(2000);
             msg.style.opacity = 0; ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)'; sprite.classList.remove('sucked-in');
@@ -610,6 +791,9 @@
 
         } else if (battleState.player.hp <= 0) {
             battleState.isBattling = false; logMsg(`YOUR POKÉMON FAINTED...`); triggerVibration([500]);
+            // FEATURE 3: Track battle loss
+            battleRecord[currentPlayer].l++;
+            localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
             await sleep(2000); alert("DEFEAT! The wild Pokémon got away..."); exitBattleMode();
         } else {
             logMsg(`What will ${battleState.player.name.toUpperCase()} do?`); enableMoves(true);
@@ -658,7 +842,7 @@
         document.getElementById('player-btn').innerText = `P${currentPlayer}`;
         document.documentElement.style.setProperty('--p-primary', currentPlayer === 1 ? '#d32f2f' : '#1976D2');
         document.documentElement.style.setProperty('--p-dark', currentPlayer === 1 ? '#b71c1c' : '#0D47A1');
-        updateCatchUI();
+        updateCatchUI(); // also calls updateFaveUI + updateCompletionBar
     }
 
     // FIX: openBag() had no way to close the drawer once opened except by selecting a ball.
@@ -704,7 +888,7 @@
     function finalizeDexCatch(isSuccess, ball, sprite, msg) {
         ball.classList.remove('ball-shake');
         if (isSuccess) {
-            soundCatch(); triggerVibration([100, 50, 100]); msg.innerText = "GOTCHA!"; msg.style.color = "#00ff00"; msg.style.opacity = 1;
+            soundCatch(); launchConfetti(); triggerVibration([100, 50, 100]); msg.innerText = "GOTCHA!"; msg.style.color = "#00ff00"; msg.style.opacity = 1;
             if (!caughtData[currentPlayer].includes(curId)) {
                 caughtData[currentPlayer].push(curId);
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
@@ -721,22 +905,24 @@
         const btn = document.getElementById('catch-btn'); const icon = document.getElementById('caught-icon');
         if (caughtData[currentPlayer].includes(curId)) { btn.innerHTML = `<span class="btn-icon">✔️</span> OWNED`; btn.classList.add('owned'); icon.style.display = 'inline-block'; }
         else { btn.innerHTML = `<span class="btn-icon">🔴</span> CATCH`; btn.classList.remove('owned'); icon.style.display = 'none'; }
+        updateFaveUI();
+        updateCompletionBar();
     }
 
     async function loadPoke(idOrName) {
         if (!idOrName || isCatching || appMode === 'battle') return;
         stopAllAudio(); clearInterval(galleryTimer);
+        closeTypePopup();
         setScanning(true);
         document.getElementById('search').blur();
         document.getElementById('poke-sprite').style.opacity = 0;
-        // Close ball drawer if open
         document.getElementById('ball-drawer').classList.remove('open');
 
         try {
             const searchTarget = idOrName.toString().toLowerCase().trim().replace(/\s+/g, '-');
             curData = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${searchTarget}`);
 
-            if(curData.id > maxPokemon) throw new Error("GEN_1_ONLY");
+            if(curData.id > maxPokemon) throw new Error("OUT_OF_RANGE");
 
             curId = curData.id;
 
@@ -751,9 +937,9 @@
             updateCatchUI();
         } catch (e) {
             console.error("loadPoke error:", e);
-            if(e.message === "GEN_1_ONLY") {
-                document.getElementById('poke-name').innerText = "GEN 1 ONLY";
-                document.getElementById('desc').innerText = "This Pokédex is locked to the original 151.";
+            if(e.message === "OUT_OF_RANGE") {
+                document.getElementById('poke-name').innerText = "OUT OF RANGE";
+                document.getElementById('desc').innerText = `This Pokédex covers #1–#${maxPokemon}.`;
             } else {
                 document.getElementById('poke-name').innerText = "ERROR / TIMEOUT";
                 document.getElementById('desc').innerText = "API issue or Pokémon not found. Try again.";
@@ -780,7 +966,7 @@
             do {
                 let sUrl = curr.species?.url; if(!sUrl) break;
                 let id = parseInt(sUrl.split('/').filter(Boolean).pop());
-                if (id <= maxPokemon) { chain.push({ name: curr.species.name, id: id }); }
+                if (id >= 1 && id <= maxPokemon) { chain.push({ name: curr.species.name, id: id }); }
                 curr = curr.evolves_to?.[0];
             } while (curr);
             // FIX: removed toggleSheet() from evo tap — it was closing the sheet when user
@@ -810,7 +996,13 @@
             const entry = curSpeciesData?.flavor_text_entries?.find(e => e.language.name === 'en');
             document.getElementById('desc').innerText = entry ? entry.flavor_text.replace(/[\n\f]/g, ' ') : "No data.";
 
-            document.getElementById('types').innerHTML = (curData.types || []).map(t => `<span class="tag" style="background:${typeColors[t.type?.name] || '#777'};">${t.type?.name}</span>`).join('');
+            // FEATURE 5: Type tags are now tappable — opens type matchup helper
+            document.getElementById('types').innerHTML = (curData.types || []).map(t =>
+                `<span class="tag" style="background:${typeColors[t.type?.name] || '#777'}; cursor:pointer;" onclick="showTypeMatchup('${t.type?.name}')">${t.type?.name} ℹ</span>`
+            ).join('');
+            // FEATURE 4: Daily badge
+            const dailyBadge = document.getElementById('daily-badge');
+            if (dailyBadge) dailyBadge.style.display = curId === getDailyPokemonId() ? 'inline-block' : 'none';
             document.getElementById('abilities').innerHTML = (curData.abilities || []).map(a => a.ability?.name?.replace(/-/g, ' ')).join('<br>');
 
             const maxStat = 255;
@@ -868,7 +1060,7 @@
     }, {passive: true});
 
     function exportSave() {
-        const saveObj = { v: 1, p1: caughtData[1], p2: caughtData[2] };
+        const saveObj = { v: 2, p1: caughtData[1], p2: caughtData[2], f1: favesData[1], f2: favesData[2], r1: battleRecord[1], r2: battleRecord[2] };
         const saveString = btoa(JSON.stringify(saveObj));
         if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(saveString).then(() => { alert("SAVE CODE COPIED!"); }); }
         else { prompt("COPY THIS SAVE CODE:", saveString); }
@@ -876,12 +1068,19 @@
     function importSave() {
         const code = prompt("PASTE YOUR SAVE CODE HERE:"); if (!code) return;
         try {
-            const saveObj = JSON.parse(atob(code));
-            if (saveObj.p1) { caughtData[1] = saveObj.p1; localStorage.setItem('pokedex_caught_p1', JSON.stringify(saveObj.p1)); }
-            if (saveObj.p2) { caughtData[2] = saveObj.p2; localStorage.setItem('pokedex_caught_p2', JSON.stringify(saveObj.p2)); }
+            const s = JSON.parse(atob(code));
+            if (s.p1) { caughtData[1] = s.p1; localStorage.setItem('pokedex_caught_p1', JSON.stringify(s.p1)); }
+            if (s.p2) { caughtData[2] = s.p2; localStorage.setItem('pokedex_caught_p2', JSON.stringify(s.p2)); }
+            if (s.f1) { favesData[1] = s.f1; localStorage.setItem('pokedex_faves_p1', JSON.stringify(s.f1)); }
+            if (s.f2) { favesData[2] = s.f2; localStorage.setItem('pokedex_faves_p2', JSON.stringify(s.f2)); }
+            if (s.r1) { battleRecord[1] = s.r1; localStorage.setItem('pokedex_record_p1', JSON.stringify(s.r1)); }
+            if (s.r2) { battleRecord[2] = s.r2; localStorage.setItem('pokedex_record_p2', JSON.stringify(s.r2)); }
             alert("SAVE IMPORTED!"); openPC('dex'); updateCatchUI();
         } catch(e) { alert("ERROR: INVALID CODE."); }
     }
+
+    // --- INIT ---
+    updateCompletionBar();
 </script>
 
 </body>
