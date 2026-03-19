@@ -278,6 +278,33 @@
         .status-sleep { background:#6a1b9a; color:#fff; }
         .status-paralysis { background:#f9a825; color:#000; }
         .status-poison { background:#7b1fa2; color:#fff; }
+
+        /* --- SPRINT 3: TEAM BUILDER (PC) --- */
+        .pc-item.team-selected { border-color:#ffcc00 !important; box-shadow:0 0 8px rgba(255,204,0,0.55); }
+        .team-select-num { position:absolute; top:-5px; right:-5px; background:#ffcc00; color:#000; font-size:8px; font-weight:900; border-radius:50%; width:15px; height:15px; display:flex; align-items:center; justify-content:center; z-index:2; }
+        #pc-fight-btn { flex-shrink:0; margin-top:8px; padding:15px; background:linear-gradient(135deg,#e53935,#c62828); color:#fff; border:none; border-radius:14px; font-size:15px; font-weight:900; cursor:pointer; letter-spacing:1px; display:none; text-transform:uppercase; box-shadow:0 4px 0 #7f0000; }
+        #pc-fight-btn:active { transform:translateY(4px); box-shadow:0 0 0 #7f0000; }
+
+        /* --- SPRINT 3: TEAM SLOTS IN BATTLE --- */
+        #team-slots { display:flex; gap:5px; margin-top:4px; }
+        .team-dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.3); }
+        .team-dot.alive { background:#4caf50; }
+        .team-dot.damaged { background:#ffeb3b; }
+        .team-dot.fainted { background:#444; }
+        .team-dot.active { background:#2196f3; box-shadow:0 0 5px rgba(33,150,243,0.9); }
+
+        /* --- SPRINT 3: VARIANT MODAL --- */
+        .variant-btn { display:block; width:100%; padding:13px 10px; margin-bottom:8px; border:2px solid rgba(255,255,255,0.15); border-radius:12px; color:#fff; font-size:13px; font-weight:900; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:transform 0.1s; }
+        .variant-btn:active { transform:scale(0.97); }
+        .variant-rare { border-color:#ffcc00 !important; animation:variantPulse 1s ease-in-out infinite alternate; }
+        .variant-ultra { border-color:#ff9800 !important; animation:variantPulse 0.55s ease-in-out infinite alternate; }
+        @keyframes variantPulse { from{box-shadow:0 0 4px rgba(255,204,0,0.2)} to{box-shadow:0 0 18px rgba(255,204,0,0.9)} }
+
+        /* --- SPRINT 3: MOVE EFFECTIVENESS HINTS --- */
+        .move-eff { font-size:8px; font-weight:900; padding:1px 5px; border-radius:4px; margin-top:3px; display:block; letter-spacing:0.5px; text-transform:uppercase; }
+        .eff-super  { background:#388e3c; color:#fff; }
+        .eff-weak   { background:#c62828; color:#fff; }
+        .eff-immune { background:#444;    color:#aaa; }
     </style>
 </head>
 <body>
@@ -419,6 +446,7 @@
                     <div class="hp-bar-container"><div class="hp-fill" id="player-hp-bar"></div></div>
                     <div style="text-align: right; font-size: 10px; color: #000; font-weight: bold; margin-top:2px;" id="player-hp-text">100/100</div>
                     <div id="player-status-badge"></div>
+                    <div id="team-slots"></div>
                 </div>
             </div>
         </div>
@@ -464,16 +492,16 @@
         <div class="save-btn" onclick="importSave()">📂 IMPORT</div>
         <div class="save-btn" id="gift-btn" onclick="toggleGiftMode()" style="grid-column:span 2;">🎁 GIFT TO P2</div>
     </div>
+    <button id="pc-fight-btn" onclick="startTeamBattle()">⚔️ FIGHT!</button>
     <button class="close-pc-btn" onclick="closePC()">CANCEL / CLOSE PC</button>
 </div>
 
-<div class="overlay-screen" id="sparkle-modal">
+<div class="overlay-screen" id="variant-modal">
     <div class="modal-box">
-        <h2 style="margin-top:0; color:#ffcc00; font-weight:900;">SELECT VARIANT</h2>
-        <p style="font-size:14px; color:#ccc;">Sparkle variants deal 200% Damage in battle!</p>
-        <button class="btn-large btn-reg" onclick="finalizeBattleSetup(false)">REGULAR</button>
-        <button class="btn-large btn-sparkle" onclick="finalizeBattleSetup(true)">✨ SPARKLE ✨</button>
-        <button class="btn-large btn-danger" onclick="document.getElementById('sparkle-modal').style.display = 'none';">CANCEL</button>
+        <h2 style="margin-top:0; color:#ffcc00; font-weight:900;">CHOOSE VARIANT</h2>
+        <p style="font-size:12px; color:#aaa; margin-bottom:10px;">🎲 Lucky variants appear randomly!</p>
+        <div id="variant-options"></div>
+        <button class="btn-large btn-danger" onclick="document.getElementById('variant-modal').style.display='none';">CANCEL</button>
     </div>
 </div>
 
@@ -606,11 +634,18 @@
         return multiplier;
     }
 
+    function createFighterObj() {
+        return { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '', status: null, sleepTurns: 0 };
+    }
+    let selectedTeam = []; // Sprint 3: IDs chosen in PC team builder
     let battleState = {
-        isSparkle: false,
-        player: { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '', status: null, sleepTurns: 0 },
-        wild:   { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '', status: null, sleepTurns: 0 },
-        isBattling: false
+        variant: 'regular',      // 'regular' | 'sparkle' | 'ex' | 'trainer'
+        damageMultiplier: 1,
+        team: [],                // array of createFighterObj() loaded for each team slot
+        activeSlot: 0,
+        player: createFighterObj(), // alias → team[activeSlot] while battling
+        wild:   createFighterObj(),
+        isBattling: false,
     };
 
     // Sprint 2 #8: status effect chance by move type
@@ -1174,6 +1209,60 @@
         await sleep(900);
     }
 
+    // =========================================================
+    // --- SPRINT 3 FEATURES ---
+    // =========================================================
+
+    // Sprint 3 #3: Variant selector — EX and Gym Trainer appear randomly
+    function rollAndShowVariants() {
+        const opts = [
+            { id:'regular', label:'REGULAR',          desc:'1× DAMAGE',                    bg:'#37474f', cls:'' },
+            { id:'sparkle', label:'✨ SPARKLE ✨',     desc:'2× DAMAGE — SHINY SPRITE',     bg:'#6a1b9a', cls:'' },
+        ];
+        if (Math.random() < 0.30) opts.push({ id:'ex',      label:'💥 EX MODE',      desc:'3× DAMAGE — LUCKY!',      bg:'#b71c1c', cls:'variant-rare'  });
+        if (Math.random() < 0.10) opts.push({ id:'trainer', label:'🏆 GYM TRAINER',  desc:'10× DAMAGE — ULTRA RARE!', bg:'#e65100', cls:'variant-ultra' });
+        document.getElementById('variant-options').innerHTML = opts.map(o =>
+            `<button class="variant-btn ${o.cls}" style="background:${o.bg}" onclick="finalizeBattleSetup('${o.id}')">${o.label}<br><small style="font-weight:500;font-size:10px;opacity:0.85">${o.desc}</small></button>`
+        ).join('');
+        document.getElementById('variant-modal').style.display = 'flex';
+    }
+
+    function startTeamBattle() {
+        if (selectedTeam.length === 0) return;
+        document.getElementById('pc-modal').style.display = 'none';
+        rollAndShowVariants();
+    }
+
+    // Sprint 3 #2: Continuous battle — loads the next wild opponent after a win
+    async function loadNextWild() {
+        enableMoves(false);
+        document.getElementById('loading-modal').style.display = 'flex';
+        try {
+            battleState.wild = createFighterObj();
+            battleState.wild.id = Math.floor(Math.random() * maxPokemon) + 1;
+            await loadFighterDataInto(battleState.wild, battleState.wild.id, false, false);
+            document.getElementById('loading-modal').style.display = 'none';
+            // Reset wild-side UI
+            document.getElementById('wild-name').innerText = `WILD ${battleState.wild.name}`;
+            document.getElementById('wild-sprite').src = battleState.wild.sprite;
+            updateHP('wild');
+            renderStatusBadge('wild');
+            renderMoveButtons(); // refresh effectiveness hints for the new opponent
+            // Reset throw-ball position
+            const ball = document.getElementById('battle-throw-ball');
+            ball.style.opacity = '0'; ball.style.transform = 'translateY(-150px) scale(2)';
+            logMsg(`A WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
+            updateStreakDisplay();
+            battleState.isBattling = true;
+            enableMoves(true);
+        } catch(e) {
+            document.getElementById('loading-modal').style.display = 'none';
+            logMsg('CONNECTION ERROR. ESCAPING...');
+            await sleep(1500);
+            exitBattleMode();
+        }
+    }
+
     // --- SPRINT 1 #4: PC BOX SORT ---
     function sortPC(mode) {
         currentPCSort = mode;
@@ -1209,8 +1298,15 @@
     // --- BATTLE FOLDER SWITCHING ---
     function exitBattleMode() {
         appMode = 'dex'; battleState.isBattling = false;
-        document.getElementById('sparkle-modal').style.display = 'none';
+        document.getElementById('variant-modal').style.display = 'none';
+        document.getElementById('loading-modal').style.display = 'none';
         document.getElementById('battle-container').classList.remove('active');
+        // Sprint 3: reset team builder state
+        selectedTeam = [];
+        battleState.team = [];
+        battleState.activeSlot = 0;
+        battleState.player = createFighterObj();
+        battleState.wild   = createFighterObj();
         if (curId) loadPoke(curId);
     }
 
@@ -1231,26 +1327,34 @@
         const streak = battleStreak[currentPlayer];
         document.getElementById('pc-record').innerText = `W: ${rec.w} | L: ${rec.l}${streak > 1 ? `  🔥 ${streak} STREAK` : ''}`;
         if (context === 'battle') {
-            document.getElementById('pc-instruction').innerText = "SELECT YOUR FIGHTER";
+            // Sprint 3: reset team selection each time we open for battle
+            selectedTeam = [];
+            document.getElementById('pc-instruction').innerText = 'TAP POKÉMON (1–3) THEN HIT FIGHT!';
             document.getElementById('save-controls').style.display = 'none';
+            document.getElementById('badge-section').style.display = 'none';
         } else {
-            document.getElementById('pc-instruction').innerText = "";
+            document.getElementById('pc-instruction').innerText = '';
             document.getElementById('save-controls').style.display = 'grid';
+            document.getElementById('badge-section').style.display = '';
+            renderBadgeRow();   // Sprint 1
+            renderEggSection(); // Sprint 2
         }
         document.querySelectorAll('.gen-filter-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
-        // Feature 3: reset gift mode and update label for correct other player
         giftModeActive = false; pendingGiftId = null;
         const otherP = currentPlayer === 1 ? 2 : 1;
         const giftBtn = document.getElementById('gift-btn');
         if (giftBtn) { giftBtn.innerText = `🎁 GIFT TO P${otherP}`; giftBtn.style.background = ''; giftBtn.style.borderColor = ''; }
-        // Hide gift button in battle context (no gifting during fighter select)
-        if (document.getElementById('save-controls')) {
-            document.getElementById('save-controls').style.display = context === 'battle' ? 'none' : 'grid';
-        }
-        renderBadgeRow();   // Sprint 1: show achievement badges
-        renderEggSection(); // Sprint 2: show daily egg
         renderPCGrid();
+        updateFightBtn();
         document.getElementById('pc-modal').style.display = 'flex';
+    }
+
+    function updateFightBtn() {
+        const btn = document.getElementById('pc-fight-btn');
+        if (!btn) return;
+        if (pcContext !== 'battle' || selectedTeam.length === 0) { btn.style.display = 'none'; return; }
+        btn.style.display = 'block';
+        btn.innerText = `⚔️ FIGHT! (${selectedTeam.length}/3 SELECTED)`;
     }
 
     function filterPC(gen) {
@@ -1299,10 +1403,12 @@
                 const isCaught = activeCaught.includes(i);
                 const isFaved  = activeFaves.includes(i);
                 if (isCaught) {
-                    const classes = ['pc-item', isFaved ? 'faved' : '', giftModeActive ? 'gift-mode-item' : ''].filter(Boolean).join(' ');
+                    const teamIdx = pcContext === 'battle' ? selectedTeam.indexOf(i) : -1;
+                    const classes = ['pc-item', isFaved ? 'faved' : '', giftModeActive ? 'gift-mode-item' : '', teamIdx >= 0 ? 'team-selected' : ''].filter(Boolean).join(' ');
                     const nick = nicknameData[currentPlayer][i];
                     const label = nick ? `<span style="color:#ffcc00;font-size:9px;">${nick}</span>` : `<span>#${i.toString().padStart(3,'0')}</span>`;
-                    html += `<div class="${classes}" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy">${label}</div>`;
+                    const teamNum = teamIdx >= 0 ? `<span class="team-select-num">${teamIdx + 1}</span>` : '';
+                    html += `<div class="${classes}" style="position:relative" onclick="handlePCSelect(${i})">${teamNum}<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy">${label}</div>`;
                 } else if (pcContext === 'dex') {
                     html += `<div class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3,'0')}</span></div>`;
                 }
@@ -1317,7 +1423,6 @@
     }
 
     function handlePCSelect(id) {
-        // Feature 3: intercept tap when gift mode is active
         if (giftModeActive) {
             pendingGiftId = id;
             const otherPlayer = currentPlayer === 1 ? 2 : 1;
@@ -1326,18 +1431,67 @@
             document.getElementById('gift-modal').style.display = 'flex';
             return;
         }
+        // Sprint 3: battle context → multi-select team builder
+        if (pcContext === 'battle') {
+            const idx = selectedTeam.indexOf(id);
+            if (idx >= 0) {
+                selectedTeam.splice(idx, 1); // deselect
+            } else if (selectedTeam.length < 3) {
+                selectedTeam.push(id);
+            }
+            renderPCGrid();
+            updateFightBtn();
+            return;
+        }
         closePC();
         if (pcContext === 'dex') { loadPoke(id); }
-        else if (pcContext === 'battle') { battleState.player.id = id; document.getElementById('sparkle-modal').style.display = 'flex'; }
     }
 
     // --- BATTLE ENGINE ---
-    async function finalizeBattleSetup(sparkle) {
-        document.getElementById('sparkle-modal').style.display = 'none'; document.getElementById('loading-modal').style.display = 'flex';
-        battleState.isSparkle = sparkle; battleState.wild.id = Math.floor(Math.random() * maxPokemon) + 1;
+    async function loadFighterDataInto(obj, id, isPlayer, isShiny) {
+        const data = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        obj.id = id; obj.name = data.name; obj.types = data.types;
+        const hpBase = data.stats.find(s => s.stat.name === 'hp')?.base_stat ?? 50;
+        obj.maxHp = Math.floor((2 * hpBase * 50) / 100 + 50 + 10);
+        obj.hp = obj.maxHp; obj.status = null; obj.sleepTurns = 0;
+        obj.speed = data.stats.find(s=>s.stat.name==='speed')?.base_stat ?? 50;
+        obj.atk   = data.stats.find(s=>s.stat.name==='attack')?.base_stat  ?? 50;
+        obj.def   = data.stats.find(s=>s.stat.name==='defense')?.base_stat ?? 50;
+        if (isPlayer) {
+            obj.sprite = isShiny ? (data.sprites?.back_shiny ?? data.sprites?.back_default ?? '') : (data.sprites?.back_default ?? '');
+        } else {
+            obj.sprite = data.sprites?.front_default ?? '';
+        }
+        let validMoves = data.moves.filter(m => !['swords-dance', 'growl', 'tail-whip', 'splash'].includes(m.move?.name));
+        validMoves.sort(() => 0.5 - Math.random()); validMoves = validMoves.slice(0, 4);
+        const movePromises = validMoves.map(async m => {
+            try {
+                const mData = await apiFetch(m.move.url);
+                return { name: mData.name.replace(/-/g, ' '), power: mData.power || 40, type: mData.type.name };
+            } catch(e) { return { name: 'Tackle', power: 40, type: 'normal' }; }
+        });
+        obj.moves = await Promise.all(movePromises);
+        if (obj.moves.length === 0) obj.moves.push({ name: 'Tackle', power: 40, type: 'normal' });
+    }
 
+    async function finalizeBattleSetup(variant) {
+        document.getElementById('variant-modal').style.display = 'none';
+        document.getElementById('loading-modal').style.display = 'flex';
+        const multipliers = { regular: 1, sparkle: 2, ex: 3, trainer: 10 };
+        battleState.variant = variant;
+        battleState.damageMultiplier = multipliers[variant] || 1;
+        battleState.activeSlot = 0;
+        // Build a fresh fighter object for each selected team member
+        battleState.team = selectedTeam.map(() => createFighterObj());
+        battleState.wild = createFighterObj();
+        battleState.wild.id = Math.floor(Math.random() * maxPokemon) + 1;
+        const isShiny = variant !== 'regular';
         try {
-            await Promise.all([ loadFighterData('player', battleState.player.id), loadFighterData('wild', battleState.wild.id) ]);
+            await Promise.all([
+                ...selectedTeam.map((id, i) => loadFighterDataInto(battleState.team[i], id, true, isShiny)),
+                loadFighterDataInto(battleState.wild, battleState.wild.id, false, false),
+            ]);
+            battleState.player = battleState.team[0]; // alias to active member
             document.getElementById('loading-modal').style.display = 'none';
             startBattleUI();
         } catch(e) {
@@ -1346,52 +1500,45 @@
         }
     }
 
-    async function loadFighterData(target, id) {
-        const data = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-        const obj = battleState[target];
-        obj.name = data.name; obj.types = data.types;
+    function renderMoveButtons() {
+        const moves = battleState.player.moves;
+        document.getElementById('battle-moves').innerHTML = moves.map((m, i) => {
+            const mult = getTypeMultiplier(m.type, battleState.wild.types);
+            let effHtml = '';
+            if (mult > 1)              effHtml = '<span class="move-eff eff-super">⚡ SUPER</span>';
+            else if (mult === 0)       effHtml = '<span class="move-eff eff-immune">✕ NO EFFECT</span>';
+            else if (mult < 1)         effHtml = '<span class="move-eff eff-weak">▽ NOT VERY EFFECTIVE</span>';
+            return `<button class="move-btn" onclick="executeTurn(${i})">${m.name}<span class="type-badge" style="background:${typeColors[m.type]||'#777'}">${m.type}</span>${effHtml}</button>`;
+        }).join('');
+    }
 
-        // FIX: Operator precedence bug. Original: (base_stat || 50 * 2 * 50) evaluated
-        // the fallback as 2500 before the division. Now using nullish coalescing + correct formula.
-        const hpBase = data.stats.find(s => s.stat.name === 'hp')?.base_stat ?? 50;
-        obj.maxHp = Math.floor((2 * hpBase * 50) / 100 + 50 + 10);
-        obj.hp = obj.maxHp;
-        obj.speed = data.stats.find(s=>s.stat.name==='speed')?.base_stat ?? 50;
-        obj.atk = data.stats.find(s=>s.stat.name==='attack')?.base_stat ?? 50;
-        obj.def = data.stats.find(s=>s.stat.name==='defense')?.base_stat ?? 50;
+    function renderTeamSlots() {
+        const el = document.getElementById('team-slots');
+        if (!el || battleState.team.length <= 1) { if (el) el.innerHTML = ''; return; }
+        el.innerHTML = battleState.team.map((f, i) => {
+            const fainted = f.hp <= 0;
+            const isActive = i === battleState.activeSlot;
+            const cls = isActive ? 'active' : fainted ? 'fainted' : f.hp < f.maxHp * 0.5 ? 'damaged' : 'alive';
+            return `<div class="team-dot ${cls}" title="${f.name}"></div>`;
+        }).join('');
+    }
 
-        if (target === 'player') obj.sprite = battleState.isSparkle ? (data.sprites?.back_shiny ?? data.sprites?.back_default ?? '') : (data.sprites?.back_default ?? '');
-        else obj.sprite = data.sprites?.front_default ?? '';
-
-        let validMoves = data.moves.filter(m => !['swords-dance', 'growl', 'tail-whip', 'splash'].includes(m.move?.name));
-        validMoves.sort(() => 0.5 - Math.random()); validMoves = validMoves.slice(0, 4);
-
-        const movePromises = validMoves.map(async m => {
-            try {
-                const mData = await apiFetch(m.move.url);
-                return { name: mData.name.replace(/-/g, ' '), power: mData.power || 40, type: mData.type.name };
-            } catch(e) { return { name: 'Tackle', power: 40, type: 'normal' }; }
-        });
-
-        obj.moves = await Promise.all(movePromises);
-        if(obj.moves.length === 0) obj.moves.push({name: 'Tackle', power: 40, type: 'normal'});
+    function updatePlayerSideUI() {
+        document.getElementById('player-name').innerText = battleState.player.name;
+        document.getElementById('player-sprite').src = battleState.player.sprite;
+        updateHP('player');
+        renderStatusBadge('player');
+        renderTeamSlots();
+        renderMoveButtons();
     }
 
     function startBattleUI() {
         document.getElementById('battle-container').classList.add('active');
         battleState.isBattling = true;
-        // Sprint 2: clear any leftover status badges
-        battleState.player.status = null; battleState.player.sleepTurns = 0;
-        battleState.wild.status   = null; battleState.wild.sleepTurns   = 0;
         renderStatusBadge('player'); renderStatusBadge('wild');
-
-        document.getElementById('player-name').innerText = battleState.player.name;
-        document.getElementById('player-sprite').src = battleState.player.sprite; updateHP('player');
-
+        updatePlayerSideUI();
         document.getElementById('wild-name').innerText = `WILD ${battleState.wild.name}`;
         document.getElementById('wild-sprite').src = battleState.wild.sprite; updateHP('wild');
-
-        document.getElementById('battle-moves').innerHTML = battleState.player.moves.map((m, i) => `<button class="move-btn" onclick="executeTurn(${i})">${m.name}<span class="type-badge" style="background:${typeColors[m.type] || '#777'}">${m.type}</span></button>`).join('');
         logMsg(`WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
         updateStreakDisplay();
         enableMoves(true);
@@ -1443,7 +1590,7 @@
         const atkStat = attacker.status === 'burn' ? Math.floor(attacker.atk / 2) : attacker.atk;
         let damage = (((2 * 50 / 5 + 2) * move.power * (atkStat / defender.def)) / 50) + 2;
         const typeMult = getTypeMultiplier(move.type, defender.types); damage *= typeMult;
-        if (attackerRole === 'player' && battleState.isSparkle) damage *= 2.0;
+        if (attackerRole === 'player') damage *= battleState.damageMultiplier;
 
         defender.hp -= damage; updateHP(defenderRole);
         const defSprite = document.getElementById(`${defenderRole}-sprite`); defSprite.classList.add('hit-anim'); setTimeout(()=>defSprite.classList.remove('hit-anim'), 300); triggerVibration([50]);
@@ -1459,53 +1606,60 @@
 
     async function checkWinCondition() {
         if (battleState.wild.hp <= 0) {
-            battleState.isBattling = false; logMsg(`${battleState.wild.name.toUpperCase()} FAINTED!`); triggerVibration([100, 100, 100]);
-
+            battleState.isBattling = false;
+            logMsg(`${battleState.wild.name.toUpperCase()} FAINTED!`); triggerVibration([100, 100, 100]);
             await sleep(1500);
             logMsg(`AUTO-CATCHING ${battleState.wild.name.toUpperCase()}...`);
-
             const sprite = document.getElementById('wild-sprite');
-            const ball = document.getElementById('battle-throw-ball');
-            const msg = document.getElementById('battle-catch-msg');
-
+            const ball   = document.getElementById('battle-throw-ball');
+            const msg    = document.getElementById('battle-catch-msg');
             ball.style.opacity = 1; ball.style.transform = 'translateY(0px) scale(1)';
             await sleep(500);
             sprite.classList.add('sucked-in'); playBeep(400, 'sine', 0.3);
-
             await sleep(500);
             soundCatch(); launchConfetti(); triggerVibration([100, 50, 100]);
             msg.style.opacity = 1;
-
-            if(!caughtData[currentPlayer].includes(battleState.wild.id)) {
+            if (!caughtData[currentPlayer].includes(battleState.wild.id)) {
                 caughtData[currentPlayer].push(battleState.wild.id);
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
-                updateDailyChallenge('catch_any'); // Sprint 2
+                updateDailyChallenge('catch_any');
             }
-            // Feature 3 (record) + Feature 5 (streak)
             battleRecord[currentPlayer].w++;
             localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
             battleStreak[currentPlayer]++;
             localStorage.setItem(`pokedex_streak_p${currentPlayer}`, JSON.stringify(battleStreak[currentPlayer]));
-            updateDailyChallenge('win_battles'); // Sprint 2
-            checkBadges(); // Sprint 1: award battle badges
-            // Nickname prompt for the newly caught wild pokemon
-            if (!nicknameData[currentPlayer][battleState.wild.id]) {
-                setTimeout(() => promptNickname(battleState.wild.name, battleState.wild.id), 600);
-            }
-
-            await sleep(2000);
+            updateDailyChallenge('win_battles');
+            checkBadges();
+            await sleep(1500);
             msg.style.opacity = 0; ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)'; sprite.classList.remove('sucked-in');
-
-            alert("VICTORY! Pokémon was added to your PC Box."); exitBattleMode();
+            // Sprint 3: continuous grind — load the next wild instead of exiting
+            await loadNextWild();
 
         } else if (battleState.player.hp <= 0) {
-            battleState.isBattling = false; logMsg(`YOUR POKÉMON FAINTED...`); triggerVibration([500]);
-            // Feature 3 (record) + Feature 5 (streak reset on loss)
-            battleRecord[currentPlayer].l++;
-            localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
-            battleStreak[currentPlayer] = 0;
-            localStorage.setItem(`pokedex_streak_p${currentPlayer}`, '0');
-            await sleep(2000); alert("DEFEAT! The wild Pokémon got away..."); exitBattleMode();
+            battleState.isBattling = false;
+            logMsg(`${battleState.player.name.toUpperCase()} FAINTED! 😵`); triggerVibration([500]);
+            await sleep(1200);
+            // Sprint 3: try next team member
+            const nextSlot = battleState.team.findIndex((f, i) => i > battleState.activeSlot && f.hp > 0);
+            if (nextSlot >= 0) {
+                battleState.activeSlot = nextSlot;
+                battleState.player = battleState.team[nextSlot];
+                logMsg(`GO ${battleState.player.name.toUpperCase()}! 💪`);
+                await sleep(800);
+                updatePlayerSideUI();
+                battleState.isBattling = true;
+                enableMoves(true);
+            } else {
+                logMsg('ALL POKÉMON FAINTED! BLACKED OUT! 💀');
+                battleRecord[currentPlayer].l++;
+                localStorage.setItem(`pokedex_record_p${currentPlayer}`, JSON.stringify(battleRecord[currentPlayer]));
+                battleStreak[currentPlayer] = 0;
+                localStorage.setItem(`pokedex_streak_p${currentPlayer}`, '0');
+                checkBadges();
+                await sleep(2500);
+                alert(`BLACKED OUT! Final record: W ${battleRecord[currentPlayer].w} / L ${battleRecord[currentPlayer].l}`);
+                exitBattleMode();
+            }
         } else {
             logMsg(`What will ${battleState.player.name.toUpperCase()} do?`); enableMoves(true);
         }
