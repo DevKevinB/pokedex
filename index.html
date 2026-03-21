@@ -305,6 +305,41 @@
         .eff-super  { background:#388e3c; color:#fff; }
         .eff-weak   { background:#c62828; color:#fff; }
         .eff-immune { background:#444;    color:#aaa; }
+
+        /* --- SPRINT 4: BATTLE MODE MODAL --- */
+        .battle-mode-btn { display:block; width:100%; padding:16px 12px; margin-bottom:10px; border:2px solid rgba(255,255,255,0.15); border-radius:14px; color:#fff; font-size:14px; font-weight:900; cursor:pointer; text-align:center; text-transform:uppercase; letter-spacing:1px; transition:transform 0.1s; }
+        .battle-mode-btn:active { transform:scale(0.97); }
+        .battle-mode-wild    { background:linear-gradient(135deg,#2e7d32,#388e3c); }
+        .battle-mode-pvp     { background:linear-gradient(135deg,#1565c0,#1976d2); }
+
+        /* --- SPRINT 4: PVP PASS OVERLAY --- */
+        #pvp-pass-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.88); z-index:50; display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; }
+        #pvp-pass-overlay.show { display:flex; }
+        .pvp-pass-title { font-size:22px; font-weight:900; color:#ffcc00; text-align:center; letter-spacing:2px; text-shadow:0 2px 10px rgba(255,204,0,0.5); }
+        .pvp-pass-sub { font-size:13px; color:#aaa; font-weight:700; text-align:center; }
+        .pvp-ready-btn { background:linear-gradient(135deg,#1976d2,#42a5f5); color:#fff; border:none; padding:15px 40px; border-radius:14px; font-size:16px; font-weight:900; cursor:pointer; letter-spacing:1px; box-shadow:0 4px 15px rgba(0,0,0,0.4); }
+
+        /* --- SPRINT 4: HEAL BUTTON IN BATTLE HEADER --- */
+        #heal-btn { background:rgba(76,175,80,0.25); border:1px solid #4caf50; color:#4caf50; padding:6px 10px; border-radius:8px; font-size:12px; font-weight:900; cursor:pointer; margin-left:auto; display:none; }
+        #heal-btn:disabled { opacity:0.35; cursor:default; }
+        #battle-header-title { flex:1; text-align:center; }
+
+        /* --- SPRINT 4: BATTLE BAG --- */
+        #battle-bag-row { display:flex; gap:6px; padding:4px 0 0 0; flex-shrink:0; }
+        .bag-btn { flex:1; padding:7px 4px; border:1px solid #555; border-radius:8px; color:#fff; font-size:10px; font-weight:900; cursor:pointer; text-align:center; background:rgba(255,255,255,0.08); transition:opacity 0.2s; }
+        .bag-btn:disabled { opacity:0.3; cursor:default; }
+        .bag-btn-potion  { border-color:#4caf50; }
+        .bag-btn-revive  { border-color:#ce93d8; }
+
+        /* --- SPRINT 4: SHINY WILD --- */
+        @keyframes shinyFlash { 0%{filter:brightness(1)} 25%{filter:brightness(2.5) saturate(0)} 50%{filter:brightness(1)} 75%{filter:brightness(2) hue-rotate(60deg)} 100%{filter:brightness(1)} }
+        @keyframes shinyPulse { 0%,100%{filter:drop-shadow(0 0 4px gold) brightness(1)} 50%{filter:drop-shadow(0 0 12px gold) brightness(1.25)} }
+        .shiny-encounter { animation:shinyFlash 0.8s ease-out; }
+        .shiny-wild { animation:shinyPulse 2s ease-in-out infinite; }
+        #wild-name.shiny-label { color:#ffd700; text-shadow:0 0 8px rgba(255,215,0,0.7); }
+
+        /* --- SPRINT 4: PVP WILD TEAM DOTS --- */
+        #pvp-wild-team-slots { display:flex; gap:5px; margin-top:3px; }
     </style>
 </head>
 <body>
@@ -419,19 +454,27 @@
 <div id="battle-container">
     <div class="battle-header">
         <button class="btn-escape" onclick="exitBattleMode()">🔙 ESCAPE</button>
-        <span>BATTLE ARENA</span>
+        <span id="battle-header-title">BATTLE ARENA</span>
+        <button id="heal-btn" onclick="healTeam()" title="Heal team between battles">⚕️ HEAL</button>
         <span id="battle-streak">🔥 0</span>
     </div>
 
     <div class="battle-view">
         <div class="battle-bg-overlay"></div>
         <div class="catch-msg" id="battle-catch-msg" style="z-index: 20;">CAUGHT!</div>
+        <!-- SPRINT 4: PvP pass overlay -->
+        <div id="pvp-pass-overlay">
+            <div class="pvp-pass-title">🤜 PASS TO P2!</div>
+            <div class="pvp-pass-sub">P1 has locked in their move.<br>Hand the phone to P2.</div>
+            <button class="pvp-ready-btn" onclick="pvpP2Ready()">✅ P2 IS READY</button>
+        </div>
         <div class="battle-arena">
             <div class="opponent-side">
                 <div class="hp-box-wild">
                     <h3 class="pkmn-name" id="wild-name">WILD PKMN <span class="lvl">Lv50</span></h3>
                     <div class="hp-bar-container"><div class="hp-fill" id="wild-hp-bar"></div></div>
                     <div id="wild-status-badge"></div>
+                    <div id="pvp-wild-team-slots"></div>
                 </div>
                 <div style="position:relative;">
                     <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;">
@@ -454,6 +497,11 @@
         <div class="battle-controls">
             <div class="battle-log" id="battle-log">WILD POKEMON APPEARED!</div>
             <div class="moves-grid" id="battle-moves"></div>
+            <!-- SPRINT 4: Battle Bag -->
+            <div id="battle-bag-row">
+                <button class="bag-btn bag-btn-potion" id="bag-potion" onclick="useItem('potion')">💊 POTION +20</button>
+                <button class="bag-btn bag-btn-revive" id="bag-revive" onclick="useItem('revive')">💫 REVIVE 50%</button>
+            </div>
         </div>
     </div>
 </div>
@@ -494,6 +542,16 @@
     </div>
     <button id="pc-fight-btn" onclick="startTeamBattle()">⚔️ FIGHT!</button>
     <button class="close-pc-btn" onclick="closePC()">CANCEL / CLOSE PC</button>
+</div>
+
+<!-- SPRINT 4: Battle mode selector -->
+<div class="overlay-screen" id="battle-mode-modal">
+    <div class="modal-box">
+        <h2 style="margin-top:0; color:#ffcc00; font-weight:900;">⚔️ BATTLE</h2>
+        <button class="battle-mode-btn battle-mode-wild" onclick="initWildBattle()">🌿 VS WILD<br><small style="font-size:11px;font-weight:500;opacity:0.85">Grind • Catch • Repeat</small></button>
+        <button class="battle-mode-btn battle-mode-pvp" onclick="initPvPBattle()">🆚 P1 vs P2<br><small style="font-size:11px;font-weight:500;opacity:0.85">Turn-based trainer duel</small></button>
+        <button class="btn-large btn-danger" onclick="document.getElementById('battle-mode-modal').style.display='none'">CANCEL</button>
+    </div>
 </div>
 
 <div class="overlay-screen" id="variant-modal">
@@ -637,15 +695,26 @@
     function createFighterObj() {
         return { id: null, name: '', hp: 100, maxHp: 100, speed: 50, atk: 50, def: 50, types: [], moves: [], sprite: '', status: null, sleepTurns: 0 };
     }
-    let selectedTeam = []; // Sprint 3: IDs chosen in PC team builder
+    let selectedTeam    = []; // Sprint 3: P1's team IDs in team builder
+    let pvpSelectedTeam = []; // Sprint 4: P2's team IDs in PvP team builder
+    let pvpBuildPhase   = 0;  // Sprint 4: 0=off, 1=P1 picking, 2=P2 picking
+    let pcTargetPlayer  = 1;  // Sprint 4: which player's PC data to display
     let battleState = {
         variant: 'regular',      // 'regular' | 'sparkle' | 'ex' | 'trainer'
         damageMultiplier: 1,
-        team: [],                // array of createFighterObj() loaded for each team slot
+        mode: 'wild',            // Sprint 4: 'wild' | 'pvp'
+        team: [],
         activeSlot: 0,
-        player: createFighterObj(), // alias → team[activeSlot] while battling
+        player: createFighterObj(),
         wild:   createFighterObj(),
         isBattling: false,
+        // Sprint 4 PvP
+        pvpTeam: [],
+        pvpSlot: 0,
+        pvpPendingMoveIdx: null,
+        pvpTurnPhase: 'p1',      // 'p1' | 'p2' | 'resolving'
+        // Sprint 4 Bag
+        items: { potion: 1, revive: 1 },
     };
 
     // Sprint 2 #8: status effect chance by move type
@@ -1213,6 +1282,93 @@
     // --- SPRINT 3 FEATURES ---
     // =========================================================
 
+    // =========================================================
+    // --- SPRINT 4 FEATURES ---
+    // =========================================================
+
+    // --- SPRINT 4: PVP PASS OVERLAY ---
+    function pvpP2Ready() {
+        document.getElementById('pvp-pass-overlay').classList.remove('show');
+        renderMoveButtons(); // show P2's moves
+        logMsg("➡️ P2's TURN! Choose your move.");
+        enableMoves(true);
+    }
+
+    // --- SPRINT 4: P2 TEAM DOTS IN WILD HP BOX ---
+    function renderPvpWildTeamSlots() {
+        const el = document.getElementById('pvp-wild-team-slots');
+        if (!el) return;
+        if (battleState.mode !== 'pvp' || battleState.pvpTeam.length <= 1) { el.innerHTML = ''; return; }
+        el.innerHTML = battleState.pvpTeam.map((f, i) => {
+            const isActive = i === battleState.pvpSlot;
+            const fainted  = f.hp <= 0;
+            const cls = isActive ? 'active' : fainted ? 'fainted' : f.hp < f.maxHp * 0.5 ? 'damaged' : 'alive';
+            return `<div class="team-dot ${cls}" title="P2: ${f.name}"></div>`;
+        }).join('');
+    }
+
+    // --- SPRINT 4: POKÉMON CENTER (HEAL BETWEEN BATTLES) ---
+    function healTeam() {
+        if (battleState.isBattling) return; // only between turns / after a win
+        let anyHealed = false;
+        battleState.team.forEach(f => {
+            if (f.hp < f.maxHp || f.status) anyHealed = true;
+            f.hp = f.maxHp; f.status = null; f.sleepTurns = 0;
+        });
+        if (!anyHealed) { logMsg('⚕️ Your team is already at full health!'); return; }
+        updatePlayerSideUI();
+        triggerVibration([30, 20, 30]);
+        logMsg('⚕️ POKÉMON CENTER: Team fully healed!');
+        showBadgeToast({ icon: '⚕️', name: 'TEAM HEALED!' });
+    }
+
+    // --- SPRINT 4: BATTLE BAG ---
+    function renderBagRow() {
+        const pr = document.getElementById('bag-potion');
+        const rr = document.getElementById('bag-revive');
+        if (!pr || !rr) return;
+        // Hide bag in PvP — items aren't part of trainer battles
+        const hide = battleState.mode === 'pvp';
+        document.getElementById('battle-bag-row').style.display = hide ? 'none' : 'flex';
+        if (hide) return;
+        pr.disabled = battleState.items.potion <= 0;
+        pr.innerText = battleState.items.potion > 0 ? '💊 POTION +20' : '💊 USED';
+        rr.disabled = battleState.items.revive <= 0;
+        rr.innerText = battleState.items.revive > 0 ? '💫 REVIVE 50%' : '💫 USED';
+    }
+
+    async function useItem(type) {
+        if (!battleState.isBattling || battleState.mode === 'pvp') return;
+        if (battleState.items[type] <= 0) return;
+        enableMoves(false);
+        battleState.items[type] = 0;
+        if (type === 'potion') {
+            const heal = 20;
+            battleState.player.hp = Math.min(battleState.player.maxHp, battleState.player.hp + heal);
+            updateHP('player');
+            logMsg(`💊 Used a Potion! +${heal} HP!`);
+        } else if (type === 'revive') {
+            const fainted = battleState.team.find(f => f.hp <= 0);
+            if (fainted) {
+                fainted.hp = Math.floor(fainted.maxHp * 0.5);
+                logMsg(`💫 Revived ${fainted.name.toUpperCase()} to 50% HP!`);
+            } else {
+                logMsg('💫 No fainted Pokémon to revive!');
+                battleState.items[type] = 1; // refund
+                enableMoves(true);
+                return;
+            }
+        }
+        renderBagRow();
+        renderTeamSlots();
+        await sleep(800);
+        // Using an item costs a turn — wild attacks back
+        const wildMove = battleState.wild.moves[Math.floor(Math.random() * battleState.wild.moves.length)];
+        const skip = await applyStatusEffects('wild');
+        if (battleState.wild.hp > 0 && !skip) await performAttack('wild', 'player', wildMove);
+        checkWinCondition();
+    }
+
     // Sprint 3 #3: Variant selector — EX and Gym Trainer appear randomly
     function rollAndShowVariants() {
         const opts = [
@@ -1228,6 +1384,25 @@
     }
 
     function startTeamBattle() {
+        if (pvpBuildPhase === 1) {
+            if (selectedTeam.length === 0) return;
+            // Move to P2's team selection
+            pvpBuildPhase = 2;
+            pvpSelectedTeam = [];
+            pcTargetPlayer = 2;
+            document.getElementById('pc-modal').style.display = 'none';
+            setTimeout(() => openPC('battle'), 200);
+            return;
+        }
+        if (pvpBuildPhase === 2) {
+            if (pvpSelectedTeam.length === 0) return;
+            pvpBuildPhase = 0;
+            document.getElementById('pc-modal').style.display = 'none';
+            // PvP always uses regular (no variant lottery — keep it fair)
+            finalizeBattleSetup('regular');
+            return;
+        }
+        // Wild mode
         if (selectedTeam.length === 0) return;
         document.getElementById('pc-modal').style.display = 'none';
         rollAndShowVariants();
@@ -1240,18 +1415,38 @@
         try {
             battleState.wild = createFighterObj();
             battleState.wild.id = Math.floor(Math.random() * maxPokemon) + 1;
-            await loadFighterDataInto(battleState.wild, battleState.wild.id, false, false);
+            const isShinyEncounter = Math.random() < 0.05; // 1/20 chance
+            await loadFighterDataInto(battleState.wild, battleState.wild.id, false, false, isShinyEncounter);
             document.getElementById('loading-modal').style.display = 'none';
             // Reset wild-side UI
-            document.getElementById('wild-name').innerText = `WILD ${battleState.wild.name}`;
-            document.getElementById('wild-sprite').src = battleState.wild.sprite;
+            const wildNameEl = document.getElementById('wild-name');
+            const wildSpriteEl = document.getElementById('wild-sprite');
+            if (isShinyEncounter) {
+                wildNameEl.innerText = `✨ SHINY ${battleState.wild.name} ✨`;
+                wildNameEl.style.color = '#ffd700';
+                wildSpriteEl.classList.add('shiny-wild');
+                // Trigger flash animation
+                wildSpriteEl.classList.remove('shiny-encounter');
+                void wildSpriteEl.offsetWidth; // reflow to restart animation
+                wildSpriteEl.classList.add('shiny-encounter');
+            } else {
+                wildNameEl.innerText = `WILD ${battleState.wild.name}`;
+                wildNameEl.style.color = '';
+                wildSpriteEl.classList.remove('shiny-wild');
+                wildSpriteEl.classList.remove('shiny-encounter');
+            }
+            wildSpriteEl.src = battleState.wild.sprite;
             updateHP('wild');
             renderStatusBadge('wild');
             renderMoveButtons(); // refresh effectiveness hints for the new opponent
             // Reset throw-ball position
             const ball = document.getElementById('battle-throw-ball');
             ball.style.opacity = '0'; ball.style.transform = 'translateY(-150px) scale(2)';
-            logMsg(`A WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
+            if (isShinyEncounter) {
+                logMsg(`✨ A SHINY ${battleState.wild.name.toUpperCase()} APPEARED! ✨`);
+            } else {
+                logMsg(`A WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
+            }
             updateStreakDisplay();
             battleState.isBattling = true;
             enableMoves(true);
@@ -1298,21 +1493,38 @@
     // --- BATTLE FOLDER SWITCHING ---
     function exitBattleMode() {
         appMode = 'dex'; battleState.isBattling = false;
-        document.getElementById('variant-modal').style.display = 'none';
-        document.getElementById('loading-modal').style.display = 'none';
+        ['battle-mode-modal','variant-modal','loading-modal'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+        document.getElementById('pvp-pass-overlay').classList.remove('show');
         document.getElementById('battle-container').classList.remove('active');
-        // Sprint 3: reset team builder state
-        selectedTeam = [];
-        battleState.team = [];
-        battleState.activeSlot = 0;
-        battleState.player = createFighterObj();
-        battleState.wild   = createFighterObj();
+        // Reset all battle + team builder state
+        selectedTeam = []; pvpSelectedTeam = []; pvpBuildPhase = 0; pcTargetPlayer = currentPlayer;
+        battleState.team = []; battleState.pvpTeam = [];
+        battleState.activeSlot = 0; battleState.pvpSlot = 0;
+        battleState.player = createFighterObj(); battleState.wild = createFighterObj();
+        battleState.pvpTurnPhase = 'p1'; battleState.mode = 'wild';
         if (curId) loadPoke(curId);
     }
 
     function initBattleMode() {
         if (caughtData[currentPlayer].length === 0) { alert("You need to CATCH a Pokémon before you can battle!"); return; }
         appMode = 'battle';
+        document.getElementById('battle-mode-modal').style.display = 'flex';
+    }
+
+    function initWildBattle() {
+        document.getElementById('battle-mode-modal').style.display = 'none';
+        battleState.mode = 'wild'; pvpBuildPhase = 0;
+        selectedTeam = []; pcTargetPlayer = currentPlayer;
+        openPC('battle');
+    }
+
+    function initPvPBattle() {
+        document.getElementById('battle-mode-modal').style.display = 'none';
+        if (caughtData[1].length === 0 || caughtData[2].length === 0) {
+            alert('Both P1 and P2 need caught Pokémon to battle each other!'); return;
+        }
+        battleState.mode = 'pvp'; pvpBuildPhase = 1;
+        selectedTeam = []; pvpSelectedTeam = []; pcTargetPlayer = 1;
         openPC('battle');
     }
 
@@ -1322,22 +1534,23 @@
         if(isCatching) return;
         pcContext = context; currentGenFilter = 0; currentPCSort = 'dex';
         document.querySelectorAll('.pc-sort-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
-        document.getElementById('pc-title').innerText = `P${currentPlayer}'S PC BOX`;
-        const rec = battleRecord[currentPlayer];
-        const streak = battleStreak[currentPlayer];
+        // Sprint 4: PvP phase 2 shows P2's PC
+        const displayPlayer = (context === 'battle' && pvpBuildPhase === 2) ? 2 : currentPlayer;
+        pcTargetPlayer = displayPlayer;
+        document.getElementById('pc-title').innerText = `P${displayPlayer}'S PC BOX`;
+        const rec = battleRecord[displayPlayer];
+        const streak = battleStreak[displayPlayer];
         document.getElementById('pc-record').innerText = `W: ${rec.w} | L: ${rec.l}${streak > 1 ? `  🔥 ${streak} STREAK` : ''}`;
         if (context === 'battle') {
-            // Sprint 3: reset team selection each time we open for battle
-            selectedTeam = [];
-            document.getElementById('pc-instruction').innerText = 'TAP POKÉMON (1–3) THEN HIT FIGHT!';
+            const instr = pvpBuildPhase === 2 ? 'P2: PICK YOUR TEAM (1–3)!' : pvpBuildPhase === 1 ? 'P1: PICK YOUR TEAM (1–3)!' : 'TAP POKÉMON (1–3) THEN HIT FIGHT!';
+            document.getElementById('pc-instruction').innerText = instr;
             document.getElementById('save-controls').style.display = 'none';
             document.getElementById('badge-section').style.display = 'none';
         } else {
             document.getElementById('pc-instruction').innerText = '';
             document.getElementById('save-controls').style.display = 'grid';
             document.getElementById('badge-section').style.display = '';
-            renderBadgeRow();   // Sprint 1
-            renderEggSection(); // Sprint 2
+            renderBadgeRow(); renderEggSection();
         }
         document.querySelectorAll('.gen-filter-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
         giftModeActive = false; pendingGiftId = null;
@@ -1352,9 +1565,15 @@
     function updateFightBtn() {
         const btn = document.getElementById('pc-fight-btn');
         if (!btn) return;
-        if (pcContext !== 'battle' || selectedTeam.length === 0) { btn.style.display = 'none'; return; }
-        btn.style.display = 'block';
-        btn.innerText = `⚔️ FIGHT! (${selectedTeam.length}/3 SELECTED)`;
+        if (pcContext !== 'battle') { btn.style.display = 'none'; return; }
+        // PvP phase 2: show P2's selection count
+        if (pvpBuildPhase === 2) {
+            btn.style.display = pvpSelectedTeam.length > 0 ? 'block' : 'none';
+            btn.innerText = `⚔️ P2 READY! (${pvpSelectedTeam.length}/3)`;
+        } else {
+            btn.style.display = selectedTeam.length > 0 ? 'block' : 'none';
+            btn.innerText = pvpBuildPhase === 1 ? `➡️ NEXT: P2 PICKS (${selectedTeam.length}/3)` : `⚔️ FIGHT! (${selectedTeam.length}/3)`;
+        }
     }
 
     function filterPC(gen) {
@@ -1368,8 +1587,10 @@
 
     function renderPCGrid() {
         const grid = document.getElementById('pc-grid');
-        const activeCaught = caughtData[currentPlayer];
-        const activeFaves = favesData[currentPlayer];
+        // Sprint 4: PvP phase 2 shows P2's PC data
+        const activeCaught = caughtData[pcTargetPlayer];
+        const activeFaves  = favesData[pcTargetPlayer];
+        const activeTeamArr = pvpBuildPhase === 2 ? pvpSelectedTeam : selectedTeam;
         let html = '';
         if (currentGenFilter === -1) {
             // FAVES filter: only show favorited + caught pokemon
@@ -1403,7 +1624,7 @@
                 const isCaught = activeCaught.includes(i);
                 const isFaved  = activeFaves.includes(i);
                 if (isCaught) {
-                    const teamIdx = pcContext === 'battle' ? selectedTeam.indexOf(i) : -1;
+                    const teamIdx = pcContext === 'battle' ? activeTeamArr.indexOf(i) : -1;
                     const classes = ['pc-item', isFaved ? 'faved' : '', giftModeActive ? 'gift-mode-item' : '', teamIdx >= 0 ? 'team-selected' : ''].filter(Boolean).join(' ');
                     const nick = nicknameData[currentPlayer][i];
                     const label = nick ? `<span style="color:#ffcc00;font-size:9px;">${nick}</span>` : `<span>#${i.toString().padStart(3,'0')}</span>`;
@@ -1431,14 +1652,13 @@
             document.getElementById('gift-modal').style.display = 'flex';
             return;
         }
-        // Sprint 3: battle context → multi-select team builder
+        // Sprint 3/4: battle context → multi-select team builder
         if (pcContext === 'battle') {
-            const idx = selectedTeam.indexOf(id);
-            if (idx >= 0) {
-                selectedTeam.splice(idx, 1); // deselect
-            } else if (selectedTeam.length < 3) {
-                selectedTeam.push(id);
-            }
+            // Sprint 4: PvP phase 2 populates P2's team
+            const arr = pvpBuildPhase === 2 ? pvpSelectedTeam : selectedTeam;
+            const idx = arr.indexOf(id);
+            if (idx >= 0) arr.splice(idx, 1);
+            else if (arr.length < 3) arr.push(id);
             renderPCGrid();
             updateFightBtn();
             return;
@@ -1448,9 +1668,10 @@
     }
 
     // --- BATTLE ENGINE ---
-    async function loadFighterDataInto(obj, id, isPlayer, isShiny) {
+    async function loadFighterDataInto(obj, id, isPlayer, isShiny, isShinyWild = false) {
         const data = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
         obj.id = id; obj.name = data.name; obj.types = data.types;
+        obj.isShinyWild = isShinyWild;
         const hpBase = data.stats.find(s => s.stat.name === 'hp')?.base_stat ?? 50;
         obj.maxHp = Math.floor((2 * hpBase * 50) / 100 + 50 + 10);
         obj.hp = obj.maxHp; obj.status = null; obj.sleepTurns = 0;
@@ -1460,7 +1681,9 @@
         if (isPlayer) {
             obj.sprite = isShiny ? (data.sprites?.back_shiny ?? data.sprites?.back_default ?? '') : (data.sprites?.back_default ?? '');
         } else {
-            obj.sprite = data.sprites?.front_default ?? '';
+            obj.sprite = isShinyWild
+                ? (data.sprites?.front_shiny ?? data.sprites?.front_default ?? '')
+                : (data.sprites?.front_default ?? '');
         }
         let validMoves = data.moves.filter(m => !['swords-dance', 'growl', 'tail-whip', 'splash'].includes(m.move?.name));
         validMoves.sort(() => 0.5 - Math.random()); validMoves = validMoves.slice(0, 4);
@@ -1481,17 +1704,31 @@
         battleState.variant = variant;
         battleState.damageMultiplier = multipliers[variant] || 1;
         battleState.activeSlot = 0;
-        // Build a fresh fighter object for each selected team member
+        battleState.pvpTurnPhase = 'p1';
+        battleState.pvpPendingMoveIdx = null;
+        battleState.items = { potion: 1, revive: 1 };
         battleState.team = selectedTeam.map(() => createFighterObj());
-        battleState.wild = createFighterObj();
-        battleState.wild.id = Math.floor(Math.random() * maxPokemon) + 1;
         const isShiny = variant !== 'regular';
         try {
-            await Promise.all([
-                ...selectedTeam.map((id, i) => loadFighterDataInto(battleState.team[i], id, true, isShiny)),
-                loadFighterDataInto(battleState.wild, battleState.wild.id, false, false),
-            ]);
-            battleState.player = battleState.team[0]; // alias to active member
+            if (battleState.mode === 'pvp') {
+                // Sprint 4: load both P1 and P2 teams; "wild" side = P2's active member
+                battleState.pvpTeam = pvpSelectedTeam.map(() => createFighterObj());
+                battleState.pvpSlot = 0;
+                await Promise.all([
+                    ...selectedTeam.map((id, i) => loadFighterDataInto(battleState.team[i], id, true, false)),
+                    ...pvpSelectedTeam.map((id, i) => loadFighterDataInto(battleState.pvpTeam[i], id, false, false)),
+                ]);
+                battleState.player = battleState.team[0];
+                battleState.wild   = battleState.pvpTeam[0]; // P2's active uses "wild" slot
+            } else {
+                battleState.wild = createFighterObj();
+                battleState.wild.id = Math.floor(Math.random() * maxPokemon) + 1;
+                await Promise.all([
+                    ...selectedTeam.map((id, i) => loadFighterDataInto(battleState.team[i], id, true, isShiny)),
+                    loadFighterDataInto(battleState.wild, battleState.wild.id, false, false),
+                ]);
+                battleState.player = battleState.team[0];
+            }
             document.getElementById('loading-modal').style.display = 'none';
             startBattleUI();
         } catch(e) {
@@ -1501,13 +1738,16 @@
     }
 
     function renderMoveButtons() {
-        const moves = battleState.player.moves;
-        document.getElementById('battle-moves').innerHTML = moves.map((m, i) => {
-            const mult = getTypeMultiplier(m.type, battleState.wild.types);
+        // Sprint 4: PvP phase p2 shows P2's moves vs P1; all other cases show P1's moves vs wild/P2
+        const isPvpP2Turn = battleState.mode === 'pvp' && battleState.pvpTurnPhase === 'p2';
+        const attacker = isPvpP2Turn ? battleState.wild   : battleState.player;
+        const defender = isPvpP2Turn ? battleState.player : battleState.wild;
+        document.getElementById('battle-moves').innerHTML = attacker.moves.map((m, i) => {
+            const mult = getTypeMultiplier(m.type, defender.types);
             let effHtml = '';
-            if (mult > 1)              effHtml = '<span class="move-eff eff-super">⚡ SUPER</span>';
-            else if (mult === 0)       effHtml = '<span class="move-eff eff-immune">✕ NO EFFECT</span>';
-            else if (mult < 1)         effHtml = '<span class="move-eff eff-weak">▽ NOT VERY EFFECTIVE</span>';
+            if (mult > 1)    effHtml = '<span class="move-eff eff-super">⚡ SUPER</span>';
+            else if (mult === 0) effHtml = '<span class="move-eff eff-immune">✕ NO EFFECT</span>';
+            else if (mult < 1)   effHtml = '<span class="move-eff eff-weak">▽ NOT VERY EFFECTIVE</span>';
             return `<button class="move-btn" onclick="executeTurn(${i})">${m.name}<span class="type-badge" style="background:${typeColors[m.type]||'#777'}">${m.type}</span>${effHtml}</button>`;
         }).join('');
     }
@@ -1537,9 +1777,19 @@
         battleState.isBattling = true;
         renderStatusBadge('player'); renderStatusBadge('wild');
         updatePlayerSideUI();
-        document.getElementById('wild-name').innerText = `WILD ${battleState.wild.name}`;
+        // Wild / P2 side
+        const wildLabel = battleState.mode === 'pvp' ? `P2: ${battleState.wild.name}` : `WILD ${battleState.wild.name}`;
+        document.getElementById('wild-name').innerText = wildLabel;
         document.getElementById('wild-sprite').src = battleState.wild.sprite; updateHP('wild');
-        logMsg(`WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
+        // Sprint 4 PvP: show P2 team dots
+        renderPvpWildTeamSlots();
+        // Sprint 4: battle header title + heal btn
+        document.getElementById('battle-header-title').innerText = battleState.mode === 'pvp' ? 'P1 vs P2' : 'BATTLE ARENA';
+        const healBtn = document.getElementById('heal-btn');
+        if (healBtn) healBtn.style.display = battleState.mode === 'wild' ? 'block' : 'none';
+        // Sprint 4: init bag buttons
+        renderBagRow();
+        logMsg(battleState.mode === 'pvp' ? `P2 sent out ${battleState.wild.name.toUpperCase()}! P1's TURN!` : `WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
         updateStreakDisplay();
         enableMoves(true);
     }
@@ -1553,31 +1803,75 @@
 
     function enableMoves(enabled) { document.querySelectorAll('.move-btn').forEach(btn => btn.disabled = !enabled); }
 
-    async function executeTurn(playerMoveIdx) {
+    async function executeTurn(moveIdx) {
         if (!battleState.isBattling) return;
-        enableMoves(false);
-        const playerMove = battleState.player.moves[playerMoveIdx];
-        const wildMove   = battleState.wild.moves[Math.floor(Math.random() * battleState.wild.moves.length)];
-        // Sprint 2: paralysis halves speed for turn order
-        const effectivePlayerSpeed = battleState.player.status === 'paralysis' ? Math.floor(battleState.player.speed / 2) : battleState.player.speed;
-        const playerGoesFirst = effectivePlayerSpeed >= battleState.wild.speed;
 
-        if (playerGoesFirst) {
-            const skip1 = await applyStatusEffects('player');
+        // Sprint 4 PvP: P1 locks in their move, show pass overlay
+        if (battleState.mode === 'pvp' && battleState.pvpTurnPhase === 'p1') {
+            battleState.pvpPendingMoveIdx = moveIdx;
+            battleState.pvpTurnPhase = 'p2';
+            enableMoves(false);
+            logMsg(`P1 locked in a move! 🤜 Pass to P2...`);
+            document.getElementById('pvp-pass-overlay').classList.add('show');
+            return;
+        }
+
+        // Sprint 4 PvP: P2 picks their move → resolve both
+        if (battleState.mode === 'pvp' && battleState.pvpTurnPhase === 'p2') {
+            battleState.pvpTurnPhase = 'resolving';
+            enableMoves(false);
+            const p1Move = battleState.player.moves[battleState.pvpPendingMoveIdx];
+            const p2Move = battleState.wild.moves[moveIdx];
+            await resolvePvpTurn(p1Move, p2Move);
+            return;
+        }
+
+        // Wild mode (existing logic)
+        enableMoves(false);
+        const playerMove = battleState.player.moves[moveIdx];
+        const wildMove   = battleState.wild.moves[Math.floor(Math.random() * battleState.wild.moves.length)];
+        const effSpeed   = battleState.player.status === 'paralysis' ? Math.floor(battleState.player.speed / 2) : battleState.player.speed;
+        const p1First    = effSpeed >= battleState.wild.speed;
+        if (p1First) {
+            const s1 = await applyStatusEffects('player');
             if (battleState.player.hp <= 0) { checkWinCondition(); return; }
-            if (!skip1) await performAttack('player', 'wild', playerMove);
+            if (!s1) await performAttack('player', 'wild', playerMove);
             if (battleState.wild.hp <= 0 || battleState.player.hp <= 0) { checkWinCondition(); return; }
-            const skip2 = await applyStatusEffects('wild');
+            const s2 = await applyStatusEffects('wild');
             if (battleState.wild.hp <= 0) { checkWinCondition(); return; }
-            if (!skip2) await performAttack('wild', 'player', wildMove);
+            if (!s2) await performAttack('wild', 'player', wildMove);
         } else {
-            const skip1 = await applyStatusEffects('wild');
+            const s1 = await applyStatusEffects('wild');
             if (battleState.wild.hp <= 0) { checkWinCondition(); return; }
-            if (!skip1) await performAttack('wild', 'player', wildMove);
+            if (!s1) await performAttack('wild', 'player', wildMove);
             if (battleState.player.hp <= 0 || battleState.wild.hp <= 0) { checkWinCondition(); return; }
-            const skip2 = await applyStatusEffects('player');
+            const s2 = await applyStatusEffects('player');
             if (battleState.player.hp <= 0) { checkWinCondition(); return; }
-            if (!skip2) await performAttack('player', 'wild', playerMove);
+            if (!s2) await performAttack('player', 'wild', playerMove);
+        }
+        checkWinCondition();
+    }
+
+    async function resolvePvpTurn(p1Move, p2Move) {
+        const p1Speed = battleState.player.status === 'paralysis' ? Math.floor(battleState.player.speed / 2) : battleState.player.speed;
+        const p2Speed = battleState.wild.status   === 'paralysis' ? Math.floor(battleState.wild.speed   / 2) : battleState.wild.speed;
+        const p1First = p1Speed >= p2Speed;
+        if (p1First) {
+            const s1 = await applyStatusEffects('player');
+            if (battleState.player.hp <= 0) { checkWinCondition(); return; }
+            if (!s1) await performAttack('player', 'wild', p1Move);
+            if (battleState.wild.hp <= 0 || battleState.player.hp <= 0) { checkWinCondition(); return; }
+            const s2 = await applyStatusEffects('wild');
+            if (battleState.wild.hp <= 0) { checkWinCondition(); return; }
+            if (!s2) await performAttack('wild', 'player', p2Move);
+        } else {
+            const s1 = await applyStatusEffects('wild');
+            if (battleState.wild.hp <= 0) { checkWinCondition(); return; }
+            if (!s1) await performAttack('wild', 'player', p2Move);
+            if (battleState.player.hp <= 0 || battleState.wild.hp <= 0) { checkWinCondition(); return; }
+            const s2 = await applyStatusEffects('player');
+            if (battleState.player.hp <= 0) { checkWinCondition(); return; }
+            if (!s2) await performAttack('player', 'wild', p1Move);
         }
         checkWinCondition();
     }
@@ -1604,7 +1898,72 @@
         await tryInflictStatus(defenderRole, move);
     }
 
+    function pvpNextTurn() {
+        battleState.pvpTurnPhase = 'p1';
+        renderMoveButtons(); // back to P1's moves
+        logMsg("➡️ P1's TURN! Choose your move.");
+        enableMoves(true);
+    }
+
     async function checkWinCondition() {
+        // Sprint 4: PvP win conditions
+        if (battleState.mode === 'pvp') {
+            if (battleState.wild.hp <= 0) {
+                // P2's active fainted
+                battleState.isBattling = false;
+                logMsg(`P2's ${battleState.wild.name.toUpperCase()} FAINTED! 😵`); triggerVibration([100,100,100]);
+                await sleep(1200);
+                const nextP2 = battleState.pvpTeam.findIndex((f, i) => i > battleState.pvpSlot && f.hp > 0);
+                if (nextP2 >= 0) {
+                    battleState.pvpSlot = nextP2;
+                    battleState.wild = battleState.pvpTeam[nextP2];
+                    logMsg(`P2 sent out ${battleState.wild.name.toUpperCase()}! 💪`); await sleep(800);
+                    document.getElementById('wild-name').innerText = `P2: ${battleState.wild.name}`;
+                    document.getElementById('wild-sprite').src = battleState.wild.sprite;
+                    updateHP('wild'); renderStatusBadge('wild'); renderPvpWildTeamSlots();
+                    renderMoveButtons(); // P1's effectiveness vs new P2 member
+                    battleState.isBattling = true;
+                    pvpNextTurn();
+                } else {
+                    logMsg('🏆 P1 WINS THE TRAINER BATTLE!');
+                    battleRecord[1].w++; battleRecord[2].l++;
+                    localStorage.setItem('pokedex_record_p1', JSON.stringify(battleRecord[1]));
+                    localStorage.setItem('pokedex_record_p2', JSON.stringify(battleRecord[2]));
+                    checkBadges();
+                    await sleep(2500);
+                    alert(`🏆 P1 WINS! Great battle!\nP1: W${battleRecord[1].w} / P2: W${battleRecord[2].w}`);
+                    exitBattleMode();
+                }
+            } else if (battleState.player.hp <= 0) {
+                // P1's active fainted
+                battleState.isBattling = false;
+                logMsg(`P1's ${battleState.player.name.toUpperCase()} FAINTED! 😵`); triggerVibration([500]);
+                await sleep(1200);
+                const nextP1 = battleState.team.findIndex((f, i) => i > battleState.activeSlot && f.hp > 0);
+                if (nextP1 >= 0) {
+                    battleState.activeSlot = nextP1;
+                    battleState.player = battleState.team[nextP1];
+                    logMsg(`P1 sent out ${battleState.player.name.toUpperCase()}! 💪`); await sleep(800);
+                    updatePlayerSideUI();
+                    battleState.isBattling = true;
+                    pvpNextTurn();
+                } else {
+                    logMsg('🏆 P2 WINS THE TRAINER BATTLE!');
+                    battleRecord[2].w++; battleRecord[1].l++;
+                    localStorage.setItem('pokedex_record_p1', JSON.stringify(battleRecord[1]));
+                    localStorage.setItem('pokedex_record_p2', JSON.stringify(battleRecord[2]));
+                    checkBadges();
+                    await sleep(2500);
+                    alert(`🏆 P2 WINS! Great battle!\nP2: W${battleRecord[2].w} / P1: W${battleRecord[1].w}`);
+                    exitBattleMode();
+                }
+            } else {
+                pvpNextTurn();
+            }
+            return;
+        }
+
+        // Wild mode below
         if (battleState.wild.hp <= 0) {
             battleState.isBattling = false;
             logMsg(`${battleState.wild.name.toUpperCase()} FAINTED!`); triggerVibration([100, 100, 100]);
