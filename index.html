@@ -340,6 +340,30 @@
 
         /* --- SPRINT 4: PVP WILD TEAM DOTS --- */
         #pvp-wild-team-slots { display:flex; gap:5px; margin-top:3px; }
+
+        /* --- SPRINT 5: XP LEVEL BADGE --- */
+        .lvl-badge { position:absolute; bottom:2px; right:2px; background:#1565c0; color:#fff; font-size:8px; font-weight:900; padding:1px 4px; border-radius:4px; line-height:1.4; pointer-events:none; z-index:3; }
+        @keyframes levelUp { 0%{transform:scale(1)} 30%{transform:scale(1.4)} 60%{transform:scale(0.9)} 100%{transform:scale(1)} }
+        .level-up-anim { animation:levelUp 0.5s ease-out; }
+
+        /* --- SPRINT 5: TRADE MODAL --- */
+        #trade-modal .modal-box { max-width:340px; }
+        .trade-pc-mini { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; max-height:320px; overflow-y:auto; margin:10px 0; }
+        .trade-pc-mini .pc-item { cursor:pointer; border:2px solid transparent; }
+        .trade-pc-mini .pc-item:active { transform:scale(0.93); border-color:#ffcc00; }
+        .trade-offer-preview { display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 0; }
+        .trade-offer-preview img { width:96px; height:96px; image-rendering:pixelated; }
+        .trade-offer-preview .name { font-size:18px; font-weight:900; color:#fff; text-transform:uppercase; }
+        .trade-offer-preview .receiver { font-size:12px; color:#aaa; }
+
+        /* --- SPRINT 5: BADGE SHELF MODAL --- */
+        #badge-shelf-modal .modal-box { max-width:340px; max-height:80dvh; overflow-y:auto; }
+        .badge-shelf-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(255,255,255,0.05); margin-bottom:6px; transition:opacity 0.2s; }
+        .badge-shelf-item.earned { border:1px solid rgba(255,204,0,0.3); }
+        .badge-shelf-item .b-icon { font-size:26px; min-width:32px; text-align:center; }
+        .badge-shelf-item .b-info .b-name { font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; }
+        .badge-shelf-item .b-info .b-desc { font-size:10px; color:#666; margin-top:1px; }
+        .badge-shelf-item .b-check { margin-left:auto; font-size:11px; color:#4caf50; font-weight:900; }
     </style>
 </head>
 <body>
@@ -364,6 +388,8 @@
         <div style="flex: 1;"></div>
         <button class="header-btn" style="color: #fda085; border-color: #fda085;" onclick="openWTP()">🎮 QUIZ</button>
         <button class="header-btn" onclick="openPC('dex')">💻 PC</button>
+        <button class="header-btn" style="color:#64b5f6;border-color:#64b5f6;" onclick="openTradeModal()">🔄 TRADE</button>
+        <button class="header-btn" style="color:#ffcc00;border-color:#ffcc00;" onclick="openBadgeShelf()">🏅</button>
         <button class="header-btn" style="color: #ffcc00; border-color: #ffcc00;" onclick="initBattleMode()">⚔️ BTL</button>
     </div>
 
@@ -581,6 +607,41 @@
     </div>
 </div>
 
+<!-- SPRINT 5: TRADE MODAL -->
+<div class="overlay-screen" id="trade-modal" style="display:none;">
+    <div class="modal-box" style="max-width:340px;width:92%;">
+        <div id="trade-phase-1">
+            <div style="font-size:32px;margin-bottom:4px;">🔄</div>
+            <h2 style="margin:0 0 4px;font-weight:900;color:#64b5f6;">TRADE</h2>
+            <p style="font-size:12px;color:#aaa;margin:0 0 8px;">P<span id="trade-giver-num">1</span>: tap a Pokémon to offer</p>
+            <div class="trade-pc-mini" id="trade-pc-grid"></div>
+            <button class="btn-large btn-danger" onclick="closeTradeModal()">✖ CANCEL</button>
+        </div>
+        <div id="trade-phase-2" style="display:none;">
+            <div class="trade-offer-preview">
+                <div style="font-size:28px;">🔄</div>
+                <img id="trade-offer-sprite" src="">
+                <div class="name" id="trade-offer-name"></div>
+                <div class="receiver">Pass to P<span id="trade-receiver-num">2</span> to accept!</div>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button class="btn-large" style="background:linear-gradient(135deg,#2e7d32,#388e3c);color:#fff;flex:1;" onclick="executeTradeAccept()">✅ ACCEPT</button>
+                <button class="btn-large btn-danger" style="flex:1;" onclick="closeTradeModal()">❌ DECLINE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SPRINT 5: BADGE SHELF MODAL -->
+<div class="overlay-screen" id="badge-shelf-modal" style="display:none;">
+    <div class="modal-box" style="max-width:340px;width:92%;max-height:80dvh;overflow-y:auto;">
+        <div style="font-size:32px;margin-bottom:4px;">🏅</div>
+        <h2 style="margin:0 0 12px;font-weight:900;color:#ffcc00;">BADGES — P<span id="badge-shelf-player">1</span></h2>
+        <div id="badge-shelf-grid"></div>
+        <button class="btn-large btn-danger" onclick="document.getElementById('badge-shelf-modal').style.display='none'">✖ CLOSE</button>
+    </div>
+</div>
+
 <!-- SPRINT 1: WHO'S THAT POKEMON GAME -->
 <div id="wtp-modal">
     <button class="wtp-exit-btn" onclick="closeWTP()">✕ EXIT</button>
@@ -602,6 +663,11 @@
     let autoCryEnabled = true;
     let currentPCSort = 'dex';
     let seenBadges = { 1: [], 2: [] };
+    let xpData = { 1: {}, 2: {} };      // Sprint 5: { pokeId: { xp, level } }
+    let pvpWins = { 1: 0, 2: 0 };       // Sprint 5: PvP battle wins
+    let tradeCount = { 1: 0, 2: 0 };    // Sprint 5: trades completed
+    let pendingTradeId = null;
+    let pendingTradeGiver = 1;
     let wtpState = { active: false, correct: 0, total: 0, currentId: null, currentData: null, choices: [], cryAudio: null };
     let challengeData = { 1:{date:0,done:false,progress:0,totalCompleted:0}, 2:{date:0,done:false,progress:0,totalCompleted:0} };
     let eggData = { 1:{date:0,taps:0,hatched:false,targetId:0,totalHatched:0}, 2:{date:0,taps:0,hatched:false,targetId:0,totalHatched:0} };
@@ -632,6 +698,10 @@
         { id:'challenger',   icon:'🎯', name:'CHALLENGER',     desc:'Complete a daily challenge',       check: p => (challengeData[p].totalCompleted||0) >= 1 },
         { id:'weekly_champ', icon:'📆', name:'WEEKLY CHAMP',   desc:'Complete 7 daily challenges',      check: p => (challengeData[p].totalCompleted||0) >= 7 },
         { id:'egg_hatcher',  icon:'🥚', name:'EGG HATCHER',    desc:'Hatch a mystery egg',              check: p => (eggData[p].totalHatched||0) >= 1 },
+        { id:'level_up',    icon:'⬆️', name:'POWER UP',        desc:'Level up a Pokémon in battle',     check: p => Object.values(xpData[p]).some(d => (d?.level||1) >= 2) },
+        { id:'max_level',   icon:'💎', name:'ELITE POWER',     desc:'Reach level 20 with a Pokémon',    check: p => Object.values(xpData[p]).some(d => (d?.level||1) >= 20) },
+        { id:'pvp_champ',   icon:'🥊', name:'PVP CHAMP',       desc:'Win a trainer battle',             check: p => pvpWins[p] >= 1 },
+        { id:'trader',      icon:'🔄', name:'TRADER',           desc:'Complete a trade',                 check: p => tradeCount[p] >= 1 },
     ];
 
     let caughtData = { 1: [], 2: [] };
@@ -658,6 +728,12 @@
         nicknameData[2] = JSON.parse(localStorage.getItem('pokedex_nicks_p2')) || {};
         seenBadges[1] = JSON.parse(localStorage.getItem('pokedex_badges_p1')) || [];
         seenBadges[2] = JSON.parse(localStorage.getItem('pokedex_badges_p2')) || [];
+        xpData[1] = JSON.parse(localStorage.getItem('pokedex_xp_p1')) || {};
+        xpData[2] = JSON.parse(localStorage.getItem('pokedex_xp_p2')) || {};
+        pvpWins[1] = JSON.parse(localStorage.getItem('pokedex_pvpw_p1')) || 0;
+        pvpWins[2] = JSON.parse(localStorage.getItem('pokedex_pvpw_p2')) || 0;
+        tradeCount[1] = JSON.parse(localStorage.getItem('pokedex_trades_p1')) || 0;
+        tradeCount[2] = JSON.parse(localStorage.getItem('pokedex_trades_p2')) || 0;
         challengeData[1] = JSON.parse(localStorage.getItem('pokedex_challenge_p1')) || challengeData[1];
         challengeData[2] = JSON.parse(localStorage.getItem('pokedex_challenge_p2')) || challengeData[2];
         eggData[1] = JSON.parse(localStorage.getItem('pokedex_egg_p1')) || eggData[1];
@@ -1629,7 +1705,9 @@
                     const nick = nicknameData[currentPlayer][i];
                     const label = nick ? `<span style="color:#ffcc00;font-size:9px;">${nick}</span>` : `<span>#${i.toString().padStart(3,'0')}</span>`;
                     const teamNum = teamIdx >= 0 ? `<span class="team-select-num">${teamIdx + 1}</span>` : '';
-                    html += `<div class="${classes}" style="position:relative" onclick="handlePCSelect(${i})">${teamNum}<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy">${label}</div>`;
+                    const pcLvl = getLevel(pcTargetPlayer, i);
+                    const lvlTag = pcLvl > 1 ? `<span class="lvl-badge">Lv${pcLvl}</span>` : '';
+                    html += `<div class="${classes}" style="position:relative" onclick="handlePCSelect(${i})">${teamNum}${lvlTag}<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy">${label}</div>`;
                 } else if (pcContext === 'dex') {
                     html += `<div class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3,'0')}</span></div>`;
                 }
@@ -1667,17 +1745,135 @@
         if (pcContext === 'dex') { loadPoke(id); }
     }
 
+    // --- SPRINT 5: XP & LEVELING ---
+    function getLevel(playerNum, pokeId) {
+        return xpData[playerNum]?.[pokeId]?.level || 1;
+    }
+
+    async function awardBattleXP(playerNum, teamArr, xpAmt) {
+        const alive = teamArr.filter(f => f.hp > 0 && f.id);
+        const levelUps = [];
+        alive.forEach(f => {
+            if (!xpData[playerNum][f.id]) xpData[playerNum][f.id] = { xp: 0, level: 1 };
+            const prevLevel = xpData[playerNum][f.id].level;
+            xpData[playerNum][f.id].xp += xpAmt;
+            const newLevel = Math.min(20, Math.floor(xpData[playerNum][f.id].xp / 30) + 1);
+            xpData[playerNum][f.id].level = newLevel;
+            if (newLevel > prevLevel) levelUps.push({ name: f.name, level: newLevel });
+        });
+        localStorage.setItem(`pokedex_xp_p${playerNum}`, JSON.stringify(xpData[playerNum]));
+        for (const lu of levelUps) {
+            logMsg(`⬆️ ${lu.name.toUpperCase()} leveled up to Lv.${lu.level}!`);
+            showBadgeToast({ icon: '⬆️', name: `${lu.name.toUpperCase()} Lv.${lu.level}!` });
+            triggerVibration([50, 50, 100]);
+            await sleep(400);
+        }
+        checkBadges();
+    }
+
+    // --- SPRINT 5: TRADE ---
+    function openTradeModal() {
+        if (caughtData[currentPlayer].length === 0) { alert(`P${currentPlayer} has no Pokémon to trade!`); return; }
+        pendingTradeGiver = currentPlayer;
+        pendingTradeId = null;
+        renderTradeGrid();
+        document.getElementById('trade-giver-num').innerText = currentPlayer;
+        document.getElementById('trade-receiver-num').innerText = currentPlayer === 1 ? 2 : 1;
+        document.getElementById('trade-phase-1').style.display = 'block';
+        document.getElementById('trade-phase-2').style.display = 'none';
+        document.getElementById('trade-modal').style.display = 'flex';
+    }
+
+    function renderTradeGrid() {
+        const ids = caughtData[pendingTradeGiver];
+        if (ids.length === 0) {
+            document.getElementById('trade-pc-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#555;padding:20px;font-size:12px;">No Pokémon to trade!</div>';
+            return;
+        }
+        let html = '';
+        ids.forEach(id => {
+            const lvl = getLevel(pendingTradeGiver, id);
+            const lvlBadge = lvl > 1 ? `<span class="lvl-badge">Lv${lvl}</span>` : '';
+            html += `<div class="pc-item caught" onclick="tradeSelectOffer(${id})" style="position:relative;">${lvlBadge}<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3,'0')}</span></div>`;
+        });
+        document.getElementById('trade-pc-grid').innerHTML = html;
+    }
+
+    function tradeSelectOffer(id) {
+        pendingTradeId = id;
+        document.getElementById('trade-offer-sprite').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+        document.getElementById('trade-offer-name').innerText = `#${id.toString().padStart(3,'0')}`;
+        const lvl = getLevel(pendingTradeGiver, id);
+        if (lvl > 1) document.getElementById('trade-offer-name').innerText += ` (Lv.${lvl})`;
+        document.getElementById('trade-phase-1').style.display = 'none';
+        document.getElementById('trade-phase-2').style.display = 'block';
+    }
+
+    function executeTradeAccept() {
+        if (!pendingTradeId) return;
+        const giver = pendingTradeGiver;
+        const receiver = giver === 1 ? 2 : 1;
+        caughtData[giver] = caughtData[giver].filter(id => id !== pendingTradeId);
+        localStorage.setItem(`pokedex_caught_p${giver}`, JSON.stringify(caughtData[giver]));
+        if (!caughtData[receiver].includes(pendingTradeId)) {
+            caughtData[receiver].push(pendingTradeId);
+            localStorage.setItem(`pokedex_caught_p${receiver}`, JSON.stringify(caughtData[receiver]));
+        }
+        if (xpData[giver][pendingTradeId]) {
+            xpData[receiver][pendingTradeId] = { ...xpData[giver][pendingTradeId] };
+            delete xpData[giver][pendingTradeId];
+            localStorage.setItem(`pokedex_xp_p${giver}`, JSON.stringify(xpData[giver]));
+            localStorage.setItem(`pokedex_xp_p${receiver}`, JSON.stringify(xpData[receiver]));
+        }
+        tradeCount[giver]++; tradeCount[receiver]++;
+        localStorage.setItem(`pokedex_trades_p${giver}`, JSON.stringify(tradeCount[giver]));
+        localStorage.setItem(`pokedex_trades_p${receiver}`, JSON.stringify(tradeCount[receiver]));
+        document.getElementById('trade-modal').style.display = 'none';
+        updateCatchUI(); checkBadges();
+        showBadgeToast({ icon: '🔄', name: 'TRADE COMPLETE!' });
+        logMsg(`🔄 P${giver} traded #${pendingTradeId.toString().padStart(3,'0')} to P${receiver}!`);
+        pendingTradeId = null;
+    }
+
+    function closeTradeModal() {
+        document.getElementById('trade-modal').style.display = 'none';
+        pendingTradeId = null;
+    }
+
+    // --- SPRINT 5: BADGE SHELF ---
+    function openBadgeShelf() {
+        const p = currentPlayer;
+        document.getElementById('badge-shelf-player').innerText = p;
+        let html = '';
+        BADGES.forEach(b => {
+            const earned = seenBadges[p].includes(b.id) || b.check(p);
+            html += `<div class="badge-shelf-item ${earned ? 'earned' : ''}" style="opacity:${earned ? '1' : '0.3'}">
+                <span class="b-icon" style="${earned ? '' : 'filter:grayscale(1)'}">${b.icon}</span>
+                <div class="b-info">
+                    <div class="b-name" style="color:${earned ? '#ffcc00' : '#666'}">${b.name}</div>
+                    <div class="b-desc">${b.desc}</div>
+                </div>
+                ${earned ? '<span class="b-check">✓</span>' : ''}
+            </div>`;
+        });
+        document.getElementById('badge-shelf-grid').innerHTML = html;
+        document.getElementById('badge-shelf-modal').style.display = 'flex';
+    }
+
     // --- BATTLE ENGINE ---
-    async function loadFighterDataInto(obj, id, isPlayer, isShiny, isShinyWild = false) {
+    async function loadFighterDataInto(obj, id, isPlayer, isShiny, isShinyWild = false, playerNum = null) {
         const data = await apiFetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
         obj.id = id; obj.name = data.name; obj.types = data.types;
         obj.isShinyWild = isShinyWild;
+        const lvl = playerNum ? getLevel(playerNum, id) : 1;
+        const lvlMul = 1 + (lvl - 1) * 0.1; // 10% stat boost per level above 1
+        obj.level = lvl;
         const hpBase = data.stats.find(s => s.stat.name === 'hp')?.base_stat ?? 50;
-        obj.maxHp = Math.floor((2 * hpBase * 50) / 100 + 50 + 10);
+        obj.maxHp = Math.round(Math.floor((2 * hpBase * 50) / 100 + 50 + 10) * lvlMul);
         obj.hp = obj.maxHp; obj.status = null; obj.sleepTurns = 0;
-        obj.speed = data.stats.find(s=>s.stat.name==='speed')?.base_stat ?? 50;
-        obj.atk   = data.stats.find(s=>s.stat.name==='attack')?.base_stat  ?? 50;
-        obj.def   = data.stats.find(s=>s.stat.name==='defense')?.base_stat ?? 50;
+        obj.speed = Math.round((data.stats.find(s=>s.stat.name==='speed')?.base_stat ?? 50) * lvlMul);
+        obj.atk   = Math.round((data.stats.find(s=>s.stat.name==='attack')?.base_stat  ?? 50) * lvlMul);
+        obj.def   = Math.round((data.stats.find(s=>s.stat.name==='defense')?.base_stat ?? 50) * lvlMul);
         if (isPlayer) {
             obj.sprite = isShiny ? (data.sprites?.back_shiny ?? data.sprites?.back_default ?? '') : (data.sprites?.back_default ?? '');
         } else {
@@ -1715,8 +1911,8 @@
                 battleState.pvpTeam = pvpSelectedTeam.map(() => createFighterObj());
                 battleState.pvpSlot = 0;
                 await Promise.all([
-                    ...selectedTeam.map((id, i) => loadFighterDataInto(battleState.team[i], id, true, false)),
-                    ...pvpSelectedTeam.map((id, i) => loadFighterDataInto(battleState.pvpTeam[i], id, false, false)),
+                    ...selectedTeam.map((id, i) => loadFighterDataInto(battleState.team[i], id, true, false, false, 1)),
+                    ...pvpSelectedTeam.map((id, i) => loadFighterDataInto(battleState.pvpTeam[i], id, false, false, false, 2)),
                 ]);
                 battleState.player = battleState.team[0];
                 battleState.wild   = battleState.pvpTeam[0]; // P2's active uses "wild" slot
@@ -1724,7 +1920,7 @@
                 battleState.wild = createFighterObj();
                 battleState.wild.id = Math.floor(Math.random() * maxPokemon) + 1;
                 await Promise.all([
-                    ...selectedTeam.map((id, i) => loadFighterDataInto(battleState.team[i], id, true, isShiny)),
+                    ...selectedTeam.map((id, i) => loadFighterDataInto(battleState.team[i], id, true, isShiny, false, currentPlayer)),
                     loadFighterDataInto(battleState.wild, battleState.wild.id, false, false),
                 ]);
                 battleState.player = battleState.team[0];
@@ -1927,8 +2123,11 @@
                 } else {
                     logMsg('🏆 P1 WINS THE TRAINER BATTLE!');
                     battleRecord[1].w++; battleRecord[2].l++;
+                    pvpWins[1]++;
                     localStorage.setItem('pokedex_record_p1', JSON.stringify(battleRecord[1]));
                     localStorage.setItem('pokedex_record_p2', JSON.stringify(battleRecord[2]));
+                    localStorage.setItem('pokedex_pvpw_p1', JSON.stringify(pvpWins[1]));
+                    await awardBattleXP(1, battleState.team, 50);
                     checkBadges();
                     await sleep(2500);
                     alert(`🏆 P1 WINS! Great battle!\nP1: W${battleRecord[1].w} / P2: W${battleRecord[2].w}`);
@@ -1950,8 +2149,11 @@
                 } else {
                     logMsg('🏆 P2 WINS THE TRAINER BATTLE!');
                     battleRecord[2].w++; battleRecord[1].l++;
+                    pvpWins[2]++;
                     localStorage.setItem('pokedex_record_p1', JSON.stringify(battleRecord[1]));
                     localStorage.setItem('pokedex_record_p2', JSON.stringify(battleRecord[2]));
+                    localStorage.setItem('pokedex_pvpw_p2', JSON.stringify(pvpWins[2]));
+                    await awardBattleXP(2, battleState.pvpTeam, 50);
                     checkBadges();
                     await sleep(2500);
                     alert(`🏆 P2 WINS! Great battle!\nP2: W${battleRecord[2].w} / P1: W${battleRecord[1].w}`);
@@ -1988,7 +2190,7 @@
             battleStreak[currentPlayer]++;
             localStorage.setItem(`pokedex_streak_p${currentPlayer}`, JSON.stringify(battleStreak[currentPlayer]));
             updateDailyChallenge('win_battles');
-            checkBadges();
+            await awardBattleXP(currentPlayer, battleState.team, 30);
             await sleep(1500);
             msg.style.opacity = 0; ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)'; sprite.classList.remove('sucked-in');
             // Sprint 3: continuous grind — load the next wild instead of exiting
