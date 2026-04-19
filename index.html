@@ -380,6 +380,7 @@
         <div style="flex: 1;"></div>
         <button class="header-btn" onclick="openPC('dex')">💻 PC</button>
         <button class="header-btn" style="color:#ffcc00;border-color:#ffcc00;" onclick="initBattleMode()">⚔️ BTL</button>
+        <button class="header-btn" style="color:#aaa;border-color:#555;" onclick="openMore()">⋯</button>
     </div>
 
     <!-- FEATURE 1: Completion Tracker Bar -->
@@ -533,14 +534,9 @@
         <button class="pc-tab-btn" data-tab="badges" onclick="switchPCTab('badges')">🏅 BADGES</button>
     </div>
 
-    <!-- BOX tab -->
+    <!-- BOX tab — grid only, maximum Pokémon space -->
     <div id="pc-tab-box">
-        <div id="badge-section">
-            <div id="badge-section-title">ACHIEVEMENTS</div>
-            <div class="badge-row" id="badge-row"></div>
-        </div>
-        <div id="egg-section"></div>
-        <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:6px; font-size:12px;" id="pc-instruction"></div>
+        <div id="pc-instruction"></div>
         <div class="gen-filter-row" id="gen-filter-row">
             <button class="gen-filter-btn active" onclick="filterPC(0)">ALL</button>
             <button class="gen-filter-btn" onclick="filterPC(1)">GEN I</button>
@@ -560,11 +556,6 @@
             <button class="pc-sort-btn" onclick="sortPC('caught')">✅ CAUGHT FIRST</button>
         </div>
         <div class="pc-grid" id="pc-grid"></div>
-        <div class="save-controls" id="save-controls">
-            <div class="save-btn" onclick="exportSave()">💾 EXPORT</div>
-            <div class="save-btn" onclick="importSave()">📂 IMPORT</div>
-            <div class="save-btn" id="gift-btn" onclick="toggleGiftMode()" style="grid-column:span 2;">🎁 GIFT TO P2</div>
-        </div>
     </div>
 
     <!-- QUIZ tab -->
@@ -589,6 +580,32 @@
 
     <button id="pc-fight-btn" onclick="startTeamBattle()">⚔️ FIGHT!</button>
     <button class="close-pc-btn" onclick="closePC()">CANCEL / CLOSE PC</button>
+</div>
+
+<!-- MORE SCREEN — achievements, egg, save, gift -->
+<div class="overlay-screen" id="more-modal" style="display:none;">
+    <div style="display:flex;flex-direction:column;width:100%;height:100%;overflow-y:auto;padding:16px 16px calc(env(safe-area-inset-bottom) + 16px);box-sizing:border-box;gap:10px;">
+        <div class="pc-header">⋯ MORE</div>
+        <div id="more-record" style="text-align:center;font-size:13px;font-weight:900;color:#aaa;margin-bottom:2px;"></div>
+
+        <!-- Achievements badge row (IDs kept so renderBadgeRow() finds them) -->
+        <div id="badge-section">
+            <div id="badge-section-title">ACHIEVEMENTS</div>
+            <div class="badge-row" id="badge-row"></div>
+        </div>
+
+        <!-- Mystery egg -->
+        <div id="egg-section"></div>
+
+        <!-- Save / export -->
+        <div class="save-controls" id="save-controls">
+            <div class="save-btn" onclick="exportSave()">💾 EXPORT</div>
+            <div class="save-btn" onclick="importSave()">📂 IMPORT</div>
+            <div class="save-btn" id="gift-btn" onclick="openPCGiftMode()" style="grid-column:span 2;">🎁 GIFT TO P2</div>
+        </div>
+
+        <button class="close-pc-btn" onclick="closeMore()">CLOSE</button>
+    </div>
 </div>
 
 <!-- SPRINT 4: Battle mode selector -->
@@ -1603,16 +1620,12 @@
         const rec = battleRecord[displayPlayer];
         const streak = battleStreak[displayPlayer];
         document.getElementById('pc-record').innerText = `W: ${rec.w} | L: ${rec.l}${streak > 1 ? `  🔥 ${streak} STREAK` : ''}`;
+        const instr = document.getElementById('pc-instruction');
         if (context === 'battle') {
-            const instr = pvpBuildPhase === 2 ? 'P2: PICK YOUR TEAM (1–3)!' : pvpBuildPhase === 1 ? 'P1: PICK YOUR TEAM (1–3)!' : 'TAP POKÉMON (1–3) THEN HIT FIGHT!';
-            document.getElementById('pc-instruction').innerText = instr;
-            document.getElementById('save-controls').style.display = 'none';
-            document.getElementById('badge-section').style.display = 'none';
+            const instrTxt = pvpBuildPhase === 2 ? 'P2: PICK YOUR TEAM (1–3)!' : pvpBuildPhase === 1 ? 'P1: PICK YOUR TEAM (1–3)!' : 'TAP POKÉMON (1–3) THEN HIT FIGHT!';
+            if (instr) { instr.innerText = instrTxt; instr.style.cssText = 'text-align:center;color:#ffcc00;font-weight:bold;margin-bottom:6px;font-size:12px;'; }
         } else {
-            document.getElementById('pc-instruction').innerText = '';
-            document.getElementById('save-controls').style.display = 'grid';
-            document.getElementById('badge-section').style.display = '';
-            renderBadgeRow(); renderEggSection();
+            if (instr) { instr.innerHTML = ''; instr.style.cssText = ''; }
         }
         document.querySelectorAll('.gen-filter-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
         giftModeActive = false; pendingGiftId = null;
@@ -1627,6 +1640,45 @@
         document.getElementById('pc-modal').style.display = 'flex';
         // Sprint 5: always reset to box tab when opening PC
         switchPCTab('box');
+    }
+
+    // --- MORE SCREEN ---
+    function openMore() {
+        const p = currentPlayer;
+        const rec = battleRecord[p];
+        const streak = battleStreak[p];
+        const moreRec = document.getElementById('more-record');
+        if (moreRec) moreRec.innerText = `P${p}  •  W: ${rec.w} | L: ${rec.l}${streak > 1 ? `  🔥 ${streak} STREAK` : ''}`;
+        const otherP = p === 1 ? 2 : 1;
+        const giftBtn = document.getElementById('gift-btn');
+        if (giftBtn) { giftBtn.innerText = `🎁 GIFT TO P${otherP}`; giftBtn.style.background = ''; giftBtn.style.borderColor = ''; }
+        renderBadgeRow();
+        renderEggSection();
+        document.getElementById('more-modal').style.display = 'flex';
+    }
+
+    function closeMore() {
+        document.getElementById('more-modal').style.display = 'none';
+    }
+
+    function openPCGiftMode() {
+        closeMore();
+        openPC('dex');
+        giftModeActive = true;
+        const otherPlayer = currentPlayer === 1 ? 2 : 1;
+        const instr = document.getElementById('pc-instruction');
+        if (instr) {
+            instr.innerHTML = `<span style="color:#ff9800;">TAP A POKÉMON TO GIFT TO P${otherPlayer}!</span>&nbsp;<button onclick="cancelGiftMode()" style="font-size:10px;padding:2px 8px;background:#333;border:1px solid #ff9800;color:#ff9800;border-radius:8px;cursor:pointer;">✕ CANCEL</button>`;
+            instr.style.cssText = 'text-align:center;margin-bottom:6px;font-size:12px;font-weight:bold;';
+        }
+        renderPCGrid();
+    }
+
+    function cancelGiftMode() {
+        giftModeActive = false;
+        const instr = document.getElementById('pc-instruction');
+        if (instr) { instr.innerHTML = ''; }
+        renderPCGrid();
     }
 
     function updateFightBtn() {
