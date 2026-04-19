@@ -341,29 +341,21 @@
         /* --- SPRINT 4: PVP WILD TEAM DOTS --- */
         #pvp-wild-team-slots { display:flex; gap:5px; margin-top:3px; }
 
-        /* --- SPRINT 5: XP LEVEL BADGE --- */
-        .lvl-badge { position:absolute; bottom:2px; right:2px; background:#1565c0; color:#fff; font-size:8px; font-weight:900; padding:1px 4px; border-radius:4px; line-height:1.4; pointer-events:none; z-index:3; }
-        @keyframes levelUp { 0%{transform:scale(1)} 30%{transform:scale(1.4)} 60%{transform:scale(0.9)} 100%{transform:scale(1)} }
-        .level-up-anim { animation:levelUp 0.5s ease-out; }
+        /* --- SPRINT 5: PC TABS --- */
+        #pc-tab-row { display:flex; gap:6px; padding:6px 0 4px; flex-shrink:0; }
+        .pc-tab-btn { flex:1; padding:7px 4px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:#aaa; font-size:10px; font-weight:900; cursor:pointer; text-transform:uppercase; letter-spacing:0.5px; transition:background 0.15s, color 0.15s; }
+        .pc-tab-btn.active { background:rgba(0,229,255,0.15); color:#00e5ff; border-color:#00e5ff; }
+        #pc-tab-box { display:flex; flex-direction:column; flex:1; min-height:0; }
+        #pc-tab-quiz, #pc-tab-trade, #pc-tab-badges { display:none; flex-direction:column; flex:1; min-height:0; overflow-y:auto; }
 
-        /* --- SPRINT 5: TRADE MODAL --- */
-        #trade-modal .modal-box { max-width:340px; }
-        .trade-pc-mini { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; max-height:320px; overflow-y:auto; margin:10px 0; }
-        .trade-pc-mini .pc-item { cursor:pointer; border:2px solid transparent; }
-        .trade-pc-mini .pc-item:active { transform:scale(0.93); border-color:#ffcc00; }
-        .trade-offer-preview { display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 0; }
-        .trade-offer-preview img { width:96px; height:96px; image-rendering:pixelated; }
-        .trade-offer-preview .name { font-size:18px; font-weight:900; color:#fff; text-transform:uppercase; }
-        .trade-offer-preview .receiver { font-size:12px; color:#aaa; }
-
-        /* --- SPRINT 5: BADGE SHELF MODAL --- */
-        #badge-shelf-modal .modal-box { max-width:340px; max-height:80dvh; overflow-y:auto; }
-        .badge-shelf-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(255,255,255,0.05); margin-bottom:6px; transition:opacity 0.2s; }
+        /* --- SPRINT 5: BADGE SHELF (inline in PC) --- */
+        .badge-shelf-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(255,255,255,0.05); margin-bottom:6px; }
         .badge-shelf-item.earned { border:1px solid rgba(255,204,0,0.3); }
-        .badge-shelf-item .b-icon { font-size:26px; min-width:32px; text-align:center; }
+        .badge-shelf-item .b-icon { font-size:22px; min-width:28px; text-align:center; }
         .badge-shelf-item .b-info .b-name { font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; }
         .badge-shelf-item .b-info .b-desc { font-size:10px; color:#666; margin-top:1px; }
         .badge-shelf-item .b-check { margin-left:auto; font-size:11px; color:#4caf50; font-weight:900; }
+
     </style>
 </head>
 <body>
@@ -386,11 +378,8 @@
         </div>
         <button class="player-toggle" id="player-btn" onclick="togglePlayer()">P1</button>
         <div style="flex: 1;"></div>
-        <button class="header-btn" style="color: #fda085; border-color: #fda085;" onclick="openWTP()">🎮 QUIZ</button>
         <button class="header-btn" onclick="openPC('dex')">💻 PC</button>
-        <button class="header-btn" style="color:#64b5f6;border-color:#64b5f6;" onclick="openTradeModal()">🔄 TRADE</button>
-        <button class="header-btn" style="color:#ffcc00;border-color:#ffcc00;" onclick="openBadgeShelf()">🏅</button>
-        <button class="header-btn" style="color: #ffcc00; border-color: #ffcc00;" onclick="initBattleMode()">⚔️ BTL</button>
+        <button class="header-btn" style="color:#ffcc00;border-color:#ffcc00;" onclick="initBattleMode()">⚔️ BTL</button>
     </div>
 
     <!-- FEATURE 1: Completion Tracker Bar -->
@@ -535,37 +524,69 @@
 <div id="pc-modal">
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
     <div id="pc-record">W: 0 | L: 0</div>
-    <div id="badge-section">
-        <div id="badge-section-title">ACHIEVEMENTS</div>
-        <div class="badge-row" id="badge-row"></div>
+
+    <!-- Sprint 5: Tab navigation (hidden during battle team-pick) -->
+    <div id="pc-tab-row">
+        <button class="pc-tab-btn active" data-tab="box" onclick="switchPCTab('box')">📦 BOX</button>
+        <button class="pc-tab-btn" data-tab="quiz" onclick="switchPCTab('quiz')">🎮 QUIZ</button>
+        <button class="pc-tab-btn" data-tab="trade" onclick="switchPCTab('trade')">🔄 TRADE</button>
+        <button class="pc-tab-btn" data-tab="badges" onclick="switchPCTab('badges')">🏅 BADGES</button>
     </div>
-    <!-- SPRINT 2: Mystery Egg Section -->
-    <div id="egg-section"></div>
-    <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:6px; font-size:12px;" id="pc-instruction"></div>
-    <div class="gen-filter-row" id="gen-filter-row">
-        <button class="gen-filter-btn active" onclick="filterPC(0)">ALL</button>
-        <button class="gen-filter-btn" onclick="filterPC(1)">GEN I</button>
-        <button class="gen-filter-btn" onclick="filterPC(2)">GEN II</button>
-        <button class="gen-filter-btn" onclick="filterPC(3)">GEN III</button>
-        <button class="gen-filter-btn" onclick="filterPC(4)">GEN IV</button>
-        <button class="gen-filter-btn" onclick="filterPC(5)">GEN V</button>
-        <button class="gen-filter-btn" onclick="filterPC(6)">GEN VI</button>
-        <button class="gen-filter-btn" onclick="filterPC(7)">GEN VII</button>
-        <button class="gen-filter-btn" onclick="filterPC(8)">GEN VIII</button>
-        <button class="gen-filter-btn" onclick="filterPC(9)">GEN IX</button>
-        <button class="gen-filter-btn" onclick="filterPC(-1)">❤️ FAVES</button>
+
+    <!-- BOX tab -->
+    <div id="pc-tab-box">
+        <div id="badge-section">
+            <div id="badge-section-title">ACHIEVEMENTS</div>
+            <div class="badge-row" id="badge-row"></div>
+        </div>
+        <div id="egg-section"></div>
+        <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:6px; font-size:12px;" id="pc-instruction"></div>
+        <div class="gen-filter-row" id="gen-filter-row">
+            <button class="gen-filter-btn active" onclick="filterPC(0)">ALL</button>
+            <button class="gen-filter-btn" onclick="filterPC(1)">GEN I</button>
+            <button class="gen-filter-btn" onclick="filterPC(2)">GEN II</button>
+            <button class="gen-filter-btn" onclick="filterPC(3)">GEN III</button>
+            <button class="gen-filter-btn" onclick="filterPC(4)">GEN IV</button>
+            <button class="gen-filter-btn" onclick="filterPC(5)">GEN V</button>
+            <button class="gen-filter-btn" onclick="filterPC(6)">GEN VI</button>
+            <button class="gen-filter-btn" onclick="filterPC(7)">GEN VII</button>
+            <button class="gen-filter-btn" onclick="filterPC(8)">GEN VIII</button>
+            <button class="gen-filter-btn" onclick="filterPC(9)">GEN IX</button>
+            <button class="gen-filter-btn" onclick="filterPC(-1)">❤️ FAVES</button>
+        </div>
+        <div class="pc-sort-row" id="pc-sort-row">
+            <button class="pc-sort-btn active" onclick="sortPC('dex')">📋 DEX ORDER</button>
+            <button class="pc-sort-btn" onclick="sortPC('newest')">⏰ NEWEST</button>
+            <button class="pc-sort-btn" onclick="sortPC('caught')">✅ CAUGHT FIRST</button>
+        </div>
+        <div class="pc-grid" id="pc-grid"></div>
+        <div class="save-controls" id="save-controls">
+            <div class="save-btn" onclick="exportSave()">💾 EXPORT</div>
+            <div class="save-btn" onclick="importSave()">📂 IMPORT</div>
+            <div class="save-btn" id="gift-btn" onclick="toggleGiftMode()" style="grid-column:span 2;">🎁 GIFT TO P2</div>
+        </div>
     </div>
-    <div class="pc-sort-row" id="pc-sort-row">
-        <button class="pc-sort-btn active" onclick="sortPC('dex')">📋 DEX ORDER</button>
-        <button class="pc-sort-btn" onclick="sortPC('newest')">⏰ NEWEST</button>
-        <button class="pc-sort-btn" onclick="sortPC('caught')">✅ CAUGHT FIRST</button>
+
+    <!-- QUIZ tab -->
+    <div id="pc-tab-quiz">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:30px 20px;gap:16px;">
+            <div style="font-size:52px;">🎮</div>
+            <div style="font-size:14px;font-weight:900;color:#fda085;text-align:center;letter-spacing:1px;">WHO'S THAT POKÉMON?</div>
+            <div style="font-size:11px;color:#777;text-align:center;">Test your knowledge on Pokémon silhouettes!</div>
+            <button class="btn-large" style="background:linear-gradient(135deg,#f46b45,#eea849);color:#000;font-weight:900;width:100%;max-width:220px;" onclick="closePC();openWTP();">▶ START QUIZ</button>
+        </div>
     </div>
-    <div class="pc-grid" id="pc-grid"></div>
-    <div class="save-controls" id="save-controls">
-        <div class="save-btn" onclick="exportSave()">💾 EXPORT</div>
-        <div class="save-btn" onclick="importSave()">📂 IMPORT</div>
-        <div class="save-btn" id="gift-btn" onclick="toggleGiftMode()" style="grid-column:span 2;">🎁 GIFT TO P2</div>
+
+    <!-- TRADE tab -->
+    <div id="pc-tab-trade">
+        <!-- rendered by renderTradeInPC() -->
     </div>
+
+    <!-- BADGES tab -->
+    <div id="pc-tab-badges">
+        <!-- rendered by renderBadgesInPC() -->
+    </div>
+
     <button id="pc-fight-btn" onclick="startTeamBattle()">⚔️ FIGHT!</button>
     <button class="close-pc-btn" onclick="closePC()">CANCEL / CLOSE PC</button>
 </div>
@@ -604,41 +625,6 @@
         <p style="font-size:11px; color:#777; margin:0;">Both players will have this Pokémon!</p>
         <button class="btn-large" style="background:linear-gradient(135deg,#ff9800,#ff5722); color:#fff;" onclick="confirmGift()">SEND GIFT! 🎁</button>
         <button class="btn-large btn-danger" onclick="cancelGift()">CANCEL</button>
-    </div>
-</div>
-
-<!-- SPRINT 5: TRADE MODAL -->
-<div class="overlay-screen" id="trade-modal" style="display:none;">
-    <div class="modal-box" style="max-width:340px;width:92%;">
-        <div id="trade-phase-1">
-            <div style="font-size:32px;margin-bottom:4px;">🔄</div>
-            <h2 style="margin:0 0 4px;font-weight:900;color:#64b5f6;">TRADE</h2>
-            <p style="font-size:12px;color:#aaa;margin:0 0 8px;">P<span id="trade-giver-num">1</span>: tap a Pokémon to offer</p>
-            <div class="trade-pc-mini" id="trade-pc-grid"></div>
-            <button class="btn-large btn-danger" onclick="closeTradeModal()">✖ CANCEL</button>
-        </div>
-        <div id="trade-phase-2" style="display:none;">
-            <div class="trade-offer-preview">
-                <div style="font-size:28px;">🔄</div>
-                <img id="trade-offer-sprite" src="">
-                <div class="name" id="trade-offer-name"></div>
-                <div class="receiver">Pass to P<span id="trade-receiver-num">2</span> to accept!</div>
-            </div>
-            <div style="display:flex;gap:10px;">
-                <button class="btn-large" style="background:linear-gradient(135deg,#2e7d32,#388e3c);color:#fff;flex:1;" onclick="executeTradeAccept()">✅ ACCEPT</button>
-                <button class="btn-large btn-danger" style="flex:1;" onclick="closeTradeModal()">❌ DECLINE</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- SPRINT 5: BADGE SHELF MODAL -->
-<div class="overlay-screen" id="badge-shelf-modal" style="display:none;">
-    <div class="modal-box" style="max-width:340px;width:92%;max-height:80dvh;overflow-y:auto;">
-        <div style="font-size:32px;margin-bottom:4px;">🏅</div>
-        <h2 style="margin:0 0 12px;font-weight:900;color:#ffcc00;">BADGES — P<span id="badge-shelf-player">1</span></h2>
-        <div id="badge-shelf-grid"></div>
-        <button class="btn-large btn-danger" onclick="document.getElementById('badge-shelf-modal').style.display='none'">✖ CLOSE</button>
     </div>
 </div>
 
@@ -1633,9 +1619,14 @@
         const otherP = currentPlayer === 1 ? 2 : 1;
         const giftBtn = document.getElementById('gift-btn');
         if (giftBtn) { giftBtn.innerText = `🎁 GIFT TO P${otherP}`; giftBtn.style.background = ''; giftBtn.style.borderColor = ''; }
+        // Sprint 5: tab row hidden in battle mode (team pick flow)
+        const tabRow = document.getElementById('pc-tab-row');
+        if (tabRow) tabRow.style.display = context === 'battle' ? 'none' : '';
         renderPCGrid();
         updateFightBtn();
         document.getElementById('pc-modal').style.display = 'flex';
+        // Sprint 5: always reset to box tab when opening PC
+        switchPCTab('box');
     }
 
     function updateFightBtn() {
@@ -1703,11 +1694,13 @@
                     const teamIdx = pcContext === 'battle' ? activeTeamArr.indexOf(i) : -1;
                     const classes = ['pc-item', isFaved ? 'faved' : '', giftModeActive ? 'gift-mode-item' : '', teamIdx >= 0 ? 'team-selected' : ''].filter(Boolean).join(' ');
                     const nick = nicknameData[currentPlayer][i];
-                    const label = nick ? `<span style="color:#ffcc00;font-size:9px;">${nick}</span>` : `<span>#${i.toString().padStart(3,'0')}</span>`;
-                    const teamNum = teamIdx >= 0 ? `<span class="team-select-num">${teamIdx + 1}</span>` : '';
                     const pcLvl = getLevel(pcTargetPlayer, i);
-                    const lvlTag = pcLvl > 1 ? `<span class="lvl-badge">Lv${pcLvl}</span>` : '';
-                    html += `<div class="${classes}" style="position:relative" onclick="handlePCSelect(${i})">${teamNum}${lvlTag}<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy">${label}</div>`;
+                    const lvlTxt = pcLvl > 1 ? ` <span style="color:#64b5f6;font-size:8px;">Lv${pcLvl}</span>` : '';
+                    const label = nick
+                        ? `<span style="color:#ffcc00;font-size:9px;">${nick}</span>`
+                        : `<span>#${i.toString().padStart(3,'0')}</span>${lvlTxt}`;
+                    const teamNum = teamIdx >= 0 ? `<span class="team-select-num">${teamIdx + 1}</span>` : '';
+                    html += `<div class="${classes}" style="position:relative" onclick="handlePCSelect(${i})">${teamNum}<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy">${label}</div>`;
                 } else if (pcContext === 'dex') {
                     html += `<div class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span>#${i.toString().padStart(3,'0')}</span></div>`;
                 }
@@ -1771,42 +1764,57 @@
         checkBadges();
     }
 
-    // --- SPRINT 5: TRADE ---
-    function openTradeModal() {
-        if (caughtData[currentPlayer].length === 0) { alert(`P${currentPlayer} has no Pokémon to trade!`); return; }
-        pendingTradeGiver = currentPlayer;
-        pendingTradeId = null;
-        renderTradeGrid();
-        document.getElementById('trade-giver-num').innerText = currentPlayer;
-        document.getElementById('trade-receiver-num').innerText = currentPlayer === 1 ? 2 : 1;
-        document.getElementById('trade-phase-1').style.display = 'block';
-        document.getElementById('trade-phase-2').style.display = 'none';
-        document.getElementById('trade-modal').style.display = 'flex';
+    // --- SPRINT 5: PC TAB SYSTEM ---
+    let pcCurrentTab = 'box';
+
+    function switchPCTab(tab) {
+        pcCurrentTab = tab;
+        ['box', 'quiz', 'trade', 'badges'].forEach(t => {
+            const el = document.getElementById(`pc-tab-${t}`);
+            if (el) el.style.display = t === tab ? 'flex' : 'none';
+            const btn = document.querySelector(`.pc-tab-btn[data-tab="${t}"]`);
+            if (btn) btn.classList.toggle('active', t === tab);
+        });
+        if (tab === 'trade') renderTradeInPC();
+        if (tab === 'badges') renderBadgesInPC();
     }
 
-    function renderTradeGrid() {
-        const ids = caughtData[pendingTradeGiver];
+    function renderTradeInPC() {
+        const el = document.getElementById('pc-tab-trade');
+        const ids = caughtData[currentPlayer];
         if (ids.length === 0) {
-            document.getElementById('trade-pc-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#555;padding:20px;font-size:12px;">No Pokémon to trade!</div>';
+            el.innerHTML = `<div style="text-align:center;color:#555;padding:40px 20px;font-size:12px;flex:1;">P${currentPlayer} has no Pokémon to trade!</div>`;
             return;
         }
-        let html = '';
+        pendingTradeGiver = currentPlayer;
+        pendingTradeId = null;
+        const receiver = currentPlayer === 1 ? 2 : 1;
+        let grid = '';
         ids.forEach(id => {
-            const lvl = getLevel(pendingTradeGiver, id);
-            const lvlBadge = lvl > 1 ? `<span class="lvl-badge">Lv${lvl}</span>` : '';
-            html += `<div class="pc-item caught" onclick="tradeSelectOffer(${id})" style="position:relative;">${lvlBadge}<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3,'0')}</span></div>`;
+            const lvl = getLevel(currentPlayer, id);
+            const lvlTxt = lvl > 1 ? ` Lv${lvl}` : '';
+            grid += `<div class="pc-item caught" onclick="tradeSelectOfferInPC(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span>#${id.toString().padStart(3,'0')}${lvlTxt}</span></div>`;
         });
-        document.getElementById('trade-pc-grid').innerHTML = html;
+        el.innerHTML = `<div style="font-size:12px;color:#64b5f6;font-weight:900;padding:6px 0 4px;flex-shrink:0;">P${currentPlayer} → P${receiver}: TAP TO OFFER</div>
+            <div class="pc-grid" style="flex:1;">${grid}</div>`;
     }
 
-    function tradeSelectOffer(id) {
+    function tradeSelectOfferInPC(id) {
         pendingTradeId = id;
-        document.getElementById('trade-offer-sprite').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-        document.getElementById('trade-offer-name').innerText = `#${id.toString().padStart(3,'0')}`;
-        const lvl = getLevel(pendingTradeGiver, id);
-        if (lvl > 1) document.getElementById('trade-offer-name').innerText += ` (Lv.${lvl})`;
-        document.getElementById('trade-phase-1').style.display = 'none';
-        document.getElementById('trade-phase-2').style.display = 'block';
+        const receiver = currentPlayer === 1 ? 2 : 1;
+        const lvl = getLevel(currentPlayer, id);
+        const lvlTxt = lvl > 1 ? ` (Lv.${lvl})` : '';
+        const el = document.getElementById('pc-tab-trade');
+        el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 0;flex:1;">
+                <div style="font-size:30px;">🔄</div>
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" style="width:96px;height:96px;image-rendering:pixelated;">
+                <div style="font-size:18px;font-weight:900;color:#fff;">#${id.toString().padStart(3,'0')}${lvlTxt}</div>
+                <div style="font-size:12px;color:#aaa;">Pass phone to P${receiver} to accept!</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-shrink:0;">
+                <button class="btn-large" style="background:linear-gradient(135deg,#2e7d32,#388e3c);color:#fff;flex:1;" onclick="executeTradeAccept()">✅ ACCEPT</button>
+                <button class="btn-large btn-danger" style="flex:1;" onclick="renderTradeInPC()">❌ DECLINE</button>
+            </div>`;
     }
 
     function executeTradeAccept() {
@@ -1828,23 +1836,16 @@
         tradeCount[giver]++; tradeCount[receiver]++;
         localStorage.setItem(`pokedex_trades_p${giver}`, JSON.stringify(tradeCount[giver]));
         localStorage.setItem(`pokedex_trades_p${receiver}`, JSON.stringify(tradeCount[receiver]));
-        document.getElementById('trade-modal').style.display = 'none';
-        updateCatchUI(); checkBadges();
         showBadgeToast({ icon: '🔄', name: 'TRADE COMPLETE!' });
         logMsg(`🔄 P${giver} traded #${pendingTradeId.toString().padStart(3,'0')} to P${receiver}!`);
         pendingTradeId = null;
+        updateCatchUI(); checkBadges();
+        switchPCTab('box');
     }
 
-    function closeTradeModal() {
-        document.getElementById('trade-modal').style.display = 'none';
-        pendingTradeId = null;
-    }
-
-    // --- SPRINT 5: BADGE SHELF ---
-    function openBadgeShelf() {
+    function renderBadgesInPC() {
         const p = currentPlayer;
-        document.getElementById('badge-shelf-player').innerText = p;
-        let html = '';
+        let html = `<div style="font-size:12px;color:#ffcc00;font-weight:900;padding:6px 0 8px;flex-shrink:0;">P${p}: ${seenBadges[p].length} / ${BADGES.length} BADGES</div>`;
         BADGES.forEach(b => {
             const earned = seenBadges[p].includes(b.id) || b.check(p);
             html += `<div class="badge-shelf-item ${earned ? 'earned' : ''}" style="opacity:${earned ? '1' : '0.3'}">
@@ -1856,9 +1857,12 @@
                 ${earned ? '<span class="b-check">✓</span>' : ''}
             </div>`;
         });
-        document.getElementById('badge-shelf-grid').innerHTML = html;
-        document.getElementById('badge-shelf-modal').style.display = 'flex';
+        document.getElementById('pc-tab-badges').innerHTML = html;
     }
+
+    // Kept as redirectors (called from other places if needed)
+    function openTradeModal() { openPC('dex'); switchPCTab('trade'); }
+    function openBadgeShelf() { openPC('dex'); switchPCTab('badges'); }
 
     // --- BATTLE ENGINE ---
     async function loadFighterDataInto(obj, id, isPlayer, isShiny, isShinyWild = false, playerNum = null) {
