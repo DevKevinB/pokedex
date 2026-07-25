@@ -9,7 +9,7 @@
 // Bump CACHE_VERSION on every release to purge old shells.
 // ============================================================
 
-const CACHE_VERSION = 'pokedexos-v16.2.0';
+const CACHE_VERSION = 'pokedexos-v16.3.0';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 
@@ -19,7 +19,7 @@ const SHELL_FILES = [
   './css/main.css', './css/gba.css',
   './js/main.js', './js/config.js', './js/state.js', './js/api.js',
   './js/audio.js', './js/dex.js', './js/catch.js', './js/battle.js', './js/pc.js',
-  './js/music.js', './js/explore.js',
+  './js/music.js', './js/explore.js', './js/progression.js',
   './manifest.webmanifest'
 ];
 

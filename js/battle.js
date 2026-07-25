@@ -398,6 +398,8 @@ async function handleVictory() {
   const newCatch = recordCatch(w.id);
   ensureMon(w.id, w.level);
   player().stats.battlesWon++; persist();
+  document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'win' } }));
+  document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: w.types || [] } }));
   await sleep(1400);
   msg.style.opacity = 0;
   ball.style.opacity = 0;

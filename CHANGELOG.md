@@ -2,6 +2,14 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [16.3.0] - TRAINER PROGRESSION (Phase 4)
+
+### Added
+- **Trainer Card** (🎖️ in the header): Pokédex completion bar, badge case, today's quests, lifetime stats, and Professor Oak commentary that changes as your dex fills up.
+- **8 Gym Badges**, each earned by a real milestone (first 3 catches, 3 battle wins, 15 explores, raising a Pokémon to Lv30...). **Every badge awards +1 Master Ball** — this is how you earn more.
+- **Daily Quests:** 3 rotating quests per day per player ("Catch a WATER type", "Win 2 battles", "Go exploring 3 times"). Each completed quest gives your lead Pokémon +30 XP; sweeping all 3 in one day earns a bonus Master Ball.
+- **Celebration pop-ups** with fanfare and haptics when a badge or quest lands.
+
 ## [16.2.0] - EXPLORE KANTO (Phase 3)
 
 ### Added

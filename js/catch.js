@@ -86,6 +86,7 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
     recordCatch(state.curId);
     ensureMon(state.curId); // fresh catches start at Lv5
     updateCatchUI();
+    document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: state.curData?.types || [] } }));
     setTimeout(() => {
       ball.style.opacity = 0;
       ball.style.transform = 'translateY(-150px) scale(2)';

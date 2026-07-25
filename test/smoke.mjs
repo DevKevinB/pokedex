@@ -79,6 +79,16 @@ async function mockRoutes(context) {
     route.fulfill({ status: 200, contentType: 'image/png', body: TINY_PNG }));
 }
 
+
+async function dismissCelebrations(page) {
+  for (let i = 0; i < 8; i++) {
+    if (await page.locator('#badge-modal').isVisible()) {
+      await page.locator('#badge-ok').evaluate(el => el.click());
+      await page.waitForTimeout(400);
+    } else break;
+  }
+}
+
 let failures = 0;
 function check(label, cond) {
   console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}`);
@@ -138,6 +148,13 @@ check('master ball catch succeeds', (await page.locator('#dex-catch-msg').innerT
 await page.waitForFunction(() => document.getElementById('catch-btn').innerText.includes('OWNED'), null, { timeout: 5000 });
 check('catch persisted to UI', true);
 
+// 3rd catch → Boulder Badge celebration
+await page.waitForTimeout(800);
+check('boulder badge celebration', await page.locator('#badge-modal').isVisible());
+const badgeTitle = await page.locator('#badge-title').innerText();
+check('badge title correct', badgeTitle.toUpperCase().includes('BOULDER'));
+await dismissCelebrations(page);
+
 // PC box
 await page.waitForTimeout(2200); // let catch animation fully release isCatching
 await page.click('#pc-btn');
@@ -189,7 +206,7 @@ for (let turn = 0; turn < 16 && !won; turn++) {
 check('battle won → victory screen', won);
 if (won) {
   check('victory shows XP', (await page.locator('#victory-lines').innerText()).includes('XP'));
-  await page.click('#victory-continue');
+  await page.locator('#victory-continue').evaluate(el => el.click());
   await page.waitForTimeout(1500);
   // evolution may play for fixture mon; wait for it to finish
   await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active') === false, null, { timeout: 15000 });
@@ -198,6 +215,7 @@ check('battle exits to dex', !(await page.locator('#battle-container.active').co
 
 // EXPLORE mode: habitat grid → encounter → battle → escape → back to explore
 await page.waitForTimeout(800);
+await dismissCelebrations(page);
 await page.click('#explore-btn');
 await page.waitForTimeout(600);
 check('explore opens', await page.locator('#explore-container.active').count() === 1);
@@ -214,6 +232,23 @@ check('run returns to explore', await page.locator('#explore-container.active').
 await page.click('#explore-back-btn');
 await page.waitForTimeout(600);
 check('back returns to dex', await page.locator('#explore-container.active').count() === 0);
+
+// trainer card
+await dismissCelebrations(page);
+await page.click('#card-btn');
+await page.waitForTimeout(500);
+check('trainer card opens', await page.locator('#card-modal').isVisible());
+check('8 badge slots', await page.locator('.card-badge').count() === 8);
+check('boulder badge earned on card', await page.locator('.card-badge.earned').count() >= 1);
+check('3 daily quests', await page.locator('.card-quest').count() === 3);
+check('oak speaks', (await page.locator('#card-oak').innerText()).includes('OAK'));
+const mbOk = await page.evaluate(() => {
+  const s2 = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+  return s2.players[1].items.masterBalls >= 1 && s2.players[1].badges.length >= 1;
+});
+check('badge + master ball persisted', mbOk);
+await page.click('#card-close');
+await page.waitForTimeout(300);
 const monsOk = await page.evaluate(() => {
   const s = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
   return Object.keys(s.players[1].mons || {}).length > 0;

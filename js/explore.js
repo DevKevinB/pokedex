@@ -74,6 +74,7 @@ async function enterHabitat(key) {
   currentHabitat = habitat;
   player().stats.explores = (player().stats.explores || 0) + 1;
   persist();
+  document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'explore' } }));
 
   const { id, tier } = rollEncounter(habitat);
 

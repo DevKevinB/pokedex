@@ -10,6 +10,7 @@ import { openBag, executeCatch } from './catch.js';
 import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, battleState } from './battle.js';
 import { openPC, closePC, cancelTeamPick, exportSave, importSave } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
+import { initProgression, openTrainerCard, closeTrainerCard, dismissCelebration } from './progression.js';
 import { playMusic, stopMusic, toggleMute, isMuted, playFanfare } from './music.js';
 import { playBeep } from './audio.js';
 
@@ -122,6 +123,9 @@ function wireUI() {
   on('switch-cancel', () => { document.getElementById('switch-modal').style.display = 'none'; });
   on('explore-btn', openExplore);
   on('explore-back-btn', closeExplore);
+  on('card-btn', openTrainerCard);
+  on('card-close', closeTrainerCard);
+  on('badge-ok', dismissCelebration);
 
   // explore → battle bridges
   document.addEventListener('explore-encounter', e => startWildEncounter(e.detail.wildId));
@@ -164,6 +168,7 @@ function registerSW() {
 
 // ---- Init ----
 loadSave();
+initProgression();
 wireUI();
 wireGestures();
 registerSW();

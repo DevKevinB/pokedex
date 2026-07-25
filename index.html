@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=16.2.0">
-    <link rel="stylesheet" href="css/gba.css?v=16.2.0">
+    <link rel="stylesheet" href="css/main.css?v=16.3.0">
+    <link rel="stylesheet" href="css/gba.css?v=16.3.0">
 </head>
 <body>
 
@@ -36,6 +36,7 @@
         <button class="player-toggle" id="player-btn">P1</button>
         <div style="flex: 1;"></div>
         <button class="header-btn" id="music-btn">🔊</button>
+        <button class="header-btn" id="card-btn">🎖️</button>
         <button class="header-btn" id="pc-btn">💻 PC</button>
         <button class="header-btn" id="battle-btn" style="color: #ffcc00; border-color: #ffcc00;">⚔️ BTL</button>
     </div>
@@ -96,7 +97,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 16.2 - GAME BOY EDITION</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 16.3 - GAME BOY EDITION</div>
         </div>
     </div>
 </div>
@@ -185,6 +186,39 @@
     <div id="evo-text">What? PIKACHU is evolving!</div>
 </div>
 
+<div class="overlay-screen" id="badge-modal" style="z-index: 3500;">
+    <div class="modal-box badge-box">
+        <div id="badge-emoji">🪨</div>
+        <h2 id="badge-title">BADGE EARNED!</h2>
+        <p id="badge-sub"></p>
+        <button class="btn-large btn-reg" id="badge-ok">AWESOME!</button>
+    </div>
+</div>
+
+<div class="overlay-screen" id="card-modal" style="z-index: 2500;">
+    <div class="modal-box card-box">
+        <h2 id="card-title">TRAINER CARD — P1</h2>
+        <div class="card-section">
+            <div class="card-row"><span>POKÉDEX</span><strong id="card-dex-pct">0/151 (0%)</strong></div>
+            <div class="card-dex-bar"><div id="card-dex-fill"></div></div>
+        </div>
+        <div class="card-section">
+            <div class="card-label">BADGES</div>
+            <div id="card-badges"></div>
+        </div>
+        <div class="card-section">
+            <div class="card-label">TODAY'S QUESTS</div>
+            <div id="card-quests"></div>
+        </div>
+        <div class="card-section">
+            <div class="card-label">STATS</div>
+            <div id="card-stats"></div>
+        </div>
+        <p id="card-oak"></p>
+        <button class="btn-large btn-reg" id="card-close">CLOSE</button>
+    </div>
+</div>
+
 <div class="overlay-screen" id="sparkle-modal">
     <div class="modal-box">
         <h2 style="margin-top:0; color:#ffcc00; font-weight:900;">SELECT VARIANT</h2>
@@ -202,6 +236,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=16.2.0"></script>
+<script type="module" src="js/main.js?v=16.3.0"></script>
 </body>
 </html>
