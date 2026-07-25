@@ -9,6 +9,7 @@ const LEGACY_KEYS = { 1: 'pokedex_caught_p1', 2: 'pokedex_caught_p2' };
 
 function freshPlayer() {
   return {
+    name: '',            // display name (falls back to P1/P2)
     caught: [],          // dex ids owned
     team: [],            // up to 6 dex ids (Phase 2)
     mons: {},            // per-id growth: { [id]: { level, xp } } (Phase 2)
@@ -66,6 +67,16 @@ export const state = {
 };
 
 export function player() { return state.save.players[state.currentPlayer]; }
+
+export function playerName(n = state.currentPlayer) {
+  const nm = state.save.players[n]?.name?.trim();
+  return nm || `P${n}`;
+}
+
+export function setPlayerName(n, name) {
+  state.save.players[n].name = (name || '').trim().slice(0, 12).toUpperCase();
+  persist();
+}
 
 export function loadSave() {
   try {

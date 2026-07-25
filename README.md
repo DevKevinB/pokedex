@@ -33,6 +33,13 @@ Designed specifically for mobile browsers with zero external dependencies, this 
 * **Visual Grid:** Displays all 151 Pokémon. Caught Pokémon appear in full color; uncaught remain in grayscale.
 * **Base64 Save System:** Easily export and import save data as a text string to transfer progress seamlessly across different devices (e.g., from iPhone to iPad).
 
+## 🆕 v16 GAME BOY EDITION Highlights
+* **GBA pixel overhaul:** Press Start 2P font, animated pixel sprites, typewriter text, CRT scanlines, screen-wipe transitions, procedural chiptune soundtrack.
+* **Real RPG battles:** teams of 6, levels & XP, evolution cutscenes, switching, crits & STAB, wild level scaling.
+* **Explore Kanto:** 8 habitats with rarity tiers and 1% legendary encounters.
+* **Progression:** trainer card, 8 badges (each awards a Master Ball), rotating daily quests, Professor Oak commentary.
+* **Junior mode:** per-player toggle — giant buttons, spoken names, tap-to-catch that never fails, battles you can't lose, maximum confetti.
+
 ## 🚀 Installation & Deployment
 
 This project requires **no build steps, no Node.js, and no backend servers**. 

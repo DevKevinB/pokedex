@@ -3,11 +3,11 @@
 // Square lead + triangle bass step sequencer. No audio files.
 // ============================================================
 
+import { isMuted } from './audio.js';
+
 let ctx = null;
 let masterGain = null;
 let current = null;      // { name, timer, step }
-let muted = false;
-try { muted = localStorage.getItem('pokedexos_muted') === '1'; } catch (e) { /* noop */ }
 
 const N = {}; // note name → frequency
 (() => {
@@ -46,7 +46,7 @@ function ensureCtx() {
     try {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       masterGain = ctx.createGain();
-      masterGain.gain.value = muted ? 0 : 1;
+      masterGain.gain.value = 1;
       masterGain.connect(ctx.destination);
     } catch (e) { return false; }
   }
@@ -79,6 +79,7 @@ export function playMusic(name) {
   let step = 0;
 
   const timer = setInterval(() => {
+    if (isMuted()) { step++; return; }  // stay in rhythm, emit nothing
     const when = ctx.currentTime + 0.03;
     const lead = t.lead[step % steps];
     const bass = t.bass[step % steps];
@@ -94,15 +95,6 @@ export function playMusic(name) {
 export function stopMusic() {
   if (current) { clearInterval(current.timer); current = null; }
 }
-
-export function toggleMute() {
-  muted = !muted;
-  try { localStorage.setItem('pokedexos_muted', muted ? '1' : '0'); } catch (e) { /* noop */ }
-  if (masterGain) masterGain.gain.value = muted ? 0 : 1;
-  return muted;
-}
-
-export function isMuted() { return muted; }
 
 // one-shot fanfare then resume a theme
 export function playFanfare(thenTrack) {

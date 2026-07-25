@@ -9,6 +9,11 @@ import { updateCatchUI } from './dex.js';
 
 export function openBag() {
   if (state.isCatching || state.appMode === 'battle' || player().caught.includes(state.curId)) return;
+  // Junior mode: no drawer, no misses — straight to the fun part
+  if (player().settings.junior) {
+    executeCatch(1, 'poke-ball', true);
+    return;
+  }
   const drawer = document.getElementById('ball-drawer');
   if (drawer.classList.contains('open')) {
     drawer.classList.remove('open');
@@ -20,7 +25,24 @@ export function openBag() {
   }
 }
 
-export function executeCatch(ballModifier, ballName) {
+// celebration confetti (extra generous in junior mode)
+export function spawnConfetti(host, count = 24) {
+  if (!host) return;
+  const colors = ['#e84040', '#ffd040', '#38c060', '#4592c4', '#f366b9', '#fff'];
+  for (let i = 0; i < count; i++) {
+    const c = document.createElement('span');
+    c.className = 'confetti-piece';
+    c.style.background = colors[i % colors.length];
+    c.style.left = `${10 + Math.random() * 80}%`;
+    c.style.top = `${Math.random() * 20}%`;
+    c.style.animationDelay = `${Math.random() * 0.4}s`;
+    c.style.setProperty('--cx', `${(Math.random() - 0.5) * 120}px`);
+    host.appendChild(c);
+    setTimeout(() => c.remove(), 1900);
+  }
+}
+
+export function executeCatch(ballModifier, ballName, forceSuccess = false) {
   if (state.isCatching) return;
   if (ballName === 'master-ball') {
     if (!spendMasterBall()) {
@@ -50,7 +72,7 @@ export function executeCatch(ballModifier, ballName) {
     sfx.suck();
 
     let isSuccess;
-    if (ballName === 'master-ball') {
+    if (forceSuccess || ballName === 'master-ball') {
       isSuccess = true;
     } else {
       const baseRate = state.curSpeciesData?.capture_rate ?? 45;
@@ -83,6 +105,7 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
     msg.innerText = 'GOTCHA!';
     msg.style.color = '#00ff00';
     msg.style.opacity = 1;
+    spawnConfetti(document.querySelector('.visual-display'), player().settings.junior ? 48 : 24);
     recordCatch(state.curId);
     ensureMon(state.curId); // fresh catches start at Lv5
     updateCatchUI();

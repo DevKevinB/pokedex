@@ -7,12 +7,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
     <link rel="manifest" href="manifest.webmanifest">
-    <title>Pokédex OS v16</title>
+    <title>Pokédex OS v17</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=16.3.0">
-    <link rel="stylesheet" href="css/gba.css?v=16.3.0">
+    <link rel="stylesheet" href="css/main.css?v=17.0.0">
+    <link rel="stylesheet" href="css/gba.css?v=17.0.0">
 </head>
 <body>
 
@@ -33,12 +33,12 @@
             <div class="led yellow" id="led-yellow"></div>
             <div class="led green" id="led-green"></div>
         </div>
-        <button class="player-toggle" id="player-btn">P1</button>
+        <button class="player-toggle" id="player-btn" title="Switch player (P1/P2)">P1</button>
         <div style="flex: 1;"></div>
-        <button class="header-btn" id="music-btn">🔊</button>
-        <button class="header-btn" id="card-btn">🎖️</button>
-        <button class="header-btn" id="pc-btn">💻 PC</button>
-        <button class="header-btn" id="battle-btn" style="color: #ffcc00; border-color: #ffcc00;">⚔️ BTL</button>
+        <button class="header-btn" id="music-btn" title="Sound on/off">🔊</button>
+        <button class="header-btn" id="settings-btn" title="Settings: names, junior mode, sound, save data">⚙️</button>
+        <button class="header-btn" id="pc-btn" title="PC Box: your Pokémon collection">💻 PC</button>
+        <button class="header-btn" id="battle-btn" title="Battle Arena: fight with your team" style="color: #ffcc00; border-color: #ffcc00;">⚔️ BTL</button>
     </div>
 
     <div class="visual-display">
@@ -67,20 +67,21 @@
             <button class="nav-btn" id="nav-next">▶</button>
         </div>
 
-        <button class="tool-btn" id="cry-btn"><span class="btn-icon">💥</span> CRY</button>
-        <button class="tool-btn" id="voice-btn"><span class="btn-icon">🎙️</span> VOICE</button>
-        <button class="tool-btn" id="shiny-btn"><span class="btn-icon">✨</span> SHINY</button>
-        <button class="tool-btn" id="random-btn"><span class="btn-icon">🎲</span> RNDM</button>
-        <button class="tool-btn btn-catch" id="catch-btn"><span class="btn-icon">🔴</span> CATCH</button>
-        <button class="tool-btn" id="data-btn" style="grid-column: span 2; background: #2c2c2c;"><span class="btn-icon">📊</span> DATA</button>
-        <button class="tool-btn btn-explore" id="explore-btn"><span class="btn-icon">🌲</span> EXPLORE KANTO</button>
+        <button class="tool-btn" id="cry-btn" title="Play this Pokémon's cry"><span class="btn-icon">💥</span> CRY</button>
+        <button class="tool-btn" id="voice-btn" title="Read the Pokédex entry out loud"><span class="btn-icon">🎙️</span> VOICE</button>
+        <button class="tool-btn" id="shiny-btn" title="Show the rare shiny coloring"><span class="btn-icon">✨</span> SHINY</button>
+        <button class="tool-btn" id="random-btn" title="Jump to a random Pokémon"><span class="btn-icon">🎲</span> RNDM</button>
+        <button class="tool-btn btn-catch" id="catch-btn" title="Throw a ball and try to catch it"><span class="btn-icon">🔴</span> CATCH</button>
+        <button class="tool-btn" id="data-btn" title="Stats, abilities and evolution" style="background: #2c2c2c;"><span class="btn-icon">📊</span> DATA</button>
+        <button class="tool-btn" id="card-btn" title="Trainer Card: badges, quests and progress"><span class="btn-icon">🎖️</span> CARD</button>
+        <button class="tool-btn btn-explore" id="explore-btn" title="Walk through habitats and find wild Pokémon"><span class="btn-icon">🌲</span> EXPLORE THE WILD</button>
     </div>
 
     <div id="ball-drawer">
-        <div class="ball-opt" data-mod="1" data-ball="poke-ball"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"><span>POKÉBALL</span><small>1x RATE</small></div>
-        <div class="ball-opt" data-mod="1.5" data-ball="great-ball"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png"><span>GREAT BALL</span><small>1.5x RATE</small></div>
-        <div class="ball-opt" data-mod="2" data-ball="ultra-ball"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png"><span>ULTRA BALL</span><small>2x RATE</small></div>
-        <div class="ball-opt" data-mod="99" data-ball="master-ball"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png"><span>MASTER BALL</span><small>100% CATCH</small><span class="ball-count" id="mb-count">x1</span></div>
+        <div class="ball-opt" data-mod="1" data-ball="poke-ball" title="Normal catch chance"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"><span>POKÉBALL</span><small>1x RATE</small></div>
+        <div class="ball-opt" data-mod="1.5" data-ball="great-ball" title="1.5x catch chance"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png"><span>GREAT BALL</span><small>1.5x RATE</small></div>
+        <div class="ball-opt" data-mod="2" data-ball="ultra-ball" title="2x catch chance"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png"><span>ULTRA BALL</span><small>2x RATE</small></div>
+        <div class="ball-opt" data-mod="99" data-ball="master-ball" title="Never fails — earn more from badges"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png"><span>MASTER BALL</span><small>100% CATCH</small><span class="ball-count" id="mb-count">x1</span></div>
     </div>
 
     <div class="bottom-sheet" id="data-sheet">
@@ -97,7 +98,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 16.3 - GAME BOY EDITION</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 17.0 - GAME BOY EDITION</div>
         </div>
     </div>
 </div>
@@ -105,7 +106,7 @@
 <div id="explore-container">
     <div class="battle-header">
         <button class="btn-escape" id="explore-back-btn">🔙 BACK</button>
-        <span>EXPLORE KANTO</span>
+        <span>EXPLORE THE WILD</span>
     </div>
     <div class="explore-body">
         <div id="habitat-grid"></div>
@@ -157,11 +158,8 @@
 <div id="pc-modal">
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
     <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:10px; font-size:12px;" id="pc-instruction"></div>
+    <div id="gen-tabs"></div>
     <div class="pc-grid" id="pc-grid"></div>
-    <div class="save-controls" id="save-controls">
-        <div class="save-btn" id="export-btn">💾 EXPORT</div>
-        <div class="save-btn" id="import-btn">📂 IMPORT</div>
-    </div>
     <button class="close-pc-btn" id="close-pc-btn">CANCEL / CLOSE PC</button>
     <button class="pc-cancel-btn" id="pc-cancel-btn" style="display:none;">✖ CANCEL</button>
 </div>
@@ -184,6 +182,33 @@
 <div class="overlay-screen" id="evo-modal" style="background: rgba(4,4,16,0.97); z-index: 3000;">
     <img id="evo-sprite" src="">
     <div id="evo-text">What? PIKACHU is evolving!</div>
+</div>
+
+<div class="overlay-screen" id="settings-modal" style="z-index: 2600;">
+    <div class="modal-box card-box">
+        <h2>⚙️ SETTINGS</h2>
+        <div class="card-section">
+            <div class="card-label">PLAYERS</div>
+            <div class="set-row"><span>PLAYER 1 NAME</span><input id="set-p1-name" class="set-input" maxlength="12" placeholder="P1"></div>
+            <div class="set-row"><span>P1 JUNIOR MODE</span><button class="set-toggle" id="set-p1-junior" title="Big buttons, spoken names, catches never fail, battles can't be lost">OFF</button></div>
+            <div class="set-row"><span>PLAYER 2 NAME</span><input id="set-p2-name" class="set-input" maxlength="12" placeholder="P2"></div>
+            <div class="set-row"><span>P2 JUNIOR MODE</span><button class="set-toggle" id="set-p2-junior" title="Big buttons, spoken names, catches never fail, battles can't be lost">OFF</button></div>
+        </div>
+        <div class="card-section">
+            <div class="card-label">SOUND</div>
+            <div class="set-row"><span>MUSIC &amp; SOUND</span><button class="set-toggle" id="set-sound">ON</button></div>
+        </div>
+        <div class="card-section">
+            <div class="card-label">SAVE DATA (BOTH PLAYERS)</div>
+            <div class="set-grid">
+                <button class="set-action" id="set-export-copy" title="Copy a save code to paste on another device">💾 COPY CODE</button>
+                <button class="set-action" id="set-export-file" title="Download your save as a file">📄 SAVE FILE</button>
+                <button class="set-action" id="set-import-paste" title="Paste a save code from another device">📋 PASTE CODE</button>
+                <button class="set-action" id="set-import-file" title="Load a downloaded save file">📂 LOAD FILE</button>
+            </div>
+        </div>
+        <button class="btn-large btn-reg" id="settings-close">SAVE &amp; CLOSE</button>
+    </div>
 </div>
 
 <div class="overlay-screen" id="badge-modal" style="z-index: 3500;">
@@ -236,6 +261,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=16.3.0"></script>
+<script type="module" src="js/main.js?v=17.0.0"></script>
 </body>
 </html>

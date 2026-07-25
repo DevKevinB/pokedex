@@ -329,7 +329,12 @@ async function performAttack(attackerRole, defenderRole, move) {
   if (crit) damage *= 1.5;
   if (attackerRole === 'player' && battleState.isSparkle) damage *= 2.0;
 
-  defender.hp -= damage;
+  // Junior mode: player Pokémon can never faint
+  if (defenderRole === 'player' && player().settings.junior) {
+    defender.hp = Math.max(1, defender.hp - damage * 0.5);
+  } else {
+    defender.hp -= damage;
+  }
   updateHP(defenderRole);
   const defSprite = document.getElementById(`${defenderRole}-sprite`);
   defSprite.classList.add('hit-anim');

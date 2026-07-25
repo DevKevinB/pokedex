@@ -5,7 +5,7 @@
 // ============================================================
 
 import { MAX_POKEMON } from './config.js';
-import { state, player, persist, addXp, monLevel } from './state.js';
+import { state, player, persist, addXp, playerName } from './state.js';
 import { sfx, triggerVibration } from './audio.js';
 
 // ---- Badges ----
@@ -142,7 +142,7 @@ export function openTrainerCard() {
   const quests = ensureDailyQuests();
   const pct = Math.round((p.caught.length / MAX_POKEMON) * 100);
 
-  document.getElementById('card-title').innerText = `TRAINER CARD — P${state.currentPlayer}`;
+  document.getElementById('card-title').innerText = `TRAINER CARD — ${playerName()}`;
   document.getElementById('card-dex-pct').innerText = `${p.caught.length}/${MAX_POKEMON} (${pct}%)`;
   document.getElementById('card-dex-fill').style.width = `${pct}%`;
 

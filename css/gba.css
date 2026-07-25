@@ -13,7 +13,7 @@
   --px-shell-2: #23233f;
   --crt-green: #6bff6b;
   --crt-dark: #0f2810;
-  --pixel-font: 'Press Start 2P', 'Courier New', monospace;
+  --pixel-font: 'Press Start 2P', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Courier New', monospace;
 }
 
 /* ---------- global ---------- */
@@ -54,10 +54,22 @@ img { image-rendering: pixelated; }
 
 /* ---------- app frame ---------- */
 .app-container {
+  --type-glow: #4592c442;
   background:
-    radial-gradient(circle at 20% -10%, var(--p-dark) 0%, transparent 45%),
-    repeating-linear-gradient(45deg, var(--px-shell-2) 0 2px, var(--px-shell) 2px 14px);
+    radial-gradient(closest-side at 50% 30%, var(--type-glow) 0%, transparent 100%) no-repeat 0 0 / 100% 60%,
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.5) 49%, transparent 51%),
+    radial-gradient(1px 1px at 78% 8%, rgba(255,255,255,0.35) 49%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 35% 62%, rgba(255,255,255,0.3) 49%, transparent 51%),
+    radial-gradient(1px 1px at 62% 41%, rgba(255,255,255,0.4) 49%, transparent 51%),
+    radial-gradient(1px 1px at 90% 74%, rgba(255,255,255,0.3) 49%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 22% 88%, rgba(255,255,255,0.25) 49%, transparent 51%),
+    radial-gradient(1px 1px at 50% 12%, rgba(255,255,255,0.3) 49%, transparent 51%),
+    linear-gradient(180deg, #131328 0%, #0b0b1a 55%, #080812 100%);
+  background-size: 100% 60%, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 100% 100%;
+  transition: --type-glow 0.5s;
 }
+/* player identity lives in a slim colored strip under the header */
+.header { border-bottom: 3px solid var(--p-primary); padding-bottom: 12px; }
 
 /* header hardware */
 .player-toggle, .header-btn {
@@ -70,8 +82,9 @@ img { image-rendering: pixelated; }
 #battle-btn { color: #a02020 !important; border-color: var(--px-ink) !important; }
 
 /* identity */
-#poke-id { font-size: 9px; letter-spacing: 1px; }
-#poke-name { font-size: 20px !important; letter-spacing: 1px; text-shadow: 3px 3px 0 rgba(0,0,0,0.55); }
+#poke-id { font-size: 9px; letter-spacing: 1px; margin-bottom: 8px; color: rgba(255,255,255,0.95); text-shadow: 2px 2px 0 rgba(0,0,0,0.8); }
+#poke-name { font-size: 20px !important; letter-spacing: 1px; text-shadow: 3px 3px 0 rgba(0,0,0,0.55); margin: 0 0 10px 0 !important; line-height: 1.3; }
+.tags { margin-top: 2px; }
 .tag { border-radius: 2px; font-size: 8px; font-family: var(--pixel-font); padding: 5px 8px; border: 2px solid var(--px-ink); box-shadow: 2px 2px 0 rgba(0,0,0,0.4); }
 
 /* sprite plinth */
@@ -337,8 +350,12 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   position: fixed; top: 100dvh; left: 0; width: 100vw; height: 100dvh; z-index: 480;
   display: flex; flex-direction: column;
   background:
-    radial-gradient(circle at 50% -10%, #2e8048 0%, transparent 45%),
-    repeating-linear-gradient(45deg, var(--px-shell-2) 0 2px, var(--px-shell) 2px 14px);
+    radial-gradient(closest-side at 50% 0%, rgba(46,128,72,0.35) 0%, transparent 100%) no-repeat 0 0 / 100% 40%,
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4) 49%, transparent 51%),
+    radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,0.3) 49%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 45% 80%, rgba(255,255,255,0.25) 49%, transparent 51%),
+    linear-gradient(180deg, #131328 0%, #0b0b1a 100%);
+  background-size: 100% 40%, 260px 260px, 260px 260px, 260px 260px, 100% 100%;
   transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 #explore-container.active { top: 0; }
@@ -397,3 +414,91 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 #card-stats div { font-family: var(--pixel-font); font-size: 7px; color: #706848; background: #fffef2; border: 2px solid var(--px-ink); border-radius: 4px; padding: 7px 8px; display: flex; justify-content: space-between; }
 #card-stats strong { color: var(--px-ink); }
 #card-oak { font-family: var(--pixel-font); font-size: 8px !important; line-height: 1.9 !important; color: var(--px-ink) !important; background: #fffef2; border: 3px solid var(--px-ink); border-radius: 4px; padding: 10px; }
+
+/* ---------- Phase 5: Junior mode ---------- */
+.confetti-piece {
+  position: absolute; width: 8px; height: 12px; z-index: 40; pointer-events: none;
+  animation: confettiFall 1.6s steps(8, end) forwards;
+}
+@keyframes confettiFall {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  100% { opacity: 0; transform: translate(var(--cx, 0px), 340px) rotate(360deg); }
+}
+
+/* bigger everything, no reading required */
+body.junior .search-row input { display: none; }
+body.junior .nav-btn { flex: 1; font-size: 22px; padding: 18px 0; }
+body.junior button.tool-btn { font-size: 10px; padding: 18px 0; }
+body.junior .btn-icon { font-size: 30px; }
+body.junior .btn-catch { font-size: 12px !important; }
+body.junior .btn-explore { font-size: 12px !important; }
+body.junior #poke-name { font-size: 26px !important; }
+body.junior .header-btn, body.junior .player-toggle { padding: 10px 12px; font-size: 11px; }
+body.junior #poke-sprite { cursor: pointer; }
+body.junior .move-btn { font-size: 10px; padding: 16px 4px; }
+body.junior .habitat-emoji { font-size: 44px; }
+body.junior .habitat-name { font-size: 9px; }
+/* hide reading-heavy chrome for little trainers */
+body.junior #data-btn { display: none; }
+body.junior .btn-catch { grid-column: span 3; }
+body.junior #card-btn { grid-column: span 1; }
+body.junior .quick-stats { display: none; }
+
+
+/* ---------- v17: gen tabs, settings, desktop console frame ---------- */
+#gen-tabs { display: flex; gap: 6px; margin-bottom: 12px; justify-content: center; }
+.gen-tab {
+  flex: 1; max-width: 76px; font-family: var(--pixel-font); font-size: 8px; cursor: pointer;
+  background: rgba(107,255,107,0.06); color: rgba(107,255,107,0.6);
+  border: 2px solid rgba(107,255,107,0.3); border-radius: 2px; padding: 7px 2px;
+  display: flex; flex-direction: column; gap: 3px; align-items: center;
+}
+.gen-tab small { font-size: 6px; opacity: 0.8; }
+.gen-tab.active { background: rgba(107,255,107,0.18); color: var(--crt-green); border-color: var(--crt-green); box-shadow: 0 0 8px rgba(107,255,107,0.35); }
+.pc-empty { grid-column: 1 / -1; font-family: var(--pixel-font); font-size: 8px; color: rgba(107,255,107,0.5); text-align: center; padding: 40px 10px; line-height: 2; }
+
+/* settings */
+.set-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; font-family: var(--pixel-font); font-size: 7px; color: #706848; }
+.set-input {
+  font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink);
+  background: #fffef2; border: 2px solid var(--px-ink); border-radius: 2px;
+  padding: 8px; width: 130px; text-transform: uppercase; text-align: center;
+}
+.set-input:focus { outline: 2px solid var(--p-primary); }
+.set-toggle {
+  font-family: var(--pixel-font); font-size: 8px; cursor: pointer; min-width: 64px;
+  background: #d8d0a8; color: #706848; border: 2px solid var(--px-ink); border-radius: 2px;
+  padding: 8px 10px; box-shadow: 0 2px 0 var(--px-ink);
+}
+.set-toggle.on { background: #38c060; color: #fff; }
+.set-toggle:active { transform: translateY(2px); box-shadow: none; }
+.set-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.set-action {
+  font-family: var(--pixel-font); font-size: 7px; cursor: pointer;
+  background: #fffef2; color: var(--px-ink); border: 2px solid var(--px-ink); border-radius: 2px;
+  padding: 10px 4px; box-shadow: 0 3px 0 var(--px-ink);
+}
+.set-action:active { transform: translateY(3px); box-shadow: none; }
+
+/* desktop: centered handheld console frame */
+@media (min-width: 760px) {
+  body {
+    background:
+      radial-gradient(circle at 50% 40%, #1a1a30 0%, #0a0a14 70%),
+      #0a0a14;
+    display: flex; justify-content: center;
+  }
+  .app-container {
+    width: 520px; max-width: 520px; margin: 0 auto; position: relative;
+    border-left: 3px solid rgba(255,255,255,0.07); border-right: 3px solid rgba(0,0,0,0.6);
+    box-shadow: 0 0 90px rgba(0,0,0,0.85), 0 0 30px rgba(70,70,140,0.25);
+  }
+  #battle-container, #explore-container {
+    width: 520px; left: 50%; margin-left: -260px;
+    border-left: 3px solid rgba(255,255,255,0.07); border-right: 3px solid rgba(0,0,0,0.6);
+    box-shadow: 0 0 90px rgba(0,0,0,0.85);
+  }
+  #pc-modal { width: 520px; left: 50%; margin-left: -260px; border-left: 3px solid rgba(255,255,255,0.07); border-right: 3px solid rgba(0,0,0,0.6); }
+  #ball-drawer { width: 100%; }
+  .tool-btn, .nav-btn, .header-btn, .habitat-card, .move-btn, .pc-item { cursor: pointer; }
+}

@@ -2,6 +2,38 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [17.0.0] - NATIONAL DEX & SETTINGS UPDATE
+
+### Added
+- **649 Pokémon!** The dex now spans Generations 1–5 (Kanto through Unova) — every one with animated pixel sprites. Search, catch, battle, and evolve across all of them.
+- **Generation tabs in the PC Box** (G1–G5) with per-gen caught counters, so 649 slots stay browsable.
+- **⚙️ Settings screen** housing everything in one place: player names, Junior Mode per player, sound, and save data.
+- **Player names:** name P1 and P2 (they show in the header, PC Box, and Trainer Card).
+- **Save to file / load from file:** in addition to copy-paste codes, you can now download your save as a file and load it back — easy backups and transfers.
+- **Tooltips everywhere:** hover any button on desktop to see what it does.
+- Expanded habitats: all 8 explore zones now spawn Pokémon from five generations, with new legendaries hidden in them (Lugia, Ho-Oh, the legendary beasts, Kyogre, Groudon, Rayquaza, Dialga, Giratina, Darkrai, Reshiram, Zekrom...).
+
+### Changed
+- **New night-sky background** with faint pixel stars and a soft glow tinted by the current Pokémon's type — the diagonal stripes are gone.
+- **Desktop console frame:** on large screens the game now renders as a centered handheld-style column instead of stretching edge to edge.
+- Fixed the dex number crowding the Pokémon's name.
+
+### Fixed
+- **Sound toggle now actually silences everything** — music, sound effects, cries, and speech (it previously only muted music).
+- Emoji icons now render in color on desktop browsers.
+- Junior Mode is easy to find (Settings), and typed player names no longer vanish when flipping other settings.
+
+## [16.4.0] - JUNIOR MODE (Phase 5)
+
+### Added
+- **🧒 Junior Mode** — a per-player toggle on the Trainer Card, built for the youngest trainers:
+  - Giant buttons everywhere; the search box and reading-heavy panels hide away.
+  - Pokémon names are **spoken aloud** automatically when they appear — zero reading required.
+  - **Tap the Pokémon itself to catch it** — no ball drawer, and the catch always succeeds (after the full 3-shake suspense, of course).
+  - **Battles can't be lost:** your Pokémon never drops below 1 HP.
+  - Confetti. So much confetti.
+- Junior mode is saved per player — P1 can play the full game while P2 stays in junior mode.
+
 ## [16.3.0] - TRAINER PROGRESSION (Phase 4)
 
 ### Added

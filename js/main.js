@@ -3,15 +3,16 @@
 // ============================================================
 
 import { APP_VERSION } from './config.js';
-import { state, loadSave } from './state.js';
-import { initAudio, stopAllAudio, playCryAudio, speak, isSpeaking, triggerVibration } from './audio.js';
+import { state, loadSave, player, playerName } from './state.js';
+import { initAudio, stopAllAudio, playCryAudio, speak, isSpeaking, triggerVibration, toggleMute } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
 import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, battleState } from './battle.js';
-import { openPC, closePC, cancelTeamPick, exportSave, importSave } from './pc.js';
+import { openPC, closePC, cancelTeamPick } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { initProgression, openTrainerCard, closeTrainerCard, dismissCelebration } from './progression.js';
-import { playMusic, stopMusic, toggleMute, isMuted, playFanfare } from './music.js';
+import { initSettings, applyJuniorClass, syncMusicBtn } from './settings.js';
+import { playMusic, stopMusic, playFanfare } from './music.js';
 import { playBeep } from './audio.js';
 
 // ---- Boot ----
@@ -56,9 +57,10 @@ function togglePlayer() {
   if (state.isCatching || state.appMode === 'battle') return;
   state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
   triggerVibration();
-  document.getElementById('player-btn').innerText = `P${state.currentPlayer}`;
+  document.getElementById('player-btn').innerText = playerName();
   document.documentElement.style.setProperty('--p-primary', state.currentPlayer === 1 ? '#d32f2f' : '#1976D2');
   document.documentElement.style.setProperty('--p-dark', state.currentPlayer === 1 ? '#b71c1c' : '#0D47A1');
+  applyJuniorClass();
   updateCatchUI();
 }
 
@@ -112,8 +114,6 @@ function wireUI() {
   on('data-btn', toggleSheet);
   on('sheet-handle', toggleSheet);
   on('escape-btn', exitBattleMode);
-  on('export-btn', exportSave);
-  on('import-btn', importSave);
   on('close-pc-btn', closePC);
   on('pc-cancel-btn', cancelTeamPick);
   on('variant-regular', () => finalizeBattleSetup(false));
@@ -126,6 +126,11 @@ function wireUI() {
   on('card-btn', openTrainerCard);
   on('card-close', closeTrainerCard);
   on('badge-ok', dismissCelebration);
+
+  // Junior mode: tapping the Pokémon itself starts a catch
+  on('poke-sprite', () => {
+    if (player().settings.junior && state.appMode === 'dex') openBag();
+  });
 
   // explore → battle bridges
   document.addEventListener('explore-encounter', e => startWildEncounter(e.detail.wildId));
@@ -149,12 +154,12 @@ function wireUI() {
   document.addEventListener('battle-victory', () => playFanfare());
   document.addEventListener('battle-exited', () => playMusic('dex'));
 
-  // mute toggle
+  // mute toggle (global: music + sfx + cries + speech)
   const musicBtn = document.getElementById('music-btn');
   if (musicBtn) {
-    musicBtn.innerText = isMuted() ? '🔇' : '🔊';
     musicBtn.addEventListener('click', () => {
-      musicBtn.innerText = toggleMute() ? '🔇' : '🔊';
+      toggleMute();
+      syncMusicBtn();
     });
   }
 }
@@ -170,6 +175,7 @@ function registerSW() {
 loadSave();
 initProgression();
 wireUI();
+initSettings();
 wireGestures();
 registerSW();
 console.log(`Pokédex OS v${APP_VERSION} ready.`);

@@ -128,8 +128,8 @@ await page.click('#data-btn');
 await page.waitForTimeout(600);
 check('data sheet opens', await page.locator('#data-sheet.open').count() === 1);
 check('flavor text loaded', (await page.locator('#desc').innerText()).includes('tail'));
-await page.waitForFunction(() => document.querySelectorAll('#evo-chain .evo-item').length === 2, null, { timeout: 5000 });
-check('evolution chain rendered (2 gen-1 stages)', true);
+await page.waitForFunction(() => document.querySelectorAll('#evo-chain .evo-item').length === 3, null, { timeout: 5000 });
+check('evolution chain rendered (3 stages incl. pichu)', true);
 await page.click('#sheet-handle');
 await page.waitForTimeout(500);
 
@@ -160,8 +160,14 @@ await page.waitForTimeout(2200); // let catch animation fully release isCatching
 await page.click('#pc-btn');
 await page.waitForTimeout(400);
 check('PC modal opens', await page.locator('#pc-modal').isVisible());
+check('5 generation tabs', await page.locator('.gen-tab').count() === 5);
 const caughtCount = await page.locator('.pc-item:not(.uncaught)').count();
 check('PC shows 3 caught (1, 25, 26)', caughtCount === 3);
+await page.locator('.gen-tab[data-gen="2"]').click();
+await page.waitForTimeout(400);
+check('gen 2 tab shows uncaught grid', await page.locator('.pc-item.uncaught').count() > 50);
+await page.locator('.gen-tab[data-gen="1"]').click();
+await page.waitForTimeout(400);
 await page.click('#close-pc-btn');
 
 // battle: team picker → sparkle modal → regular → battle screen
@@ -248,6 +254,54 @@ const mbOk = await page.evaluate(() => {
 });
 check('badge + master ball persisted', mbOk);
 await page.click('#card-close');
+await page.waitForTimeout(300);
+
+// SETTINGS: names, junior mode, sound toggle, save tools
+await page.click('#settings-btn');
+await page.waitForTimeout(400);
+check('settings modal opens', await page.locator('#settings-modal').isVisible());
+await page.fill('#set-p1-name', 'GABE');
+await page.locator('#set-p1-junior').evaluate(el => el.click());
+await page.waitForTimeout(200);
+check('junior toggle flips to ON', (await page.locator('#set-p1-junior').innerText()).includes('ON'));
+await page.locator('#set-sound').evaluate(el => el.click());
+await page.waitForTimeout(150);
+check('sound toggles to OFF', (await page.locator('#set-sound').innerText()).includes('OFF'));
+await page.locator('#set-sound').evaluate(el => el.click());
+await page.waitForTimeout(150);
+await page.click('#settings-close');
+await page.waitForTimeout(300);
+check('player button shows custom name', (await page.locator('#player-btn').innerText()) === 'GABE');
+check('junior body class applied', await page.evaluate(() => document.body.classList.contains('junior')));
+check('search input hidden in junior', !(await page.locator('#search').isVisible()));
+
+// navigate to an uncaught mon and tap the sprite to catch — no drawer, guaranteed
+await page.click('#nav-next'); // 27
+await page.waitForTimeout(1500);
+await dismissCelebrations(page);
+await page.locator('#poke-sprite').evaluate(el => el.click());
+await page.waitForTimeout(400);
+check('junior catch skips ball drawer', await page.locator('#ball-drawer.open').count() === 0);
+await page.waitForFunction(() => document.getElementById('catch-btn').innerText.includes('OWNED'), null, { timeout: 15000 });
+check('junior tap-catch always succeeds', true);
+check('confetti spawned', await page.evaluate(() => document.querySelectorAll('.confetti-piece').length > 0));
+await page.waitForTimeout(2400);
+await dismissCelebrations(page);
+
+// junior mode is per-player: P2 unaffected
+await page.click('#player-btn');
+await page.waitForTimeout(300);
+check('P2 not in junior mode', !(await page.evaluate(() => document.body.classList.contains('junior'))));
+await page.click('#player-btn');
+await page.waitForTimeout(300);
+check('P1 junior persists', await page.evaluate(() => document.body.classList.contains('junior')));
+
+// turn junior back off for the remaining checks
+await page.click('#settings-btn');
+await page.waitForTimeout(400);
+await page.locator('#set-p1-junior').evaluate(el => el.click());
+await page.waitForTimeout(200);
+await page.click('#settings-close');
 await page.waitForTimeout(300);
 const monsOk = await page.evaluate(() => {
   const s = JSON.parse(localStorage.getItem('pokedexos_save_v2'));

@@ -5,6 +5,19 @@
 let audioCtx = null;
 let cryAudio = null;
 
+// ---- global mute: silences music, sfx, cries, AND speech ----
+let muted = false;
+try { muted = localStorage.getItem('pokedexos_muted') === '1'; } catch (e) { /* noop */ }
+
+export function isMuted() { return muted; }
+
+export function toggleMute() {
+  muted = !muted;
+  try { localStorage.setItem('pokedexos_muted', muted ? '1' : '0'); } catch (e) { /* noop */ }
+  if (muted) stopAllAudio();
+  return muted;
+}
+
 export function initAudio() {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -13,7 +26,7 @@ export function initAudio() {
 }
 
 export function playBeep(freq, type, duration, vol = 0.1) {
-  if (!audioCtx) return;
+  if (!audioCtx || muted) return;
   try {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -42,6 +55,7 @@ export function setCry(url) {
 }
 
 export function playCryAudio() {
+  if (muted) return;
   if (cryAudio) {
     cryAudio.volume = 0.5;
     cryAudio.play().catch(() => console.warn('Audio Blocked'));
@@ -56,6 +70,7 @@ export function stopAllAudio() {
 }
 
 export function speak(text, { pitch = 0.5, rate = 0.9, onstart, onend } = {}) {
+  if (muted) return;
   try {
     if (!('speechSynthesis' in window)) return;
     const utter = new SpeechSynthesisUtterance(text);

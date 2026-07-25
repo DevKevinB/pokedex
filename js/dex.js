@@ -5,7 +5,7 @@
 import { MAX_POKEMON, typeColors, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
 import { getPokemon, getSpecies, getEvolution } from './api.js';
 import { state, player } from './state.js';
-import { stopAllAudio, setCry, triggerVibration } from './audio.js';
+import { stopAllAudio, setCry, triggerVibration, speak } from './audio.js';
 
 let galleryTimer = null;
 let typeTimer = null;
@@ -72,7 +72,7 @@ export async function loadPoke(idOrName) {
   try {
     const searchTarget = idOrName.toString().toLowerCase().trim().replace(/\s+/g, '-');
     const data = await getPokemon(searchTarget);
-    if (data.id > MAX_POKEMON) throw new Error('GEN_1_ONLY');
+    if (data.id > MAX_POKEMON) throw new Error('GEN_RANGE');
 
     state.curData = data;
     state.curId = data.id;
@@ -85,9 +85,9 @@ export async function loadPoke(idOrName) {
   } catch (e) {
     console.error('Master Fetch Error:', e);
     setScanning(false);
-    if (e.message === 'GEN_1_ONLY') {
-      document.getElementById('poke-name').innerText = 'GEN 1 ONLY';
-      document.getElementById('desc').innerText = 'This OS is locked to the original 151 Pokémon.';
+    if (e.message === 'GEN_RANGE') {
+      document.getElementById('poke-name').innerText = 'NOT FOUND YET';
+      document.getElementById('desc').innerText = 'This OS covers Pokémon #1–#649 (Generations 1–5).';
     } else {
       document.getElementById('poke-name').innerText = 'ERROR / TIMEOUT';
       document.getElementById('desc').innerText = 'API Server issue or Pokémon not found. Try again.';
@@ -109,6 +109,7 @@ function updateUISafe() {
   try {
     const typeColor = typeColors[d.types?.[0]?.type?.name] || '#777';
     document.getElementById('bg-glow').style.background = `radial-gradient(circle, ${typeColor}66 0%, transparent 70%)`;
+    document.getElementById('app-body').style.setProperty('--type-glow', `${typeColor}42`);
     document.getElementById('id-text').innerText = `NO. ${d.id.toString().padStart(4, '0')}`;
     document.getElementById('poke-name').innerText = d.name;
     document.getElementById('poke-name').style.fontSize = d.name.length > 12 ? '24px' : '32px';
@@ -132,6 +133,9 @@ function updateUISafe() {
     }).join('');
 
     setCry(d.cries?.latest);
+
+    // Junior mode: say the name out loud — no reading required
+    if (player().settings.junior) speak(d.name, { pitch: 1.1, rate: 0.85 });
   } catch (e) { console.error('UI Update Failed', e); }
 }
 

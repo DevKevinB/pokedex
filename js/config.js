@@ -2,8 +2,17 @@
 // Pokédex OS — shared constants & type math
 // ============================================================
 
-export const MAX_POKEMON = 151;
-export const APP_VERSION = '16.3.0';
+export const MAX_POKEMON = 649; // Gens 1–5 — the animated pixel sprite era
+export const APP_VERSION = '17.0.0';
+
+// generation ranges for PC Box tabs
+export const GENERATIONS = [
+  { key: 1, label: 'G1', from: 1, to: 151 },
+  { key: 2, label: 'G2', from: 152, to: 251 },
+  { key: 3, label: 'G3', from: 252, to: 386 },
+  { key: 4, label: 'G4', from: 387, to: 493 },
+  { key: 5, label: 'G5', from: 494, to: 649 }
+];
 
 export const SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites';
 export const ITEM_SPRITE = name => `${SPRITE_BASE}/items/${name}.png`;
