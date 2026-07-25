@@ -326,3 +326,43 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   font-family: var(--pixel-font); font-size: 11px; color: #fff; text-align: center;
   margin-top: 30px; line-height: 2; padding: 0 30px;
 }
+
+/* ---------- Phase 3: EXPLORE mode ---------- */
+.btn-explore {
+  grid-column: span 4;
+  background: linear-gradient(180deg, #48a860 0%, #2e8048 100%) !important;
+  color: #fff !important; font-size: 10px !important;
+}
+#explore-container {
+  position: fixed; top: 100dvh; left: 0; width: 100vw; height: 100dvh; z-index: 480;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(circle at 50% -10%, #2e8048 0%, transparent 45%),
+    repeating-linear-gradient(45deg, var(--px-shell-2) 0 2px, var(--px-shell) 2px 14px);
+  transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#explore-container.active { top: 0; }
+.explore-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)) 16px; }
+#habitat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.habitat-card {
+  background: var(--px-cream); border: 3px solid var(--px-ink); border-radius: 4px;
+  box-shadow: inset -3px -3px 0 var(--px-cream-dark), 4px 4px 0 rgba(0,0,0,0.35);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 18px 8px 14px 8px; cursor: pointer; transition: transform 0.1s; text-align: center;
+}
+.habitat-card:active { transform: translate(3px, 3px); box-shadow: inset -3px -3px 0 var(--px-cream-dark); }
+.habitat-emoji { font-size: 34px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.25)); }
+.habitat-name { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); line-height: 1.6; }
+.habitat-sub { font-family: var(--pixel-font); font-size: 6px; color: #706848; }
+#encounter-scene { flex-direction: column; align-items: center; justify-content: center; height: 100%; display: flex; gap: 30px; }
+#rustle-art { font-size: 80px; }
+#rustle-art.rustling { animation: rustle 0.5s steps(2) infinite; }
+#rustle-art.alert { animation: alertPop 0.4s steps(3); font-size: 90px; }
+@keyframes rustle { 0% { transform: rotate(-8deg) translateX(-6px); } 50% { transform: rotate(8deg) translateX(6px); } 100% { transform: rotate(-8deg) translateX(-6px); } }
+@keyframes alertPop { 0% { transform: scale(0.3); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
+#encounter-text {
+  font-family: var(--pixel-font); font-size: 10px; color: var(--px-ink); line-height: 2;
+  background: var(--px-cream); border: 3px solid var(--px-ink); border-radius: 4px;
+  box-shadow: inset -3px -3px 0 var(--px-cream-dark), 4px 4px 0 rgba(0,0,0,0.35);
+  padding: 14px 18px; text-align: center; max-width: 320px;
+}

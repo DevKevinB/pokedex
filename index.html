@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=16.1.0">
-    <link rel="stylesheet" href="css/gba.css?v=16.1.0">
+    <link rel="stylesheet" href="css/main.css?v=16.2.0">
+    <link rel="stylesheet" href="css/gba.css?v=16.2.0">
 </head>
 <body>
 
@@ -72,6 +72,7 @@
         <button class="tool-btn" id="random-btn"><span class="btn-icon">🎲</span> RNDM</button>
         <button class="tool-btn btn-catch" id="catch-btn"><span class="btn-icon">🔴</span> CATCH</button>
         <button class="tool-btn" id="data-btn" style="grid-column: span 2; background: #2c2c2c;"><span class="btn-icon">📊</span> DATA</button>
+        <button class="tool-btn btn-explore" id="explore-btn"><span class="btn-icon">🌲</span> EXPLORE KANTO</button>
     </div>
 
     <div id="ball-drawer">
@@ -95,7 +96,21 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 16.1 - GAME BOY EDITION</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 16.2 - GAME BOY EDITION</div>
+        </div>
+    </div>
+</div>
+
+<div id="explore-container">
+    <div class="battle-header">
+        <button class="btn-escape" id="explore-back-btn">🔙 BACK</button>
+        <span>EXPLORE KANTO</span>
+    </div>
+    <div class="explore-body">
+        <div id="habitat-grid"></div>
+        <div id="encounter-scene" style="display:none;">
+            <div id="rustle-art">🌲</div>
+            <div id="encounter-text">You walk through the tall grass...</div>
         </div>
     </div>
 </div>
@@ -187,6 +202,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=16.1.0"></script>
+<script type="module" src="js/main.js?v=16.2.0"></script>
 </body>
 </html>

@@ -195,6 +195,25 @@ if (won) {
   await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active') === false, null, { timeout: 15000 });
 }
 check('battle exits to dex', !(await page.locator('#battle-container.active').count()));
+
+// EXPLORE mode: habitat grid → encounter → battle → escape → back to explore
+await page.waitForTimeout(800);
+await page.click('#explore-btn');
+await page.waitForTimeout(600);
+check('explore opens', await page.locator('#explore-container.active').count() === 1);
+check('8 habitats listed', await page.locator('.habitat-card').count() === 8);
+await page.locator('.habitat-card[data-habitat="forest"]').click();
+await page.waitForTimeout(800);
+check('encounter scene plays', await page.locator('#encounter-scene').isVisible());
+await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 20000 });
+check('explore encounter starts battle', true);
+await page.waitForFunction(() => document.querySelectorAll('.move-btn').length > 0, null, { timeout: 8000 });
+await page.locator('#run-btn').evaluate(el => el.click());
+await page.waitForTimeout(900);
+check('run returns to explore', await page.locator('#explore-container.active').count() === 1);
+await page.click('#explore-back-btn');
+await page.waitForTimeout(600);
+check('back returns to dex', await page.locator('#explore-container.active').count() === 0);
 const monsOk = await page.evaluate(() => {
   const s = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
   return Object.keys(s.players[1].mons || {}).length > 0;

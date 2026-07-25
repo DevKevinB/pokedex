@@ -18,7 +18,8 @@ export const battleState = {
   loaded: {},        // id → fighter (player side)
   wild: null,
   isBattling: false,
-  busy: false
+  busy: false,
+  origin: 'arena'    // 'arena' | 'explore'
 };
 
 const active = () => battleState.loaded[battleState.teamIds[battleState.activeIdx]];
@@ -70,8 +71,14 @@ export function exitBattleMode() {
   battleState.loaded = {};
   ['sparkle-modal', 'victory-modal', 'switch-modal', 'evo-modal', 'loading-modal'].forEach(id => show(id, false));
   document.getElementById('battle-container').classList.remove('active');
+  const cameFromExplore = battleState.origin === 'explore';
+  battleState.origin = 'arena';
   document.dispatchEvent(new CustomEvent('battle-exited'));
-  if (state.curId) loadPoke(state.curId);
+  if (cameFromExplore) {
+    document.dispatchEvent(new CustomEvent('return-to-explore'));
+  } else if (state.curId) {
+    loadPoke(state.curId);
+  }
 }
 
 export function initBattleMode() {
@@ -88,17 +95,16 @@ export function onTeamConfirmed() {
   show('sparkle-modal');
 }
 
-export async function finalizeBattleSetup(sparkle) {
-  show('sparkle-modal', false);
+async function launchBattle(wildId, { sparkle = false, origin = 'arena' } = {}) {
   show('loading-modal');
   battleState.isSparkle = sparkle;
-  battleState.teamIds = [...player().team];
+  battleState.origin = origin;
+  battleState.teamIds = player().team.length ? [...player().team] : player().caught.slice(0, 6);
   battleState.activeIdx = 0;
   battleState.loaded = {};
 
   const avgLevel = Math.round(battleState.teamIds.reduce((a, id) => a + monLevel(id), 0) / battleState.teamIds.length);
   const wildLevel = Math.max(3, Math.min(60, avgLevel + (Math.floor(Math.random() * 5) - 2)));
-  const wildId = Math.floor(Math.random() * MAX_POKEMON) + 1;
 
   try {
     const leadId = battleState.teamIds[0];
@@ -115,6 +121,18 @@ export async function finalizeBattleSetup(sparkle) {
     alert('Error loading battle data. Network issue?');
     exitBattleMode();
   }
+}
+
+export async function finalizeBattleSetup(sparkle) {
+  show('sparkle-modal', false);
+  const wildId = Math.floor(Math.random() * MAX_POKEMON) + 1;
+  await launchBattle(wildId, { sparkle, origin: 'arena' });
+}
+
+// EXPLORE mode encounters: saved team, no picker, no sparkle friction
+export async function startWildEncounter(wildId) {
+  state.appMode = 'battle';
+  await launchBattle(wildId, { sparkle: false, origin: 'explore' });
 }
 
 // ---- battle FX ----

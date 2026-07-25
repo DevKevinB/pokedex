@@ -7,8 +7,9 @@ import { state, loadSave } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, speak, isSpeaking, triggerVibration } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
-import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, battleState } from './battle.js';
+import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, battleState } from './battle.js';
 import { openPC, closePC, cancelTeamPick, exportSave, importSave } from './pc.js';
+import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { playMusic, stopMusic, toggleMute, isMuted, playFanfare } from './music.js';
 import { playBeep } from './audio.js';
 
@@ -119,6 +120,12 @@ function wireUI() {
   on('variant-cancel', () => { document.getElementById('sparkle-modal').style.display = 'none'; exitBattleMode(); });
   on('victory-continue', maybeEvolveThenExit);
   on('switch-cancel', () => { document.getElementById('switch-modal').style.display = 'none'; });
+  on('explore-btn', openExplore);
+  on('explore-back-btn', closeExplore);
+
+  // explore → battle bridges
+  document.addEventListener('explore-encounter', e => startWildEncounter(e.detail.wildId));
+  document.addEventListener('return-to-explore', reopenExplore);
 
   document.querySelectorAll('.ball-opt').forEach(el =>
     el.addEventListener('click', () => executeCatch(parseFloat(el.dataset.mod), el.dataset.ball)));

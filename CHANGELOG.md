@@ -2,6 +2,14 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [16.2.0] - EXPLORE KANTO (Phase 3)
+
+### Added
+- **EXPLORE KANTO button** on the main screen — pick from 8 habitats: Viridian Forest, Tall Grass, Ocean & Beach, Volcano Path, Power Plant, Deep Cave, Ghost Tower, and Dragon's Den.
+- **Rarity tiers:** every walk rolls 60% common / 30% uncommon / 9% rare / **1% legendary**. Articuno haunts the ocean, Zapdos the power plant, Moltres the volcano, Mewtwo the deep cave, and Mew... is out there somewhere.
+- **Encounter scenes:** rustling grass, escalating suspense, and a special legendary fanfare when you hit the 1%.
+- Encounters flow straight into battle with your saved team (no picker friction) — win to catch, then land right back in the wild for another run.
+
 ## [16.1.0] - BATTLE OVERHAUL (Phase 2)
 
 ### Added

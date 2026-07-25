@@ -3,7 +3,7 @@
 // ============================================================
 
 export const MAX_POKEMON = 151;
-export const APP_VERSION = '16.1.0';
+export const APP_VERSION = '16.2.0';
 
 export const SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites';
 export const ITEM_SPRITE = name => `${SPRITE_BASE}/items/${name}.png`;
