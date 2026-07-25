@@ -1,6 +1,6 @@
 # 📱 Pokédex OS
 
-A high-performance, single-file Progressive Web App (PWA) Pokédex and RPG Battle Engine built entirely in Vanilla JavaScript, HTML5, and CSS3. 
+A high-performance Progressive Web App (PWA) Pokédex and RPG Battle Engine built entirely in Vanilla JavaScript, HTML5, and CSS3 — now in a retro **GAME BOY EDITION** with pixel sprites, chiptune music, and GBA-style battle scenes. 
 
 Designed specifically for mobile browsers with zero external dependencies, this OS transforms a standard phone into a fully functional, interactive Pokédex and game engine.
 
@@ -37,7 +37,7 @@ Designed specifically for mobile browsers with zero external dependencies, this 
 
 This project requires **no build steps, no Node.js, and no backend servers**. 
 
-1. Create a GitHub repository and upload the `index.html` file.
+1. Create a GitHub repository and upload the project files (`index.html`, `css/`, `js/`, `sw.js`, `manifest.webmanifest`).
 2. Go to your repository **Settings** > **Pages**.
 3. Under "Build and deployment", set the source to **Deploy from a branch** and select your `main` branch.
 4. GitHub will generate a live URL for your app (e.g., `https://yourusername.github.io/pokedex-os/`).
@@ -51,8 +51,15 @@ To get the full, full-screen native app experience on an iPhone or iPad:
 
 *(Note: If updating the code, iOS aggressively caches PWAs. You may need to delete the app icon, clear Safari cache, and re-add it to see the newest updates).*
 
+## 📁 Project Structure
+* `index.html` — markup only
+* `css/` — `main.css` (layout) + `gba.css` (Game Boy theme)
+* `js/` — native ES modules (`config`, `state`, `api`, `audio`, `music`, `dex`, `catch`, `battle`, `pc`, `main`) — no build step, GitHub Pages serves them directly
+* `sw.js` — service worker: network-first app shell (updates reach installed iOS PWAs), offline cache for sprites/API/fonts
+* `test/` — Playwright smoke tests with a fully mocked PokeAPI
+
 ## 🛠️ Tech Stack
-* **Frontend:** Vanilla JavaScript (ES6+), HTML5, CSS3.
+* **Frontend:** Vanilla JavaScript (ES6+ modules), HTML5, CSS3.
 * **Network:** Custom `AbortController` fetch wrapper with timeout protection to prevent silent hanging on mobile networks.
 * **Data Source:** [PokeAPI v2](https://pokeapi.co/)
 * **Audio:** Web Audio API (procedural synthesis) & SpeechSynthesis API.

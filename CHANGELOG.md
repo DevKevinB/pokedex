@@ -2,6 +2,23 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [16.0.0] - GAME BOY EDITION (Foundation + Visual Overhaul)
+
+### Changed — Architecture (Phase 0)
+- **Modular codebase:** Split the single 860-line `index.html` into `index.html` + `css/` + `js/` ES modules. Still zero build steps — GitHub Pages serves it exactly as before.
+- **API cache:** Every PokeAPI response is slimmed to just the fields the game uses and cached in `localStorage`. Previously-viewed Pokémon now load instantly and survive flaky WiFi.
+- **Versioned save system (v2):** Saves migrate automatically from the old `pokedex_caught_p1/p2` keys — no catches lost. The new schema has room for teams, levels/XP, badges, items, and quests (coming in later phases).
+- **Service worker + manifest:** Network-first app shell means pushed updates reach installed iPhone/iPad home-screen apps on next launch — no more delete-and-re-add. Sprites, API data, and fonts cache offline.
+
+### Added — GBA Visual Overhaul (Phase 1)
+- **Retro pixel styling throughout:** Press Start 2P pixel font, cream GBA dialog boxes with pixel borders and drop shadows, subtle CRT scanlines, stepped screen-wipe transition between Pokémon.
+- **Animated pixel sprites:** The Pokédex and battles now use the animated Gen-V battle sprites (they idle, breathe, and bounce), rendered crisp with `image-rendering: pixelated`.
+- **Typewriter text:** Pokédex entries type themselves out with a blinking ▼ cursor, GBA style.
+- **Battle scene overhaul:** Habitat backdrops keyed to the wild Pokémon's type, fighter platforms, GBA HP boxes, damage number pop-ups, per-type particle bursts, and screen shake on super-effective hits.
+- **Chiptune soundtrack:** Procedural Web Audio music engine — Pokédex theme, battle theme, and victory fanfare. Square lead + triangle bass, no audio files. Mute toggle in the header (remembered between sessions).
+- **Bill's PC = CRT terminal:** The PC Box is now a green-phosphor CRT terminal, scanlines and all.
+- **Game Boy boot chime** on the startup screen.
+
 ## [7.0.0] - Save System & Audio OS Update
 ### Added
 - **Save Data Management:** Added Export/Import functionality in the PC Box using base64 encoded strings to transfer saves between devices (e.g., Phone to iPad).

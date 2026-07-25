@@ -1,0 +1,56 @@
+// ============================================================
+// Pokédex OS — shared constants & type math
+// ============================================================
+
+export const MAX_POKEMON = 151;
+export const APP_VERSION = '16.0.0';
+
+export const SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites';
+export const ITEM_SPRITE = name => `${SPRITE_BASE}/items/${name}.png`;
+export const PIXEL_SPRITE = id => `${SPRITE_BASE}/pokemon/${id}.png`;
+
+export const typeColors = {
+  fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535',
+  ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842',
+  flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21',
+  ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8',
+  fairy: '#fdb9e9', normal: '#a4acaf'
+};
+
+// w = weak to (takes 2x FROM), r = resists, i = immune
+export const typeChart = {
+  normal:   { w: ['fighting'], r: [], i: ['ghost'] },
+  fire:     { w: ['water', 'ground', 'rock'], r: ['fire', 'grass', 'ice', 'bug', 'fairy'], i: [] },
+  water:    { w: ['electric', 'grass'], r: ['fire', 'water', 'ice', 'steel'], i: [] },
+  grass:    { w: ['fire', 'ice', 'poison', 'flying', 'bug'], r: ['water', 'electric', 'grass', 'ground'], i: [] },
+  electric: { w: ['ground'], r: ['electric', 'flying', 'steel'], i: [] },
+  ice:      { w: ['fire', 'fighting', 'rock', 'steel'], r: ['ice'], i: [] },
+  fighting: { w: ['flying', 'psychic', 'fairy'], r: ['bug', 'rock', 'dark'], i: [] },
+  poison:   { w: ['ground', 'psychic'], r: ['grass', 'fighting', 'poison', 'bug', 'fairy'], i: [] },
+  ground:   { w: ['water', 'grass', 'ice'], r: ['poison', 'rock'], i: ['electric'] },
+  flying:   { w: ['electric', 'ice', 'rock'], r: ['grass', 'fighting', 'bug'], i: ['ground'] },
+  psychic:  { w: ['bug', 'ghost', 'dark'], r: ['fighting', 'psychic'], i: [] },
+  bug:      { w: ['fire', 'flying', 'rock'], r: ['grass', 'fighting', 'ground'], i: [] },
+  rock:     { w: ['water', 'grass', 'fighting', 'ground', 'steel'], r: ['normal', 'fire', 'poison', 'flying'], i: [] },
+  ghost:    { w: ['ghost', 'dark'], r: ['poison', 'bug'], i: ['normal', 'fighting'] },
+  dragon:   { w: ['ice', 'dragon', 'fairy'], r: ['fire', 'water', 'electric', 'grass'], i: [] },
+  steel:    { w: ['fire', 'fighting', 'ground'], r: ['normal', 'grass', 'ice', 'flying', 'psychic', 'bug', 'rock', 'dragon', 'steel', 'fairy'], i: ['poison'] },
+  dark:     { w: ['fighting', 'bug', 'fairy'], r: ['ghost', 'dark'], i: ['psychic'] },
+  fairy:    { w: ['poison', 'steel'], r: ['fighting', 'bug', 'dark'], i: ['dragon'] }
+};
+
+export function getTypeMultiplier(attackType, defenderTypes) {
+  let multiplier = 1;
+  if (!typeChart[attackType]) return 1;
+  defenderTypes.forEach(t => {
+    const defData = typeChart[t.type?.name];
+    if (defData) {
+      if (defData.w.includes(attackType)) multiplier *= 2.0;
+      if (defData.r.includes(attackType)) multiplier *= 0.5;
+      if (defData.i.includes(attackType)) multiplier *= 0;
+    }
+  });
+  return multiplier;
+}
+
+export const sleep = ms => new Promise(r => setTimeout(r, ms));
