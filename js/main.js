@@ -7,8 +7,8 @@ import { state, loadSave } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, speak, isSpeaking, triggerVibration } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
-import { initBattleMode, exitBattleMode, finalizeBattleSetup, selectFighter, battleState } from './battle.js';
-import { openPC, closePC, exportSave, importSave } from './pc.js';
+import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, battleState } from './battle.js';
+import { openPC, closePC, cancelTeamPick, exportSave, importSave } from './pc.js';
 import { playMusic, stopMusic, toggleMute, isMuted, playFanfare } from './music.js';
 import { playBeep } from './audio.js';
 
@@ -113,9 +113,12 @@ function wireUI() {
   on('export-btn', exportSave);
   on('import-btn', importSave);
   on('close-pc-btn', closePC);
+  on('pc-cancel-btn', cancelTeamPick);
   on('variant-regular', () => finalizeBattleSetup(false));
   on('variant-sparkle', () => finalizeBattleSetup(true));
-  on('variant-cancel', () => { document.getElementById('sparkle-modal').style.display = 'none'; });
+  on('variant-cancel', () => { document.getElementById('sparkle-modal').style.display = 'none'; exitBattleMode(); });
+  on('victory-continue', maybeEvolveThenExit);
+  on('switch-cancel', () => { document.getElementById('switch-modal').style.display = 'none'; });
 
   document.querySelectorAll('.ball-opt').forEach(el =>
     el.addEventListener('click', () => executeCatch(parseFloat(el.dataset.mod), el.dataset.ball)));
@@ -125,7 +128,7 @@ function wireUI() {
   });
 
   // pc.js → battle.js bridges (avoids circular imports)
-  document.addEventListener('pc-fighter-selected', e => selectFighter(e.detail.id));
+  document.addEventListener('team-confirmed', onTeamConfirmed);
   document.addEventListener('pc-battle-cancelled', () => {
     if (state.appMode === 'battle' && !battleState.isBattling) exitBattleMode();
   });

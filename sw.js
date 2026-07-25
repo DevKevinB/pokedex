@@ -9,7 +9,7 @@
 // Bump CACHE_VERSION on every release to purge old shells.
 // ============================================================
 
-const CACHE_VERSION = 'pokedexos-v16.0.0';
+const CACHE_VERSION = 'pokedexos-v16.1.0';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 

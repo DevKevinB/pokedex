@@ -147,21 +147,59 @@ const caughtCount = await page.locator('.pc-item:not(.uncaught)').count();
 check('PC shows 3 caught (1, 25, 26)', caughtCount === 3);
 await page.click('#close-pc-btn');
 
-// battle: select fighter → sparkle modal → regular → battle screen
+// battle: team picker → sparkle modal → regular → battle screen
 await page.click('#battle-btn');
 await page.waitForTimeout(400);
-check('PC opens in battle mode', (await page.locator('#pc-instruction').innerText()).includes('FIGHTER'));
-await page.locator('.pc-item').first().click();
+check('team picker opens', (await page.locator('#pc-instruction').innerText()).includes('TEAM'));
+check('team preselected', await page.locator('.pc-item.picked').count() > 0);
+await page.click('#close-pc-btn'); // START BATTLE
 await page.waitForTimeout(300);
 check('sparkle modal opens', await page.locator('#sparkle-modal').isVisible());
-await page.click('#variant-regular');
+await page.click('#variant-sparkle');
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 10000 });
 check('battle screen active', true);
 await page.waitForFunction(() => document.querySelectorAll('.move-btn').length > 0, null, { timeout: 5000 });
-check('move buttons rendered', true);
-await page.click('#escape-btn');
-await page.waitForTimeout(600);
-check('escape returns to dex', !(await page.locator('#battle-container.active').count()));
+check('move buttons + switch/run rendered', await page.locator('.move-btn').count() >= 3 && await page.locator('#switch-btn').count() === 1);
+check('player level shown', /lv\d+/i.test(await page.locator('#player-name').innerText()));
+check('wild level shown', /lv\d+/i.test(await page.locator('#wild-name').innerText()));
+
+// fight to victory (fixture mons are weak — a few hits should do it)
+let won = false;
+for (let turn = 0; turn < 16 && !won; turn++) {
+  const btn = page.locator('.move-btn[data-move="0"]');
+  try {
+    await page.waitForFunction(() => {
+      const log = document.getElementById('battle-log').innerText.toLowerCase();
+      return document.getElementById('victory-modal').style.display === 'flex' ||
+        document.getElementById('switch-modal').style.display === 'flex' ||
+        (!document.querySelector('.move-btn[data-move="0"]')?.disabled &&
+         (log.includes('do?') || log.includes('appeared')));
+    }, null, { timeout: 15000 });
+  } catch (e) { break; }
+  if (await page.locator('#victory-modal').isVisible()) { won = true; break; }
+  if (await page.locator('#switch-modal').isVisible()) {
+    await page.locator('.switch-item').first().evaluate(el => el.click());
+    await page.waitForTimeout(2500);
+    continue;
+  }
+  await btn.evaluate(el => el.click());
+  await page.waitForTimeout(4200);
+  if (await page.locator('#victory-modal').isVisible()) { won = true; }
+}
+check('battle won → victory screen', won);
+if (won) {
+  check('victory shows XP', (await page.locator('#victory-lines').innerText()).includes('XP'));
+  await page.click('#victory-continue');
+  await page.waitForTimeout(1500);
+  // evolution may play for fixture mon; wait for it to finish
+  await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active') === false, null, { timeout: 15000 });
+}
+check('battle exits to dex', !(await page.locator('#battle-container.active').count()));
+const monsOk = await page.evaluate(() => {
+  const s = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+  return Object.keys(s.players[1].mons || {}).length > 0;
+});
+check('mon levels persisted', monsOk);
 
 // save v2 persisted & api cache populated
 const saveOk = await page.evaluate(() => {
@@ -170,7 +208,7 @@ const saveOk = await page.evaluate(() => {
 });
 check('v2 save contains migrated + new catches', saveOk);
 const cacheOk = await page.evaluate(() => {
-  const c = JSON.parse(localStorage.getItem('pokedexos_apicache_v1') || '{}');
+  const c = JSON.parse(localStorage.getItem('pokedexos_apicache_v2') || '{}');
   return !!c['pkmn:25'] && !!c['pkmn:26'];
 });
 check('api cache populated', cacheOk);

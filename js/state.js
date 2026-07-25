@@ -13,7 +13,7 @@ function freshPlayer() {
     team: [],            // up to 6 dex ids (Phase 2)
     mons: {},            // per-id growth: { [id]: { level, xp } } (Phase 2)
     badges: [],          // badge ids earned (Phase 4)
-    items: { masterBalls: 0 },
+    items: { masterBalls: 1 },   // scarce: earn more via badges (Phase 4)
     quests: {},          // quest progress (Phase 4)
     settings: { junior: false },
     stats: { catches: 0, battlesWon: 0, battlesLost: 0 }
@@ -32,6 +32,7 @@ function migrateLegacy(save) {
       if (Array.isArray(legacy) && legacy.length && save.players[p].caught.length === 0) {
         save.players[p].caught = [...new Set(legacy)].filter(n => Number.isInteger(n)).sort((a, b) => a - b);
         save.players[p].stats.catches = save.players[p].caught.length;
+        save.players[p].items.masterBalls = 1;
         migrated = true;
       }
     } catch (e) { /* corrupt legacy save — ignore */ }
@@ -80,6 +81,60 @@ export function loadSave() {
 export function persist() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state.save)); }
   catch (e) { console.warn('Persist failed', e); }
+}
+
+// ---- Growth: per-Pokémon level & XP ----
+export const DEFAULT_LEVEL = 5;
+
+export function ensureMon(id, level = DEFAULT_LEVEL) {
+  const p = player();
+  if (!p.mons[id]) { p.mons[id] = { level, xp: 0 }; persist(); }
+  return p.mons[id];
+}
+
+export function monLevel(id) {
+  return player().mons[id]?.level ?? DEFAULT_LEVEL;
+}
+
+export function xpThreshold(level) {
+  return 25 + level * 10; // fast, kid-friendly curve
+}
+
+// Adds xp; returns number of levels gained (capped at 100).
+export function addXp(id, amount) {
+  const mon = ensureMon(id);
+  mon.xp += amount;
+  let ups = 0;
+  while (mon.level < 100 && mon.xp >= xpThreshold(mon.level)) {
+    mon.xp -= xpThreshold(mon.level);
+    mon.level++;
+    ups++;
+  }
+  persist();
+  return ups;
+}
+
+// Evolution bookkeeping: newId joins the box at the same level,
+// and replaces oldId in the team lineup.
+export function evolveMon(oldId, newId) {
+  const p = player();
+  const growth = p.mons[oldId] || { level: DEFAULT_LEVEL, xp: 0 };
+  p.mons[newId] = { level: growth.level, xp: growth.xp };
+  if (!p.caught.includes(newId)) { p.caught.push(newId); p.caught.sort((a, b) => a - b); }
+  const ti = p.team.indexOf(oldId);
+  if (ti >= 0) p.team[ti] = newId;
+  persist();
+}
+
+export function setTeam(ids) {
+  player().team = ids.slice(0, 6);
+  persist();
+}
+
+export function spendMasterBall() {
+  const p = player();
+  if (p.items.masterBalls > 0) { p.items.masterBalls--; persist(); return true; }
+  return false;
 }
 
 export function recordCatch(id) {

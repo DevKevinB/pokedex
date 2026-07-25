@@ -2,6 +2,21 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [16.1.0] - BATTLE OVERHAUL (Phase 2)
+
+### Added
+- **Teams of 6:** The BTL button now opens a team picker — choose up to 6 from your PC Box (your lineup is remembered). Starred picks, level badges on every PC slot.
+- **Levels & XP:** Every caught Pokémon has a level (new catches start at Lv5; battle catches join at the wild's level). Winning battles grants XP with a fast, kid-friendly curve; level-ups happen right on the victory screen.
+- **Evolution!** Level past an evolution threshold and the classic flashing evolution cutscene plays — "What? PIKACHU is evolving!" Evolved forms join the box and take their spot on your team.
+- **In-battle switching:** SWITCH and RUN buttons in the move grid. Switching costs your turn (the wild Pokémon gets a free hit). When a fighter faints, you pick the next one.
+- **Real damage math:** Damage now scales with level, STAB (same-type attack bonus, 1.5x), and critical hits (1/16 chance, 1.5x, screen shake).
+- **Wild scaling:** Wild Pokémon spawn near your team's average level, so battles stay fair as you grow.
+- **Victory screen:** XP gained, level-ups, and catch results presented GBA-style.
+
+### Changed
+- **Master Balls are now scarce:** each player starts with exactly 1 (shown as x1 in the ball drawer). More are earned via badges in the upcoming progression update. Choose wisely — Mewtwo isn't going to catch itself.
+- Teams are fully healed after every battle — no potion micromanagement for small trainers.
+
 ## [16.0.0] - GAME BOY EDITION (Foundation + Visual Overhaul)
 
 ### Changed — Architecture (Phase 0)

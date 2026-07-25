@@ -193,12 +193,15 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 #player-hp-text { font-family: var(--pixel-font); font-size: 7px !important; }
 
 /* battle text + moves */
-.battle-controls { background: var(--px-cream); border-top: 4px solid var(--px-ink); border-radius: 0; height: 210px; }
+.battle-controls { background: var(--px-cream); border-top: 4px solid var(--px-ink); border-radius: 0; height: auto; min-height: 200px; }
 .battle-log {
   font-family: var(--pixel-font); font-size: 10px; line-height: 2;
   color: var(--px-ink); border-bottom: 3px solid var(--px-ink);
   background: #fffef2; text-transform: uppercase;
+  flex: 0 0 auto; min-height: 52px; overflow-y: hidden;
 }
+.moves-grid { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) 12px; gap: 8px; }
+.move-btn { padding: 10px 4px; }
 .move-btn {
   font-family: var(--pixel-font); font-size: 8px; border-radius: 2px;
   background: #fffef2; color: var(--px-ink); border: 3px solid var(--px-ink);
@@ -279,3 +282,47 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 
 /* music toggle */
 #music-btn { min-width: 38px; }
+
+/* ---------- Phase 2: teams, switching, victory, evolution ---------- */
+.ball-count { font-family: var(--pixel-font); font-size: 7px; color: #a02020; font-weight: 900; }
+
+.pc-lvl { font-family: var(--pixel-font); font-size: 6px; font-style: normal; color: rgba(107,255,107,0.7); margin-top: 2px; }
+.pc-item.uncaught .pc-lvl { display: none; }
+.pc-item.picked {
+  border-color: #ffd040; background: rgba(255,208,64,0.12);
+  box-shadow: 0 0 10px rgba(255,208,64,0.35), inset 0 0 6px rgba(255,208,64,0.2);
+}
+.pc-item.picked::after { content: '★'; position: absolute; top: 2px; right: 4px; color: #ffd040; font-size: 10px; }
+.pc-item { position: relative; }
+.pc-cancel-btn {
+  font-family: var(--pixel-font); font-size: 8px; border-radius: 2px; margin-top: 8px;
+  background: transparent; color: var(--crt-green); border: 2px solid rgba(107,255,107,0.5);
+  padding: 10px; cursor: pointer;
+}
+
+.switch-list { display: flex; flex-direction: column; gap: 8px; max-height: 40dvh; overflow-y: auto; margin: 10px 0; }
+.switch-item {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  background: #fffef2; border: 3px solid var(--px-ink); border-radius: 4px; padding: 6px 10px;
+  box-shadow: 0 3px 0 var(--px-ink); transition: transform 0.1s;
+}
+.switch-item:active { transform: translateY(3px); box-shadow: none; }
+.switch-item img { width: 44px; height: 44px; }
+.switch-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.switch-meta span { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink); }
+.switch-meta small { font-family: var(--pixel-font); font-size: 7px; color: #38845c; }
+
+.moves-grid .aux-btn { background: var(--px-cream-dark); font-size: 7px; }
+
+#victory-lines p { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink) !important; line-height: 1.9; margin: 8px 0; }
+#victory-lines p:first-child { font-size: 13px; color: #a02020 !important; }
+
+#evo-sprite { width: 180px; height: 180px; image-rendering: pixelated; }
+#evo-sprite.evolving { animation: evoFlash 0.35s steps(2) infinite; }
+#evo-sprite.evolved { animation: evoPop 0.5s steps(4); }
+@keyframes evoFlash { 0% { filter: brightness(1); } 50% { filter: brightness(0) invert(1); } 100% { filter: brightness(1); } }
+@keyframes evoPop { 0% { transform: scale(0.6); filter: brightness(0) invert(1); } 100% { transform: scale(1); filter: none; } }
+#evo-text {
+  font-family: var(--pixel-font); font-size: 11px; color: #fff; text-align: center;
+  margin-top: 30px; line-height: 2; padding: 0 30px;
+}

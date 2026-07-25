@@ -5,7 +5,7 @@
 // 151 Pokémon ≈ 450KB — comfortably inside localStorage limits.
 // ============================================================
 
-const CACHE_KEY = 'pokedexos_apicache_v1';
+const CACHE_KEY = 'pokedexos_apicache_v2';
 let cache = {};
 try { cache = JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; } catch (e) { cache = {}; }
 
@@ -76,13 +76,17 @@ function slimMove(d) {
 }
 
 function slimEvo(d) {
-  // flatten first path of the chain into [{name,id}...]
+  // flatten first path of the chain into [{name,id,min_level}...]
   const chain = [];
   let curr = d.chain;
   while (curr) {
     const sUrl = curr.species?.url;
     if (!sUrl) break;
-    chain.push({ name: curr.species.name, id: parseInt(sUrl.split('/').filter(Boolean).pop()) });
+    chain.push({
+      name: curr.species.name,
+      id: parseInt(sUrl.split('/').filter(Boolean).pop()),
+      min_level: curr.evolution_details?.[0]?.min_level ?? null
+    });
     curr = curr.evolves_to?.[0];
   }
   return { chain };

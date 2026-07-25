@@ -3,7 +3,7 @@
 // ============================================================
 
 import { ITEM_SPRITE } from './config.js';
-import { state, player, recordCatch } from './state.js';
+import { state, player, recordCatch, ensureMon, spendMasterBall } from './state.js';
 import { sfx, stopAllAudio, triggerVibration } from './audio.js';
 import { updateCatchUI } from './dex.js';
 
@@ -13,6 +13,8 @@ export function openBag() {
   if (drawer.classList.contains('open')) {
     drawer.classList.remove('open');
   } else {
+    const count = document.getElementById('mb-count');
+    if (count) count.innerText = `x${player().items.masterBalls}`;
     drawer.classList.add('open');
     triggerVibration();
   }
@@ -20,6 +22,18 @@ export function openBag() {
 
 export function executeCatch(ballModifier, ballName) {
   if (state.isCatching) return;
+  if (ballName === 'master-ball') {
+    if (!spendMasterBall()) {
+      const msg = document.getElementById('dex-catch-msg');
+      msg.innerText = 'NO MASTER BALLS! EARN MORE WITH BADGES!';
+      msg.style.color = '#ffcc00';
+      msg.style.opacity = 1;
+      sfx.break();
+      setTimeout(() => { msg.style.opacity = 0; }, 2000);
+      document.getElementById('ball-drawer').classList.remove('open');
+      return;
+    }
+  }
   state.isCatching = true;
   document.getElementById('ball-drawer').classList.remove('open');
   stopAllAudio();
@@ -70,6 +84,7 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
     msg.style.color = '#00ff00';
     msg.style.opacity = 1;
     recordCatch(state.curId);
+    ensureMon(state.curId); // fresh catches start at Lv5
     updateCatchUI();
     setTimeout(() => {
       ball.style.opacity = 0;
