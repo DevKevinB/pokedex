@@ -9,11 +9,6 @@ import { updateCatchUI } from './dex.js';
 
 export function openBag() {
   if (state.isCatching || state.appMode === 'battle' || player().caught.includes(state.curId)) return;
-  // Junior mode: no drawer, no misses — straight to the fun part
-  if (player().settings.junior) {
-    executeCatch(1, 'poke-ball', true);
-    return;
-  }
   const drawer = document.getElementById('ball-drawer');
   if (drawer.classList.contains('open')) {
     drawer.classList.remove('open');
@@ -44,7 +39,11 @@ export function spawnConfetti(host, count = 24) {
 
 export function executeCatch(ballModifier, ballName, forceSuccess = false) {
   if (state.isCatching) return;
-  if (ballName === 'master-ball') {
+  // Junior mode: every ball is a guaranteed catch, and Master Balls are
+  // never consumed — but the drawer looks completely normal, so the
+  // choice still feels like a real decision.
+  const junior = player().settings.junior;
+  if (ballName === 'master-ball' && !junior) {
     if (!spendMasterBall()) {
       const msg = document.getElementById('dex-catch-msg');
       msg.innerText = 'NO MASTER BALLS! EARN MORE WITH BADGES!';
@@ -72,7 +71,7 @@ export function executeCatch(ballModifier, ballName, forceSuccess = false) {
     sfx.suck();
 
     let isSuccess;
-    if (forceSuccess || ballName === 'master-ball') {
+    if (forceSuccess || junior || ballName === 'master-ball') {
       isSuccess = true;
     } else {
       const baseRate = state.curSpeciesData?.capture_rate ?? 45;

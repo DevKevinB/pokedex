@@ -2,6 +2,22 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [17.1.0] - PARENT TOOLS & LAYOUT FIXES
+
+### Added
+- **🔧 Parent Tools** (Settings → hold "PARENT TOOLS" for a second): add **any** Pokémon to either player's box by name or number, set its level 1–100, bump levels ±5, or remove one. Levels drive real battle power — a Lv80 Pokémon has ~146 HP versus ~18 at Lv5, with attack, defense and speed scaling to match.
+- The hold-to-open gate keeps curious kids from stumbling into it by accident.
+
+### Changed
+- **Junior mode keeps the ball drawer.** All four balls appear and behave normally — but in Junior mode every one of them is a guaranteed catch, and Master Balls are never used up. Nothing on screen gives it away, so the choice still feels like a real decision.
+
+### Fixed
+- **Junior mode now fits on screen.** The sprite area flexes to whatever space is left instead of being pinned at 45% height, so the EXPLORE button can never be pushed under the data sheet — verified on tall and short phones alike.
+- **Header no longer overflows on narrow phones** (the BTL button was being clipped): the status LEDs and lens shrink or hide below 430px, and Junior mode no longer inflates the header.
+- Pokémon sprites scale up to fill the display area again instead of rendering at their tiny native size.
+- The dex number no longer tucks under the header divider.
+- Parent Tools rows and inputs no longer overflow their panel on phone widths.
+
 ## [17.0.0] - NATIONAL DEX & SETTINGS UPDATE
 
 ### Added

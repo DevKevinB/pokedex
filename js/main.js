@@ -12,6 +12,7 @@ import { openPC, closePC, cancelTeamPick } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { initProgression, openTrainerCard, closeTrainerCard, dismissCelebration } from './progression.js';
 import { initSettings, applyJuniorClass, syncMusicBtn } from './settings.js';
+import { initDevTools } from './devtools.js';
 import { playMusic, stopMusic, playFanfare } from './music.js';
 import { playBeep } from './audio.js';
 
@@ -176,6 +177,7 @@ loadSave();
 initProgression();
 wireUI();
 initSettings();
+initDevTools();
 wireGestures();
 registerSW();
 console.log(`Pokédex OS v${APP_VERSION} ready.`);

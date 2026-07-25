@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=17.0.0">
-    <link rel="stylesheet" href="css/gba.css?v=17.0.0">
+    <link rel="stylesheet" href="css/main.css?v=17.1.0">
+    <link rel="stylesheet" href="css/gba.css?v=17.1.0">
 </head>
 <body>
 
@@ -98,7 +98,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 17.0 - GAME BOY EDITION</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 17.1 - GAME BOY EDITION</div>
         </div>
     </div>
 </div>
@@ -207,7 +207,40 @@
                 <button class="set-action" id="set-import-file" title="Load a downloaded save file">📂 LOAD FILE</button>
             </div>
         </div>
+        <div class="card-section">
+            <div class="card-label">GROWN-UPS</div>
+            <button class="set-action dev-open" id="dev-open-btn" title="Add any Pokémon and set levels">🔧 PARENT TOOLS — HOLD TO OPEN</button>
+        </div>
         <button class="btn-large btn-reg" id="settings-close">SAVE &amp; CLOSE</button>
+    </div>
+</div>
+
+<div class="overlay-screen" id="dev-modal" style="z-index: 2700;">
+    <div class="modal-box card-box">
+        <h2>🔧 TRAINER TOOLS</h2>
+        <div class="card-section">
+            <div class="card-label">EDITING</div>
+            <div class="dev-targets">
+                <button class="set-toggle on" id="dev-target-1">P1</button>
+                <button class="set-toggle" id="dev-target-2">P2</button>
+            </div>
+            <div class="dev-count" id="dev-count">0 / 649 OWNED</div>
+        </div>
+        <div class="card-section">
+            <div class="card-label">ADD A POKÉMON</div>
+            <div class="dev-add">
+                <input id="dev-add-name" class="set-input dev-wide" placeholder="NAME OR NUMBER" maxlength="20">
+                <input id="dev-add-level" class="set-input dev-narrow" type="number" min="1" max="100" value="5" title="Level">
+                <button class="set-action" id="dev-add-btn">ADD</button>
+            </div>
+            <div class="dev-status" id="dev-status"></div>
+        </div>
+        <div class="card-section">
+            <div class="card-label">OWNED — TAP A LEVEL TO EDIT</div>
+            <input id="dev-filter" class="set-input dev-wide" placeholder="FILTER BY NUMBER">
+            <div class="dev-list" id="dev-list"></div>
+        </div>
+        <button class="btn-large btn-reg" id="dev-close">DONE</button>
     </div>
 </div>
 
@@ -261,6 +294,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=17.0.0"></script>
+<script type="module" src="js/main.js?v=17.1.0"></script>
 </body>
 </html>

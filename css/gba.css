@@ -54,9 +54,9 @@ img { image-rendering: pixelated; }
 
 /* ---------- app frame ---------- */
 .app-container {
-  --type-glow: #4592c442;
+  --type-glow: #4592c455;
   background:
-    radial-gradient(closest-side at 50% 30%, var(--type-glow) 0%, transparent 100%) no-repeat 0 0 / 100% 60%,
+    radial-gradient(closest-side at 50% 32%, var(--type-glow) 0%, transparent 100%) no-repeat,
     radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.5) 49%, transparent 51%),
     radial-gradient(1px 1px at 78% 8%, rgba(255,255,255,0.35) 49%, transparent 51%),
     radial-gradient(1.5px 1.5px at 35% 62%, rgba(255,255,255,0.3) 49%, transparent 51%),
@@ -65,11 +65,19 @@ img { image-rendering: pixelated; }
     radial-gradient(1.5px 1.5px at 22% 88%, rgba(255,255,255,0.25) 49%, transparent 51%),
     radial-gradient(1px 1px at 50% 12%, rgba(255,255,255,0.3) 49%, transparent 51%),
     linear-gradient(180deg, #131328 0%, #0b0b1a 55%, #080812 100%);
-  background-size: 100% 60%, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 100% 100%;
-  transition: --type-glow 0.5s;
+  background-size: 130% 66%, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 260px 260px, 100% 100%;
+  background-position: center 6%, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
 }
 /* player identity lives in a slim colored strip under the header */
-.header { border-bottom: 3px solid var(--p-primary); padding-bottom: 12px; }
+.header { border-bottom: 3px solid var(--p-primary); padding-bottom: 12px; flex: 0 0 auto; }
+
+/* Vertical layout: the sprite area absorbs leftover space so the toolbar
+   ALWAYS fits — at any screen height, in any mode. The collapsed data
+   sheet overlays the bottom, so the toolbar reserves room for it. */
+.visual-display { flex: 1 1 auto; min-height: 0; margin-top: 0 !important; padding-top: 10px; }
+.img-container { height: auto !important; flex: 1 1 auto; min-height: 88px; }
+#poke-sprite { height: 100%; width: auto; max-height: 230px; max-width: 68%; object-fit: contain; }
+.toolbar { flex: 0 0 auto; margin-bottom: calc(96px + env(safe-area-inset-bottom)); }
 
 /* header hardware */
 .player-toggle, .header-btn {
@@ -391,7 +399,7 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 #badge-title { color: #a02020 !important; }
 #badge-sub { white-space: pre-line; }
 
-.card-box { max-height: 86dvh; overflow-y: auto; width: 360px; text-align: left; }
+.card-box { max-height: 86dvh; overflow-y: auto; width: min(380px, 92vw); padding: 20px; text-align: left; }
 .card-box h2 { text-align: center; }
 .card-section { margin: 14px 0; }
 .card-label { font-family: var(--pixel-font); font-size: 8px; color: #a02020; margin-bottom: 8px; border-bottom: 2px solid rgba(36,36,58,0.15); padding-bottom: 4px; }
@@ -425,15 +433,23 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   100% { opacity: 0; transform: translate(var(--cx, 0px), 340px) rotate(360deg); }
 }
 
-/* bigger everything, no reading required */
+/* bigger everything, no reading required — sized to fit small screens */
 body.junior .search-row input { display: none; }
-body.junior .nav-btn { flex: 1; font-size: 22px; padding: 18px 0; }
-body.junior button.tool-btn { font-size: 10px; padding: 18px 0; }
-body.junior .btn-icon { font-size: 30px; }
+body.junior .nav-btn { flex: 1; font-size: 20px; padding: 13px 0; }
+body.junior button.tool-btn { font-size: 10px; padding: 13px 0; }
+body.junior .btn-icon { font-size: 26px; }
+/* collapsed sheet is just a handle in junior (quick stats hidden) */
+body.junior .bottom-sheet { transform: translateY(calc(100% - 54px)); }
+body.junior .bottom-sheet.open { transform: translateY(0); }
+body.junior .toolbar { margin-bottom: calc(60px + env(safe-area-inset-bottom)); }
+/* every ball works in junior mode — never advertise it */
+body.junior .ball-count { display: none; }
+body.junior .ball-opt img { width: 56px; height: 56px; }
+body.junior .ball-opt span { font-size: 8px; }
 body.junior .btn-catch { font-size: 12px !important; }
 body.junior .btn-explore { font-size: 12px !important; }
 body.junior #poke-name { font-size: 26px !important; }
-body.junior .header-btn, body.junior .player-toggle { padding: 10px 12px; font-size: 11px; }
+/* header stays compact in junior mode — it must fit narrow phones */
 body.junior #poke-sprite { cursor: pointer; }
 body.junior .move-btn { font-size: 10px; padding: 16px 4px; }
 body.junior .habitat-emoji { font-size: 44px; }
@@ -501,4 +517,60 @@ body.junior .quick-stats { display: none; }
   #pc-modal { width: 520px; left: 50%; margin-left: -260px; border-left: 3px solid rgba(255,255,255,0.07); border-right: 3px solid rgba(0,0,0,0.6); }
   #ball-drawer { width: 100%; }
   .tool-btn, .nav-btn, .header-btn, .habitat-card, .move-btn, .pc-item { cursor: pointer; }
+}
+
+/* ---------- v17.1: parent trainer tools ---------- */
+.set-action.dev-open { width: 100%; font-size: 7px; padding: 12px 6px; position: relative; overflow: hidden; }
+.set-action.dev-open.holding::after {
+  content: ''; position: absolute; left: 0; bottom: 0; height: 4px; width: 0;
+  background: #38c060; animation: holdFill 1.2s linear forwards;
+}
+@keyframes holdFill { to { width: 100%; } }
+
+.dev-targets { display: flex; gap: 8px; }
+.dev-targets .set-toggle { flex: 1; }
+.dev-count { font-family: var(--pixel-font); font-size: 7px; color: #706848; text-align: center; margin-top: 8px; }
+.dev-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; }
+.dev-wide { flex: 1 1 100%; width: auto; min-width: 0; }
+.dev-narrow { flex: 0 0 74px; width: 74px; }
+.dev-add .set-action { flex: 1 1 auto; padding: 8px 10px; }
+/* no browser spinners — they blow out the pixel layout */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+.dev-status { font-family: var(--pixel-font); font-size: 6px; line-height: 1.8; margin-top: 8px; min-height: 12px; color: #706848; }
+.dev-status.ok { color: #2e8048; }
+.dev-status.err { color: #a02020; }
+
+.dev-list { display: flex; flex-direction: column; gap: 6px; max-height: 34dvh; overflow-y: auto; margin-top: 8px; }
+.dev-row {
+  display: flex; align-items: center; gap: 4px; overflow: hidden;
+  background: #fffef2; border: 2px solid var(--px-ink); border-radius: 4px; padding: 5px;
+}
+.dev-row img { width: 30px; height: 30px; flex: 0 0 30px; }
+.dev-id { font-family: var(--pixel-font); font-size: 7px; color: var(--px-ink); flex: 1 1 auto; min-width: 0; }
+.dev-lvl {
+  font-family: var(--pixel-font); font-size: 9px; flex: 0 0 44px; width: 44px; text-align: center;
+  background: #fff; color: var(--px-ink); border: 2px solid var(--px-ink); border-radius: 2px; padding: 5px 1px;
+}
+.dev-mini {
+  font-family: var(--pixel-font); font-size: 10px; cursor: pointer; flex: 0 0 auto;
+  min-width: 24px; background: var(--px-cream-dark); color: var(--px-ink);
+  border: 2px solid var(--px-ink); border-radius: 2px; padding: 5px 3px;
+}
+.dev-mini.danger { background: #e84040; color: #fff; }
+.dev-mini:active { transform: translateY(2px); }
+.dev-empty { font-family: var(--pixel-font); font-size: 7px; color: #706848; text-align: center; padding: 20px 8px; line-height: 2; }
+
+
+/* ---------- narrow screens: keep the header on one line ---------- */
+@media (max-width: 430px) {
+  .header { padding-left: 12px; padding-right: 12px; gap: 5px; }
+  .big-blue { width: 34px; height: 34px; border-width: 2px; }
+  .led-group { display: none; }
+  .player-toggle, .header-btn { padding: 7px 6px; font-size: 8px; }
+  #pc-btn, #battle-btn { letter-spacing: -0.5px; }
+}
+@media (max-width: 360px) {
+  .big-blue { display: none; }
 }

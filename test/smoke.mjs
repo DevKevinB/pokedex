@@ -274,6 +274,12 @@ await page.waitForTimeout(300);
 check('player button shows custom name', (await page.locator('#player-btn').innerText()) === 'GABE');
 check('junior body class applied', await page.evaluate(() => document.body.classList.contains('junior')));
 check('search input hidden in junior', !(await page.locator('#search').isVisible()));
+const fits = await page.evaluate(() => {
+  const btn = document.getElementById('explore-btn').getBoundingClientRect();
+  const sheetTop = document.getElementById('data-sheet').getBoundingClientRect().top;
+  return { bottom: Math.round(btn.bottom), sheetTop: Math.round(sheetTop), vh: window.innerHeight };
+});
+check(`junior EXPLORE fits on screen (${fits.bottom} <= ${fits.sheetTop})`, fits.bottom <= fits.sheetTop + 1 && fits.bottom <= fits.vh);
 
 // navigate to an uncaught mon and tap the sprite to catch — no drawer, guaranteed
 await page.click('#nav-next'); // 27
@@ -281,9 +287,12 @@ await page.waitForTimeout(1500);
 await dismissCelebrations(page);
 await page.locator('#poke-sprite').evaluate(el => el.click());
 await page.waitForTimeout(400);
-check('junior catch skips ball drawer', await page.locator('#ball-drawer.open').count() === 0);
-await page.waitForFunction(() => document.getElementById('catch-btn').innerText.includes('OWNED'), null, { timeout: 15000 });
-check('junior tap-catch always succeeds', true);
+check('junior tap opens ball drawer', await page.locator('#ball-drawer.open').count() === 1);
+check('master ball count hidden in junior', !(await page.locator('#mb-count').isVisible()));
+// a plain Pokéball on a low-rate target: in junior it must ALWAYS land
+await page.locator('.ball-opt[data-ball="poke-ball"]').evaluate(el => el.click());
+await page.waitForFunction(() => document.getElementById('catch-btn').innerText.includes('OWNED'), null, { timeout: 20000 });
+check('junior poke-ball always succeeds', true);
 check('confetti spawned', await page.evaluate(() => document.querySelectorAll('.confetti-piece').length > 0));
 await page.waitForTimeout(2400);
 await dismissCelebrations(page);
@@ -295,6 +304,37 @@ check('P2 not in junior mode', !(await page.evaluate(() => document.body.classLi
 await page.click('#player-btn');
 await page.waitForTimeout(300);
 check('P1 junior persists', await page.evaluate(() => document.body.classList.contains('junior')));
+
+// PARENT TOOLS: hold to open, add a Pokémon at a chosen level
+await page.click('#settings-btn');
+await page.waitForTimeout(400);
+const devBtn = await page.locator('#dev-open-btn').boundingBox();
+await page.mouse.move(devBtn.x + devBtn.width / 2, devBtn.y + devBtn.height / 2);
+await page.mouse.down();
+await page.waitForTimeout(1500);
+await page.mouse.up();
+await page.waitForTimeout(400);
+check('parent tools open on hold', await page.locator('#dev-modal').isVisible());
+await page.fill('#dev-add-name', '150');
+await page.fill('#dev-add-level', '70');
+await page.locator('#dev-add-btn').evaluate(el => el.click());
+await page.waitForTimeout(900);
+check('added mon by number at level', (await page.locator('#dev-status').innerText()).includes('Lv70'));
+const devSaved = await page.evaluate(() => {
+  const s2 = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+  return s2.players[1].caught.includes(150) && s2.players[1].mons['150'].level === 70;
+});
+check('parent-added mon persisted at Lv70', devSaved);
+await page.locator('.dev-row[data-id="150"] .dev-mini[data-act="up"]').evaluate(el => el.click());
+await page.waitForTimeout(400);
+const bumped = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].mons['150'].level);
+check('level +5 button works (75)', bumped === 75);
+await page.locator('.dev-row[data-id="150"] .dev-mini[data-act="del"]').evaluate(el => el.click());
+await page.waitForTimeout(400);
+const removed = await page.evaluate(() => !JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].caught.includes(150));
+check('remove works', removed);
+await page.click('#dev-close');
+await page.waitForTimeout(300);
 
 // turn junior back off for the remaining checks
 await page.click('#settings-btn');
@@ -336,6 +376,32 @@ const code = await page.evaluate(async () => {
   return exportCode();
 });
 check('export code generated', typeof code === 'string' && code.length > 20);
+
+// LEVEL → POWER: a parent-set high level must produce real battle stats
+await page.evaluate(() => {
+  const sv = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+  sv.players[1].team = [25];
+  sv.players[1].mons['25'] = { level: 80, xp: 0 };
+  sv.players[1].settings.junior = false;
+  localStorage.setItem('pokedexos_save_v2', JSON.stringify(sv));
+});
+await page.goto(BASE, { waitUntil: 'networkidle' });
+await page.click('#boot-screen');
+await page.waitForTimeout(1500);
+await page.click('#battle-btn');
+await page.waitForTimeout(500);
+await page.locator('#close-pc-btn').evaluate(el => el.click());
+await page.waitForTimeout(300);
+await page.locator('#variant-regular').evaluate(el => el.click());
+await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
+await page.waitForTimeout(600);
+const lvlTxt = await page.locator('#player-name').innerText();
+const hpTxt = await page.locator('#player-hp-text').innerText();
+const maxHp = parseInt(hpTxt.split('/')[1]);
+check('battle shows the parent-set level (Lv80)', /lv80/i.test(lvlTxt));
+check(`Lv80 HP scales up (${maxHp} HP vs ~18 at Lv5)`, maxHp > 100);
+await page.locator('#run-btn').evaluate(el => el.click());
+await page.waitForTimeout(800);
 
 await page.screenshot({ path: 'test/screen-dex.png' });
 
