@@ -7,9 +7,10 @@ import { state, loadSave, player, playerName } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, speak, isSpeaking, triggerVibration, toggleMute } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
-import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, battleState } from './battle.js';
-import { openPC, closePC, cancelTeamPick } from './pc.js';
+import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, battleState } from './battle.js';
+import { openPC, closePC, cancelTeamPick, onPCSearchInput } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
+import { openGyms, backFromGym, reopenGyms } from './gym.js';
 import { initProgression, openTrainerCard, closeTrainerCard, dismissCelebration } from './progression.js';
 import { initSettings, applyJuniorClass, syncMusicBtn } from './settings.js';
 import { initDevTools } from './devtools.js';
@@ -122,8 +123,16 @@ function wireUI() {
   on('variant-cancel', () => { document.getElementById('sparkle-modal').style.display = 'none'; exitBattleMode(); });
   on('victory-continue', maybeEvolveThenExit);
   on('switch-cancel', () => { document.getElementById('switch-modal').style.display = 'none'; });
+  on('ballpick-cancel', () => { document.getElementById('ballpick-modal').style.display = 'none'; });
+  document.getElementById('pc-search').addEventListener('input', onPCSearchInput);
   on('explore-btn', openExplore);
   on('explore-back-btn', closeExplore);
+  on('gyms-btn', openGyms);
+  on('gym-back-btn', backFromGym);
+
+  // gym → battle bridges
+  document.addEventListener('gym-challenge', e => startTrainerBattle(e.detail.gymKey, e.detail.idx));
+  document.addEventListener('return-to-gym', reopenGyms);
   on('card-btn', openTrainerCard);
   on('card-close', closeTrainerCard);
   on('badge-ok', dismissCelebration);
@@ -151,7 +160,7 @@ function wireUI() {
   });
 
   // music reacts to battle lifecycle
-  document.addEventListener('battle-started', () => playMusic('battle'));
+  document.addEventListener('battle-started', e => playMusic(e.detail?.origin === 'gym' ? 'gym' : 'battle'));
   document.addEventListener('battle-victory', () => playFanfare());
   document.addEventListener('battle-exited', () => playMusic('dex'));
 

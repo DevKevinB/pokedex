@@ -64,7 +64,9 @@ async function mockRoutes(context) {
     let body;
     const m = url.match(/pokemon-species\/(\d+)/);
     const p = url.match(/pokemon\/([\w-]+)\/?$/);
-    if (m) body = speciesFixture(parseInt(m[1]));
+    if (url.includes('pokemon?limit')) {
+      body = { results: Array.from({ length: 649 }, (_, i) => ({ name: NAMES[i + 1] || `mon-${i + 1}`, url: `https://pokeapi.co/api/v2/pokemon/${i + 1}/` })) };
+    } else if (m) body = speciesFixture(parseInt(m[1]));
     else if (url.includes('evolution-chain')) body = evoFixture;
     else if (url.includes('/move/')) body = moveFixture;
     else if (p) {
@@ -160,12 +162,20 @@ await page.waitForTimeout(2200); // let catch animation fully release isCatching
 await page.click('#pc-btn');
 await page.waitForTimeout(400);
 check('PC modal opens', await page.locator('#pc-modal').isVisible());
-check('5 generation tabs', await page.locator('.gen-tab').count() === 5);
+check('6 tabs (G1-G5 + ALL)', await page.locator('.gen-tab').count() === 6);
 const caughtCount = await page.locator('.pc-item:not(.uncaught)').count();
 check('PC shows 3 caught (1, 25, 26)', caughtCount === 3);
 await page.locator('.gen-tab[data-gen="2"]').click();
 await page.waitForTimeout(400);
 check('gen 2 tab shows uncaught grid', await page.locator('.pc-item.uncaught').count() > 50);
+await page.locator('.gen-tab[data-gen="all"]').click();
+await page.waitForTimeout(600);
+check('ALL tab lists every mon', await page.locator('.pc-item').count() === 649);
+await page.fill('#pc-search', 'raichu');
+await page.waitForTimeout(500);
+check('search narrows to raichu', await page.locator('.pc-item').count() === 1 &&
+  (await page.locator('.pc-item .pc-name').first().innerText()).toLowerCase() === 'raichu');
+await page.fill('#pc-search', '');
 await page.locator('.gen-tab[data-gen="1"]').click();
 await page.waitForTimeout(400);
 await page.click('#close-pc-btn');
@@ -185,6 +195,33 @@ await page.waitForFunction(() => document.querySelectorAll('.move-btn').length >
 check('move buttons + switch/run rendered', await page.locator('.move-btn').count() >= 3 && await page.locator('#switch-btn').count() === 1);
 check('player level shown', /lv\d+/i.test(await page.locator('#player-name').innerText()));
 check('wild level shown', /lv\d+/i.test(await page.locator('#wild-name').innerText()));
+
+// BALL THROW: force RNG low so the catch always lands, then verify
+await page.evaluate(() => { window.__realRandom = Math.random; Math.random = () => 0.011; });
+await page.locator('#ball-btn').evaluate(el => el.click());
+await page.waitForTimeout(400);
+check('ball picker opens', await page.locator('#ballpick-modal').isVisible());
+await page.locator('.ballpick[data-ball="ultra-ball"]').evaluate(el => el.click());
+await page.waitForFunction(() => document.getElementById('victory-modal').style.display === 'flex', null, { timeout: 20000 });
+check('ball catch → gotcha screen', (await page.locator('#victory-lines').innerText()).includes('GOTCHA'));
+await page.evaluate(() => { Math.random = window.__realRandom; });
+await page.locator('#victory-continue').evaluate(el => el.click());
+await page.waitForFunction(() => !document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
+await page.waitForTimeout(800);
+await dismissCelebrations(page);
+
+// start a fresh battle for the fight-to-victory path
+await page.click('#battle-btn');
+await page.waitForTimeout(500);
+await page.locator('#close-pc-btn').evaluate(el => el.click());
+await page.waitForTimeout(300);
+await page.locator('#variant-sparkle').evaluate(el => el.click());
+await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
+await page.waitForTimeout(400);
+check('wild level within ±20% of lead', await page.evaluate(() => {
+  const m = document.getElementById('wild-name').innerText.match(/lv(\d+)/i);
+  return m && parseInt(m[1]) >= 4 && parseInt(m[1]) <= 6; // lead is Lv5
+}));
 
 // fight to victory (fixture mons are weak — a few hits should do it)
 let won = false;
@@ -239,8 +276,24 @@ await page.click('#explore-back-btn');
 await page.waitForTimeout(600);
 check('back returns to dex', await page.locator('#explore-container.active').count() === 0);
 
-// trainer card
+// TEAM strip: visible in PC, tap promotes to lead
 await dismissCelebrations(page);
+await page.click('#pc-btn');
+await page.waitForTimeout(500);
+check('team strip visible', await page.locator('#team-strip').isVisible());
+const stripCount = await page.locator('.team-slot').count();
+if (stripCount > 1) {
+  const secondId = await page.locator('.team-slot').nth(1).getAttribute('data-team-id');
+  await page.locator('.team-slot').nth(1).evaluate(el => el.click());
+  await page.waitForTimeout(400);
+  check('tapped slot becomes lead', (await page.locator('.team-slot.lead').getAttribute('data-team-id')) === secondId);
+} else {
+  check('tapped slot becomes lead (single member — trivially lead)', await page.locator('.team-slot.lead').count() === 1);
+}
+await page.locator('#close-pc-btn').evaluate(el => el.click());
+await page.waitForTimeout(300);
+
+// trainer card
 await page.click('#card-btn');
 await page.waitForTimeout(500);
 check('trainer card opens', await page.locator('#card-modal').isVisible());
@@ -402,6 +455,50 @@ check('battle shows the parent-set level (Lv80)', /lv80/i.test(lvlTxt));
 check(`Lv80 HP scales up (${maxHp} HP vs ~18 at Lv5)`, maxHp > 100);
 await page.locator('#run-btn').evaluate(el => el.click());
 await page.waitForTimeout(800);
+
+// GYM CIRCUIT: browse, fight trainer 1 with the Lv80 lead, capture their team
+await page.click('#gyms-btn');
+await page.waitForTimeout(600);
+check('gym screen opens', await page.locator('#gym-container.active').count() === 1);
+check('12 gym stops listed', await page.locator('.gym-card').count() === 12);
+check('gym 2 locked at start', await page.locator('.gym-card.locked').count() >= 10);
+check('poke center button present', await page.locator('#poke-center-btn').isVisible());
+await page.locator('.gym-card[data-gym="rock"]').click();
+await page.waitForTimeout(500);
+check('5 trainers in boulder gym', await page.locator('.trainer-card').count() === 5);
+check('trainer 1 challengeable', (await page.locator('.trainer-card').first().innerText()).includes('TAP TO BATTLE'));
+await page.evaluate(() => { window.__r2 = Math.random; Math.random = () => 0.011; });
+await page.locator('.trainer-card').first().evaluate(el => el.click());
+await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
+await page.waitForTimeout(500);
+check('battle title shows trainer name', (await page.locator('#battle-title').innerText()).includes('CARL'));
+check('no BALL button vs trainers', await page.locator('#ball-btn').count() === 0);
+let gymWon = false;
+for (let turn = 0; turn < 8 && !gymWon; turn++) {
+  if (await page.locator('#victory-modal').isVisible()) { gymWon = true; break; }
+  const can = await page.evaluate(() => { const b = document.querySelector('.move-btn[data-move="0"]'); return b && !b.disabled; });
+  if (can) await page.locator('.move-btn[data-move="0"]').evaluate(el => el.click());
+  await page.waitForTimeout(3800);
+  if (await page.locator('#victory-modal').isVisible()) gymWon = true;
+}
+await page.evaluate(() => { Math.random = window.__r2; });
+check('gym trainer defeated', gymWon);
+check('spoils listed', (await page.locator('#victory-lines').innerText()).toLowerCase().includes('whole team'));
+await page.locator('#victory-continue').evaluate(el => el.click());
+await page.waitForTimeout(1200);
+check('returned to gym trainer list', await page.locator('#gym-container.active').count() === 1);
+check('trainer 1 marked beaten', (await page.locator('.trainer-card').first().innerText()).includes('✅'));
+const gymSave = await page.evaluate(() => {
+  const sv = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+  return sv.players[1].caught.includes(74) && sv.players[1].mons['74']?.level === 8 && !!sv.players[1].gyms.beaten['rock:0'];
+});
+check('trainer team captured + progress saved', gymSave);
+await dismissCelebrations(page);
+await page.locator('#gym-back-btn').evaluate(el => el.click());
+await page.waitForTimeout(400);
+await page.locator('#gym-back-btn').evaluate(el => el.click());
+await page.waitForTimeout(500);
+check('gym screen closes to dex', await page.locator('#gym-container.active').count() === 0);
 
 await page.screenshot({ path: 'test/screen-dex.png' });
 

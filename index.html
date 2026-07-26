@@ -7,12 +7,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
     <link rel="manifest" href="manifest.webmanifest">
-    <title>Pokédex OS v17</title>
+    <title>Pokédex OS v18</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=17.1.0">
-    <link rel="stylesheet" href="css/gba.css?v=17.1.0">
+    <link rel="stylesheet" href="css/main.css?v=18.1.0">
+    <link rel="stylesheet" href="css/gba.css?v=18.1.0">
 </head>
 <body>
 
@@ -74,7 +74,8 @@
         <button class="tool-btn btn-catch" id="catch-btn" title="Throw a ball and try to catch it"><span class="btn-icon">🔴</span> CATCH</button>
         <button class="tool-btn" id="data-btn" title="Stats, abilities and evolution" style="background: #2c2c2c;"><span class="btn-icon">📊</span> DATA</button>
         <button class="tool-btn" id="card-btn" title="Trainer Card: badges, quests and progress"><span class="btn-icon">🎖️</span> CARD</button>
-        <button class="tool-btn btn-explore" id="explore-btn" title="Walk through habitats and find wild Pokémon"><span class="btn-icon">🌲</span> EXPLORE THE WILD</button>
+        <button class="tool-btn btn-explore half" id="explore-btn" title="Walk through habitats and find wild Pokémon"><span class="btn-icon">🌲</span> EXPLORE</button>
+        <button class="tool-btn btn-gym" id="gyms-btn" title="Challenge 58 trainers — win their whole team!"><span class="btn-icon">🏟️</span> GYMS</button>
     </div>
 
     <div id="ball-drawer">
@@ -98,7 +99,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 17.1 - GAME BOY EDITION</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 18.0 - TRAINER'S JOURNEY</div>
         </div>
     </div>
 </div>
@@ -117,10 +118,18 @@
     </div>
 </div>
 
+<div id="gym-container">
+    <div class="battle-header">
+        <button class="btn-escape" id="gym-back-btn">🔙 BACK</button>
+        <span id="gym-title">GYM CIRCUIT</span>
+    </div>
+    <div class="explore-body" id="gym-body"></div>
+</div>
+
 <div id="battle-container">
     <div class="battle-header">
         <button class="btn-escape" id="escape-btn">🔙 ESCAPE</button>
-        <span>BATTLE ARENA</span>
+        <span id="battle-title">BATTLE ARENA</span>
     </div>
 
     <div class="battle-view">
@@ -158,6 +167,8 @@
 <div id="pc-modal">
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
     <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:10px; font-size:12px;" id="pc-instruction"></div>
+    <div id="team-strip"></div>
+    <input id="pc-search" class="pc-search" placeholder="🔍 SEARCH NAME OR NUMBER" maxlength="20">
     <div id="gen-tabs"></div>
     <div class="pc-grid" id="pc-grid"></div>
     <button class="close-pc-btn" id="close-pc-btn">CANCEL / CLOSE PC</button>
@@ -169,6 +180,15 @@
         <h2 style="margin-top:0;">SWITCH POKÉMON</h2>
         <div id="switch-list" class="switch-list"></div>
         <button class="btn-large btn-danger" id="switch-cancel">CANCEL</button>
+    </div>
+</div>
+
+<div class="overlay-screen" id="ballpick-modal">
+    <div class="modal-box">
+        <h2 style="margin-top:0;">THROW A BALL</h2>
+        <p style="margin:4px 0 10px 0;">Weaker Pokémon are easier to catch!</p>
+        <div id="ballpick-list" class="switch-list"></div>
+        <button class="btn-large btn-danger" id="ballpick-cancel">CANCEL</button>
     </div>
 </div>
 
@@ -294,6 +314,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=17.1.0"></script>
+<script type="module" src="js/main.js?v=18.1.0"></script>
 </body>
 </html>

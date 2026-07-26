@@ -100,6 +100,31 @@ async function cached(key, url, slim) {
   return data;
 }
 
+// ---- 649-name index: one request, cached forever ----
+// nameIndex[id] = 'pikachu'. Powers PC search, parent tools picker,
+// gym rosters — anywhere we need a name without a full fetch.
+let nameIndexPromise = null;
+export function getNameIndex() {
+  if (cache['nameindex']) return Promise.resolve(cache['nameindex']);
+  if (!nameIndexPromise) {
+    nameIndexPromise = apiFetch('https://pokeapi.co/api/v2/pokemon?limit=649')
+      .then(d => {
+        const idx = [''];
+        (d.results || []).forEach(r => idx.push(r.name));
+        cache['nameindex'] = idx;
+        saveCache();
+        return idx;
+      })
+      .catch(() => { nameIndexPromise = null; return null; });
+  }
+  return nameIndexPromise;
+}
+
+// synchronous best-effort lookup once the index is warm
+export function nameOf(id) {
+  return cache['nameindex']?.[id] || `#${String(id).padStart(3, '0')}`;
+}
+
 export const getPokemon = idOrName =>
   cached(`pkmn:${idOrName}`.toLowerCase(), `https://pokeapi.co/api/v2/pokemon/${idOrName}`, slimPokemon)
     .then(d => { if (!cache[`pkmn:${d.id}`]) { cache[`pkmn:${d.id}`] = d; saveCache(); } return d; });

@@ -16,6 +16,7 @@ function freshPlayer() {
     badges: [],          // badge ids earned (Phase 4)
     items: { masterBalls: 1 },   // scarce: earn more via badges (Phase 4)
     quests: {},          // quest progress (Phase 4)
+    gyms: { beaten: {} },// gym circuit progress (v18.1)
     settings: { junior: false },
     stats: { catches: 0, battlesWon: 0, battlesLost: 0 }
   };
@@ -52,6 +53,7 @@ function hydratePlayer(raw) {
     settings: { ...base.settings, ...(raw.settings || {}) },
     stats: { ...base.stats, ...(raw.stats || {}) },
     mons: raw.mons || {}, quests: raw.quests || {},
+    gyms: (raw.gyms && raw.gyms.beaten) ? raw.gyms : { beaten: {} },
     caught: Array.isArray(raw.caught) ? raw.caught : [],
     team: Array.isArray(raw.team) ? raw.team : [],
     badges: Array.isArray(raw.badges) ? raw.badges : []
@@ -139,6 +141,14 @@ export function evolveMon(oldId, newId) {
 
 export function setTeam(ids) {
   player().team = ids.slice(0, 6);
+  persist();
+}
+
+// promote a team member to lead (position 0), preserving the rest's order
+export function setLead(id) {
+  const p = player();
+  if (!p.team.includes(id)) return;
+  p.team = [id, ...p.team.filter(t => t !== id)];
   persist();
 }
 

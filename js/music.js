@@ -34,6 +34,13 @@ const TRACKS = {
     bass: [N.E2, _, N.E2, N.E2, _, N.E2, N.E2, _, N.G2, _, N.G2, N.G2, _, N.G2, N.A2, _,
            N.E2, _, N.E2, N.E2, _, N.E2, N.E2, _, N.C2, _, N.C2, N.C2, N.B1, _, N.B1, _]
   },
+  gym: {
+    bpm: 168, loop: true, leadVol: 0.032, bassVol: 0.052,
+    lead: [N.A4, _, N.A4, N.C5, N.B4, _, N.E4, _, N.A4, _, N.C5, N.E5, N.D5, N.C5, N.B4, _,
+           N.G4, _, N.G4, N.B4, N.A4, _, N.E4, _, N.F4, N.G4, N.A4, N.B4, N.C5, _, N.E5, _],
+    bass: [N.A2, _, N.A2, N.A2, _, N.A2, N.E2, _, N.A2, _, N.A2, N.A2, _, N.A2, N.G2, _,
+           N.F2, _, N.F2, N.F2, _, N.F2, N.C2, _, N.E2, _, N.E2, N.E2, N.E2, _, N.E2, _]
+  },
   victory: {
     bpm: 132, loop: false, leadVol: 0.035, bassVol: 0.05,
     lead: [N.G4, _, N.C5, _, N.E5, _, N.G5, N.G5, N.E5, _, N.G5, _, _, _, _, _],

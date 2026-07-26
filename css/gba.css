@@ -574,3 +574,101 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 @media (max-width: 360px) {
   .big-blue { display: none; }
 }
+
+/* ---------- v18.0: PC search, team strip, ball throwing ---------- */
+.pc-search {
+  font-family: var(--pixel-font); font-size: 9px; width: 100%;
+  background: rgba(0,0,0,0.5); color: var(--crt-green);
+  border: 2px solid rgba(107,255,107,0.4); border-radius: 2px;
+  padding: 11px 10px; margin-bottom: 10px; text-transform: uppercase;
+}
+.pc-search::placeholder { color: rgba(107,255,107,0.4); }
+.pc-search:focus { outline: none; border-color: var(--crt-green); box-shadow: 0 0 8px rgba(107,255,107,0.3); }
+.pc-name { font-family: var(--pixel-font); font-size: 5px; font-style: normal; color: rgba(107,255,107,0.75); text-transform: uppercase; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-item.uncaught .pc-name { color: rgba(107,255,107,0.25); }
+.pc-order {
+  position: absolute; top: 2px; left: 4px; font-family: var(--pixel-font); font-size: 8px;
+  color: var(--crt-dark); background: #ffd040; border-radius: 2px; padding: 1px 3px; z-index: 2;
+}
+
+#team-strip {
+  display: none; align-items: center; gap: 6px; margin-bottom: 10px;
+  background: rgba(107,255,107,0.06); border: 2px solid rgba(107,255,107,0.35);
+  border-radius: 2px; padding: 6px; overflow-x: auto;
+}
+.team-strip-label { font-family: var(--pixel-font); font-size: 7px; color: var(--crt-green); display: flex; flex-direction: column; gap: 3px; flex: 0 0 auto; padding: 0 4px; }
+.team-strip-label small { font-size: 5px; opacity: 0.6; }
+.team-slot {
+  position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;
+  border: 2px solid rgba(107,255,107,0.3); border-radius: 2px; padding: 3px 5px; flex: 0 0 auto;
+  transition: transform 0.1s;
+}
+.team-slot:active { transform: scale(0.92); }
+.team-slot img { width: 34px; height: 34px; }
+.team-slot small { font-family: var(--pixel-font); font-size: 6px; color: var(--crt-green); }
+.team-slot.lead { border-color: #ffd040; background: rgba(255,208,64,0.12); box-shadow: 0 0 8px rgba(255,208,64,0.3); }
+.team-slot.lead em { position: absolute; top: -2px; right: 0; font-style: normal; font-size: 9px; color: #ffd040; }
+
+.moves-grid .ball-btn { background: linear-gradient(180deg, #e84040 0%, #c02828 100%); color: #fff; }
+.moves-grid .run-wide { grid-column: span 2; }
+.switch-item.ballpick.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ---------- v18.1: Gym Circuit ---------- */
+.btn-explore.half { grid-column: span 2; }
+.btn-gym {
+  grid-column: span 2;
+  background: linear-gradient(180deg, #b8952a 0%, #96751a 100%) !important;
+  color: #fff !important; font-size: 10px !important;
+}
+body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important; }
+
+#gym-container {
+  position: fixed; top: 100dvh; left: 0; width: 100vw; height: 100dvh; z-index: 480;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(closest-side at 50% 0%, rgba(184,149,42,0.3) 0%, transparent 100%) no-repeat 0 0 / 100% 40%,
+    radial-gradient(1px 1px at 30% 40%, rgba(255,255,255,0.35) 49%, transparent 51%),
+    radial-gradient(1px 1px at 75% 70%, rgba(255,255,255,0.3) 49%, transparent 51%),
+    linear-gradient(180deg, #131328 0%, #0b0b1a 100%);
+  background-size: 100% 40%, 260px 260px, 260px 260px, 100% 100%;
+  transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#gym-container.active { top: 0; }
+@media (min-width: 760px) {
+  #gym-container { width: 520px; left: 50%; margin-left: -260px; border-left: 3px solid rgba(255,255,255,0.07); border-right: 3px solid rgba(0,0,0,0.6); box-shadow: 0 0 90px rgba(0,0,0,0.85); }
+}
+
+.gym-progress {
+  font-family: var(--pixel-font); font-size: 8px; color: #ffd040; text-align: center;
+  line-height: 1.8; margin-bottom: 10px; text-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+}
+.poke-center-btn {
+  font-family: var(--pixel-font); font-size: 9px; width: 100%; cursor: pointer;
+  background: linear-gradient(180deg, #f8b0c8 0%, #e87098 100%); color: #fff;
+  border: 3px solid var(--px-ink); border-radius: 4px; padding: 12px;
+  box-shadow: 0 4px 0 var(--px-ink); margin-bottom: 10px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
+}
+.poke-center-btn:active { transform: translateY(4px); box-shadow: none; }
+.gym-center-msg { font-family: var(--pixel-font); font-size: 8px; color: #f8b0c8; text-align: center; min-height: 14px; opacity: 0; transition: opacity 0.3s; margin-bottom: 6px; }
+
+#gym-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gym-card.locked { filter: grayscale(1) opacity(0.45); cursor: default; }
+.gym-card.locked:active { transform: none; box-shadow: inset -3px -3px 0 var(--px-cream-dark), 4px 4px 0 rgba(0,0,0,0.35); }
+.gym-card.complete { border-color: #b8952a; box-shadow: inset -3px -3px 0 var(--px-cream-dark), 0 0 12px rgba(255,208,64,0.5); }
+
+.trainer-card {
+  background: var(--px-cream); border: 3px solid var(--px-ink); border-radius: 4px;
+  box-shadow: inset -3px -3px 0 var(--px-cream-dark), 4px 4px 0 rgba(0,0,0,0.35);
+  padding: 12px; margin-bottom: 12px; cursor: pointer;
+}
+.trainer-card.beaten { opacity: 0.65; cursor: default; border-color: #2e8048; }
+.trainer-card.locked { filter: grayscale(1) opacity(0.4); cursor: default; }
+.trainer-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.trainer-name { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink); }
+.trainer-lvl { font-family: var(--pixel-font); font-size: 8px; color: #a02020; }
+.trainer-taunt { font-family: var(--pixel-font); font-size: 7px; color: #706848; line-height: 1.8; margin-bottom: 8px; }
+.trainer-roster { display: flex; gap: 4px; flex-wrap: wrap; }
+.trainer-roster img { width: 34px; height: 34px; background: rgba(0,0,0,0.06); border-radius: 2px; }
+.trainer-card.locked .trainer-roster img { filter: brightness(0); }
+.trainer-cta { font-family: var(--pixel-font); font-size: 8px; color: #a02020; text-align: center; margin-top: 8px; animation: blinker 1.2s infinite; }

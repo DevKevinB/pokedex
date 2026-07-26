@@ -2,6 +2,24 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.1.0] - THE GYM CIRCUIT
+
+### Added
+- **🏟️ GYMS button — 58 simulated trainers** in a fixed ladder from Lv8 to Lv80: ten themed gyms (Boulder, Cascade, Thunder, Meadow, Mindbend, Knuckle, Phantom, Glacier, Inferno, Dragon — 4 trainers + a Leader each), then Victory Road, the Elite Four, and the Champion. Every trainer has a name, a taunt, and a themed roster.
+- **Win a battle, catch their whole team.** Every Pokémon a defeated trainer owned joins your PC Box at its trainer level.
+- **Sequential unlocks:** beat a trainer to open the next; beat a Leader to open the next gym. Blocked? Go train in the wild and come back.
+- **Trainers fight smart:** gym trainers prefer super-effective moves 70% of the time, and send out their next Pokémon when one falls (with the classic "sent out" beat).
+- **Gym endurance + 💗 Poké Center:** your team's HP carries across a gym's trainers. The Poké Center button (free, with a healing jingle) fully restores the team; losing a gym battle rushes you there automatically. Junior mode always fights at full HP.
+- **New gym battle theme** on the chiptune engine, and a progress tracker (trainers defeated / 58).
+
+## [18.0.0] - TRAINER'S JOURNEY, PART 1
+
+### Added
+- **Battle-to-catch!** Wild battles now have a 🔴 BALL button. Weaken a Pokémon first — the lower its HP, the better your odds (real capture math: species rate × ball power × health). Miss and it breaks free and hits back. Knocking it out still catches it, so nobody loses a catch for hitting too hard. Junior mode throws never miss.
+- **PC Box search + ALL view:** search any name or number (powered by a cached index of all 649 names — searching works across every generation at once), plus an ALL tab that scrolls the whole box. Names now show on every PC tile.
+- **TEAM strip** at the top of the PC: your party in order — tap any member to make it your lead. Team picker now shows pick order (1st = lead).
+- Wild Pokémon now spawn **within ±20% of your lead's level** — swap your lead to tune the difficulty.
+
 ## [17.1.0] - PARENT TOOLS & LAYOUT FIXES
 
 ### Added
