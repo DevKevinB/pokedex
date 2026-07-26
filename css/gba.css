@@ -672,3 +672,26 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
 .trainer-roster img { width: 34px; height: 34px; background: rgba(0,0,0,0.06); border-radius: 2px; }
 .trainer-card.locked .trainer-roster img { filter: brightness(0); }
 .trainer-cta { font-family: var(--pixel-font); font-size: 8px; color: #a02020; text-align: center; margin-top: 8px; animation: blinker 1.2s infinite; }
+
+/* ---------- v18.2: shinies, versus, nicknames, parent picker ---------- */
+.pc-shiny { position: absolute; top: 1px; right: 3px; font-size: 9px; z-index: 2; filter: drop-shadow(0 0 3px rgba(255,208,64,0.8)); }
+.pc-name.nicked { color: #ffd040; }
+.vs-btn {
+  font-family: var(--pixel-font); font-size: 9px; width: 100%; cursor: pointer;
+  background: linear-gradient(90deg, #c02828 0%, #7a2020 48%, #20427a 52%, #2858c0 100%); color: #fff;
+  border: 3px solid var(--px-ink); border-radius: 4px; padding: 12px;
+  box-shadow: 0 4px 0 var(--px-ink); margin-bottom: 10px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+}
+.vs-btn:active { transform: translateY(4px); box-shadow: none; }
+#pass-modal .modal-box p { font-size: 8px; }
+#dev-suggest { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.dev-sug {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  background: #fffef2; border: 2px solid var(--px-ink); border-radius: 3px; padding: 4px 8px;
+}
+.dev-sug:active { background: var(--px-cream-dark); }
+.dev-sug img { width: 26px; height: 26px; }
+.dev-sug span { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); flex: 1; text-transform: uppercase; }
+.dev-sug small { font-family: var(--pixel-font); font-size: 7px; color: #706848; }
+#variant-sparkle:disabled { opacity: 0.55; box-shadow: 0 4px 0 var(--px-ink); transform: none; cursor: default; }

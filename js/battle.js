@@ -6,7 +6,7 @@
 
 import { MAX_POKEMON, getTypeMultiplier, typeColors, sleep, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
 import { getPokemon, getMove, getSpecies, getEvolution } from './api.js';
-import { state, player, recordCatch, ensureMon, monLevel, addXp, evolveMon, persist, spendMasterBall } from './state.js';
+import { state, player, recordCatch, ensureMon, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName } from './state.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
 import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
@@ -70,7 +70,8 @@ async function buildFighter(id, level, side) {
     name: data.name, types: data.types, base_experience: data.base_experience || 60,
     ...stats, hp: stats.maxHp,
     spriteBack: sparkle ? (sp.animated_back_shiny ?? sp.back_shiny ?? sp.back_default) : (sp.animated_back ?? sp.back_default ?? sp.front_default),
-    spriteFront: sp.animated ?? sp.front_default ?? ''
+    spriteFront: sp.animated ?? sp.front_default ?? '',
+    shinyFront: sp.animated_shiny ?? sp.front_shiny ?? null
   };
 }
 
@@ -104,8 +105,16 @@ export function initBattleMode() {
   openPC('team');
 }
 
-// team picked in PC → sparkle question
+// team picked in PC → sparkle question (earned via shiny ownership)
 export function onTeamConfirmed() {
+  const leadId = player().team[0] || player().caught[0];
+  const unlocked = hasShiny(leadId);
+  const btn = document.getElementById('variant-sparkle');
+  btn.disabled = !unlocked;
+  btn.innerText = unlocked ? '✨ SPARKLE ✨' : '🔒 SPARKLE — CATCH A SHINY!';
+  document.getElementById('sparkle-hint').innerText = unlocked
+    ? 'Sparkle variants deal 200% damage in battle!'
+    : `Catch your lead Pokémon's ✨SHINY✨ in the wild (1-in-50 encounters) to unlock Sparkle power!`;
   show('sparkle-modal');
 }
 
@@ -113,6 +122,7 @@ async function launchBattle(wildId, { sparkle = false, origin = 'arena' } = {}) 
   show('loading-modal');
   battleState.isSparkle = sparkle;
   battleState.origin = origin;
+  battleState.wildShiny = Math.random() < 1 / 50; // ✨ shiny hunting
   battleState.teamIds = player().team.length ? [...player().team] : player().caught.slice(0, 6);
   battleState.activeIdx = 0;
   battleState.loaded = {};
@@ -128,8 +138,17 @@ async function launchBattle(wildId, { sparkle = false, origin = 'arena' } = {}) 
     ]);
     battleState.loaded[leadId] = lead;
     battleState.wild = wild;
+    if (battleState.wildShiny) {
+      wild.shiny = true;
+      wild.spriteFront = wild.shinyFront || wild.spriteFront;
+    }
     show('loading-modal', false);
     startBattleUI();
+    if (wild.shiny) {
+      logMsg(`✨ WOW! A SHINY ${wild.name.toUpperCase()} APPEARED!! ✨`);
+      sfx.catch();
+      triggerVibration([80, 40, 80, 40, 160]);
+    }
   } catch (e) {
     show('loading-modal', false);
     alert('Error loading battle data. Network issue?');
@@ -160,6 +179,7 @@ export async function startTrainerBattle(gymKey, idx) {
   show('loading-modal');
 
   battleState.isSparkle = false;
+  battleState.wildShiny = false;
   battleState.origin = 'gym';
   battleState.canCatch = false;
   battleState.trainer = { gymKey, idx, def, enemyNum: 0, kos: [], xpLines: [] };
@@ -251,7 +271,7 @@ function spawnParticles(defenderRole, color) {
 // ---- UI ----
 function renderActive() {
   const f = active();
-  document.getElementById('player-name').innerHTML = `${f.name} <span class="lvl">Lv${f.level}</span>`;
+  document.getElementById('player-name').innerHTML = `${nickOf(f.id) || f.name} <span class="lvl">Lv${f.level}</span>`;
   document.getElementById('player-sprite').src = f.spriteBack;
   updateHP('player');
   document.getElementById('battle-moves').innerHTML =
@@ -287,7 +307,7 @@ function renderEnemy() {
   const w = battleState.wild;
   const t = battleState.trainer;
   const label = t ? `${w.name} <span class="lvl">Lv${w.level} · ${t.enemyNum + 1}/${t.def.team.length}</span>`
-                  : `WILD ${w.name} <span class="lvl">Lv${w.level}</span>`;
+                  : `${w.shiny ? '✨ SHINY ' : 'WILD '}${w.name} <span class="lvl">Lv${w.level}</span>`;
   document.getElementById('wild-name').innerHTML = label;
   document.getElementById('wild-sprite').src = w.spriteFront;
   updateHP('wild');
@@ -417,8 +437,8 @@ async function performAttack(attackerRole, defenderRole, move) {
   if (crit) damage *= 1.5;
   if (attackerRole === 'player' && battleState.isSparkle) damage *= 2.0;
 
-  // Junior mode: player Pokémon can never faint
-  if (defenderRole === 'player' && player().settings.junior) {
+  // Junior mode: player Pokémon can never faint (not in VS — fair fight!)
+  if (defenderRole === 'player' && player().settings.junior && !battleState.versusActive) {
     defender.hp = Math.max(1, defender.hp - damage * 0.5);
   } else {
     defender.hp -= damage;
@@ -578,16 +598,27 @@ function concludeCapture(headline) {
   const f = active();
   const newCatch = recordCatch(w.id);
   ensureMon(w.id, w.level);
+  const newShiny = w.shiny ? recordShiny(w.id) : false;
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: w.types || [] } }));
+
+  // nickname (skippable; junior mode never interrupts)
+  if (newCatch && !player().settings.junior) {
+    try {
+      const nick = prompt(`Give ${w.name.toUpperCase()} a nickname? (leave blank to skip)`);
+      if (nick) setNick(w.id, nick);
+    } catch (e) { /* prompt unavailable — skip */ }
+  }
 
   const gained = Math.floor((w.base_experience || 60) / 2 + w.level * 3);
   const before = monLevel(f.id);
   const ups = addXp(f.id, gained);
   const after = monLevel(f.id);
 
+  const shownName = nickOf(w.id) || w.name.toUpperCase();
   const lines = [
     headline,
-    newCatch ? `${w.name.toUpperCase()} was added to your PC Box!` : `${w.name.toUpperCase()} was caught (already in your Box).`,
+    newShiny ? `✨ SHINY ${w.name.toUpperCase()} joins your Box — its sparkle power is yours forever!` :
+      newCatch ? `${shownName} was added to your PC Box!` : `${w.name.toUpperCase()} was caught (already in your Box).`,
     `${f.name.toUpperCase()} gained ${gained} XP!`
   ];
   if (ups > 0) lines.push(`${f.name.toUpperCase()} grew from Lv${before} to Lv${after}!`);
@@ -756,6 +787,192 @@ async function playEvolution(fromMon, toMon) {
   text.innerText = `${fromMon.name.toUpperCase()} evolved into ${toMon.name.toUpperCase()}!`;
   await sleep(2600);
   show('evo-modal', false);
+}
+
+// ============================================================
+// VERSUS MODE — P1 vs P2, pass-and-play on one device
+// Side 1 = bottom (back sprite), Side 2 = top (front sprite).
+// No catching, no junior shield, no XP — pure bragging rights.
+// ============================================================
+const versus = { sides: null, order: [], qi: 0 };
+
+const pLevel = (n, id) => state.save.players[n].mons[id]?.level ?? 5;
+const sideActive = n => n === 1 ? active() : battleState.wild;
+
+let passResolver = null;
+export function onPassReady() {
+  show('pass-modal', false);
+  if (passResolver) { const r = passResolver; passResolver = null; r(); }
+}
+
+function waitForPass(n) {
+  document.getElementById('pass-name').innerText = `PASS TO ${playerName(n)}!`;
+  show('pass-modal');
+  return new Promise(res => { passResolver = res; });
+}
+
+export async function startVersusBattle() {
+  const P = state.save.players;
+  if (!P[1].caught.length || !P[2].caught.length) {
+    alert('Both players need at least 1 Pokémon before a VS battle!');
+    return;
+  }
+  state.appMode = 'battle';
+  document.getElementById('gym-container').classList.remove('active');
+  show('loading-modal');
+
+  battleState.isSparkle = false;
+  battleState.wildShiny = false;
+  battleState.canCatch = false;
+  battleState.trainer = null;
+  battleState.origin = 'gym';       // exits back to the gym screen
+  battleState.versusActive = true;
+
+  const ids1 = P[1].team.length ? [...P[1].team] : P[1].caught.slice(0, 6);
+  const ids2 = P[2].team.length ? [...P[2].team] : P[2].caught.slice(0, 6);
+  versus.sides = { 1: { ids: ids1, loaded: {}, activeIdx: 0 }, 2: { ids: ids2, loaded: {}, activeIdx: 0 } };
+
+  try {
+    const [f1, f2] = await Promise.all([
+      buildFighter(ids1[0], pLevel(1, ids1[0]), 'player'),
+      buildFighter(ids2[0], pLevel(2, ids2[0]), 'wild')
+    ]);
+    versus.sides[1].loaded[ids1[0]] = f1;
+    versus.sides[2].loaded[ids2[0]] = f2;
+    // map side 1 onto the engine's player slot, side 2 onto the wild slot
+    battleState.teamIds = ids1;
+    battleState.activeIdx = 0;
+    battleState.loaded = versus.sides[1].loaded;
+    battleState.wild = f2;
+
+    show('loading-modal', false);
+    document.getElementById('battle-container').classList.add('active');
+    battleState.isBattling = true;
+    battleState.busy = false;
+    setBattleBackdrop();
+    document.dispatchEvent(new CustomEvent('battle-started', { detail: { origin: 'gym' } }));
+    document.getElementById('battle-title').innerText = `${playerName(1)} VS ${playerName(2)}`;
+    renderVersusSide(1);
+    renderVersusSide(2);
+    logMsg(`${playerName(1)} VS ${playerName(2)} — LET'S GO!`);
+    await sleep(1200);
+    await versusRound();
+  } catch (e) {
+    show('loading-modal', false);
+    alert('Error loading battle data. Network issue?');
+    battleState.versusActive = false;
+    exitBattleMode();
+  }
+}
+
+function renderVersusSide(n) {
+  const f = sideActive(n);
+  const owner = state.save.players[n];
+  const nick = owner.nicks[f.id];
+  if (n === 1) {
+    document.getElementById('player-name').innerHTML = `${nick || f.name} <span class="lvl">Lv${f.level} · ${playerName(1)}</span>`;
+    document.getElementById('player-sprite').src = f.spriteBack;
+    updateHP('player');
+  } else {
+    document.getElementById('wild-name').innerHTML = `${nick || f.name} <span class="lvl">Lv${f.level} · ${playerName(2)}</span>`;
+    document.getElementById('wild-sprite').src = f.spriteFront;
+    updateHP('wild');
+  }
+}
+
+function renderVersusMoves(n) {
+  const f = sideActive(n);
+  const grid = document.getElementById('battle-moves');
+  grid.innerHTML = f.moves.map((m, i) =>
+    `<button class="move-btn" data-vmove="${i}">${m.name}<span class="type-badge" style="background:${typeColors[m.type] || '#777'}">${m.type}</span></button>`
+  ).join('') + `<button class="move-btn aux-btn run-wide" id="vs-quit-btn">🏳️ END MATCH</button>`;
+  grid.querySelectorAll('[data-vmove]').forEach(btn =>
+    btn.addEventListener('click', () => executeVersusMove(n, parseInt(btn.dataset.vmove)), { once: true }));
+  document.getElementById('vs-quit-btn').addEventListener('click', () => {
+    battleState.versusActive = false;
+    exitBattleMode();
+  });
+}
+
+async function versusRound() {
+  if (!battleState.isBattling) return;
+  const s1 = sideActive(1), s2 = sideActive(2);
+  versus.order = s1.speed >= s2.speed ? [1, 2] : [2, 1];
+  versus.qi = 0;
+  await versusNextTurn();
+}
+
+async function versusNextTurn() {
+  if (!battleState.isBattling) return;
+  if (versus.qi >= versus.order.length) { await versusRound(); return; }
+  const n = versus.order[versus.qi];
+  await waitForPass(n);
+  logMsg(`${playerName(n)} — PICK A MOVE!`);
+  renderVersusMoves(n);
+  enableMoves(true);
+}
+
+async function executeVersusMove(n, moveIdx) {
+  if (!battleState.isBattling || battleState.busy) return;
+  battleState.busy = true;
+  enableMoves(false);
+  const move = sideActive(n).moves[moveIdx];
+  await performAttack(n === 1 ? 'player' : 'wild', n === 1 ? 'wild' : 'player', move);
+  battleState.busy = false;
+
+  const defSide = n === 1 ? 2 : 1;
+  const def = sideActive(defSide);
+  if (def.hp <= 0) {
+    const owner = state.save.players[defSide];
+    logMsg(`${owner.nicks[def.id] || def.name.toUpperCase()} FAINTED!`);
+    triggerVibration([300]);
+    await sleep(1300);
+    const replaced = await versusNextMon(defSide);
+    if (!replaced) { await versusMatchOver(n); return; }
+    await versusRound(); // fresh round after a KO swap
+    return;
+  }
+  versus.qi++;
+  await versusNextTurn();
+}
+
+async function versusNextMon(n) {
+  const side = versus.sides[n];
+  for (let i = 0; i < side.ids.length; i++) {
+    const id = side.ids[i];
+    if (side.loaded[id] && side.loaded[id].hp <= 0) continue;
+    if (i === side.activeIdx) continue;
+    if (!side.loaded[id]) {
+      show('loading-modal');
+      try { side.loaded[id] = await buildFighter(id, pLevel(n, id), n === 1 ? 'player' : 'wild'); }
+      catch (e) { show('loading-modal', false); continue; }
+      show('loading-modal', false);
+    }
+    if (side.loaded[id].hp <= 0) continue;
+    side.activeIdx = i;
+    if (n === 1) { battleState.activeIdx = i; }
+    else { battleState.wild = side.loaded[id]; }
+    renderVersusSide(n);
+    logMsg(`${playerName(n)} SENT OUT ${side.loaded[id].name.toUpperCase()}!`);
+    await sleep(1100);
+    return true;
+  }
+  return false;
+}
+
+async function versusMatchOver(winnerSide) {
+  battleState.isBattling = false;
+  battleState.versusActive = false;
+  state.save.players[winnerSide].stats.versusWins = (state.save.players[winnerSide].stats.versusWins || 0) + 1;
+  persist();
+  document.dispatchEvent(new CustomEvent('battle-victory'));
+  document.getElementById('victory-lines').innerHTML = [
+    `🏆 ${playerName(winnerSide)} WINS THE BATTLE!`,
+    `${playerName(winnerSide === 1 ? 2 : 1)} fought hard — rematch anytime!`,
+    `(VS wins are tracked on the Trainer Card.)`
+  ].map(l => `<p>${l}</p>`).join('');
+  show('victory-modal');
+  battleState.pendingEvolution = null;
 }
 
 // legacy export kept for the sparkle modal buttons

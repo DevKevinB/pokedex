@@ -2,6 +2,15 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.2.0] - SHINIES, SHOWDOWNS & NICKNAMES
+
+### Added
+- **✨ Shiny hunting:** roughly 1-in-50 wild encounters is SHINY — special announcement, shiny sprite, and a permanent ✨ badge in your PC Box. **Sparkle power is now earned:** the 200%-damage Sparkle option unlocks only when you've caught your lead Pokémon's shiny. (Existing free Sparkle is retired — go hunt!)
+- **🆚 Versus mode:** P1 vs P2 pass-and-play on one device, launched from the Gym screen. Each player uses their own real team, "PASS TO GABE" handoffs between turns, auto-send on faints, and the winner's VS WINS count lands on their Trainer Card. Junior's no-faint shield is off in VS — fair fights only.
+- **Nicknames:** new catches ask for an optional nickname (skippable, never in Junior mode). Nicknames show in gold on PC tiles and in battle.
+- **Parent Tools hardening:** hold-to-open now leads to a **4-digit PIN** (set on first use), and the add box shows **live name suggestions with sprites** — type "char", tap Charizard, done.
+- Trainer Card now tracks VS WINS and SHINIES.
+
 ## [18.1.0] - THE GYM CIRCUIT
 
 ### Added

@@ -158,7 +158,9 @@ export function openTrainerCard() {
     <div>EXPLORES <strong>${p.stats.explores || 0}</strong></div>
     <div>TOP LEVEL <strong>${maxLv}</strong></div>
     <div>MASTER BALLS <strong>x${p.items.masterBalls}</strong></div>
-    <div>BADGES <strong>${p.badges.length}/8</strong></div>`;
+    <div>BADGES <strong>${p.badges.length}/8</strong></div>
+    <div>VS WINS <strong>${p.stats.versusWins || 0}</strong></div>
+    <div>SHINIES <strong>✨${(p.shinies || []).length}</strong></div>`;
 
   document.getElementById('card-quests').innerHTML = quests.list.map(q => {
     const def = questDef(q.key);

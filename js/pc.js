@@ -5,7 +5,7 @@
 
 import { GENERATIONS, MAX_POKEMON, PIXEL_SPRITE } from './config.js';
 import { getNameIndex, nameOf } from './api.js';
-import { state, player, playerName, monLevel, setTeam, setLead } from './state.js';
+import { state, player, playerName, monLevel, setTeam, setLead, nickOf } from './state.js';
 import { loadPoke } from './dex.js';
 import { triggerVibration } from './audio.js';
 
@@ -101,10 +101,12 @@ function itemHtml(id, caught) {
   const lvl = caught ? `<em class="pc-lvl">Lv${monLevel(id)}</em>` : '';
   const picked = pcContext === 'team' && teamPick.includes(id) ? ' picked' : '';
   const order = pcContext === 'team' && teamPick.includes(id) ? `<b class="pc-order">${teamPick.indexOf(id) + 1}</b>` : '';
-  const nm = nameOf(id);
-  const nameLine = nm.startsWith('#') ? '' : `<i class="pc-name">${nm}</i>`;
+  const nick = caught ? nickOf(id) : null;
+  const nm = nick || nameOf(id);
+  const nameLine = nm.startsWith('#') ? '' : `<i class="pc-name${nick ? ' nicked' : ''}">${nm}</i>`;
+  const shiny = caught && player().shinies.includes(id) ? '<b class="pc-shiny">✨</b>' : '';
   return `<div class="pc-item${caught ? '' : ' uncaught'}${picked}" data-pc-id="${id}">
-    ${order}<img src="${PIXEL_SPRITE(id)}" loading="lazy">
+    ${order}${shiny}<img src="${PIXEL_SPRITE(id)}" loading="lazy">
     <span>#${id.toString().padStart(3, '0')}</span>${nameLine}${lvl}
   </div>`;
 }

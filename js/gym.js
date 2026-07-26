@@ -8,7 +8,7 @@
 
 import { PIXEL_SPRITE } from './config.js';
 import { GYMS, trainerKey, TOTAL_TRAINERS } from './gymdata.js';
-import { state, player, persist } from './state.js';
+import { state, player, persist, playerName } from './state.js';
 import { nameOf, getNameIndex } from './api.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
 
@@ -82,6 +82,7 @@ function renderGymList() {
   body.innerHTML = `
     <div class="gym-progress">TRAINERS DEFEATED: ${done}/${TOTAL_TRAINERS}</div>
     <button class="poke-center-btn" id="poke-center-btn" title="Fully heal your team">💗 POKÉ CENTER — HEAL TEAM</button>
+    <button class="vs-btn" id="vs-btn" title="Pass-and-play battle: each player uses their own team">🆚 ${playerName(1)} VS ${playerName(2)}</button>
     <div class="gym-center-msg" id="gym-center-msg"></div>
     <div id="gym-grid">` +
     GYMS.map((g, gi) => {
@@ -96,6 +97,8 @@ function renderGymList() {
     }).join('') + '</div>';
 
   document.getElementById('poke-center-btn').addEventListener('click', () => pokeCenterHeal());
+  document.getElementById('vs-btn').addEventListener('click', () =>
+    document.dispatchEvent(new CustomEvent('versus-start')));
   body.querySelectorAll('.gym-card:not(.locked)').forEach(el =>
     el.addEventListener('click', () => { openGymKey = el.dataset.gym; renderTrainerList(); }));
 }

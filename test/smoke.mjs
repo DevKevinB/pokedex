@@ -144,6 +144,7 @@ check('nav to raichu', true);
 await page.click('#catch-btn');
 await page.waitForTimeout(400);
 check('ball drawer opens', await page.locator('#ball-drawer.open').count() === 1);
+page.once('dialog', d => d.accept('SPARKY'));
 await page.locator('.ball-opt[data-ball="master-ball"]').click();
 await page.waitForFunction(() => document.getElementById('dex-catch-msg').style.opacity === '1', null, { timeout: 12000 });
 check('master ball catch succeeds', (await page.locator('#dex-catch-msg').innerText()) === 'GOTCHA!');
@@ -174,7 +175,8 @@ check('ALL tab lists every mon', await page.locator('.pc-item').count() === 649)
 await page.fill('#pc-search', 'raichu');
 await page.waitForTimeout(500);
 check('search narrows to raichu', await page.locator('.pc-item').count() === 1 &&
-  (await page.locator('.pc-item .pc-name').first().innerText()).toLowerCase() === 'raichu');
+  (await page.locator('.pc-item .pc-name').first().innerText()).toUpperCase().includes('SPARKY'));
+check('nickname saved', await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].nicks['26'] === 'SPARKY'));
 await page.fill('#pc-search', '');
 await page.locator('.gen-tab[data-gen="1"]').click();
 await page.waitForTimeout(400);
@@ -188,6 +190,10 @@ check('team preselected', await page.locator('.pc-item.picked').count() > 0);
 await page.click('#close-pc-btn'); // START BATTLE
 await page.waitForTimeout(300);
 check('sparkle modal opens', await page.locator('#sparkle-modal').isVisible());
+check('sparkle locked without shiny', await page.evaluate(() => document.getElementById('variant-sparkle').disabled));
+check('sparkle hint explains unlock', (await page.locator('#sparkle-hint').innerText()).toUpperCase().includes('SHINY'));
+// force RNG low: guarantees the wild rolls SHINY (0.011 < 1/50) and the throw lands
+await page.evaluate(() => { window.__realRandom = Math.random; Math.random = () => 0.011; document.getElementById('variant-sparkle').disabled = false; });
 await page.click('#variant-sparkle');
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 10000 });
 check('battle screen active', true);
@@ -196,14 +202,17 @@ check('move buttons + switch/run rendered', await page.locator('.move-btn').coun
 check('player level shown', /lv\d+/i.test(await page.locator('#player-name').innerText()));
 check('wild level shown', /lv\d+/i.test(await page.locator('#wild-name').innerText()));
 
-// BALL THROW: force RNG low so the catch always lands, then verify
-await page.evaluate(() => { window.__realRandom = Math.random; Math.random = () => 0.011; });
+// wild rolled shiny under forced RNG
+check('shiny wild announced', (await page.locator('#wild-name').innerText()).includes('✨'));
+
+// BALL THROW: RNG still low so the catch always lands
 await page.locator('#ball-btn').evaluate(el => el.click());
 await page.waitForTimeout(400);
 check('ball picker opens', await page.locator('#ballpick-modal').isVisible());
 await page.locator('.ballpick[data-ball="ultra-ball"]').evaluate(el => el.click());
 await page.waitForFunction(() => document.getElementById('victory-modal').style.display === 'flex', null, { timeout: 20000 });
 check('ball catch → gotcha screen', (await page.locator('#victory-lines').innerText()).includes('GOTCHA'));
+check('shiny recorded on capture', await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].shinies.length > 0));
 await page.evaluate(() => { Math.random = window.__realRandom; });
 await page.locator('#victory-continue').evaluate(el => el.click());
 await page.waitForFunction(() => !document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
@@ -215,6 +224,7 @@ await page.click('#battle-btn');
 await page.waitForTimeout(500);
 await page.locator('#close-pc-btn').evaluate(el => el.click());
 await page.waitForTimeout(300);
+await page.evaluate(() => { document.getElementById('variant-sparkle').disabled = false; });
 await page.locator('#variant-sparkle').evaluate(el => el.click());
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
 await page.waitForTimeout(400);
@@ -362,12 +372,22 @@ check('P1 junior persists', await page.evaluate(() => document.body.classList.co
 await page.click('#settings-btn');
 await page.waitForTimeout(400);
 const devBtn = await page.locator('#dev-open-btn').boundingBox();
+page.once('dialog', d => d.accept('1234')); // set the PIN on first open
 await page.mouse.move(devBtn.x + devBtn.width / 2, devBtn.y + devBtn.height / 2);
 await page.mouse.down();
 await page.waitForTimeout(1500);
 await page.mouse.up();
-await page.waitForTimeout(400);
-check('parent tools open on hold', await page.locator('#dev-modal').isVisible());
+await page.waitForTimeout(500);
+check('parent tools open after PIN setup', await page.locator('#dev-modal').isVisible());
+check('PIN stored', await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === '1234'));
+// live name suggestions
+await page.fill('#dev-add-name', 'raich');
+await page.waitForTimeout(600);
+check('name suggestions appear', await page.locator('.dev-sug').count() >= 1);
+await page.locator('.dev-sug').first().evaluate(el => el.click());
+await page.waitForTimeout(200);
+check('suggestion fills the id', (await page.inputValue('#dev-add-name')) === '26');
+await page.fill('#dev-add-name', '');
 await page.fill('#dev-add-name', '150');
 await page.fill('#dev-add-level', '70');
 await page.locator('#dev-add-btn').evaluate(el => el.click());
@@ -499,6 +519,38 @@ await page.waitForTimeout(400);
 await page.locator('#gym-back-btn').evaluate(el => el.click());
 await page.waitForTimeout(500);
 check('gym screen closes to dex', await page.locator('#gym-container.active').count() === 0);
+
+// VERSUS MODE: seed P2 with a weak mon, then GABE vs P2 pass-and-play
+await page.evaluate(() => {
+  const sv = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+  sv.players[2].caught = [1];
+  sv.players[2].mons = { 1: { level: 5, xp: 0 } };
+  sv.players[2].team = [1];
+  localStorage.setItem('pokedexos_save_v2', JSON.stringify(sv));
+});
+await page.goto(BASE, { waitUntil: 'networkidle' });
+await page.click('#boot-screen');
+await page.waitForTimeout(1600);
+await dismissCelebrations(page);
+await page.click('#gyms-btn');
+await page.waitForTimeout(600);
+check('VS button on gym screen', await page.locator('#vs-btn').isVisible());
+await page.locator('#vs-btn').evaluate(el => el.click());
+await page.waitForFunction(() => document.getElementById('pass-modal').style.display === 'flex', null, { timeout: 20000 });
+check('pass-and-play handoff appears', (await page.locator('#pass-name').innerText()).includes('GABE'));
+check('versus title shows both players', (await page.locator('#battle-title').innerText()).includes('VS'));
+await page.locator('#pass-ready').evaluate(el => el.click());
+await page.waitForTimeout(500);
+check('versus moves rendered', await page.locator('[data-vmove]').count() >= 1);
+await page.locator('[data-vmove="0"]').evaluate(el => el.click());
+await page.waitForFunction(() => document.getElementById('victory-modal').style.display === 'flex', null, { timeout: 25000 });
+check('versus winner announced', (await page.locator('#victory-lines').innerText()).includes('GABE WINS'));
+await page.locator('#victory-continue').evaluate(el => el.click());
+await page.waitForTimeout(1000);
+check('versus returns to gym screen', await page.locator('#gym-container.active').count() === 1);
+check('versus win recorded', await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].stats.versusWins === 1));
+await page.locator('#gym-back-btn').evaluate(el => el.click());
+await page.waitForTimeout(500);
 
 await page.screenshot({ path: 'test/screen-dex.png' });
 

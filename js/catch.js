@@ -3,7 +3,7 @@
 // ============================================================
 
 import { ITEM_SPRITE } from './config.js';
-import { state, player, recordCatch, ensureMon, spendMasterBall } from './state.js';
+import { state, player, recordCatch, ensureMon, spendMasterBall, setNick } from './state.js';
 import { sfx, stopAllAudio, triggerVibration } from './audio.js';
 import { updateCatchUI } from './dex.js';
 
@@ -105,9 +105,19 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
     msg.style.color = '#00ff00';
     msg.style.opacity = 1;
     spawnConfetti(document.querySelector('.visual-display'), player().settings.junior ? 48 : 24);
-    recordCatch(state.curId);
+    const isNewCatch = recordCatch(state.curId);
     ensureMon(state.curId); // fresh catches start at Lv5
     updateCatchUI();
+    if (isNewCatch && !player().settings.junior) {
+      const capturedId = state.curId;
+      const capturedName = (state.curData?.name || 'it').toUpperCase();
+      setTimeout(() => {
+        try {
+          const nick = prompt(`Give ${capturedName} a nickname? (leave blank to skip)`);
+          if (nick) setNick(capturedId, nick);
+        } catch (e) { /* prompt unavailable */ }
+      }, 2100);
+    }
     document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: state.curData?.types || [] } }));
     setTimeout(() => {
       ball.style.opacity = 0;

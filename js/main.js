@@ -7,7 +7,7 @@ import { state, loadSave, player, playerName } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, speak, isSpeaking, triggerVibration, toggleMute } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
-import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, battleState } from './battle.js';
+import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState } from './battle.js';
 import { openPC, closePC, cancelTeamPick, onPCSearchInput } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { openGyms, backFromGym, reopenGyms } from './gym.js';
@@ -133,6 +133,8 @@ function wireUI() {
   // gym → battle bridges
   document.addEventListener('gym-challenge', e => startTrainerBattle(e.detail.gymKey, e.detail.idx));
   document.addEventListener('return-to-gym', reopenGyms);
+  document.addEventListener('versus-start', startVersusBattle);
+  on('pass-ready', onPassReady);
   on('card-btn', openTrainerCard);
   on('card-close', closeTrainerCard);
   on('badge-ok', dismissCelebration);

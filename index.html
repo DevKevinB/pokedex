@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=18.1.0">
-    <link rel="stylesheet" href="css/gba.css?v=18.1.0">
+    <link rel="stylesheet" href="css/main.css?v=18.2.0">
+    <link rel="stylesheet" href="css/gba.css?v=18.2.0">
 </head>
 <body>
 
@@ -183,6 +183,15 @@
     </div>
 </div>
 
+<div class="overlay-screen" id="pass-modal" style="z-index: 2400; background: rgba(4,4,16,0.97);">
+    <div class="modal-box" style="text-align:center;">
+        <div style="font-size: 46px;">🎮</div>
+        <h2 id="pass-name" style="margin: 14px 0;">PASS TO P2!</h2>
+        <p>No peeking at their move choice!</p>
+        <button class="btn-large btn-reg" id="pass-ready">I'M READY ▶</button>
+    </div>
+</div>
+
 <div class="overlay-screen" id="ballpick-modal">
     <div class="modal-box">
         <h2 style="margin-top:0;">THROW A BALL</h2>
@@ -249,10 +258,11 @@
         <div class="card-section">
             <div class="card-label">ADD A POKÉMON</div>
             <div class="dev-add">
-                <input id="dev-add-name" class="set-input dev-wide" placeholder="NAME OR NUMBER" maxlength="20">
+                <input id="dev-add-name" class="set-input dev-wide" placeholder="NAME OR NUMBER" maxlength="20" autocomplete="off">
                 <input id="dev-add-level" class="set-input dev-narrow" type="number" min="1" max="100" value="5" title="Level">
                 <button class="set-action" id="dev-add-btn">ADD</button>
             </div>
+            <div id="dev-suggest"></div>
             <div class="dev-status" id="dev-status"></div>
         </div>
         <div class="card-section">
@@ -300,7 +310,7 @@
 <div class="overlay-screen" id="sparkle-modal">
     <div class="modal-box">
         <h2 style="margin-top:0; color:#ffcc00; font-weight:900;">SELECT VARIANT</h2>
-        <p style="font-size:14px; color:#ccc;">Sparkle variants deal 200% Damage in battle!</p>
+        <p id="sparkle-hint" style="font-size:14px; color:#ccc;">Sparkle variants deal 200% Damage in battle!</p>
         <button class="btn-large btn-reg" id="variant-regular">REGULAR</button>
         <button class="btn-large btn-sparkle" id="variant-sparkle">✨ SPARKLE ✨</button>
         <button class="btn-large btn-danger" id="variant-cancel">CANCEL</button>
@@ -314,6 +324,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=18.1.0"></script>
+<script type="module" src="js/main.js?v=18.2.0"></script>
 </body>
 </html>

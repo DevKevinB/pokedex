@@ -33,6 +33,13 @@ Designed specifically for mobile browsers with zero external dependencies, this 
 * **Visual Grid:** Displays all 151 Pokémon. Caught Pokémon appear in full color; uncaught remain in grayscale.
 * **Base64 Save System:** Easily export and import save data as a text string to transfer progress seamlessly across different devices (e.g., from iPhone to iPad).
 
+## 🆕 v18 TRAINER'S JOURNEY Highlights
+* **Battle-to-catch:** weaken wild Pokémon and throw balls with real HP-scaled odds; knockouts still catch.
+* **The Gym Circuit:** 58 progressively harder trainers (Lv8→80) across 10 themed gyms, Victory Road, the Elite Four, and a Champion — beat a trainer and their whole team joins your box. Gym endurance runs + Poké Center healing.
+* **✨ Shiny hunting** (1-in-50 wilds) that unlocks earned Sparkle power, **P1-vs-P2 pass-and-play battles**, and **nicknames**.
+* PC Box: name search across all 649, ALL-view, generation tabs, TEAM strip with tap-to-promote lead; wild spawns track your lead's level (±20%).
+* **Parent Tools** behind a PIN: add any Pokémon at any level with live name suggestions.
+
 ## 🆕 v16 GAME BOY EDITION Highlights
 * **GBA pixel overhaul:** Press Start 2P font, animated pixel sprites, typewriter text, CRT scanlines, screen-wipe transitions, procedural chiptune soundtrack.
 * **Real RPG battles:** teams of 6, levels & XP, evolution cutscenes, switching, crits & STAB, wild level scaling.

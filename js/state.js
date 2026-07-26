@@ -14,11 +14,13 @@ function freshPlayer() {
     team: [],            // up to 6 dex ids (Phase 2)
     mons: {},            // per-id growth: { [id]: { level, xp } } (Phase 2)
     badges: [],          // badge ids earned (Phase 4)
+    shinies: [],         // ids whose shiny form was caught (v18.2)
+    nicks: {},           // id → nickname (v18.2)
     items: { masterBalls: 1 },   // scarce: earn more via badges (Phase 4)
     quests: {},          // quest progress (Phase 4)
     gyms: { beaten: {} },// gym circuit progress (v18.1)
     settings: { junior: false },
-    stats: { catches: 0, battlesWon: 0, battlesLost: 0 }
+    stats: { catches: 0, battlesWon: 0, battlesLost: 0, versusWins: 0 }
   };
 }
 
@@ -54,6 +56,8 @@ function hydratePlayer(raw) {
     stats: { ...base.stats, ...(raw.stats || {}) },
     mons: raw.mons || {}, quests: raw.quests || {},
     gyms: (raw.gyms && raw.gyms.beaten) ? raw.gyms : { beaten: {} },
+    shinies: Array.isArray(raw.shinies) ? raw.shinies : [],
+    nicks: raw.nicks || {},
     caught: Array.isArray(raw.caught) ? raw.caught : [],
     team: Array.isArray(raw.team) ? raw.team : [],
     badges: Array.isArray(raw.badges) ? raw.badges : []
@@ -151,6 +155,21 @@ export function setLead(id) {
   p.team = [id, ...p.team.filter(t => t !== id)];
   persist();
 }
+
+export function recordShiny(id) {
+  const p = player();
+  if (!p.shinies.includes(id)) { p.shinies.push(id); persist(); return true; }
+  return false;
+}
+
+export function hasShiny(id) { return player().shinies.includes(id); }
+
+export function setNick(id, nick) {
+  const clean = (nick || '').trim().slice(0, 12).toUpperCase();
+  if (clean) { player().nicks[id] = clean; persist(); }
+}
+
+export function nickOf(id) { return player().nicks[id] || null; }
 
 export function spendMasterBall() {
   const p = player();

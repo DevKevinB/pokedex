@@ -6,7 +6,7 @@
 // ============================================================
 
 import { MAX_POKEMON, PIXEL_SPRITE } from './config.js';
-import { getPokemon } from './api.js';
+import { getPokemon, getNameIndex, nameOf } from './api.js';
 import { state, persist, playerName, DEFAULT_LEVEL } from './state.js';
 import { updateCatchUI } from './dex.js';
 import { triggerVibration, sfx } from './audio.js';
@@ -153,6 +153,7 @@ function wireHoldToOpen() {
     timer = setTimeout(() => {
       held = true;
       btn.classList.remove('holding');
+      if (!requirePin()) return;
       document.getElementById('settings-modal').style.display = 'none';
       openDevTools();
     }, HOLD_MS);
@@ -169,6 +170,49 @@ function wireHoldToOpen() {
   btn.addEventListener('pointercancel', cancel);
 }
 
+// ---- PIN gate: set on first open, required ever after ----
+const PIN_KEY = 'pokedexos_devpin';
+
+function requirePin() {
+  let stored = null;
+  try { stored = localStorage.getItem(PIN_KEY); } catch (e) { /* noop */ }
+  try {
+    if (!stored) {
+      const pin = prompt('Set a 4-digit PIN for Parent Tools:');
+      if (!pin || !/^\d{4}$/.test(pin.trim())) { alert('PIN not set — must be exactly 4 digits. Try again.'); return false; }
+      localStorage.setItem(PIN_KEY, pin.trim());
+      return true;
+    }
+    const entry = prompt('Enter Parent Tools PIN:');
+    if (entry && entry.trim() === stored) return true;
+    alert('Wrong PIN.');
+    return false;
+  } catch (e) { return true; } // prompt unavailable (kiosk) — fail open for the parent
+}
+
+// ---- live name suggestions with sprites ----
+function renderSuggestions() {
+  const box = document.getElementById('dev-suggest');
+  const q = document.getElementById('dev-add-name').value.trim().toLowerCase();
+  if (q.length < 2 || /^\d+$/.test(q)) { box.innerHTML = ''; return; }
+  getNameIndex().then(idx => {
+    if (!idx) return;
+    const hits = [];
+    for (let id = 1; id < idx.length && hits.length < 8; id++) {
+      if (idx[id].includes(q)) hits.push(id);
+    }
+    box.innerHTML = hits.map(id =>
+      `<div class="dev-sug" data-id="${id}"><img src="${PIXEL_SPRITE(id)}"><span>${idx[id]}</span><small>#${String(id).padStart(3, '0')}</small></div>`
+    ).join('');
+    box.querySelectorAll('.dev-sug').forEach(el =>
+      el.addEventListener('click', () => {
+        document.getElementById('dev-add-name').value = el.dataset.id;
+        box.innerHTML = '';
+        document.getElementById('dev-add-level').focus();
+      }));
+  });
+}
+
 export function initDevTools() {
   const on = (id, fn) => document.getElementById(id)?.addEventListener('click', fn);
   on('dev-close', closeDevTools);
@@ -176,6 +220,7 @@ export function initDevTools() {
   on('dev-target-1', () => { target = 1; render(); });
   on('dev-target-2', () => { target = 2; render(); });
   document.getElementById('dev-filter')?.addEventListener('input', renderList);
+  document.getElementById('dev-add-name')?.addEventListener('input', renderSuggestions);
   document.getElementById('dev-add-name')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') addMon();
   });
