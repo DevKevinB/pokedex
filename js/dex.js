@@ -5,7 +5,7 @@
 import { MAX_POKEMON, typeColors, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
 import { getPokemon, getSpecies, getEvolution } from './api.js';
 import { state, player } from './state.js';
-import { stopAllAudio, setCry, triggerVibration, speak } from './audio.js';
+import { stopAllAudio, setCry, triggerVibration } from './audio.js';
 
 let galleryTimer = null;
 let typeTimer = null;
@@ -133,9 +133,6 @@ function updateUISafe() {
     }).join('');
 
     setCry(d.cries?.latest);
-
-    // Junior mode: say the name out loud — no reading required
-    if (player().settings.junior) speak(d.name, { pitch: 1.1, rate: 0.85 });
   } catch (e) { console.error('UI Update Failed', e); }
 }
 

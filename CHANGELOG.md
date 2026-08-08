@@ -2,6 +2,17 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.3.0] - THE GAME DOESN'T TALK
+
+### Removed
+- **All speech synthesis, permanently.** The VOICE button is gone, Junior Mode no longer reads Pokemon names out loud, and speak() / isSpeaking() are deleted from the audio engine. Product decision: Pokedex OS carries meaning through picture, colour and motion - never a synthesised voice. Chiptune music, sound effects and real Pokemon cries are untouched.
+
+### Changed
+- **Toolbar reflow.** With VOICE gone the 4-column grid was left with a hole, so the buttons were rebalanced into a clean 3x4: CRY / SHINY / RNDM / DATA, then CATCH and CARD and EXPLORE and GYMS as full-width pairs. CARD is now double-width - a bigger target on a small screen. Junior Mode gets the same treatment with CRY taking the freed slot.
+
+### Testing
+- New permanent guard in the smoke suite: speechSynthesis.speak is instrumented before boot and asserted never to fire across the entire run, plus a check that #voice-btn does not exist. If anyone ever reintroduces TTS, the tests fail.
+
 ## [18.2.0] - SHINIES, SHOWDOWNS & NICKNAMES
 
 ### Added

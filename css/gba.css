@@ -613,6 +613,17 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .moves-grid .run-wide { grid-column: span 2; }
 .switch-item.ballpick.disabled { opacity: 0.4; pointer-events: none; }
 
+/* ---------- v18.3: toolbar reflow after the VOICE button was removed ----------
+   The toolbar is a 4-column grid and VOICE used to fill row 1. With 8 buttons
+   it now lands on a clean 3x4 with no holes:
+     row 1  CRY | SHINY | RNDM | DATA
+     row 2  CATCH (x2)      | CARD (x2)
+     row 3  EXPLORE (x2)    | GYMS (x2)
+   Junior hides DATA and already spans CATCH x3 / CARD x1, so junior only
+   needs CRY to take the slot VOICE left behind. */
+#card-btn { grid-column: span 2; }
+body.junior #cry-btn { grid-column: span 2; }
+
 /* ---------- v18.1: Gym Circuit ---------- */
 .btn-explore.half { grid-column: span 2; }
 .btn-gym {

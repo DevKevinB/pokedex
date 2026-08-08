@@ -4,7 +4,7 @@
 
 import { APP_VERSION } from './config.js';
 import { state, loadSave, player, playerName } from './state.js';
-import { initAudio, stopAllAudio, playCryAudio, speak, isSpeaking, triggerVibration, toggleMute } from './audio.js';
+import { initAudio, stopAllAudio, playCryAudio, triggerVibration, toggleMute } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
 import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState } from './battle.js';
@@ -32,20 +32,6 @@ function startApp() {
     setTimeout(() => (boot.style.display = 'none'), 500);
     loadPoke(state.curId);
   }, 500);
-}
-
-// ---- Voice ----
-function toggleVoice() {
-  if (!state.curData || state.isCatching || state.appMode === 'battle') return;
-  if (isSpeaking()) { stopAllAudio(); return; }
-  stopAllAudio();
-  setTimeout(() => {
-    const btn = document.getElementById('voice-btn');
-    speak(`${state.curData.name}. ${document.getElementById('desc').innerText}`, {
-      onstart: () => { btn.innerHTML = '<span class="btn-icon">🛑</span> STOP'; },
-      onend: () => { btn.innerHTML = '<span class="btn-icon">🎙️</span> VOICE'; }
-    });
-  }, 50);
 }
 
 function playCry() {
@@ -109,7 +95,6 @@ function wireUI() {
   on('nav-prev', () => nav(-1));
   on('nav-next', () => nav(1));
   on('cry-btn', playCry);
-  on('voice-btn', toggleVoice);
   on('shiny-btn', toggleShiny);
   on('random-btn', randomPoke);
   on('catch-btn', openBag);

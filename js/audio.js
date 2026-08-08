@@ -62,27 +62,11 @@ export function playCryAudio() {
   }
 }
 
+// NOTE: Pokedex OS never uses speech synthesis. The game does not talk.
+// Meaning is carried by picture, colour and motion - never by a synthesised
+// voice. Do not reintroduce SpeechSynthesis here or anywhere else.
 export function stopAllAudio() {
-  try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) { /* noop */ }
   if (cryAudio) { cryAudio.pause(); cryAudio.currentTime = 0; }
-  const btn = document.getElementById('voice-btn');
-  if (btn) btn.innerHTML = '<span class="btn-icon">🎙️</span> VOICE';
-}
-
-export function speak(text, { pitch = 0.5, rate = 0.9, onstart, onend } = {}) {
-  if (muted) return;
-  try {
-    if (!('speechSynthesis' in window)) return;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.pitch = pitch; utter.rate = rate;
-    if (onstart) utter.onstart = onstart;
-    if (onend) { utter.onend = onend; utter.onerror = onend; }
-    window.speechSynthesis.speak(utter);
-  } catch (e) { /* noop */ }
-}
-
-export function isSpeaking() {
-  try { return 'speechSynthesis' in window && window.speechSynthesis.speaking; } catch (e) { return false; }
 }
 
 export function triggerVibration(duration = 40) {

@@ -1,0 +1,13 @@
+# Never commit these — they are large, machine-specific, or regenerated.
+node_modules/
+package-lock.json
+
+# Playwright/debug output. Screenshots that document a release can be committed
+# deliberately with `git add -f`, but they should not ride along by accident.
+test/screen-*.png
+test/shot-*.png
+test/debug*.png
+
+# OS noise
+.DS_Store
+Thumbs.db

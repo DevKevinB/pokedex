@@ -105,6 +105,18 @@ const consoleErrors = [];
 page.on('pageerror', e => consoleErrors.push(e.message));
 page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
 
+// THE GAME DOES NOT TALK. Trip a flag if anything ever reaches speech
+// synthesis, then assert it stayed false after the full run.
+await page.addInitScript(() => {
+  window.__SPOKE__ = false;
+  try {
+    if (window.speechSynthesis) {
+      const orig = window.speechSynthesis.speak.bind(window.speechSynthesis);
+      window.speechSynthesis.speak = function (...args) { window.__SPOKE__ = true; return orig(...args); };
+    }
+  } catch (e) { /* noop */ }
+});
+
 // Seed a legacy save to validate migration
 await page.addInitScript(() => {
   if (!localStorage.getItem('pokedexos_save_v2')) {
@@ -551,6 +563,10 @@ check('versus returns to gym screen', await page.locator('#gym-container.active'
 check('versus win recorded', await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].stats.versusWins === 1));
 await page.locator('#gym-back-btn').evaluate(el => el.click());
 await page.waitForTimeout(500);
+
+// ---- the game never talks ----
+check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);
+check('speech synthesis never invoked', await page.evaluate(() => window.__SPOKE__ === false));
 
 await page.screenshot({ path: 'test/screen-dex.png' });
 
