@@ -18,8 +18,11 @@ body, html { margin: 0; padding: 0; height: 100dvh; width: 100vw; background: va
 .led.red { background: radial-gradient(circle at 30% 30%, #ff8a8a, #ff0000); }
 .led.yellow { background: radial-gradient(circle at 30% 30%, #ffe68a, #ffcc00); }
 .led.green { background: radial-gradient(circle at 30% 30%, #8aff8a, #00ff00); }
-.blink { animation: ledBlink 0.3s linear infinite; }
-@keyframes ledBlink { 50% { filter: brightness(2); box-shadow: 0 0 10px currentColor; } }
+/* PHOTOSENSITIVITY: was 0.3s = 3.33 flashes/sec, inside the 3-49Hz band that
+   the seizure guidelines warn about. Slowed to 1.2s (0.83Hz) and eased so the
+   change is a pulse rather than a hard on/off edge. */
+.blink { animation: ledBlink 1.2s ease-in-out infinite; }
+@keyframes ledBlink { 50% { filter: brightness(1.7); box-shadow: 0 0 10px currentColor; } }
 
 .player-toggle { background: rgba(0,0,0,0.5); border: 2px solid #fff; padding: 6px 10px; border-radius: 15px; color: #fff; font-weight: 900; font-size: 12px; cursor: pointer; transition: transform 0.1s; }
 .header-btn { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); padding: 8px 10px; border-radius: 20px; color: var(--pc-cyan); font-weight: 900; font-size: 11px; display: flex; align-items: center; gap: 4px; cursor: pointer; transition: transform 0.1s;}

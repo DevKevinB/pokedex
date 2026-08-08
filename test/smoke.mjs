@@ -128,6 +128,19 @@ await page.goto(BASE, { waitUntil: 'networkidle' });
 check('boot screen visible', await page.locator('#boot-screen').isVisible());
 
 await page.click('#boot-screen');
+
+// WHO'S PLAYING picker — shown on first boot because no player is remembered
+// on this device yet. ART must never land in GABE's profile by default.
+await page.waitForFunction(
+  () => document.getElementById('whoplaying-modal').style.display === 'flex',
+  null, { timeout: 8000 }
+);
+check("who's playing picker shown on first boot", true);
+check('picker offers both trainers', await page.locator('.whoplaying-choice').count() === 2);
+await page.locator('.whoplaying-choice[data-player="1"]').evaluate(el => el.click());
+check('picker remembers the choice on this device',
+  await page.evaluate(() => localStorage.getItem('pokedexos_lastplayer') === '1'));
+
 await page.waitForFunction(() => document.getElementById('poke-name').innerText.toLowerCase() === 'pikachu', null, { timeout: 8000 });
 check('pikachu loaded after boot', true);
 check('dex number shown', (await page.locator('#id-text').innerText()).includes('0025'));
@@ -163,11 +176,24 @@ check('master ball catch succeeds', (await page.locator('#dex-catch-msg').innerT
 await page.waitForFunction(() => document.getElementById('catch-btn').innerText.includes('OWNED'), null, { timeout: 5000 });
 check('catch persisted to UI', true);
 
-// 3rd catch → Boulder Badge celebration
-await page.waitForTimeout(800);
+// 3rd catch → celebrations. A random daily quest can also complete on this same
+// catch, and quests and badges share #badge-modal, so the Boulder Badge is NOT
+// reliably the first one shown. Drain the whole queue and assert Boulder is in
+// it. (Asserting on the first modal made this check flaky at random.)
+await page.waitForFunction(() => {
+  const m = document.getElementById('badge-modal');
+  const t = document.getElementById('badge-title');
+  return m && m.style.display === 'flex' && t && t.innerText.trim().length > 0;
+}, null, { timeout: 10000 }).catch(() => {});
 check('boulder badge celebration', await page.locator('#badge-modal').isVisible());
-const badgeTitle = await page.locator('#badge-title').innerText();
-check('badge title correct', badgeTitle.toUpperCase().includes('BOULDER'));
+const celebrations = [];
+for (let i = 0; i < 6; i++) {
+  if (!(await page.locator('#badge-modal').isVisible())) break;
+  celebrations.push((await page.locator('#badge-title').innerText()).toUpperCase());
+  await page.locator('#badge-ok').evaluate(el => el.click());
+  await page.waitForTimeout(450);
+}
+check('badge title correct', celebrations.some(t => t.includes('BOULDER')));
 await dismissCelebrations(page);
 
 // PC box
@@ -239,10 +265,24 @@ await page.waitForTimeout(300);
 await page.evaluate(() => { document.getElementById('variant-sparkle').disabled = false; });
 await page.locator('#variant-sparkle').evaluate(el => el.click());
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
-await page.waitForTimeout(400);
+// Wait for the wild name to actually carry a level. The container goes active
+// before the opponent is built, so a fixed sleep races the fetch under load.
+await page.waitForFunction(
+  () => /lv\d+/i.test(document.getElementById('wild-name').innerText),
+  null, { timeout: 15000 }
+).catch(() => {});
+// Read the lead's real level rather than assuming Lv5 — it can level up in the
+// battle just fought, which used to make this check fail at random.
 check('wild level within ±20% of lead', await page.evaluate(() => {
-  const m = document.getElementById('wild-name').innerText.match(/lv(\d+)/i);
-  return m && parseInt(m[1]) >= 4 && parseInt(m[1]) <= 6; // lead is Lv5
+  const m = document.getElementById('wild-name').innerText.match(/lv\s*\.?\s*(\d+)/i);
+  if (!m) return false;
+  const wild = parseInt(m[1]);
+  const save = JSON.parse(localStorage.getItem('pokedexos_save_v2') || '{}');
+  const p = save.players && save.players[1];
+  if (!p) return false;
+  const leadId = (p.team && p.team[0]) || (p.caught && p.caught[0]);
+  const lead = (p.mons && p.mons[leadId] && p.mons[leadId].level) || 5;
+  return wild >= Math.floor(lead * 0.8) && wild <= Math.ceil(lead * 1.2);
 }));
 
 // fight to victory (fixture mons are weak — a few hits should do it)
@@ -563,6 +603,77 @@ check('versus returns to gym screen', await page.locator('#gym-container.active'
 check('versus win recorded', await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].stats.versusWins === 1));
 await page.locator('#gym-back-btn').evaluate(el => el.click());
 await page.waitForTimeout(500);
+
+// ============================================================
+// v18.4 regressions. Run LAST and against the live ES modules, because these
+// mutate the save on purpose — nothing downstream may depend on them.
+// ============================================================
+const teardown = await page.evaluate(async () => {
+  const B = await import('/js/battle.js');
+  // Simulate the exact CRITICAL bug: one ESCAPE tap during a versus match used
+  // to leave versusActive true, which silently stripped ART's no-faint shield
+  // for the rest of the session.
+  B.battleState.versusActive = true;
+  B.battleState.busy = true;
+  B.battleState.pendingEvolution = { id: 25 };
+  B.battleState.bankedCatch = { id: 25 };
+  const e0 = B.battleState.epoch;
+  B.exitBattleMode();
+  return {
+    epochBumped: B.battleState.epoch === e0 + 1,
+    versusCleared: B.battleState.versusActive === false,
+    busyCleared: B.battleState.busy === false,
+    evoCleared: B.battleState.pendingEvolution === null,
+    catchCleared: B.battleState.bankedCatch === null
+  };
+});
+check('exit bumps the battle epoch (orphaned turns go stale)', teardown.epochBumped);
+check("exit clears versusActive (ART keeps his no-faint shield)", teardown.versusCleared);
+check('exit clears busy, pendingEvolution and bankedCatch',
+  teardown.busyCleared && teardown.evoCleared && teardown.catchCleared);
+
+const fences = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const out = {};
+  const before = S.state.save.players[1].caught.length;
+
+  // THE catastrophic case: a valid-looking code that silently wipes both boys.
+  const emptyCode = btoa(JSON.stringify({ v: 2, save: { players: {} } }));
+  try { S.importCode(emptyCode); out.emptyRejected = false; }
+  catch (e) { out.emptyRejected = e.message === 'EMPTY_SAVE'; }
+  out.survivedEmpty = S.state.save.players[1].caught.length === before;
+
+  // Junk and hostile input inside an otherwise valid code.
+  const dirty = btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, save: { players: {
+    1: {
+      caught: [25, 1, 'x', null, 99999, 26],
+      team: [26, 25],                       // deliberately NOT sorted
+      mons: { 25: { level: 300, xp: -5 } },
+      name: '<img src=x onerror=alert(1)>'
+    },
+    2: { caught: [] }
+  } } }))));
+  S.importCode(dirty);
+  const p1 = S.state.save.players[1];
+  out.caughtClean = JSON.stringify(p1.caught) === JSON.stringify([1, 25, 26]);
+  out.teamOrderKept = JSON.stringify(p1.team) === JSON.stringify([26, 25]);
+  out.levelClamped = p1.mons[25].level === 100 && p1.mons[25].xp === 0;
+  out.nameEscaped = !p1.name.includes('<');
+
+  // And the import is reversible.
+  out.hasPrev = S.hasPreviousSave();
+  S.restorePreviousSave();
+  out.undoRestored = S.state.save.players[1].caught.length === before;
+  return out;
+});
+check('empty save code is refused, not applied', fences.emptyRejected);
+check('both boys survive an empty import', fences.survivedEmpty);
+check('import strips junk ids', fences.caughtClean);
+check('import preserves team ORDER (team[0] is the lead)', fences.teamOrderKept);
+check('import clamps absurd levels and negative xp', fences.levelClamped);
+check('import escapes hostile names', fences.nameEscaped);
+check('import takes an undo snapshot', fences.hasPrev);
+check('UNDO IMPORT restores the previous save', fences.undoRestored);
 
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);

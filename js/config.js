@@ -3,7 +3,7 @@
 // ============================================================
 
 export const MAX_POKEMON = 649; // Gens 1–5 — the animated pixel sprite era
-export const APP_VERSION = '18.3.0';
+export const APP_VERSION = '18.4.0';
 
 // generation ranges for PC Box tabs
 export const GENERATIONS = [
@@ -14,6 +14,23 @@ export const GENERATIONS = [
   { key: 5, label: 'G5', from: 494, to: 649 }
 ];
 
+// SPRITE PINNING — deliberately still on `master`, and here is why.
+// Pointing a child's game at someone else's moving branch is a real risk: an
+// upstream reorg would replace every sprite in the app with a broken-image
+// glyph, on a Saturday, with no warning. The fix is to pin to a tag or commit
+// SHA. But an unverifiable pin is WORSE than the risk — a ref that doesn't
+// exist breaks all 649 sprites immediately and with certainty, and this
+// sandbox cannot reach github.com to confirm one.
+//
+// TO PIN IT (one line, ~2 minutes): open
+//   https://github.com/PokeAPI/sprites/commits/master
+// copy the full 40-character SHA of the latest commit, and swap `master` for
+// it below. Then hard-relaunch the game and check a sprite loads.
+//
+// Until then the mitigation is live and covers the real failure mode: the
+// delegated image error handler in main.js swaps any sprite that fails to load
+// — 404, rate limit, offline — for an inline Pokéball, so the game degrades to
+// a placeholder instead of a broken-image icon.
 export const SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites';
 export const ITEM_SPRITE = name => `${SPRITE_BASE}/items/${name}.png`;
 export const PIXEL_SPRITE = id => `${SPRITE_BASE}/pokemon/${id}.png`;

@@ -2,7 +2,7 @@
 // Pokédex OS — bootstrap & event wiring
 // ============================================================
 
-import { APP_VERSION } from './config.js';
+import { APP_VERSION, PIXEL_SPRITE } from './config.js';
 import { state, loadSave, player, playerName } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, triggerVibration, toggleMute } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
@@ -11,6 +11,7 @@ import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, m
 import { openPC, closePC, cancelTeamPick, onPCSearchInput } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { openGyms, backFromGym, reopenGyms } from './gym.js';
+import { clearGymRun } from './gym.js';
 import { initProgression, openTrainerCard, closeTrainerCard, dismissCelebration } from './progression.js';
 import { initSettings, applyJuniorClass, syncMusicBtn } from './settings.js';
 import { initDevTools } from './devtools.js';
@@ -25,11 +26,16 @@ function startApp() {
   setTimeout(() => playBeep(2093, 'sine', 0.4, 0.15), 130);
   document.getElementById('tap-msg').innerText = 'LOADING OS...';
   setTimeout(() => playMusic('dex'), 900);
-  setTimeout(() => {
+  setTimeout(async () => {
     const boot = document.getElementById('boot-screen');
     boot.style.transform = 'translateY(-100%)';
     boot.style.opacity = '0';
     setTimeout(() => (boot.style.display = 'none'), 500);
+    // Ask who's playing before anything loads, so the very first screen already
+    // belongs to the right boy — including Junior Mode.
+    const remembered = recallPlayer();
+    if (remembered) { state.currentPlayer = remembered; applyPlayerChrome(); }
+    else await showPlayerPicker();
     loadPoke(state.curId);
   }, 500);
 }
@@ -41,15 +47,69 @@ function playCry() {
 }
 
 // ---- Player toggle ----
-function togglePlayer() {
-  if (state.isCatching || state.appMode === 'battle') return;
-  state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
-  triggerVibration();
+// The active player is remembered on THIS DEVICE only, deliberately outside the
+// synced save: an exported save carries both boys' collections, and whoever's
+// turn it was on Dad's laptop is not a fact about the iPad.
+const LAST_PLAYER_KEY = 'pokedexos_lastplayer';
+function rememberPlayer(n) {
+  try { localStorage.setItem(LAST_PLAYER_KEY, String(n)); } catch (e) { /* non-fatal */ }
+}
+function recallPlayer() {
+  try {
+    const n = parseInt(localStorage.getItem(LAST_PLAYER_KEY), 10);
+    return (n === 1 || n === 2) ? n : null;
+  } catch (e) { return null; }
+}
+
+function applyPlayerChrome() {
   document.getElementById('player-btn').innerText = playerName();
   document.documentElement.style.setProperty('--p-primary', state.currentPlayer === 1 ? '#d32f2f' : '#1976D2');
   document.documentElement.style.setProperty('--p-dark', state.currentPlayer === 1 ? '#b71c1c' : '#0D47A1');
   applyJuniorClass();
   updateCatchUI();
+}
+
+function setPlayer(n) {
+  state.currentPlayer = n;
+  rememberPlayer(n);
+  // A half-finished gym run belongs to the boy who started it. Carrying its
+  // endurance HP across a player switch handed one brother the other's damage.
+  clearGymRun();
+  applyPlayerChrome();
+}
+
+function togglePlayer() {
+  if (state.isCatching || state.appMode === 'battle') return;
+  triggerVibration();
+  setPlayer(state.currentPlayer === 1 ? 2 : 1);
+}
+
+// ---- WHO'S PLAYING? ----
+// state.js used to hardcode currentPlayer = 1, so ART opening the app landed in
+// GABE's profile with Junior Mode off — his brother's Pokémon, and a game he
+// cannot read. Shown on first boot, and any time the remembered player is gone.
+function showPlayerPicker() {
+  return new Promise(resolve => {
+    const modal = document.getElementById('whoplaying-modal');
+    if (!modal) { resolve(); return; }
+    const grid = document.getElementById('whoplaying-grid');
+    const P = state.save.players;
+    grid.innerHTML = [1, 2].map(n => {
+      const lead = P[n].team[0] || P[n].caught[0] || (n === 1 ? 25 : 1);
+      return `<div class="whoplaying-choice" data-player="${n}">
+        <img src="${PIXEL_SPRITE(lead)}" alt="">
+        <span>${playerName(n)}</span>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('.whoplaying-choice').forEach(el =>
+      el.addEventListener('click', () => {
+        playBeep(1046.5, 'square', 0.12, 0.12);
+        setPlayer(parseInt(el.dataset.player, 10));
+        modal.style.display = 'none';
+        resolve();
+      }));
+    modal.style.display = 'flex';
+  });
 }
 
 // ---- Gestures ----
@@ -161,6 +221,48 @@ function wireUI() {
   }
 }
 
+// ---- Global failure net ----
+// There were ZERO global handlers in this app. Any unhandled error left the
+// game frozen mid-animation with no way out except force-quitting — which, to
+// a 7-year-old, is indistinguishable from having broken it himself.
+function installFailureNet() {
+  let shown = false;
+  const bail = (why) => {
+    console.error('Caught by the failure net:', why);
+    if (shown) return;
+    shown = true;
+    try { exitBattleMode(); } catch (e) { /* already torn down */ }
+    const el = document.getElementById('oops-modal');
+    if (el) el.style.display = 'flex';
+  };
+  window.addEventListener('error', e => bail(e?.message || e));
+  window.addEventListener('unhandledrejection', e => bail(e?.reason || 'promise'));
+  document.getElementById('oops-ok')?.addEventListener('click', () => {
+    document.getElementById('oops-modal').style.display = 'none';
+    shown = false;
+  });
+
+  // One delegated handler for every sprite in the app, present and future.
+  // raw.githubusercontent rate-limits, and a 429 renders as a broken-image
+  // glyph — which is what a child would be asked to battle against.
+  document.addEventListener('error', e => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    if (img.dataset.fellBack === '1') return;
+    img.dataset.fellBack = '1';
+    img.src = FALLBACK_SPRITE;
+  }, true);
+}
+
+// A Pokéball, inline, so the fallback itself can never fail to load.
+const FALLBACK_SPRITE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+     <circle cx="32" cy="32" r="28" fill="#f8f8e8" stroke="#24243a" stroke-width="4"/>
+     <path d="M4 32a28 28 0 0 1 56 0z" fill="#e84040" stroke="#24243a" stroke-width="4"/>
+     <line x1="4" y1="32" x2="60" y2="32" stroke="#24243a" stroke-width="5"/>
+     <circle cx="32" cy="32" r="9" fill="#f8f8e8" stroke="#24243a" stroke-width="5"/>
+   </svg>`);
+
 // ---- Service worker (network-first shell: fixes stale iOS PWA installs) ----
 function registerSW() {
   if ('serviceWorker' in navigator) {
@@ -175,5 +277,6 @@ wireUI();
 initSettings();
 initDevTools();
 wireGestures();
+installFailureNet();
 registerSW();
 console.log(`Pokédex OS v${APP_VERSION} ready.`);

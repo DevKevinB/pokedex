@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=18.3.0">
-    <link rel="stylesheet" href="css/gba.css?v=18.3.0">
+    <link rel="stylesheet" href="css/main.css?v=18.4.0">
+    <link rel="stylesheet" href="css/gba.css?v=18.4.0">
 </head>
 <body>
 
@@ -98,7 +98,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 18.3 - TRAINER'S JOURNEY</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 18.4 - TRAINER'S JOURNEY</div>
         </div>
     </div>
 </div>
@@ -182,6 +182,27 @@
     </div>
 </div>
 
+<!-- The failure net's in-world apology. Icon-led and four words, because the
+     person most likely to see it cannot read a stack trace or a sentence. -->
+<div class="overlay-screen" id="oops-modal" style="z-index: 2700; background: rgba(4,4,16,0.98);">
+    <div class="modal-box" style="text-align:center;">
+        <div style="font-size: 56px;">😵‍💫</div>
+        <h2 style="margin: 14px 0;">OH NO</h2>
+        <p style="font-size: 11px;">Something went wobbly.</p>
+        <button class="btn-large btn-reg" id="oops-ok">TRY AGAIN ▶</button>
+    </div>
+</div>
+
+<!-- First-boot / unknown-device player picker. Deliberately wordless enough for
+     a pre-reader: two big sprites, tap yours. -->
+<div class="overlay-screen" id="whoplaying-modal" style="z-index: 2600; background: rgba(4,4,16,0.98);">
+    <div class="modal-box" style="text-align:center;">
+        <div style="font-size: 44px;">🎮</div>
+        <h2 style="margin: 12px 0 4px;">WHO'S PLAYING?</h2>
+        <div id="whoplaying-grid"></div>
+    </div>
+</div>
+
 <div class="overlay-screen" id="pass-modal" style="z-index: 2400; background: rgba(4,4,16,0.97);">
     <div class="modal-box" style="text-align:center;">
         <div style="font-size: 46px;">🎮</div>
@@ -233,6 +254,7 @@
                 <button class="set-action" id="set-export-file" title="Download your save as a file">📄 SAVE FILE</button>
                 <button class="set-action" id="set-import-paste" title="Paste a save code from another device">📋 PASTE CODE</button>
                 <button class="set-action" id="set-import-file" title="Load a downloaded save file">📂 LOAD FILE</button>
+                <button class="set-action" id="set-undo-import" title="Put back the save from just before the last import">↩️ UNDO IMPORT</button>
             </div>
         </div>
         <div class="card-section">
@@ -323,6 +345,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=18.3.0"></script>
+<script type="module" src="js/main.js?v=18.4.0"></script>
 </body>
 </html>

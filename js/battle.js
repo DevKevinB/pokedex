@@ -23,10 +23,39 @@ export const battleState = {
   busy: false,
   origin: 'arena',   // 'arena' | 'explore' | 'gym'
   canCatch: true,
-  trainer: null      // { gymKey, idx, def, enemyNum } during gym battles
+  trainer: null,     // { gymKey, idx, def, enemyNum } during gym battles
+  // Previously these three were created on the fly by whichever code path
+  // happened to run first, and never reliably cleared. Declaring them here
+  // means exitBattleMode() has one complete list to reset.
+  versusActive: false,
+  wildShiny: false,
+  pendingEvolution: null,
+  bankedCatch: null,
+  // Monotonic battle id, bumped on every exit. Async work captures it and
+  // bails if it no longer matches — see stale().
+  epoch: 0
 };
 
+// An async step that resumes after the battle ended must not touch anything.
+// Without this, tapping ESCAPE mid-turn leaves an orphaned attack in flight
+// that lands on whatever battle starts next.
+const stale = e => e !== battleState.epoch;
+
 const active = () => battleState.loaded[battleState.teamIds[battleState.activeIdx]];
+
+// ---- Junior Mode combat floor ----
+// ART has to be able to WIN a fight, not merely survive one. Without an
+// outgoing floor a Lv8 starter needs ~84 turns to drop a Lv80 gym ace while
+// sitting pinned at 1 HP — which reads to a 4-year-old as "the game is broken".
+// The floor guarantees visible progress; the ceiling keeps his own HP bar
+// draining gracefully instead of bottoming out on the first hit.
+// None of this is ever shown or announced, and none of it applies in VS.
+const JUNIOR_MIN_HIT = 0.15;   // outgoing: >= 15% of the target's max HP
+const JUNIOR_MAX_TAKE = 0.40;  // incoming: <= 40% of his own max HP per hit
+function juniorActive() {
+  try { return !!player().settings.junior && !battleState.versusActive; }
+  catch (e) { return false; }
+}
 
 function logMsg(msg) { document.getElementById('battle-log').innerText = msg; }
 const show = (id, on = true) => { document.getElementById(id).style.display = on ? 'flex' : 'none'; };
@@ -76,11 +105,28 @@ async function buildFighter(id, level, side) {
 }
 
 // ---- mode entry/exit ----
+// THE single teardown authority. Every way out of a battle — escape, victory,
+// defeat, network error, evolution finishing — comes through here, and here is
+// the only place battle flags are reset. Anything added to battleState above
+// must be reset below, or it leaks into the next battle.
 export function exitBattleMode() {
+  battleState.epoch++;              // invalidate every in-flight async step
   state.appMode = 'dex';
   battleState.isBattling = false;
+  battleState.busy = false;
   battleState.loaded = {};
-  ['sparkle-modal', 'victory-modal', 'switch-modal', 'evo-modal', 'loading-modal'].forEach(id => show(id, false));
+  battleState.wild = null;
+  battleState.isSparkle = false;
+  battleState.wildShiny = false;
+  battleState.versusActive = false;
+  battleState.pendingEvolution = null;
+  battleState.bankedCatch = null;
+  // Release anyone blocked on the pass-and-play handoff, or that promise
+  // never settles and the versus flow hangs forever behind a hidden modal.
+  if (passResolver) { const r = passResolver; passResolver = null; r(); }
+  versus.sides = null; versus.order = []; versus.qi = 0;
+  ['sparkle-modal', 'victory-modal', 'switch-modal', 'evo-modal', 'loading-modal',
+   'pass-modal', 'ballpick-modal'].forEach(id => show(id, false));
   document.getElementById('battle-container').classList.remove('active');
   const from = battleState.origin;
   battleState.origin = 'arena';
@@ -324,6 +370,10 @@ function updateHP(target) {
 
 function enableMoves(enabled) {
   document.querySelectorAll('.move-btn').forEach(btn => (btn.disabled = !enabled));
+  // ESCAPE follows the move buttons. Leaving it live mid-turn is how a tap
+  // during an animation tore a battle down from underneath its own async work.
+  const esc = document.getElementById('escape-btn');
+  if (esc) { esc.disabled = !enabled; esc.style.opacity = enabled ? '' : '0.45'; }
 }
 
 // ---- switching ----
@@ -351,6 +401,7 @@ function openSwitchModal(forced) {
 }
 
 async function doSwitch(newIdx, forced) {
+  const e0 = battleState.epoch;
   show('switch-modal', false);
   enableMoves(false);
   const id = battleState.teamIds[newIdx];
@@ -358,6 +409,7 @@ async function doSwitch(newIdx, forced) {
     show('loading-modal');
     try {
       const f = await buildFighter(id, monLevel(id), 'player');
+      if (stale(e0)) return;   // battle ended while the sprite was loading
       if (battleState.origin === 'gym' && !player().settings.junior && gymRun.gymKey === battleState.trainer?.gymKey && gymRun.hp[id] != null) {
         f.hp = Math.min(f.maxHp, gymRun.hp[id]);
       }
@@ -371,16 +423,25 @@ async function doSwitch(newIdx, forced) {
     show('loading-modal', false);
   }
   const old = active();
+  // Commit the opponent's punish move BEFORE the swap resolves. Picking it
+  // afterwards means the AI already knows what you switched to, so every
+  // switch is answered by a fully-informed super-effective hit — the opposite
+  // of how the real games work, and it teaches GABE that switching is a trap.
+  const punish = (!forced && battleState.wild.hp > 0) ? pickEnemyMove() : null;
   battleState.activeIdx = newIdx;
   if (!forced) { logMsg(`COME BACK, ${old.name.toUpperCase()}!`); await sleep(800); }
+  if (stale(e0)) return;
   renderActive();
   logMsg(`GO, ${active().name.toUpperCase()}!`);
   await sleep(800);
+  if (stale(e0)) return;
 
-  if (!forced && battleState.wild.hp > 0) {
+  if (punish) {
     // switching costs the turn — the opponent gets a free hit
-    await performAttack('wild', 'player', pickEnemyMove());
+    await performAttack('wild', 'player', punish);
+    if (stale(e0)) return;
     await checkFaints();
+    if (stale(e0)) return;
   } else {
     logMsg(`What will ${active().name.toUpperCase()} do?`);
   }
@@ -391,7 +452,10 @@ async function doSwitch(newIdx, forced) {
 function pickEnemyMove() {
   const w = battleState.wild;
   const target = active();
-  if (battleState.trainer && Math.random() < 0.7) {
+  // Trainers think — but never against ART. This is gated on MODE, not just on
+  // `trainer`: the old check let the smart AI loose in junior gym battles, so a
+  // gym ace could chain super-effective hits on a 4-year-old.
+  if (battleState.trainer && !juniorActive() && Math.random() < 0.7) {
     // trainers think: pick the highest-multiplier (then highest-power) move
     return [...w.moves].sort((a, b) => {
       const ma = getTypeMultiplier(a.type, target.types), mb = getTypeMultiplier(b.type, target.types);
@@ -403,29 +467,42 @@ function pickEnemyMove() {
 
 async function executeTurn(playerMoveIdx) {
   if (!battleState.isBattling || battleState.busy) return;
+  const e = battleState.epoch;
   battleState.busy = true;
   enableMoves(false);
-  const f = active();
-  const playerMove = f.moves[playerMoveIdx];
-  const wildMove = pickEnemyMove();
-  const playerGoesFirst = f.speed >= battleState.wild.speed;
+  try {
+    const f = active();
+    const playerMove = f.moves[playerMoveIdx];
+    const wildMove = pickEnemyMove();
+    const playerGoesFirst = f.speed >= battleState.wild.speed;
 
-  if (playerGoesFirst) {
-    await performAttack('player', 'wild', playerMove);
-    if (battleState.wild.hp > 0) await performAttack('wild', 'player', wildMove);
-  } else {
-    await performAttack('wild', 'player', wildMove);
-    if (active().hp > 0) await performAttack('player', 'wild', playerMove);
+    if (playerGoesFirst) {
+      await performAttack('player', 'wild', playerMove);
+      if (stale(e)) return;
+      if (battleState.wild.hp > 0) await performAttack('wild', 'player', wildMove);
+    } else {
+      await performAttack('wild', 'player', wildMove);
+      if (stale(e)) return;
+      if (active().hp > 0) await performAttack('player', 'wild', playerMove);
+    }
+    if (stale(e)) return;
+    await checkFaints();
+  } finally {
+    // Always release the lock, even if a fetch threw mid-turn. Leaving busy
+    // stuck true silently bricks every move button for the rest of the battle.
+    if (!stale(e)) battleState.busy = false;
   }
-  battleState.busy = false;
-  await checkFaints();
 }
 
 async function performAttack(attackerRole, defenderRole, move) {
+  const e = battleState.epoch;
   const attacker = attackerRole === 'wild' ? battleState.wild : active();
   const defender = defenderRole === 'wild' ? battleState.wild : active();
+  if (!attacker || !defender) return;
   logMsg(`${attacker.name.toUpperCase()} used ${move.name.toUpperCase()}!`);
   await sleep(900);
+  // Bail before touching HP if the battle ended during that pause.
+  if (stale(e)) return;
 
   let damage = (((2 * attacker.level / 5 + 2) * move.power * (attacker.atk / defender.def)) / 50) + 2;
   const typeMult = getTypeMultiplier(move.type, defender.types);
@@ -437,8 +514,19 @@ async function performAttack(attackerRole, defenderRole, move) {
   if (crit) damage *= 1.5;
   if (attackerRole === 'player' && battleState.isSparkle) damage *= 2.0;
 
+  // Junior Mode floor and ceiling. Immune hits stay immune — the floor must
+  // never resurrect a 0x matchup, or type advantage stops meaning anything.
+  if (juniorActive()) {
+    if (attackerRole === 'player' && typeMult > 0) {
+      damage = Math.max(damage, defender.maxHp * JUNIOR_MIN_HIT);
+    }
+    if (defenderRole === 'player') {
+      damage = Math.min(damage, defender.maxHp * JUNIOR_MAX_TAKE);
+    }
+  }
+
   // Junior mode: player Pokémon can never faint (not in VS — fair fight!)
-  if (defenderRole === 'player' && player().settings.junior && !battleState.versusActive) {
+  if (defenderRole === 'player' && juniorActive()) {
     defender.hp = Math.max(1, defender.hp - damage * 0.5);
   } else {
     defender.hp -= damage;
@@ -461,6 +549,7 @@ async function performAttack(attackerRole, defenderRole, move) {
 }
 
 async function checkFaints() {
+  if (!battleState.wild || !active()) return;
   if (battleState.wild.hp <= 0) {
     if (battleState.trainer) { await handleEnemyDown(); } else { await handleVictory(); }
     return;
@@ -499,9 +588,11 @@ async function checkFaints() {
 
 // ---- gym: one enemy down; next up, or the whole trainer folds ----
 async function handleEnemyDown() {
+  const e0 = battleState.epoch;
   const t = battleState.trainer;
   const w = battleState.wild;
   const f = active();
+  if (!t || !w || !f) return;
   logMsg(`${w.name.toUpperCase()} FAINTED!`);
   triggerVibration([100, 100, 100]);
 
@@ -511,14 +602,22 @@ async function handleEnemyDown() {
   const ups = addXp(f.id, gained);
   if (ups > 0) t.xpLines.push(`${f.name.toUpperCase()} grew to Lv${monLevel(f.id)}!`);
   t.lastXpMon = { id: f.id, name: f.name, level: monLevel(f.id), ups };
+  // Queue the evolution. Gym wins are the game's biggest XP source, and until
+  // now they could never trigger an evolution at all — nothing set this, and
+  // the victory modal explicitly nulled it out. Keep the LAST mon that gained
+  // a level across the whole trainer fight.
+  if (ups > 0) battleState.pendingEvolution = { id: f.id, name: f.name, level: monLevel(f.id) };
   t.kos.push(w.id);
   await sleep(1300);
+  if (stale(e0)) return;
 
   if (t.enemyNum + 1 < t.def.team.length) {
     t.enemyNum++;
     show('loading-modal');
     try {
-      battleState.wild = await buildEnemy(t.def, t.enemyNum);
+      const next = await buildEnemy(t.def, t.enemyNum);
+      if (stale(e0)) return;   // don't send out a Pokémon into a dead battle
+      battleState.wild = next;
     } catch (e) {
       show('loading-modal', false);
       alert('Network hiccup — the gym battle ended safely.');
@@ -529,6 +628,7 @@ async function handleEnemyDown() {
     renderEnemy();
     logMsg(`${t.def.name} SENT OUT ${battleState.wild.name.toUpperCase()}!`);
     await sleep(1100);
+    if (stale(e0)) return;
     logMsg(`What will ${active().name.toUpperCase()} do?`);
     enableMoves(true);
     battleState.busy = false;
@@ -558,6 +658,7 @@ async function handleEnemyDown() {
 
   const circuitDone = recordGymWin(t.gymKey, t.idx);
   await sleep(1500);
+  if (stale(e0)) return;   // spoils are already banked; just don't paint a dead screen
 
   const lines = [
     `🏆 ${t.def.name} DEFEATED!`,
@@ -568,7 +669,10 @@ async function handleEnemyDown() {
   if (circuitDone) lines.push('👑 YOU BEAT THE ENTIRE GYM CIRCUIT! YOU ARE THE CHAMPION!');
   document.getElementById('victory-lines').innerHTML = lines.map(l => `<p>${l}</p>`).join('');
   show('victory-modal');
-  battleState.pendingEvolution = null;
+  // NOTE: pendingEvolution is deliberately NOT cleared here — it is consumed by
+  // maybeEvolveThenExit() when the modal is dismissed. Clearing it at this point
+  // is exactly what made evolution impossible from a gym win, the game's single
+  // biggest source of XP. (Defeat and VS paths below still clear it; correct.)
 }
 
 // ---- shared capture conclusion (KO'd or balled) ----
@@ -593,12 +697,24 @@ async function playCaptureAnimation(ballName = 'poke-ball') {
   sprite.classList.remove('sucked-in');
 }
 
+// FENCE: bank a catch the moment it is DECIDED, not five seconds later when the
+// animation finishes. A tablet that sleeps mid-throw used to lose the Pokémon
+// entirely — the worst possible bug, because the child watched it succeed.
+// Idempotent: whoever calls it first wins, later callers get the same answer.
+function bankCatch(w) {
+  if (!w) return { wasNew: false, newShiny: false };
+  if (battleState.bankedCatch && battleState.bankedCatch.id === w.id) return battleState.bankedCatch;
+  const wasNew = recordCatch(w.id);
+  ensureMon(w.id, w.level);
+  const newShiny = w.shiny ? recordShiny(w.id) : false;
+  battleState.bankedCatch = { id: w.id, wasNew, newShiny };
+  return battleState.bankedCatch;
+}
+
 function concludeCapture(headline) {
   const w = battleState.wild;
   const f = active();
-  const newCatch = recordCatch(w.id);
-  ensureMon(w.id, w.level);
-  const newShiny = w.shiny ? recordShiny(w.id) : false;
+  const { wasNew: newCatch, newShiny } = bankCatch(w);
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: w.types || [] } }));
 
   // nickname (skippable; junior mode never interrupts)
@@ -667,6 +783,7 @@ function openBallPick() {
 
 async function executeBallThrow(ballMod, ballName) {
   if (!battleState.isBattling || battleState.busy) return;
+  const e0 = battleState.epoch;
   battleState.busy = true;
   enableMoves(false);
   const junior = player().settings.junior;
@@ -677,6 +794,8 @@ async function executeBallThrow(ballMod, ballName) {
 
   const w = battleState.wild;
   const success = Math.random() < catchChance(ballMod, ballName);
+  // Banked here, at the decision, not after the ~5s of shake animation below.
+  if (success) bankCatch(w);
   logMsg(`YOU THREW A ${ballName.replace('-', ' ').toUpperCase()}!`);
 
   const sprite = document.getElementById('wild-sprite');
@@ -685,9 +804,11 @@ async function executeBallThrow(ballMod, ballName) {
   ball.style.opacity = 1;
   ball.style.transform = 'translateY(0px) scale(1)';
   await sleep(600);
+  if (stale(e0)) return;
   sprite.classList.add('sucked-in');
   playBeep(400, 'sine', 0.3);
   await sleep(400);
+  if (stale(e0)) return;
 
   const shakes = success ? 3 : 1 + Math.floor(Math.random() * 2);
   for (let i = 0; i < shakes; i++) {
@@ -697,6 +818,7 @@ async function executeBallThrow(ballMod, ballName) {
     sfx.shake();
     triggerVibration([50]);
     await sleep(950);
+    if (stale(e0)) return;
   }
   ball.classList.remove('ball-shake');
 
@@ -707,6 +829,7 @@ async function executeBallThrow(ballMod, ballName) {
     document.getElementById('battle-catch-msg').style.opacity = 1;
     document.dispatchEvent(new CustomEvent('battle-victory'));
     await sleep(1400);
+    if (stale(e0)) return;
     document.getElementById('battle-catch-msg').style.opacity = 0;
     ball.style.opacity = 0;
     ball.style.transform = 'translateY(-150px) scale(2)';
@@ -724,8 +847,10 @@ async function executeBallThrow(ballMod, ballName) {
   sprite.classList.remove('sucked-in');
   logMsg('OH NO! IT BROKE FREE!');
   await sleep(1100);
+  if (stale(e0)) return;
   if (battleState.wild.hp > 0 && active().hp > 0) {
     await performAttack('wild', 'player', pickEnemyMove());
+    if (stale(e0)) return;
   }
   battleState.busy = false;
   await checkFaints();
@@ -733,15 +858,22 @@ async function executeBallThrow(ballMod, ballName) {
 
 // ---- victory: XP, level ups, evolution, auto-catch on faint ----
 async function handleVictory() {
+  const e0 = battleState.epoch;
   battleState.isBattling = false;
   const w = battleState.wild;
+  if (!w) return;
+  // Auto-catch-on-KO is already earned the instant it faints — bank it before
+  // the capture animation, same reasoning as the ball throw.
+  bankCatch(w);
   logMsg(`${w.name.toUpperCase()} FAINTED!`);
   document.dispatchEvent(new CustomEvent('battle-victory'));
   triggerVibration([100, 100, 100]);
   await sleep(1400);
+  if (stale(e0)) return;
 
   logMsg(`CATCHING ${w.name.toUpperCase()}...`);
   await playCaptureAnimation();
+  if (stale(e0)) return;
   player().stats.battlesWon++; persist();
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'win' } }));
   concludeCapture('⭐ VICTORY! ⭐');

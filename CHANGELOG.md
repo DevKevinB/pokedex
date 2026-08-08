@@ -2,6 +2,40 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.4.0] - THE FLOOR
+
+Week 1 of the council roadmap: nothing breaks, nothing gets lost, and ART can finally win a fight.
+
+### Fixed — the two that changed the game
+- **ART can win now.** In Junior Mode his attacks always take off at least 15% of the opponent's health, so a Lv8 starter beats a Lv80 gym ace in about seven hits instead of eighty-four. Incoming hits are capped so his health bar drains gracefully instead of bottoming out on the first swing — he still can't faint. Gym trainers also stop playing smart against him: they picked super-effective moves 70% of the time even in Junior Mode. **None of this is shown or announced.**
+- **Pokémon evolve from gym wins again.** They never could — the game's biggest source of XP was the one place evolution was switched off, by a single line that cleared it right before the victory screen. GABE should see evolutions start firing almost immediately.
+
+### Fixed — nothing breaks
+- **One way out of a battle.** Escape, victory, defeat and network errors now all tear down through the same code, and every battle carries an id that invalidates work still in flight. Previously one ESCAPE tap during a versus match silently switched off ART's no-faint protection for the rest of the session, and an interrupted turn could land its damage on the *next* battle.
+- **ESCAPE is disabled mid-turn**, so it can't fire during an animation.
+- **Switching is no longer a trap.** The opponent commits its punishing move before it can see what you switched to. It was choosing afterwards, with full knowledge — a guaranteed super-effective hit every time.
+- **A global safety net.** Any unhandled error now shows a friendly "OH NO — something went wobbly" screen and safely exits the battle, instead of freezing mid-animation. There were no error handlers at all before this.
+- **Sprites that fail to load** fall back to a drawn Pokéball instead of a broken-image icon.
+
+### Fixed — nothing gets lost
+- **A save code that would have wiped both boys is now refused.** A valid-looking but empty code used to erase everything and report "SAVE LOADED! Welcome back."
+- **↩️ UNDO IMPORT** in Settings puts back the save from just before the last import. Import now also tells you honestly if the code you loaded has *fewer* Pokémon than you had.
+- **Catches are banked the moment they're decided**, not five seconds later when the animation ends. A tablet that went to sleep mid-throw used to lose the Pokémon entirely.
+- **A save that can't be written** (tablet out of storage) now clears the sprite cache, retries, and only then stops the game with a full-screen "SHOW A GROWN-UP" message. It used to fail silently.
+- **A save that can't be read** is kept aside instead of being overwritten, so it can be recovered.
+- Imported data is now validated item by item: bad Pokémon numbers dropped, impossible levels clamped, names escaped, and team order preserved.
+
+### Added
+- **WHO'S PLAYING?** on first launch — two big sprites, tap yours. The app always opened as P1, so ART landed in GABE's profile with Junior Mode off. Your choice is remembered per device, and switching players no longer carries one brother's gym damage into the other's run.
+
+### Changed
+- **Photosensitivity.** The header LEDs flashed at 3.3 times a second and the evolution animation inverted the whole sprite black-to-white at 2.9 times a second — both inside the range seizure guidelines warn about, the second one firing at the most exciting moment in the game. Both are now slow pulses. The app also respects the iPad's "Reduce Motion" setting.
+- **Sprites and fonts are cached properly.** Because of one wrong check, not a single sprite had ever been cached in the life of the app; the cache was also being wiped on every release. The app shell now also gives up on a slow network after 2.5 seconds and opens from cache instead of hanging on a white screen.
+
+### Testing
+- 121 checks passing, including new regressions for the empty-save wipe, import validation, undo, and battle teardown.
+- Fixed two tests that had been failing at random: one assumed the Boulder Badge celebration always appeared before a daily-quest celebration, the other assumed the lead Pokémon was always Lv5.
+
 ## [18.3.0] - THE GAME DOESN'T TALK
 
 ### Removed

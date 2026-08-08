@@ -3,7 +3,7 @@
 // save export/import (code or file), all in one place.
 // ============================================================
 
-import { state, player, persist, playerName, setPlayerName, exportCode, importCode } from './state.js';
+import { state, player, persist, playerName, setPlayerName, exportCode, importCode, hasPreviousSave, restorePreviousSave } from './state.js';
 import { isMuted, toggleMute, triggerVibration } from './audio.js';
 import { updateCatchUI } from './dex.js';
 
@@ -91,15 +91,49 @@ function downloadSaveFile() {
 }
 
 function applyImportedCode(code) {
+  const before = state.save.players[1].caught.length + state.save.players[2].caught.length;
   try {
     importCode(code);
-    alert('SAVE LOADED! Welcome back.');
+    const after = state.save.players[1].caught.length + state.save.players[2].caught.length;
     syncHeaderPlayerBtn();
     applyJuniorClass();
     refreshSettingsUI();
     updateCatchUI();
+    // Tell the truth about what just happened. The old code said "Welcome back"
+    // no matter what — including when the import had just emptied both boxes.
+    if (after < before) {
+      alert(`SAVE LOADED, BUT HEADS UP:\n\nBefore: ${before} Pokémon\nNow: ${after} Pokémon\n\n` +
+            `That code has FEWER Pokémon than you had. If this is wrong, tap ↩️ UNDO IMPORT ` +
+            `in Settings right now to put it back.`);
+    } else {
+      alert(`SAVE LOADED! ${after} Pokémon across both trainers.`);
+    }
   } catch (e) {
-    alert('ERROR: That save code was not recognized.');
+    const why = e && e.message === 'EMPTY_SAVE'
+      ? 'That code is empty — it has no Pokémon in it.\n\nNothing was changed.'
+      : 'That save code was not recognized.\n\nNothing was changed.';
+    alert('ERROR: ' + why);
+  }
+}
+
+// The reversible half of the import fence. Swaps back to the snapshot taken
+// immediately before the last import — and is itself undoable, because the
+// swap keeps the replaced save in the same slot.
+function undoImport() {
+  if (!hasPreviousSave()) { alert('Nothing to undo — no import has been made on this device.'); return; }
+  const now = state.save.players[1].caught.length + state.save.players[2].caught.length;
+  if (!confirm(`UNDO THE LAST IMPORT?\n\nRight now you have ${now} Pokémon. ` +
+               `This swaps back to the save from just before the last import.`)) return;
+  try {
+    restorePreviousSave();
+    syncHeaderPlayerBtn();
+    applyJuniorClass();
+    refreshSettingsUI();
+    updateCatchUI();
+    const after = state.save.players[1].caught.length + state.save.players[2].caught.length;
+    alert(`RESTORED. You now have ${after} Pokémon. Tap UNDO again to swap back.`);
+  } catch (e) {
+    alert('ERROR: The backup could not be read. Nothing was changed.');
   }
 }
 
@@ -143,6 +177,7 @@ export function initSettings() {
   on('set-export-file', downloadSaveFile);
   on('set-import-paste', pasteSaveCode);
   on('set-import-file', uploadSaveFile);
+  on('set-undo-import', undoImport);
   syncHeaderPlayerBtn();
   syncMusicBtn();
   applyJuniorClass();
