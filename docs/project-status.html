@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokédex OS — Project Status · Aug 8, 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1220;
+    --surface:#181c30;
+    --surface2:#1f2440;
+    --cream:#f8f4e3;
+    --ink:#e8eaf2;
+    --ink2:#a9aec5;
+    --ink3:#7c81a0;
+    --line:#2c3252;
+    --green:#3fb950;
+    --green-dim:#1d3a2a;
+    --amber:#d29922;
+    --amber-dim:#3a2f14;
+    --blue:#58a6ff;
+    --blue-dim:#152a45;
+    --red:#f85149;
+    --purple:#bc8cff;
+    --gba-red:#e23b47;
+    --pixel-shadow:0 4px 0 rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:15px;line-height:1.6;
+    padding:0 0 80px;
+  }
+  .px{font-family:"Press Start 2P",ui-monospace,monospace;}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px;}
+
+  /* ---------- header ---------- */
+  header{
+    background:linear-gradient(180deg,#20264a 0%,#161a30 100%);
+    border-bottom:4px solid var(--gba-red);
+    padding:44px 0 36px;
+    position:relative;overflow:hidden;
+  }
+  header::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.12) 3px 4px);
+  }
+  .led-row{display:flex;gap:8px;margin-bottom:18px}
+  .led{width:10px;height:10px;border-radius:50%}
+  .led.r{background:var(--gba-red)}
+  .led.y{background:var(--amber)}
+  .led.g{background:var(--green)}
+  h1{font-size:22px;letter-spacing:1px;line-height:1.7;color:var(--cream)}
+  .subtitle{color:var(--ink2);margin-top:14px;max-width:640px}
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .chip{
+    background:var(--surface2);border:1px solid var(--line);border-radius:6px;
+    padding:6px 12px;font-size:12.5px;color:var(--ink2);
+  }
+  .chip b{color:var(--ink);font-weight:600}
+  .chip.ok b{color:var(--green)}
+
+  /* ---------- sections ---------- */
+  section{margin-top:52px}
+  h2{
+    font-size:13px;letter-spacing:1px;color:var(--cream);
+    display:flex;align-items:center;gap:12px;margin-bottom:6px;
+  }
+  h2::after{content:"";flex:1;height:2px;background:var(--line)}
+  .kicker{font-size:12.5px;color:var(--ink3);margin-bottom:22px}
+
+  /* ---------- stat tiles ---------- */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
+  .tile{
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:18px 16px 14px;box-shadow:var(--pixel-shadow);
+  }
+  .tile .num{font-size:26px;font-weight:700;color:var(--cream);font-variant-numeric:tabular-nums}
+  .tile .lbl{font-size:11.5px;color:var(--ink3);margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
+
+  /* ---------- arc progress ---------- */
+  .arc{display:flex;gap:6px;margin:18px 0 10px}
+  .arc-seg{flex:1;border-radius:5px;padding:10px 10px 9px;border:1px solid var(--line);background:var(--surface)}
+  .arc-seg .wk{font-size:10px;letter-spacing:.5px;color:var(--ink3);text-transform:uppercase}
+  .arc-seg .nm{font-size:12.5px;margin-top:3px;color:var(--ink2)}
+  .arc-seg.done{background:var(--green-dim);border-color:#2c5a3d}
+  .arc-seg.done .nm{color:var(--green);font-weight:600}
+  .arc-seg.next{background:var(--amber-dim);border-color:#5a4a1e}
+  .arc-seg.next .nm{color:var(--amber);font-weight:600}
+  .arc-note{font-size:12.5px;color:var(--ink3)}
+
+  /* ---------- timeline ---------- */
+  .timeline{border-left:3px solid var(--line);margin-left:8px;padding-left:26px;position:relative}
+  .t-item{position:relative;padding-bottom:26px}
+  .t-item:last-child{padding-bottom:4px}
+  .t-item::before{
+    content:"";position:absolute;left:-34.5px;top:5px;width:12px;height:12px;
+    background:var(--blue);border-radius:2px;transform:rotate(45deg);
+    box-shadow:0 0 0 3px var(--bg);
+  }
+  .t-item.today::before{background:var(--green)}
+  .t-date{font-size:11.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px}
+  .t-title{font-weight:700;color:var(--cream);margin:2px 0 4px}
+  .t-title .v{color:var(--purple);font-weight:600}
+  .t-body{font-size:13.5px;color:var(--ink2);max-width:700px}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:22px 24px;box-shadow:var(--pixel-shadow);margin-bottom:16px;
+  }
+  .card h3{font-size:15px;color:var(--cream);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .card .meta{font-size:12px;color:var(--ink3);margin-top:2px}
+  .badge{
+    font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+    padding:3px 9px;border-radius:4px;border:1px solid transparent;
+  }
+  .badge.done{color:var(--green);background:var(--green-dim);border-color:#2c5a3d}
+  .badge.next{color:var(--amber);background:var(--amber-dim);border-color:#5a4a1e}
+  .badge.plan{color:var(--ink2);background:var(--surface2);border-color:var(--line)}
+  .badge.swing{color:var(--purple);background:#2a2145;border-color:#453a6b}
+  .card p.lede{font-size:13.5px;color:var(--ink2);margin-top:12px}
+  ul.feats{list-style:none;margin-top:14px}
+  ul.feats li{
+    font-size:13.5px;color:var(--ink2);padding:7px 0 7px 26px;position:relative;
+    border-top:1px dashed var(--line);
+  }
+  ul.feats li:first-child{border-top:none}
+  ul.feats li::before{position:absolute;left:0;top:7px}
+  ul.feats li.done::before{content:"✔";color:var(--green)}
+  ul.feats li.todo::before{content:"▸";color:var(--amber)}
+  ul.feats li b{color:var(--ink);font-weight:600}
+  .notice{font-size:13px;color:var(--ink2);background:var(--blue-dim);border:1px solid #24466e;
+    border-radius:8px;padding:14px 16px;margin-top:14px}
+  .notice b{color:var(--blue)}
+
+  /* ---------- rules ---------- */
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+  .rule{
+    background:var(--cream);color:#2a2417;border-radius:8px;padding:16px;
+    border:2px solid #d8d2ba;box-shadow:var(--pixel-shadow);
+  }
+  .rule .r-icon{font-size:20px}
+  .rule .r-name{font-weight:700;font-size:13px;margin:8px 0 4px;letter-spacing:.3px;text-transform:uppercase}
+  .rule .r-body{font-size:12.5px;color:#5a533d}
+
+  /* ---------- risks ---------- */
+  table.risks{width:100%;border-collapse:collapse;font-size:13px}
+  table.risks th{
+    text-align:left;color:var(--ink3);font-size:11px;text-transform:uppercase;
+    letter-spacing:.6px;padding:8px 12px;border-bottom:2px solid var(--line);
+  }
+  table.risks td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink2);vertical-align:top}
+  table.risks td:first-child{color:var(--ink);font-weight:600;width:38%}
+
+  footer{margin-top:60px;text-align:center;color:var(--ink3);font-size:12px}
+  footer .px{font-size:9px;color:var(--gba-red)}
+  @media(max-width:640px){
+    .arc{flex-direction:column}
+    h1{font-size:16px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap" style="position:relative;z-index:1">
+    <div class="led-row"><span class="led r"></span><span class="led y"></span><span class="led g"></span></div>
+    <h1 class="px">POKÉDEX OS<br><span style="font-size:12px;color:var(--gba-red)">PROJECT STATUS REPORT</span></h1>
+    <p class="subtitle">A zero-dependency Game Boy–style Pokédex &amp; RPG battle engine, built for Gabe (7) and Art (4). Vanilla JS PWA on GitHub Pages — no build step, no backend, no frameworks.</p>
+    <div class="chips">
+      <span class="chip ok">Version <b>v18.4.0</b> · shipped today</span>
+      <span class="chip ok">Branch <b>main — synced with origin</b></span>
+      <span class="chip ok">Tests <b>121 checks passing</b></span>
+      <span class="chip">Report date <b>Aug 8, 2026</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ WHERE WE ARE ============ -->
+  <section>
+    <h2 class="px">WHERE WE ARE</h2>
+    <p class="kicker">The game by the numbers, as of today's push.</p>
+    <div class="tiles">
+      <div class="tile"><div class="num">649</div><div class="lbl">Pokémon · Gen 1–5</div></div>
+      <div class="tile"><div class="num">58</div><div class="lbl">Gym trainers · Lv8→80</div></div>
+      <div class="tile"><div class="num">8</div><div class="lbl">Explore habitats</div></div>
+      <div class="tile"><div class="num">16</div><div class="lbl">ES modules · no build</div></div>
+      <div class="tile"><div class="num">121</div><div class="lbl">Smoke checks passing</div></div>
+      <div class="tile"><div class="num">0</div><div class="lbl">Runtime dependencies</div></div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <h3>The v19 arc — 4-week council roadmap <span class="badge done">Week 1 of 4 complete</span></h3>
+      <p class="meta">Synthesized from 50 expert audits and 8 debate panels (COUNCIL-REPORT.md → ROADMAP.md)</p>
+      <div class="arc">
+        <div class="arc-seg done"><div class="wk">Week 1 · shipped ✔</div><div class="nm">The Floor</div></div>
+        <div class="arc-seg next"><div class="wk">Week 2 · next ▸</div><div class="nm">The Team &amp; the World</div></div>
+        <div class="arc-seg"><div class="wk">Week 3 · big swing</div><div class="nm">Show, Don't Tell</div></div>
+        <div class="arc-seg"><div class="wk">Week 4</div><div class="nm">The Ending &amp; the Long Tail</div></div>
+      </div>
+      <p class="arc-note">Through-line: <b style="color:var(--ink)">build the floor → widen the drain → show instead of tell → give it an ending.</b> Ruling in force: the game does not talk — meaning travels by picture, colour and motion, never a synthesised voice.</p>
+    </div>
+  </section>
+
+  <!-- ============ SHIPPED ============ -->
+  <section>
+    <h2 class="px">HOW WE GOT HERE</h2>
+    <p class="kicker">Release history — the July rebuild through today.</p>
+    <div class="timeline">
+      <div class="t-item">
+        <div class="t-date">Mar 2026</div>
+        <div class="t-title"><span class="v">v1–v7</span> · The original Pokédex</div>
+        <div class="t-body">Single-file Gen-1 dex: PokeAPI data, catch mechanic, Bill's PC, P1/P2 saves, base64 export.</div>
+      </div>
+      <div class="t-item">
+        <div class="t-date">Jul 25, 2026</div>
+        <div class="t-title"><span class="v">v16</span> · GAME BOY EDITION</div>
+        <div class="t-body">Full rebuild: modular ES-module architecture, GBA pixel overhaul, chiptune engine, real RPG battles with teams/levels/XP/evolution, Explore Kanto, badges &amp; daily quests, Junior Mode for Art.</div>
+      </div>
+      <div class="t-item">
+        <div class="t-date">Jul 25, 2026</div>
+        <div class="t-title"><span class="v">v17</span> · NATIONAL DEX</div>
+        <div class="t-body">151 → 649 Pokémon across five generations, Settings screen, save-to-file, Parent Tools.</div>
+      </div>
+      <div class="t-item">
+        <div class="t-date">Jul 26, 2026</div>
+        <div class="t-title"><span class="v">v18.0–18.2</span> · TRAINER'S JOURNEY</div>
+        <div class="t-body">Battle-to-catch with real capture math, the 58-trainer Gym Circuit with catch-their-whole-team spoils, shiny hunting with earned Sparkle, P1-vs-P2 versus mode, nicknames, PC search + TEAM strip.</div>
+      </div>
+      <div class="t-item today">
+        <div class="t-date">Aug 8, 2026 — today</div>
+        <div class="t-title"><span class="v">v18.3–18.4</span> · THE GAME DOESN'T TALK + THE FLOOR</div>
+        <div class="t-body">All speech synthesis removed permanently (with a test guard so it can never return), then the whole of roadmap Week 1 — details below.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WEEK 1 DETAIL ============ -->
+  <section>
+    <h2 class="px">JUST SHIPPED · WEEK 1</h2>
+    <p class="kicker">"The Floor" — nothing breaks, nothing gets lost, and Art can finally win a fight.</p>
+    <div class="card">
+      <ul class="feats">
+        <li class="done"><b>Art can win now.</b> Junior damage floor (≥15% per hit) plus an incoming-hit cap — a Lv8 starter beats a gym ace in ~7 hits instead of ~84, and trainer AI stops playing smart against a 4-year-old.</li>
+        <li class="done"><b>Evolution from gym wins restored.</b> The game's biggest XP source was the one place evolution never fired — a one-line bug, now fixed with the punish-move ordering corrected too.</li>
+        <li class="done"><b>One way out of a battle.</b> Single teardown authority + battle-epoch guards; an ESCAPE tap can no longer strip Art's no-faint shield or leak damage into the next battle.</li>
+        <li class="done"><b>Saves are defended.</b> Empty-save wipe refused, ↩️ UNDO IMPORT, catches banked at decision time, quarantine for unreadable saves, element-level import validation.</li>
+        <li class="done"><b>WHO'S PLAYING? picker</b> on first boot — Art no longer lands in Gabe's profile with Junior Mode off.</li>
+        <li class="done"><b>The narrator is gone.</b> All TTS deleted; a permanent smoke-suite guard fails the build if speech ever returns.</li>
+        <li class="done"><b>Service worker actually caches.</b> One wrong check meant zero sprites had ever been cached; also a 2.5s shell timeout so a slow network can't hang boot on a white screen.</li>
+        <li class="done"><b>Global error net + photosensitivity fix.</b> Friendly "something went wobbly" recovery screen, sprite fallbacks, and both seizure-range flashes slowed below threshold (with reduced-motion support).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ WHERE WE'RE GOING ============ -->
+  <section>
+    <h2 class="px">WHERE WE'RE GOING</h2>
+    <p class="kicker">Three weeks left in the arc. Each week ships as its own push, in order.</p>
+
+    <div class="card">
+      <h3>Week 2 — The Team and the World <span class="badge next">Up next</span></h3>
+      <p class="lede">Make growth felt. The engine extraction lands first — nothing below it ships safely until the old numbers are pinned by tests.</p>
+      <ul class="feats">
+        <li class="todo"><b>engine.js extraction + node test suite</b> — DOM-free battle math (stats, damage, catch odds, XP) shared by battle and catch, which today run <i>two different catch formulas</i>. Gate for everything after it.</li>
+        <li class="todo"><b>Party XP share</b> — KO'er 100%, bench 50%. Today 269 battles fund exactly one Pokémon.</li>
+        <li class="todo"><b>Gym spoils ceremony</b> — "PICK YOUR FAVORITE" from the beaten roster; whole team still awarded, level-honest, no more silent no-ops.</li>
+        <li class="todo"><b>Habitat level bands with a leash</b> — each zone gets real difficulty that rises with badges, clamped around the lead so the volcano can't wall Art.</li>
+        <li class="todo"><b>Lead chip + difficulty-dial fix</b> — persistent lead sprite/level in the toolbar slot VOICE freed; wild levels derive from your actual team.</li>
+        <li class="todo"><b>Damage honesty</b> — physical/special split (rescues Alakazam &amp; Gengar), variance roll, one-shot cap, move hygiene, Sparkle rescoped to 1.5×.</li>
+        <li class="todo"><b>Daily-loop repair</b> — local-time quest rollover (UTC currently wipes progress at dinnertime), meaningful quest XP, and the app's first visible XP bar.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Week 3 — Show, Don't Tell <span class="badge swing">The big swing</span></h3>
+      <p class="lede">A battle screen a pre-reader can read at a glance — no words needed. Today ~100% of the battle narrative is 9px text, and half the audience can't read.</p>
+      <ul class="feats">
+        <li class="todo"><b>Wordless move buttons</b> — big type-coloured tiles with type emoji (🔥💧⚡🌿); this decides whether Art is <i>choosing</i> or mashing.</li>
+        <li class="todo"><b>A visual grammar for outcomes</b> — super-effective = red chevron + hard shake + huge number; immune = grey ✖; crit = flash-frame. Sensation replaces sentences.</li>
+        <li class="todo"><b>Icon-led status</b> — fainted sprites grey out and tip over; team pips under HP boxes; animated switching.</li>
+        <li class="todo"><b>Retire all 21 native dialogs</b> — one icon-led dialog component (native dialogs silently fail in iOS standalone PWAs).</li>
+        <li class="todo"><b>Tap-to-skip + celebration pass</b> — cuts ~43s of dead air per gym fight; confetti and fanfare on every level-up.</li>
+        <li class="todo"><b>Audio lifecycle + speed</b> — fix iOS context interruption (one phone call currently silences the game until relaunch), prefetch battles, local moves.json for persistent movesets.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Week 4 — The Ending, the Long Tail &amp; What Dad Sees <span class="badge plan">Planned</span></h3>
+      <p class="lede">Close the post-Champion cliff and the collection dead-end — the game currently forgets that a boy became Champion.</p>
+      <ul class="feats">
+        <li class="todo"><b>Hall of Fame</b> — full Champion ceremony, team march-in, permanent 👑 on the trainer card, champion flag persisted.</li>
+        <li class="todo"><b>Unlock the 58 dead trainers</b> — rematches, then a Round 2 circuit at +15 levels.</li>
+        <li class="todo"><b>Badge rebase</b> — 11 gym badges + a late tier (100/300/649 caught, first shiny, Champion); visible progress instead of tooltips.</li>
+        <li class="todo"><b>Habitat backfill + FARAWAY LAND</b> — 336 currently-unplaced species get homes; 52% of the dex is unreachable through play today.</li>
+        <li class="todo"><b>Master Ball gets a moment</b> — legendary auto-catch exemption, guaranteed-on-a-legendary framing, pity counter on throws.</li>
+        <li class="todo"><b>Parent dashboard behind the PIN</b> — play minutes, last backup age, PIN fails <i>closed</i> (it currently fails open), dangerous buttons moved behind the gate.</li>
+        <li class="todo"><b>Last-mile hygiene</b> — self-hosted font + icons, privacy note, 8px type floor.</li>
+      </ul>
+      <div class="notice"><b>v20 candidates on deck:</b> seen-gate dex catching ("FIND IT ▶" routing, only after FARAWAY LAND soaks), SEASONS, collectible RULES cards. Explicitly rejected for good: streaks, currencies, flee timers, level caps — nothing that takes things away from a kid.</div>
+    </div>
+  </section>
+
+  <!-- ============ HARD RULES ============ -->
+  <section>
+    <h2 class="px">HARD PRODUCT RULES</h2>
+    <p class="kicker">The constitution — every design argument tiebreaks to the boys' fun.</p>
+    <div class="rules">
+      <div class="rule"><div class="r-icon">🔇</div><div class="r-name">The game does not talk</div><div class="r-body">No TTS, ever. A test guard fails the suite if speech returns. Picture, colour and motion carry meaning.</div></div>
+      <div class="rule"><div class="r-icon">🛡️</div><div class="r-name">Junior never punishes</div><div class="r-body">Art's Pokémon don't faint and his balls don't miss — and the game never advertises the help. He should feel skilled.</div></div>
+      <div class="rule"><div class="r-icon">🎁</div><div class="r-name">Never take from a child</div><div class="r-body">No flee timers, no streaks to break, no currency they can't afford, no removing an earned Pokémon.</div></div>
+      <div class="rule"><div class="r-icon">💾</div><div class="r-name">Saves are sacred</div><div class="r-body">Two boys' collections live in one localStorage key. State changes get extreme care.</div></div>
+      <div class="rule"><div class="r-icon">🧱</div><div class="r-name">Zero build, zero deps</div><div class="r-body">Vanilla ES modules served as authored on GitHub Pages. No bundler, no CI in front of a weekly push.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ RISKS ============ -->
+  <section>
+    <h2 class="px">RISKS TO WATCH</h2>
+    <p class="kicker">From the roadmap — each with its mitigation already sequenced.</p>
+    <table class="risks">
+      <tr><th>Risk</th><th>Mitigation in plan</th></tr>
+      <tr><td>⚠️ battle.js churn across W1–W2 (hottest file, three battle modes, one mutable singleton)</td><td>engine.js + its test suite land <b>first</b> in the Week 2 push, before any formula edit; weekly diffs stay separately revertible.</td></tr>
+      <tr><td>⚠️ Looted gym spoils out-levelling hand-raised Pokémon</td><td>Watch one gym run after W2 party-XP lands; if the raised lead still trails at gym 4, ship pick-one-at-−3 in v20 (the ceremony UI already supports it).</td></tr>
+      <tr><td>⚠️ Habitat bands turning the volcano into a wall for Art</td><td>The junior leash clamp ships in the same commit as the bands — never after; W1's damage floor already sits underneath.</td></tr>
+      <tr><td>⚠️ W3's visual grammar is now the <i>only</i> channel for a pre-reader</td><td>Ship slices 1–2 together, then watch Art play one gym battle unaided. If he can't tell who won an exchange, the fallback is <b>louder visuals</b> — never words.</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    <p class="px">▲ ▼ SELECT · START ▶</p>
+    <p style="margin-top:10px">Pokédex OS · DevKevinB/pokedex · main @ f31f76f · Report generated Aug 8, 2026<br>Sources: ROADMAP.md · CHANGELOG.md · CLAUDE.md · git history</p>
+  </footer>
+
+</div>
+</body>
+</html>
