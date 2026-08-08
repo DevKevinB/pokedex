@@ -3,7 +3,7 @@
 // ============================================================
 
 import { APP_VERSION, PIXEL_SPRITE } from './config.js';
-import { state, loadSave, player, playerName } from './state.js';
+import { state, loadSave, player, playerName, monLevel } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, triggerVibration, toggleMute } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
@@ -61,8 +61,26 @@ function recallPlayer() {
   } catch (e) { return null; }
 }
 
+// The LEAD chip. Kept in sync from every place that can change the lead:
+// player switch, a catch, team edits in the PC, and evolution.
+export function refreshLeadChip() {
+  const img = document.getElementById('lead-sprite');
+  const label = document.getElementById('lead-label');
+  if (!img || !label) return;
+  const p = player();
+  const id = p.team[0] || p.caught[0];
+  if (!id) { img.removeAttribute('src'); img.style.visibility = 'hidden'; label.innerText = 'LEAD'; return; }
+  img.style.visibility = 'visible';
+  img.src = PIXEL_SPRITE(id);
+  label.innerText = `Lv${monLevel(id)}`;
+}
+document.addEventListener('game-progress', refreshLeadChip);
+document.addEventListener('battle-exited', refreshLeadChip);
+document.addEventListener('team-changed', refreshLeadChip);
+
 function applyPlayerChrome() {
   document.getElementById('player-btn').innerText = playerName();
+  refreshLeadChip();
   document.documentElement.style.setProperty('--p-primary', state.currentPlayer === 1 ? '#d32f2f' : '#1976D2');
   document.documentElement.style.setProperty('--p-dark', state.currentPlayer === 1 ? '#b71c1c' : '#0D47A1');
   applyJuniorClass();
@@ -150,6 +168,7 @@ function on(id, fn) {
 function wireUI() {
   on('boot-screen', startApp);
   on('player-btn', togglePlayer);
+  on('lead-btn', () => openPC('team'));
   on('pc-btn', () => openPC('dex'));
   on('battle-btn', initBattleMode);
   on('nav-prev', () => nav(-1));

@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=18.4.0">
-    <link rel="stylesheet" href="css/gba.css?v=18.4.0">
+    <link rel="stylesheet" href="css/main.css?v=18.5.0">
+    <link rel="stylesheet" href="css/gba.css?v=18.5.0">
 </head>
 <body>
 
@@ -67,6 +67,12 @@
             <button class="nav-btn" id="nav-next">▶</button>
         </div>
 
+        <!-- LEAD chip: your lead Pokémon sets the difficulty of the whole
+             game (wild levels, who sends out first), and until now it was
+             invisible. Lives in the toolbar slot the VOICE button vacated. -->
+        <button class="tool-btn" id="lead-btn" title="Your lead Pokémon — it sets how tough wild Pokémon are. Tap to change it.">
+            <img id="lead-sprite" alt="" src=""><span id="lead-label">LEAD</span>
+        </button>
         <button class="tool-btn" id="cry-btn" title="Play this Pokémon's cry"><span class="btn-icon">💥</span> CRY</button>
         <button class="tool-btn" id="shiny-btn" title="Show the rare shiny coloring"><span class="btn-icon">✨</span> SHINY</button>
         <button class="tool-btn" id="random-btn" title="Jump to a random Pokémon"><span class="btn-icon">🎲</span> RNDM</button>
@@ -98,7 +104,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 18.4 - TRAINER'S JOURNEY</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 18.5 - TRAINER'S JOURNEY</div>
         </div>
     </div>
 </div>
@@ -151,6 +157,9 @@
                 <div class="hp-box-player">
                     <h3 class="pkmn-name" id="player-name">PLAYER PKMN <span class="lvl">Lv50</span></h3>
                     <div class="hp-bar-container"><div class="hp-fill" id="player-hp-bar"></div></div>
+                    <!-- XP bar: the game had no XP readout anywhere, so "how
+                         close am I to levelling up" was invisible. -->
+                    <div class="xp-bar-container"><div class="xp-fill" id="player-xp-bar"></div></div>
                     <div style="text-align: right; font-size: 10px; color: #000; font-weight: bold; margin-top:2px;" id="player-hp-text">100/100</div>
                 </div>
             </div>
@@ -345,6 +354,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=18.4.0"></script>
+<script type="module" src="js/main.js?v=18.5.0"></script>
 </body>
 </html>

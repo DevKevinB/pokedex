@@ -5,6 +5,13 @@
 // ============================================================
 
 import { MAX_POKEMON, getTypeMultiplier, typeColors, sleep, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
+// All fight maths lives in engine.js and is unit-tested there. Nothing in this
+// file should recompute damage, catch odds or XP by hand ever again.
+import {
+  computeStats, computeDamage, catchProbability, xpForKO,
+  pickMove as enginePickMove, usableMoves, clampPower, shuffle, xpProgress,
+  wildLevel as engineWildLevel
+} from './engine.js';
 import { getPokemon, getMove, getSpecies, getEvolution } from './api.js';
 import { state, player, recordCatch, ensureMon, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName } from './state.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
@@ -12,6 +19,7 @@ import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
 import { GYMS } from './gymdata.js';
 import { gymRun, clearGymRun, recordGymWin } from './gym.js';
+import { activeHabitat, habitatEncounterLevel } from './explore.js';
 
 export const battleState = {
   isSparkle: false,
@@ -41,17 +49,34 @@ export const battleState = {
 // that lands on whatever battle starts next.
 const stale = e => e !== battleState.epoch;
 
+// ---- party XP share ----
+// The KO'er earns full XP; everyone else on the team earns half for being
+// there. Without this, 269 battles fund exactly ONE Pokémon and the other five
+// sit at Lv5 forever — which is why the boys' "teams" were really just a lead
+// with five passengers. Returns display lines for the victory screen.
+const PARTY_XP_SHARE = 0.5;
+function awardPartyXp(koerId, amount) {
+  const lines = [];
+  const team = battleState.teamIds.length ? battleState.teamIds : [koerId];
+  team.forEach(id => {
+    if (id == null) return;
+    const share = id === koerId ? amount : Math.floor(amount * PARTY_XP_SHARE);
+    if (share <= 0) return;
+    const before = monLevel(id);
+    const ups = addXp(id, share);
+    if (ups > 0) {
+      const f = battleState.loaded[id];
+      const nm = (f?.name || nickOf(id) || `#${id}`).toUpperCase();
+      lines.push(`${nm} grew from Lv${before} to Lv${monLevel(id)}!`);
+    }
+  });
+  return lines;
+}
+
 const active = () => battleState.loaded[battleState.teamIds[battleState.activeIdx]];
 
-// ---- Junior Mode combat floor ----
-// ART has to be able to WIN a fight, not merely survive one. Without an
-// outgoing floor a Lv8 starter needs ~84 turns to drop a Lv80 gym ace while
-// sitting pinned at 1 HP — which reads to a 4-year-old as "the game is broken".
-// The floor guarantees visible progress; the ceiling keeps his own HP bar
-// draining gracefully instead of bottoming out on the first hit.
-// None of this is ever shown or announced, and none of it applies in VS.
-const JUNIOR_MIN_HIT = 0.15;   // outgoing: >= 15% of the target's max HP
-const JUNIOR_MAX_TAKE = 0.40;  // incoming: <= 40% of his own max HP per hit
+// Is the current player ART, in a mode where his accommodations apply?
+// The floor/ceiling values themselves live in engine.js.
 function juniorActive() {
   try { return !!player().settings.junior && !battleState.versusActive; }
   catch (e) { return false; }
@@ -60,16 +85,7 @@ function juniorActive() {
 function logMsg(msg) { document.getElementById('battle-log').innerText = msg; }
 const show = (id, on = true) => { document.getElementById(id).style.display = on ? 'flex' : 'none'; };
 
-// ---- stat math ----
-function computeStats(data, level) {
-  const base = n => data.stats.find(s => s.stat.name === n)?.base_stat || 50;
-  return {
-    maxHp: Math.floor((base('hp') * 2 * level) / 100 + level + 10),
-    atk: Math.floor((base('attack') * 2 * level) / 100 + 5),
-    def: Math.floor((base('defense') * 2 * level) / 100 + 5),
-    speed: Math.floor((base('speed') * 2 * level) / 100 + 5)
-  };
-}
+// computeStats now comes from engine.js (and includes spatk/spdef).
 
 async function buildFighter(id, level, side) {
   const data = await getPokemon(id);
@@ -82,16 +98,25 @@ async function buildFighter(id, level, side) {
     catch (e) { /* default stands */ }
   }
 
-  let validMoves = data.moves.filter(m => !['swords-dance', 'growl', 'tail-whip', 'splash'].includes(m.name));
-  validMoves.sort(() => 0.5 - Math.random());
-  validMoves = validMoves.slice(0, 4);
-  const moves = await Promise.all(validMoves.map(async m => {
+  // Fetch a few more than we need, THEN filter to real attacks. The old code
+  // took 4 at random and defaulted every null power to 40, which is how
+  // Hypnosis became a 40-power attack and Growl became a punch.
+  const candidates = shuffle(data.moves).slice(0, 10);
+  const fetched = await Promise.all(candidates.map(async m => {
     try {
-      const mData = await getMove(m.url);
-      return { name: mData.name.replace(/-/g, ' '), power: mData.power || 40, type: mData.type };
-    } catch (e) { return { name: 'tackle', power: 40, type: 'normal' }; }
+      const d = await getMove(m.url);
+      return { name: d.name.replace(/-/g, ' '), rawName: d.name, power: d.power, type: d.type, damage_class: d.damage_class };
+    } catch (e) { return null; }
   }));
-  if (moves.length === 0) moves.push({ name: 'tackle', power: 40, type: 'normal' });
+  const moves = usableMoves(fetched.filter(Boolean).map(m => ({ ...m, name: m.rawName })))
+    .slice(0, 4)
+    .map(m => ({
+      name: m.name.replace(/-/g, ' '),
+      power: clampPower(m.power),      // a 250-power nuke the AI would spam
+      type: m.type,
+      damage_class: m.damage_class
+    }));
+  if (moves.length === 0) moves.push({ name: 'tackle', power: 40, type: 'normal', damage_class: 'physical' });
 
   const sparkle = side === 'player' && battleState.isSparkle;
   return {
@@ -153,14 +178,18 @@ export function initBattleMode() {
 
 // team picked in PC → sparkle question (earned via shiny ownership)
 export function onTeamConfirmed() {
-  const leadId = player().team[0] || player().caught[0];
-  const unlocked = hasShiny(leadId);
+  // Sparkle used to demand the shiny of your EXACT current lead species — a
+  // 1-in-50 encounter on one specific Pokémon out of 649. That is not a
+  // feature with a hard unlock, it is a feature that never unlocks. Owning
+  // ANY shiny now turns it on, and the bonus is 1.5x rather than a
+  // fight-trivialising 2.0x.
+  const unlocked = player().shinies.length > 0;
   const btn = document.getElementById('variant-sparkle');
   btn.disabled = !unlocked;
   btn.innerText = unlocked ? '✨ SPARKLE ✨' : '🔒 SPARKLE — CATCH A SHINY!';
   document.getElementById('sparkle-hint').innerText = unlocked
-    ? 'Sparkle variants deal 200% damage in battle!'
-    : `Catch your lead Pokémon's ✨SHINY✨ in the wild (1-in-50 encounters) to unlock Sparkle power!`;
+    ? 'Sparkle variants deal 150% damage in battle!'
+    : `Catch ANY ✨SHINY✨ in the wild (about 1 in 50 encounters) to unlock Sparkle power forever!`;
   show('sparkle-modal');
 }
 
@@ -173,14 +202,20 @@ async function launchBattle(wildId, { sparkle = false, origin = 'arena' } = {}) 
   battleState.activeIdx = 0;
   battleState.loaded = {};
 
-  const leadLevel = monLevel(battleState.teamIds[0]);
-  const wildLevel = Math.max(2, Math.min(100, Math.round(leadLevel * (0.8 + Math.random() * 0.4))));
+  // Explore encounters take the HABITAT's level band (leashed to the lead in
+  // engine.wildLevel). The Battle Arena has no habitat, so it stays keyed to
+  // the lead — that's the one place "scaled to you" is the right answer.
+  const leadLv = monLevel(battleState.teamIds[0]);
+  const habitat = origin === 'explore' ? activeHabitat() : null;
+  const wildLv = habitat
+    ? habitatEncounterLevel(habitat)
+    : engineWildLevel({ base: Math.max(2, leadLv - 2), spread: 4, badges: 0, leadLevel: leadLv, junior: juniorActive() });
 
   try {
     const leadId = battleState.teamIds[0];
     const [lead, wild] = await Promise.all([
       buildFighter(leadId, monLevel(leadId), 'player'),
-      buildFighter(wildId, wildLevel, 'wild')
+      buildFighter(wildId, wildLv, 'wild')
     ]);
     battleState.loaded[leadId] = lead;
     battleState.wild = wild;
@@ -361,11 +396,23 @@ function renderEnemy() {
 
 function updateHP(target) {
   const obj = target === 'wild' ? battleState.wild : active();
+  if (!obj) return;
   const pct = Math.max(0, (obj.hp / obj.maxHp) * 100);
   const bar = document.getElementById(`${target}-hp-bar`);
   bar.style.width = `${pct}%`;
   bar.style.background = pct < 20 ? '#f44336' : pct < 50 ? '#ffeb3b' : '#38c060';
-  if (target === 'player') document.getElementById('player-hp-text').innerText = `${Math.max(0, Math.floor(obj.hp))}/${obj.maxHp}`;
+  if (target === 'player') {
+    document.getElementById('player-hp-text').innerText = `${Math.max(0, Math.floor(obj.hp))}/${obj.maxHp}`;
+    updateXpBar();
+  }
+}
+
+function updateXpBar() {
+  const bar = document.getElementById('player-xp-bar');
+  if (!bar) return;
+  const f = active();
+  if (!f) return;
+  bar.style.width = `${Math.round(xpProgress(player().mons[f.id] || { level: f.level, xp: 0 }) * 100)}%`;
 }
 
 function enableMoves(enabled) {
@@ -450,19 +497,11 @@ async function doSwitch(newIdx, forced) {
 
 // ---- turns ----
 function pickEnemyMove() {
-  const w = battleState.wild;
-  const target = active();
-  // Trainers think — but never against ART. This is gated on MODE, not just on
-  // `trainer`: the old check let the smart AI loose in junior gym battles, so a
-  // gym ace could chain super-effective hits on a 4-year-old.
-  if (battleState.trainer && !juniorActive() && Math.random() < 0.7) {
-    // trainers think: pick the highest-multiplier (then highest-power) move
-    return [...w.moves].sort((a, b) => {
-      const ma = getTypeMultiplier(a.type, target.types), mb = getTypeMultiplier(b.type, target.types);
-      return (mb - ma) || ((b.power || 0) - (a.power || 0));
-    })[0];
-  }
-  return w.moves[Math.floor(Math.random() * w.moves.length)];
+  // Trainers think — but never against ART. Gated on MODE, not just on
+  // `trainer`: the old check let the smart AI loose in junior gym battles.
+  return enginePickMove(battleState.wild.moves, active(), {
+    smart: !!battleState.trainer && !juniorActive()
+  });
 }
 
 async function executeTurn(playerMoveIdx) {
@@ -504,26 +543,14 @@ async function performAttack(attackerRole, defenderRole, move) {
   // Bail before touching HP if the battle ended during that pause.
   if (stale(e)) return;
 
-  let damage = (((2 * attacker.level / 5 + 2) * move.power * (attacker.atk / defender.def)) / 50) + 2;
-  const typeMult = getTypeMultiplier(move.type, defender.types);
-  damage *= typeMult;
-  // STAB
-  if (attacker.types.some(t => t.type?.name === move.type)) damage *= 1.5;
-  // Crit: 1 in 16
-  const crit = Math.random() < 1 / 16 && typeMult > 0;
-  if (crit) damage *= 1.5;
-  if (attackerRole === 'player' && battleState.isSparkle) damage *= 2.0;
-
-  // Junior Mode floor and ceiling. Immune hits stay immune — the floor must
-  // never resurrect a 0x matchup, or type advantage stops meaning anything.
-  if (juniorActive()) {
-    if (attackerRole === 'player' && typeMult > 0) {
-      damage = Math.max(damage, defender.maxHp * JUNIOR_MIN_HIT);
-    }
-    if (defenderRole === 'player') {
-      damage = Math.min(damage, defender.maxHp * JUNIOR_MAX_TAKE);
-    }
-  }
+  // One call, one formula, unit-tested in test/engine.test.mjs.
+  const junior = juniorActive()
+    ? (attackerRole === 'player' ? 'attacker' : defenderRole === 'player' ? 'defender' : null)
+    : null;
+  const { damage, typeMult, crit } = computeDamage(attacker, defender, move, {
+    junior,
+    sparkle: attackerRole === 'player' && battleState.isSparkle
+  });
 
   // Junior mode: player Pokémon can never faint (not in VS — fair fight!)
   if (defenderRole === 'player' && juniorActive()) {
@@ -597,10 +624,11 @@ async function handleEnemyDown() {
   triggerVibration([100, 100, 100]);
 
   // XP per KO
-  const gained = Math.floor((w.base_experience || 60) / 2 + w.level * 3);
+  const gained = xpForKO(w);
   const before = monLevel(f.id);
-  const ups = addXp(f.id, gained);
-  if (ups > 0) t.xpLines.push(`${f.name.toUpperCase()} grew to Lv${monLevel(f.id)}!`);
+  const levelLines = awardPartyXp(f.id, gained);
+  const ups = monLevel(f.id) - before;
+  levelLines.forEach(l => t.xpLines.push(l));
   t.lastXpMon = { id: f.id, name: f.name, level: monLevel(f.id), ups };
   // Queue the evolution. Gym wins are the game's biggest XP source, and until
   // now they could never trigger an evolution at all — nothing set this, and
@@ -725,19 +753,23 @@ function concludeCapture(headline) {
     } catch (e) { /* prompt unavailable — skip */ }
   }
 
-  const gained = Math.floor((w.base_experience || 60) / 2 + w.level * 3);
+  const gained = xpForKO(w);
   const before = monLevel(f.id);
-  const ups = addXp(f.id, gained);
+  const levelLines = awardPartyXp(f.id, gained);
   const after = monLevel(f.id);
+  const ups = after - before;
 
   const shownName = nickOf(w.id) || w.name.toUpperCase();
+  const teamSize = battleState.teamIds.filter(Boolean).length;
   const lines = [
     headline,
     newShiny ? `✨ SHINY ${w.name.toUpperCase()} joins your Box — its sparkle power is yours forever!` :
       newCatch ? `${shownName} was added to your PC Box!` : `${w.name.toUpperCase()} was caught (already in your Box).`,
-    `${f.name.toUpperCase()} gained ${gained} XP!`
+    teamSize > 1
+      ? `${f.name.toUpperCase()} gained ${gained} XP — the rest of the team got ${Math.floor(gained * PARTY_XP_SHARE)} each!`
+      : `${f.name.toUpperCase()} gained ${gained} XP!`
   ];
-  if (ups > 0) lines.push(`${f.name.toUpperCase()} grew from Lv${before} to Lv${after}!`);
+  levelLines.forEach(l => lines.push(l));
   document.getElementById('victory-lines').innerHTML = lines.map(l => `<p>${l}</p>`).join('');
   show('victory-modal');
   battleState.pendingEvolution = ups > 0 ? { id: f.id, level: after, name: f.name } : null;
@@ -745,12 +777,13 @@ function concludeCapture(headline) {
 
 // ---- ball throwing: weaken it, then catch it ----
 function catchChance(ballMod, ballName) {
-  if (player().settings.junior) return 1;
-  if (ballName === 'master-ball') return 1;
   const w = battleState.wild;
-  const hpFactor = (3 * w.maxHp - 2 * Math.max(0, w.hp)) / (3 * w.maxHp); // 1/3 at full HP → 1 near zero
-  const p = hpFactor * ((w.captureRate ?? 45) / 255) * ballMod;
-  return Math.max(0.03, Math.min(0.95, p));
+  return catchProbability({
+    captureRate: w.captureRate ?? 45,
+    ballMod, hp: w.hp, maxHp: w.maxHp,
+    junior: player().settings.junior,
+    master: ballName === 'master-ball'
+  });
 }
 
 function openBallPick() {

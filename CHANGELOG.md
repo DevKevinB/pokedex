@@ -2,6 +2,33 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.5.0] - THE TEAM AND THE WORLD
+
+Week 2 of the council roadmap: growth you can feel, a world with its own shape, and every number in the game finally under test.
+
+### Added
+- **A real team.** Every Pokémon on your team now earns XP from every fight — full XP for the one that lands the knockout, half for everyone else. Before this, 269 battles funded exactly *one* Pokémon and the other five sat at Lv5 forever, so a "team" was really a lead with five passengers.
+- **An XP bar** under the health bar in battle. There was no XP readout anywhere in the game, so how close you were to levelling up — the number a child cares most about — was invisible.
+- **LEAD chip in the toolbar.** Your lead Pokémon decides how tough wild Pokémon are and who fights first, and nothing on screen ever said which one it was. Now it's always visible with its level, and tapping it opens the team picker.
+- **Your first catch automatically becomes your lead.** Until now the team started empty and the game fell back to whichever Pokémon had the lowest Pokédex number — meaning the difficulty of the entire game was set by an invisible accident.
+- **Habitats have their own difficulty.** Deep Forest is gentle, Dragon's Den is not, and every habitat gets harder as you earn badges. Each card shows difficulty pips and an expected level. Wild levels used to scale to your lead everywhere, which is why week four of play was mathematically identical to day two. Junior Mode keeps a tighter leash so a habitat can never become a wall for Art.
+
+### Fixed
+- **Special attackers work.** Every move in the game resolved against physical attack and defence, so Alakazam, Gengar and most gym aces hit like normal Pokémon — exactly the ones a 7-year-old picks because they look coolest. Special moves now use special stats.
+- **No single hit can delete a full-health Pokémon** any more. Losing a favourite to one unseen attack is the least fun thing that can happen in a fight.
+- **Damage now varies 85–100%** per hit, like the real games, so identical attacks stop feeling like a calculator.
+- **Status moves are no longer attacks.** Hypnosis was being presented as a 40-power hit because moves with no attack power were silently defaulted. Self-destruct and friends are also off the board — the opponent AI would find them and spam them.
+- **Sparkle is unlockable.** It required the shiny of your *exact current lead species* — a 1-in-50 encounter on one specific Pokémon out of 649, which in practice meant it never unlocked. Any shiny now unlocks it permanently, and the bonus is 150% rather than a fight-trivialising 200%.
+- **One catch formula.** The dex screen and the battle screen ran different equations, so the same ball on the same Pokémon had different odds depending on which screen you threw it from.
+- **Switching players no longer carries gym damage** from one brother's run into the other's.
+
+### Under the hood
+- **New `js/engine.js`.** Every number that decides what happens in a fight — damage, catch odds, XP, level-ups, opponent move choice, wild levels — now lives in one file that touches no screen and no network, with **16 unit tests** that run in under a second (`npm run test:engine`). This is what makes the next few weeks safe to build: changing a formula stops being a change made blind inside a thousand-line file.
+
+### Testing
+- 121 browser checks plus 16 engine unit tests. `npm test` runs both.
+- Three test assumptions had to be corrected because the game got better: a one-hit-kill versus match now plays out over real turns, and two assertions that quietly depended on the old damage maths were rewritten to assert the actual invariant.
+
 ## [18.4.0] - THE FLOOR
 
 Week 1 of the council roadmap: nothing breaks, nothing gets lost, and ART can finally win a fight.

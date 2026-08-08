@@ -623,16 +623,26 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .moves-grid .run-wide { grid-column: span 2; }
 .switch-item.ballpick.disabled { opacity: 0.4; pointer-events: none; }
 
-/* ---------- v18.3: toolbar reflow after the VOICE button was removed ----------
-   The toolbar is a 4-column grid and VOICE used to fill row 1. With 8 buttons
-   it now lands on a clean 3x4 with no holes:
-     row 1  CRY | SHINY | RNDM | DATA
-     row 2  CATCH (x2)      | CARD (x2)
-     row 3  EXPLORE (x2)    | GYMS (x2)
-   Junior hides DATA and already spans CATCH x3 / CARD x1, so junior only
-   needs CRY to take the slot VOICE left behind. */
-#card-btn { grid-column: span 2; }
-body.junior #cry-btn { grid-column: span 2; }
+/* ---------- v18.5: toolbar with the LEAD chip ----------
+   The toolbar is a 4-column grid. v18.3 removed VOICE and rebalanced to a
+   clean 3x4; v18.5 spends that freed slot on the LEAD chip, so CARD goes back
+   to single width and the grid stays whole:
+     row 1  LEAD | CRY | SHINY | RNDM
+     row 2  DATA | CATCH (x2)  | CARD
+     row 3  EXPLORE (x2)       | GYMS (x2)
+   Junior hides DATA and spans CATCH x3 / CARD x1, landing on the same 3x4.
+   (CATCH already spans 2 in main.css.) */
+
+/* LEAD chip: sprite over a tiny level label. Your lead sets wild levels and
+   sends out first, and until now nothing on screen said which one it was. */
+#lead-btn { padding: 4px 0 5px; gap: 1px; }
+#lead-sprite {
+  width: 34px; height: 34px; object-fit: contain; image-rendering: pixelated;
+  filter: drop-shadow(0 2px 0 rgba(0,0,0,0.35));
+}
+#lead-label { font-size: 7px; letter-spacing: 0; }
+body.junior #lead-sprite { width: 42px; height: 42px; }
+body.junior #lead-label { font-size: 8px; }
 
 /* ---------- v18.1: Gym Circuit ---------- */
 .btn-explore.half { grid-column: span 2; }
@@ -753,4 +763,17 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
   .blink, #evo-sprite.evolving { animation: none !important; filter: none !important; }
   #scanlines { display: none; }
   .hit-anim, .ball-shake, .shake { animation: none !important; }
+}
+
+/* ---------- v18.5: XP bar ----------
+   Thin gold sliver under the HP bar. There was no XP readout anywhere in the
+   game, so "how close am I to levelling up" — the single number a child cares
+   most about — was completely invisible. */
+.xp-bar-container {
+  height: 5px; margin-top: 3px; border: 2px solid var(--px-ink); border-radius: 2px;
+  background: #2a2a3e; overflow: hidden;
+}
+.xp-fill {
+  height: 100%; width: 0%; background: linear-gradient(90deg, #ffd040, #ffec80);
+  transition: width 0.45s ease-out;
 }

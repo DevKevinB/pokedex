@@ -310,6 +310,11 @@ export function recordCatch(id) {
     p.caught.push(id);
     p.caught.sort((a, b) => a - b);
     p.stats.catches++;
+    // Your FIRST catch becomes your lead automatically. Without this the team
+    // stays empty and the game falls back to dex-sorted caught[0] — meaning
+    // the entire difficulty of the game was set by whichever species happened
+    // to have the lowest Pokédex number, which no child would ever guess.
+    if (p.team.length === 0) p.team = [id];
     persist();
     return true;
   }

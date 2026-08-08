@@ -61,6 +61,7 @@ function renderTeamStrip() {
   strip.querySelectorAll('.team-slot').forEach(el =>
     el.addEventListener('click', () => {
       setLead(parseInt(el.dataset.teamId));
+      document.dispatchEvent(new CustomEvent('team-changed'));
       triggerVibration(30);
       renderTeamStrip();
     }));
@@ -166,6 +167,7 @@ export function closePC() {
       return;
     }
     setTeam(teamPick);
+    document.dispatchEvent(new CustomEvent('team-changed'));
     document.getElementById('pc-modal').style.display = 'none';
     document.dispatchEvent(new CustomEvent('team-confirmed'));
     return;

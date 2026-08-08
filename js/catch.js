@@ -3,6 +3,7 @@
 // ============================================================
 
 import { ITEM_SPRITE } from './config.js';
+import { catchProbability } from './engine.js';
 import { state, player, recordCatch, ensureMon, spendMasterBall, setNick } from './state.js';
 import { sfx, stopAllAudio, triggerVibration } from './audio.js';
 import { updateCatchUI } from './dex.js';
@@ -70,14 +71,16 @@ export function executeCatch(ballModifier, ballName, forceSuccess = false) {
     sprite.classList.add('sucked-in');
     sfx.suck();
 
-    let isSuccess;
-    if (forceSuccess || junior || ballName === 'master-ball') {
-      isSuccess = true;
-    } else {
-      const baseRate = state.curSpeciesData?.capture_rate ?? 45;
-      const catchProbability = (baseRate * ballModifier) / 255;
-      isSuccess = Math.random() < catchProbability;
-    }
+    // Same formula as the battle screen (engine.catchProbability). These used
+    // to be two different equations: the dex screen ignored HP and skipped the
+    // clamps, so the same ball on the same species had different odds
+    // depending on which screen you happened to throw it from.
+    const isSuccess = forceSuccess || Math.random() < catchProbability({
+      captureRate: state.curSpeciesData?.capture_rate ?? 45,
+      ballMod: ballModifier,
+      junior,
+      master: ballName === 'master-ball'
+    });
 
     const shakes = isSuccess ? 3 : Math.floor(Math.random() * 3) + 1;
     let shakeCount = 0;
