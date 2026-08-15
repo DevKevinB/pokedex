@@ -142,7 +142,12 @@ export function openTrainerCard() {
   const quests = ensureDailyQuests();
   const pct = Math.round((p.caught.length / MAX_POKEMON) * 100);
 
-  document.getElementById('card-title').innerText = `TRAINER CARD — ${playerName()}`;
+  // The crown is permanent once earned — it is the only thing on this card
+  // that can never be lost, which is rather the point of it.
+  const champ = p.champion;
+  document.getElementById('card-title').innerHTML =
+    `TRAINER CARD — ${playerName()}` +
+    (champ ? ` <span class="champ-crown" title="Champion ${champ.date}">👑</span>` : '');
   document.getElementById('card-dex-pct').innerText = `${p.caught.length}/${MAX_POKEMON} (${pct}%)`;
   document.getElementById('card-dex-fill').style.width = `${pct}%`;
 

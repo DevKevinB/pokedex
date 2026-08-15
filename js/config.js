@@ -3,7 +3,7 @@
 // ============================================================
 
 export const MAX_POKEMON = 649; // Gens 1–5 — the animated pixel sprite era
-export const APP_VERSION = '18.5.0';
+export const APP_VERSION = '18.7.0';
 
 // generation ranges for PC Box tabs
 export const GENERATIONS = [
@@ -80,3 +80,42 @@ export function getTypeMultiplier(attackType, defenderTypes) {
 }
 
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ---- the visual language of a type ----
+// ART cannot read "THUNDER SHOCK". He can read a lightning bolt instantly.
+// Every type gets a picture so a move button works with the words removed.
+export const typeEmoji = {
+  fire: '🔥', water: '💧', grass: '🌿', electric: '⚡', ice: '❄️',
+  fighting: '🥊', poison: '☠️', ground: '⛰️', flying: '🪶', psychic: '🔮',
+  bug: '🐛', rock: '🪨', ghost: '👻', dragon: '🐉', dark: '🌑',
+  steel: '⚙️', fairy: '🧚', normal: '⭐'
+};
+
+const INK_DARK = '#1a1a2a';
+const INK_LIGHT = '#ffffff';
+
+/** WCAG relative luminance of a hex colour. */
+export function luminance(hex) {
+  const h = String(hex || '#777777').replace('#', '');
+  const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const ch = i => {
+    const c = parseInt(n.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4);
+}
+
+const contrast = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+
+// Pick black or white ink for a coloured chip by measuring BOTH options and
+// taking the more readable one. The old code hardcoded white, which put white
+// on the ground type at ~1.4:1 — effectively invisible.
+//
+// Note: don't do this with a luminance threshold picked by eye. My first
+// attempt used L > 0.45, which still handed ground white ink at 2.9:1 when
+// black would have given 7.3:1. Measuring is cheap; guessing is wrong.
+export function inkFor(hex) {
+  const L = luminance(hex);
+  return contrast(L, luminance(INK_DARK)) >= contrast(L, luminance(INK_LIGHT))
+    ? INK_DARK : INK_LIGHT;
+}

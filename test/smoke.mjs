@@ -83,11 +83,21 @@ async function mockRoutes(context) {
 
 
 async function dismissCelebrations(page) {
-  for (let i = 0; i < 8; i++) {
+  // Drains anything modal that can sit between the player and the next tap:
+  // badge/quest celebrations AND the in-world nickname prompt, which since
+  // v18.6 replaces window.prompt() and appears after every new catch.
+  for (let i = 0; i < 10; i++) {
+    if (await page.locator('#nick-modal').isVisible()) {
+      await page.locator('#nick-skip').evaluate(el => el.click());
+      await page.waitForTimeout(300);
+      continue;
+    }
     if (await page.locator('#badge-modal').isVisible()) {
       await page.locator('#badge-ok').evaluate(el => el.click());
       await page.waitForTimeout(400);
-    } else break;
+      continue;
+    }
+    break;
   }
 }
 
@@ -169,12 +179,28 @@ check('nav to raichu', true);
 await page.click('#catch-btn');
 await page.waitForTimeout(400);
 check('ball drawer opens', await page.locator('#ball-drawer.open').count() === 1);
-page.once('dialog', d => d.accept('SPARKY'));
 await page.locator('.ball-opt[data-ball="master-ball"]').click();
 await page.waitForFunction(() => document.getElementById('dex-catch-msg').style.opacity === '1', null, { timeout: 12000 });
 check('master ball catch succeeds', (await page.locator('#dex-catch-msg').innerText()) === 'GOTCHA!');
 await page.waitForFunction(() => document.getElementById('catch-btn').innerText.includes('OWNED'), null, { timeout: 5000 });
 check('catch persisted to UI', true);
+
+// Nicknames are asked in-world now, not via window.prompt() — which an
+// installed iOS PWA suppresses, so on the boys' actual iPad the old prompt
+// silently returned null and the feature did nothing at all.
+await page.waitForFunction(
+  () => document.getElementById('nick-modal').style.display === 'flex',
+  null, { timeout: 8000 }
+).catch(() => {});
+check('nickname asked in-world, not via a native prompt',
+  await page.locator('#nick-modal').isVisible());
+await page.fill('#nick-input', 'SPARKY');
+await page.locator('#nick-ok').evaluate(el => el.click());
+await page.waitForTimeout(400);
+check('nickname saved', await page.evaluate(() => {
+  const s = JSON.parse(localStorage.getItem('pokedexos_save_v2') || '{}');
+  return s.players && s.players[1] && s.players[1].nicks && s.players[1].nicks[26] === 'SPARKY';
+}));
 
 // 3rd catch → celebrations. A random daily quest can also complete on this same
 // catch, and quests and badges share #badge-modal, so the Boulder Badge is NOT
@@ -256,6 +282,8 @@ await page.locator('#victory-continue').evaluate(el => el.click());
 await page.waitForFunction(() => !document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
 await page.waitForTimeout(800);
 await dismissCelebrations(page);
+await page.waitForTimeout(400);
+await dismissCelebrations(page);
 
 // start a fresh battle for the fight-to-victory path
 await page.click('#battle-btn');
@@ -273,7 +301,13 @@ await page.waitForFunction(
 ).catch(() => {});
 // Read the lead's real level rather than assuming Lv5 — it can level up in the
 // battle just fought, which used to make this check fail at random.
-check('wild level within ±20% of lead', await page.evaluate(() => {
+// Assert the rule the game ACTUALLY implements. This check used to assert a
+// ±20% multiplicative band, which v18.5 deliberately replaced with the
+// additive habitat leash — so it had been failing about half the time and
+// passing only when the lead happened to have levelled enough to widen the
+// window. The leash itself is exhaustively covered in engine.test.mjs; this
+// just confirms the rendered battle honours it.
+check('wild level inside the habitat leash', await page.evaluate(() => {
   const m = document.getElementById('wild-name').innerText.match(/lv\s*\.?\s*(\d+)/i);
   if (!m) return false;
   const wild = parseInt(m[1]);
@@ -282,7 +316,10 @@ check('wild level within ±20% of lead', await page.evaluate(() => {
   if (!p) return false;
   const leadId = (p.team && p.team[0]) || (p.caught && p.caught[0]);
   const lead = (p.mons && p.mons[leadId] && p.mons[leadId].level) || 5;
-  return wild >= Math.floor(lead * 0.8) && wild <= Math.ceil(lead * 1.2);
+  const junior = !!(p.settings && p.settings.junior);
+  const lo = Math.max(2, lead - (junior ? 3 : 5));
+  const hi = lead + (junior ? 5 : 8);
+  return wild >= lo && wild <= hi;
 }));
 
 // This block tests the VICTORY FLOW (KO → auto-catch → victory screen), not
@@ -712,6 +749,85 @@ check('import clamps absurd levels and negative xp', fences.levelClamped);
 check('import escapes hostile names', fences.nameEscaped);
 check('import takes an undo snapshot', fences.hasPrev);
 check('UNDO IMPORT restores the previous save', fences.undoRestored);
+
+// ---- v18.7: the game remembers he became Champion ----
+// Before this the entire ending was one <p> in a victory list and the save had
+// no field for it: Gabe could become Champion and by morning there'd be no
+// evidence it ever happened.
+const champ = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const before = S.isChampion();
+  S.recordChampion([25, 26, 1]);
+  const rec = S.championRecord();
+  // Written once, on the day it first happened — a later completion must not
+  // overwrite the original date.
+  const second = S.recordChampion([172]);
+  const after = S.championRecord();
+  return {
+    before, wroteOnce: second === false,
+    teamKept: JSON.stringify(after.team) === JSON.stringify(rec.team),
+    hasDate: /^\d{4}-\d{2}-\d{2}$/.test(rec.date),
+    hasLevels: rec.levels && typeof rec.levels === 'object',
+    persisted: (() => {
+      const s = JSON.parse(localStorage.getItem('pokedexos_save_v2') || '{}');
+      return !!(s.players && s.players[1] && s.players[1].champion);
+    })()
+  };
+});
+check('champion flag starts empty', champ.before === false);
+check('champion record has a date, a team and their levels',
+  champ.hasDate && champ.hasLevels);
+check('champion is written once and keeps the original day',
+  champ.wroteOnce && champ.teamKept);
+check('champion survives to the save file', champ.persisted);
+
+// A pasted import code is untrusted — junk here would crash the proudest
+// screen in the game.
+const champGuard = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const bad = ['{"v":2,"save":{"players":{"1":{"champion":{"date":"nope","team":[1]}}}}}',
+               '{"v":2,"save":{"players":{"1":{"champion":{"date":"2026-01-02","team":[99999,null]}}}}}',
+               '{"v":2,"save":{"players":{"1":{"champion":"yes"}}}}'];
+  return bad.map(b => { try { S.importCode(b); return S.championRecord(); } catch (e) { return 'threw'; } });
+});
+check('malformed champion records are rejected, not rendered',
+  champGuard.every(r => r === null || r === 'threw'));
+
+// The crown renders on the trainer card and nowhere else until earned.
+const crown = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  S.recordChampion([25]);
+  const P = await import('/js/progression.js');
+  P.openTrainerCard();
+  const html = document.getElementById('card-title')?.innerHTML || '';
+  P.closeTrainerCard();
+  return html;
+});
+check('crown appears on the trainer card once Champion', crown.includes('champ-crown'));
+
+// ---- v18.6: the battle screen works without words ----
+// ART cannot read. These assert that the wordless channel actually exists,
+// because if it silently regresses nothing else replaces it for him.
+const visual = await page.evaluate(async () => {
+  const B = await import('/js/battle.js');
+  const C = await import('/js/config.js');
+  // Every type in the game must have a picture, or a move tile falls back to
+  // being a word-only button for the child who can't read words.
+  const missing = Object.keys(C.typeColors).filter(t => !C.typeEmoji[t]);
+  // Ink must be chosen by luminance. White on ground was 1.36:1 — invisible.
+  // Measure the real contrast ratio of every type chip with the ink the game
+  // actually picks. White-on-ground used to be ~1.4:1.
+  const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  let worst = 99, worstType = '';
+  for (const [name, col] of Object.entries(C.typeColors)) {
+    const r = ratio(C.luminance(col), C.luminance(C.inkFor(col)));
+    if (r < worst) { worst = r; worstType = name; }
+  }
+  return { missing, worst, worstType, hasImpactFx: typeof B.battleState === 'object' };
+});
+check('every type has a picture, not just a word', visual.missing.length === 0);
+check(`every type chip clears WCAG AA (worst: ${visual.worstType} ${visual.worst.toFixed(2)}:1)`,
+  visual.worst >= 4.5);
 
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);

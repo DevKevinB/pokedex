@@ -43,6 +43,10 @@ function freshPlayer() {
     quests: {},          // quest progress (Phase 4)
     gyms: { beaten: {} },// gym circuit progress (v18.1)
     settings: { junior: false },
+    // The game used to have no memory that the boy became Champion — the whole
+    // ending was one <p> in a victory list, and by the next morning there was
+    // no evidence in the save that it had ever happened.
+    champion: null,      // { date: 'YYYY-MM-DD', team: [ids], levels: {id:lv} }
     stats: { catches: 0, battlesWon: 0, battlesLost: 0, versusWins: 0 }
   };
 }
@@ -69,6 +73,24 @@ function migrateLegacy(save) {
 
 // Merge a possibly-partial loaded object over fresh defaults so
 // older v2 saves gain new fields automatically as phases ship.
+// A Champion record arriving from a pasted import code is untrusted like
+// everything else in the blob: a bad team array here would crash the Hall of
+// Fame on the proudest screen in the game.
+function validChampion(c) {
+  if (!c || typeof c !== 'object') return null;
+  const date = typeof c.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(c.date) ? c.date : null;
+  if (!date) return null;
+  const team = cleanOrderedIds(c.team).slice(0, 6);
+  if (!team.length) return null;
+  const levels = {};
+  if (c.levels && typeof c.levels === 'object') {
+    for (const [k, v] of Object.entries(c.levels)) {
+      if (isDexId(Number(k))) levels[Number(k)] = Math.max(1, Math.min(100, Math.floor(Number(v)) || 1));
+    }
+  }
+  return { date, team, levels };
+}
+
 function hydratePlayer(raw) {
   const base = freshPlayer();
   if (!raw || typeof raw !== 'object') return base;
@@ -107,7 +129,8 @@ function hydratePlayer(raw) {
     // A team member you don't own is a guaranteed crash on battle start.
     // Order preserved — team[0] is the lead.
     team: cleanOrderedIds(raw.team).filter(id => caught.includes(id)).slice(0, 6),
-    badges: Array.isArray(raw.badges) ? raw.badges : []
+    badges: Array.isArray(raw.badges) ? raw.badges : [],
+    champion: validChampion(raw.champion)
   };
 }
 
@@ -355,3 +378,24 @@ export function importCode(code) {
   }
   persist();
 }
+
+// ---- Champion ----
+// Written once, the first time the circuit is completed. Deliberately NOT
+// overwritten on later completions: this records the day it first happened,
+// which is the thing worth keeping.
+export function recordChampion(teamIds) {
+  const p = player();
+  if (p.champion) return false;
+  const team = (teamIds || []).filter(isDexId).slice(0, 6);
+  if (!team.length) return false;
+  const d = new Date();
+  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const levels = {};
+  team.forEach(id => { levels[id] = monLevel(id); });
+  p.champion = { date, team, levels };
+  persist();
+  return true;
+}
+
+export const isChampion = () => !!player().champion;
+export const championRecord = () => player().champion;

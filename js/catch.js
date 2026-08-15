@@ -4,6 +4,7 @@
 
 import { ITEM_SPRITE } from './config.js';
 import { catchProbability } from './engine.js';
+import { askNickname } from './nickname.js';
 import { state, player, recordCatch, ensureMon, spendMasterBall, setNick } from './state.js';
 import { sfx, stopAllAudio, triggerVibration } from './audio.js';
 import { updateCatchUI } from './dex.js';
@@ -115,10 +116,7 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
       const capturedId = state.curId;
       const capturedName = (state.curData?.name || 'it').toUpperCase();
       setTimeout(() => {
-        try {
-          const nick = prompt(`Give ${capturedName} a nickname? (leave blank to skip)`);
-          if (nick) setNick(capturedId, nick);
-        } catch (e) { /* prompt unavailable */ }
+        askNickname(capturedId, capturedName).then(nick => { if (nick) setNick(capturedId, nick); });
       }, 2100);
     }
     document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: state.curData?.types || [] } }));

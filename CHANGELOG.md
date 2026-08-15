@@ -2,6 +2,44 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.7.0] - THE HALL OF FAME
+
+The game finally has an ending, and it remembers it.
+
+### Added
+- **The Hall of Fame.** Beating all eleven gyms now opens a fullscreen ceremony: the crown, then all six of the team marching on one at a time with a rising beep each, confetti, and a four-note fanfare. There's no timer on it — this is the one screen in the game nobody should be hurried off.
+- **The save remembers.** A Champion record is written the first time the circuit is completed, holding the date, the exact six who did it, and their levels. It is written *once* — finishing again later never overwrites the day it first happened.
+- **A crown that stays.** 👑 sits permanently on the trainer card, with the date on hover. It is the only thing on that card that can never be lost.
+
+### Fixed
+- **A test that had been green by luck for two releases.** The browser suite asserted wild Pokémon spawn within ±20% of your lead's level — but v18.5 deliberately replaced that with the additive habitat leash (lead−3 to lead+5 for Art, lead−5 to lead+8 otherwise). The old check failed about half the time depending on how much the lead had levelled mid-run. The engine was right the whole time; the test was asserting a rule the game no longer had.
+
+### Notes
+- This adds one field to the save file. It's additive — older versions of the app read the new save without complaint, and a Champion record arriving from a pasted import code is validated like everything else, because malformed data should never reach the proudest screen in the game.
+
+### Testing
+- 134 browser checks and 18 engine unit tests, four consecutive clean runs.
+- The habitat leash is now covered exhaustively in the unit tests — every combination of junior mode, lead level, badge count and dice roll — instead of sampled once through a random battle.
+- Hall of Fame rendered and inspected at 375×667 and 390×844; three text styles I'd written below the project's 8px floor were raised.
+
+## [18.6.0] - SHOW, DON'T TELL
+
+Week 3, and the one aimed squarely at Art. Until now roughly all of the battle narrative was text, which means half the audience was playing a game that never told them anything.
+
+### Added
+- **Move buttons are pictures now.** Each move is a big type-coloured tile with its type symbol — 🔥 💧 ⚡ 🌿 — and the move name demoted to a caption underneath. Junior Mode makes the symbol much larger still. This is the difference between Art *choosing* a move and Art mashing a button.
+- **A visual grammar for what just happened.** Effectiveness stopped being a sentence and became a sensation: super-effective is a big red ⏫, a hard screen shake and an oversized damage number; not-very-effective is a small grey ⏬ and a muted thud; a critical hit is a single white flash and a starburst; and an immune hit is a grey ✖ with no particles and no number at all. One shared `impactFx()` drives all of it. The text line stays for Gabe.
+- **Icon-led status.** A fainted Pokémon greys out and tips over instead of only being reported in a line of text, and a health bar under 20% pulses.
+
+### Fixed
+- **Nicknames work on the iPad at all.** They were asked via a native `prompt()`, which an installed iOS app **suppresses** — it returns nothing, without error. So on the boys' actual device the nickname feature has silently done nothing this entire time. On a laptop it was merely bad: a blocking grey box that froze the capture celebration mid-confetti. It's now an in-world panel with the Pokémon's sprite, a text field, and a SKIP button.
+- **Immune hits look immune.** They used to pop a "-1" with full particles while the log said "no effect" — teaching the exact opposite of the lesson type advantage is meant to teach.
+- **Type labels are readable.** Ink is now chosen by measuring contrast rather than always using white. White on the ground type was about 1.4:1, effectively invisible. Every one of the 18 type colours now clears the WCAG AA standard, worst case 4.73:1.
+
+### Testing
+- 127 browser checks and 16 engine unit tests, three consecutive clean runs.
+- New assertions that the wordless channel actually exists: every type has a picture, and every type chip is measured for real contrast — because if this silently regresses, nothing replaces it for Art.
+
 ## [18.5.0] - THE TEAM AND THE WORLD
 
 Week 2 of the council roadmap: growth you can feel, a world with its own shape, and every number in the game finally under test.

@@ -190,3 +190,32 @@ test('wild levels follow the habitat band but stay leashed to the lead', () => {
   assert.equal(late, 11, `expected band + 3 badges * 2, got ${late}`);
   assert.ok(late > early);
 });
+
+// ---- the habitat leash ----
+// This is the guard that stops the volcano becoming a wall for ART. It is a
+// hard clamp relative to the lead's level, NOT the old ±20% multiplicative
+// band — the browser suite asserted the wrong one of those for two releases
+// and flaked about half the time as a result.
+test('wildLevel never escapes the leash, for any rng or badge count', () => {
+  for (const junior of [true, false]) {
+    for (let lead = 2; lead <= 100; lead += 7) {
+      for (let badges = 0; badges <= 11; badges++) {
+        for (const r of [0, 0.25, 0.5, 0.75, 0.9999]) {
+          for (const base of [5, 20, 45, 70]) {
+            const lv = wildLevel({ base, spread: 3, badges, leadLevel: lead, junior, rng: () => r });
+            const lo = Math.max(2, lead - (junior ? 3 : 5));
+            const hi = Math.min(100, lead + (junior ? 5 : 8));
+            assert.ok(lv >= lo && lv <= hi,
+              `junior=${junior} lead=${lead} badges=${badges} base=${base} rng=${r} -> ${lv}, expected ${lo}..${hi}`);
+          }
+        }
+      }
+    }
+  }
+});
+
+test('wildLevel gives ART a tighter ceiling than GABE', () => {
+  const argsFor = j => ({ base: 80, spread: 3, badges: 11, leadLevel: 10, junior: j, rng: () => 0.99 });
+  assert.equal(wildLevel(argsFor(true)), 15);   // 10 + 5
+  assert.equal(wildLevel(argsFor(false)), 18);  // 10 + 8
+});

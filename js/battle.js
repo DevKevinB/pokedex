@@ -4,7 +4,7 @@
 // wild level scaling. Wild Pokémon are auto-caught on victory.
 // ============================================================
 
-import { MAX_POKEMON, getTypeMultiplier, typeColors, sleep, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
+import { MAX_POKEMON, getTypeMultiplier, typeColors, typeEmoji, inkFor, sleep, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
 // All fight maths lives in engine.js and is unit-tested there. Nothing in this
 // file should recompute damage, catch odds or XP by hand ever again.
 import {
@@ -13,13 +13,15 @@ import {
   wildLevel as engineWildLevel
 } from './engine.js';
 import { getPokemon, getMove, getSpecies, getEvolution } from './api.js';
-import { state, player, recordCatch, ensureMon, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName } from './state.js';
+import { state, player, recordCatch, ensureMon, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName, recordChampion, championRecord } from './state.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
 import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
 import { GYMS } from './gymdata.js';
 import { gymRun, clearGymRun, recordGymWin } from './gym.js';
 import { activeHabitat, habitatEncounterLevel } from './explore.js';
+import { askNickname } from './nickname.js';
+import { spawnConfetti } from './catch.js';
 
 export const battleState = {
   isSparkle: false,
@@ -149,9 +151,13 @@ export function exitBattleMode() {
   // Release anyone blocked on the pass-and-play handoff, or that promise
   // never settles and the versus flow hangs forever behind a hidden modal.
   if (passResolver) { const r = passResolver; passResolver = null; r(); }
+  // Same hazard as passResolver: the Hall of Fame blocks on a tap with no
+  // timeout, so teardown has to release it or the ceremony deadlocks the
+  // victory path behind a hidden modal.
+  if (hofResolver) { const r = hofResolver; hofResolver = null; r(); }
   versus.sides = null; versus.order = []; versus.qi = 0;
   ['sparkle-modal', 'victory-modal', 'switch-modal', 'evo-modal', 'loading-modal',
-   'pass-modal', 'ballpick-modal'].forEach(id => show(id, false));
+   'pass-modal', 'ballpick-modal', 'hof-modal', 'nick-modal'].forEach(id => show(id, false));
   document.getElementById('battle-container').classList.remove('active');
   const from = battleState.origin;
   battleState.origin = 'arena';
@@ -310,13 +316,16 @@ function setBattleBackdrop() {
   overlay.classList.add(`bg-${HABITAT_TYPES.includes(t) ? t : (HABITAT_ALIAS[t] || 'grass')}`);
 }
 
-function screenShake() {
+// A super-effective hit should FEEL different from an ordinary one, not just
+// read differently. 'hard' is the super-effective / crit shake.
+function screenShake(strength = 'normal') {
   const view = document.querySelector('.battle-view');
   if (!view) return;
-  view.classList.remove('shake');
+  const cls = strength === 'hard' ? 'shake-hard' : 'shake';
+  view.classList.remove('shake', 'shake-hard');
   void view.offsetWidth;
-  view.classList.add('shake');
-  setTimeout(() => view.classList.remove('shake'), 450);
+  view.classList.add(cls);
+  setTimeout(() => view.classList.remove(cls), 450);
 }
 
 function spawnDamagePop(defenderRole, dmg, typeMult, crit) {
@@ -352,13 +361,22 @@ function spawnParticles(defenderRole, color) {
 // ---- UI ----
 function renderActive() {
   const f = active();
+  unfaintSprites();
   document.getElementById('player-name').innerHTML = `${nickOf(f.id) || f.name} <span class="lvl">Lv${f.level}</span>`;
   document.getElementById('player-sprite').src = f.spriteBack;
   updateHP('player');
+  // Move tiles lead with the TYPE, not the name. A pre-reader picks a move by
+  // recognising fire vs water vs lightning; the name is a caption for GABE.
+  // This is the difference between ART choosing and ART mashing.
   document.getElementById('battle-moves').innerHTML =
-    f.moves.map((m, i) =>
-      `<button class="move-btn" data-move="${i}">${m.name}<span class="type-badge" style="background:${typeColors[m.type] || '#777'}">${m.type}</span></button>`
-    ).join('') +
+    f.moves.map((m, i) => {
+      const bg = typeColors[m.type] || '#777';
+      return `<button class="move-btn type-tile" data-move="${i}" data-type="${m.type}"
+        style="background:${bg}; color:${inkFor(bg)}">
+        <span class="move-emoji">${typeEmoji[m.type] || '⭐'}</span>
+        <span class="move-name">${m.name}</span>
+      </button>`;
+    }).join('') +
     (battleState.canCatch !== false ? `<button class="move-btn aux-btn ball-btn" id="ball-btn">🔴 BALL</button>` : '') +
     `<button class="move-btn aux-btn" id="switch-btn">🔄 SWITCH</button>
      <button class="move-btn aux-btn run-wide" id="run-btn">🏃 RUN</button>`;
@@ -385,6 +403,7 @@ function startBattleUI() {
 }
 
 function renderEnemy() {
+  document.getElementById('wild-sprite')?.classList.remove('fainted');
   const w = battleState.wild;
   const t = battleState.trainer;
   const label = t ? `${w.name} <span class="lvl">Lv${w.level} · ${t.enemyNum + 1}/${t.def.team.length}</span>`
@@ -401,6 +420,7 @@ function updateHP(target) {
   const bar = document.getElementById(`${target}-hp-bar`);
   bar.style.width = `${pct}%`;
   bar.style.background = pct < 20 ? '#f44336' : pct < 50 ? '#ffeb3b' : '#38c060';
+  bar.classList.toggle('critical', pct > 0 && pct < 20);
   if (target === 'player') {
     document.getElementById('player-hp-text').innerText = `${Math.max(0, Math.floor(obj.hp))}/${obj.maxHp}`;
     updateXpBar();
@@ -559,20 +579,94 @@ async function performAttack(attackerRole, defenderRole, move) {
     defender.hp -= damage;
   }
   updateHP(defenderRole);
-  const defSprite = document.getElementById(`${defenderRole}-sprite`);
-  defSprite.classList.add('hit-anim');
-  setTimeout(() => defSprite.classList.remove('hit-anim'), 300);
   triggerVibration([50]);
-  spawnDamagePop(defenderRole, damage, typeMult, crit);
-  spawnParticles(defenderRole, (typeColors[move.type] || '#ffffff'));
-  if (typeMult > 1 || crit) screenShake();
+  impactFx(defenderRole, { damage, typeMult, crit, moveType: move.type });
 
-  if (crit) { sfx.superHit(); logMsg('A CRITICAL HIT!'); await sleep(900); }
-  if (typeMult > 1) { sfx.superHit(); logMsg("It's super effective!"); await sleep(900); }
-  else if (typeMult < 1 && typeMult > 0) { sfx.hit(); logMsg("It's not very effective..."); await sleep(900); }
-  else if (typeMult === 0) { logMsg('It had no effect!'); await sleep(900); }
-  else if (!crit) { sfx.hit(); }
-  await sleep(400);
+  // The text line stays for GABE, but it is no longer the ONLY channel — the
+  // chevron, the shake and the number above already said it.
+  if (crit) { logMsg('A CRITICAL HIT!'); await sleep(750); }
+  if (typeMult > 1) { logMsg("It's super effective!"); await sleep(750); }
+  else if (typeMult < 1 && typeMult > 0) { logMsg("It's not very effective..."); await sleep(750); }
+  else if (typeMult === 0) { logMsg('It had no effect!'); await sleep(750); }
+  await sleep(350);
+}
+
+// ---- the visual grammar ----
+// One place that decides what a hit LOOKS like. Before this, 100% of the
+// battle narrative was text and half the audience is pre-literate: colour,
+// motion and size are the channel a 4-year-old already reads fluently.
+//   super-effective → red ⏫, hard shake, oversized number
+//   not very        → grey ⏬, muted thud, small number
+//   immune          → grey ✖, no particles, no number
+//   crit            → white flash-frame + starburst
+function impactFx(defenderRole, { damage, typeMult, crit, moveType }) {
+  const sprite = document.getElementById(`${defenderRole}-sprite`);
+  const arena = document.querySelector('.battle-arena');
+
+  if (typeMult === 0) {
+    // Immune must look like NOTHING happened. The old code popped a "-1" with
+    // full particles while the log said "no effect", which taught the exact
+    // opposite of the lesson type advantage is supposed to teach.
+    spawnMark(defenderRole, '✖', 'fx-immune');
+    sfx.hit();
+    return;
+  }
+
+  if (sprite) {
+    sprite.classList.remove('hit-anim');
+    void sprite.offsetWidth;
+    sprite.classList.add('hit-anim');
+    setTimeout(() => sprite.classList.remove('hit-anim'), 320);
+  }
+
+  const kind = typeMult > 1 ? 'super' : typeMult < 1 ? 'weak' : 'normal';
+  spawnDamagePop(defenderRole, damage, typeMult, crit);
+  spawnParticles(defenderRole, typeColors[moveType] || '#ffffff');
+
+  if (kind === 'super') {
+    spawnMark(defenderRole, '⏫', 'fx-super');
+    screenShake('hard');
+    sfx.superHit();
+  } else if (kind === 'weak') {
+    spawnMark(defenderRole, '⏬', 'fx-weak');
+    sfx.hit();
+  } else {
+    sfx.hit();
+  }
+
+  if (crit) {
+    if (arena) {
+      arena.classList.remove('crit-flash');
+      void arena.offsetWidth;
+      arena.classList.add('crit-flash');
+      setTimeout(() => arena.classList.remove('crit-flash'), 260);
+    }
+    spawnMark(defenderRole, '✳', 'fx-crit');
+    screenShake('hard');
+    sfx.superHit();
+  }
+}
+
+// Fainting is shown before it is said: grey out and tip over.
+function faintSprite(role) {
+  document.getElementById(`${role}-sprite`)?.classList.add('fainted');
+}
+function unfaintSprites() {
+  ['player', 'wild'].forEach(r =>
+    document.getElementById(`${r}-sprite`)?.classList.remove('fainted'));
+}
+
+// A single glyph that floats over the defender — the wordless half of the
+// effectiveness message.
+function spawnMark(defenderRole, glyph, cls) {
+  const host = document.querySelector(defenderRole === 'wild' ? '.opponent-side' : '.player-side')
+            || document.querySelector('.battle-arena');
+  if (!host) return;
+  const el = document.createElement('div');
+  el.className = `impact-mark ${cls}`;
+  el.textContent = glyph;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 900);
 }
 
 async function checkFaints() {
@@ -582,6 +676,7 @@ async function checkFaints() {
     return;
   }
   if (active().hp <= 0) {
+    faintSprite('player');
     logMsg(`${active().name.toUpperCase()} FAINTED!`);
     triggerVibration([500]);
     await sleep(1200);
@@ -620,6 +715,7 @@ async function handleEnemyDown() {
   const w = battleState.wild;
   const f = active();
   if (!t || !w || !f) return;
+  faintSprite('wild');
   logMsg(`${w.name.toUpperCase()} FAINTED!`);
   triggerVibration([100, 100, 100]);
 
@@ -694,9 +790,16 @@ async function handleEnemyDown() {
     caughtNames.join(' · '),
     ...t.xpLines
   ];
-  if (circuitDone) lines.push('👑 YOU BEAT THE ENTIRE GYM CIRCUIT! YOU ARE THE CHAMPION!');
   document.getElementById('victory-lines').innerHTML = lines.map(l => `<p>${l}</p>`).join('');
   show('victory-modal');
+
+  // Becoming Champion is the biggest thing that happens in this game. It used
+  // to be one <p> appended to the list above, sitting beside "#006 Lv53".
+  if (circuitDone) {
+    recordChampion(battleState.teamIds.filter(Boolean));
+    await playHallOfFame();
+    if (stale(e0)) return;
+  }
   // NOTE: pendingEvolution is deliberately NOT cleared here — it is consumed by
   // maybeEvolveThenExit() when the modal is dismissed. Clearing it at this point
   // is exactly what made evolution impossible from a gym win, the game's single
@@ -745,12 +848,10 @@ function concludeCapture(headline) {
   const { wasNew: newCatch, newShiny } = bankCatch(w);
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: w.types || [] } }));
 
-  // nickname (skippable; junior mode never interrupts)
+  // Nickname: in-world, non-blocking, and AFTER the celebration rather than
+  // on top of it. Junior mode is never interrupted — ART cannot type.
   if (newCatch && !player().settings.junior) {
-    try {
-      const nick = prompt(`Give ${w.name.toUpperCase()} a nickname? (leave blank to skip)`);
-      if (nick) setNick(w.id, nick);
-    } catch (e) { /* prompt unavailable — skip */ }
+    askNickname(w.id, w.name).then(nick => { if (nick) setNick(w.id, nick); });
   }
 
   const gained = xpForKO(w);
@@ -898,6 +999,7 @@ async function handleVictory() {
   // Auto-catch-on-KO is already earned the instant it faints — bank it before
   // the capture animation, same reasoning as the ball throw.
   bankCatch(w);
+  faintSprite('wild');
   logMsg(`${w.name.toUpperCase()} FAINTED!`);
   document.dispatchEvent(new CustomEvent('battle-victory'));
   triggerVibration([100, 100, 100]);
@@ -968,6 +1070,10 @@ let passResolver = null;
 export function onPassReady() {
   show('pass-modal', false);
   if (passResolver) { const r = passResolver; passResolver = null; r(); }
+  // Same hazard as passResolver: the Hall of Fame blocks on a tap with no
+  // timeout, so teardown has to release it or the ceremony deadlocks the
+  // victory path behind a hidden modal.
+  if (hofResolver) { const r = hofResolver; hofResolver = null; r(); }
 }
 
 function waitForPass(n) {
@@ -1142,3 +1248,59 @@ async function versusMatchOver(winnerSide) {
 
 // legacy export kept for the sparkle modal buttons
 export function selectFighter() { /* replaced by team flow in v16.1 */ }
+
+// ---- HALL OF FAME ----
+// Six sprites march on one at a time, each with its own rising beep, then the
+// date locks in. Resolves when the child taps CONTINUE — there is no timeout,
+// because this is the one screen in the game nobody should be rushed off.
+let hofResolver = null;
+async function playHallOfFame() {
+  const rec = championRecord();
+  const modal = document.getElementById('hof-modal');
+  const teamEl = document.getElementById('hof-team');
+  const closeBtn = document.getElementById('hof-close');
+  if (!rec || !modal || !teamEl) return;
+
+  document.getElementById('hof-trainer').innerText = `${playerName()} — CHAMPION`;
+  document.getElementById('hof-date').innerText = `ENTERED ${rec.date}`;
+  closeBtn.style.display = 'none';
+
+  // Build every slot up front but hold them invisible; the march is what
+  // reveals them, one at a time.
+  teamEl.innerHTML = rec.team.map(id => {
+    const nick = nickOf(id) || `#${String(id).padStart(3, '0')}`;
+    return `<div class="hof-slot" data-id="${id}">
+      <img src="${PIXEL_SPRITE(id)}" alt="">
+      <small>${String(nick).toUpperCase()}</small>
+      <span class="hof-lv">Lv${rec.levels[id] ?? monLevel(id)}</span>
+    </div>`;
+  }).join('');
+
+  show('hof-modal');
+  sfx.catch();
+
+  const slots = [...teamEl.querySelectorAll('.hof-slot')];
+  for (let i = 0; i < slots.length; i++) {
+    slots[i].classList.add('marched');
+    // Rising scale — each team member is a step further up the fanfare.
+    playBeep(392 + i * 76, 'square', 0.22, 0.28);
+    triggerVibration([40]);
+    await sleep(560);
+  }
+
+  spawnConfetti(document.getElementById('hof-inner'), 64);
+  // Closing four-note flourish on top of the confetti.
+  [523, 659, 784, 1047].forEach((f, i) =>
+    setTimeout(() => playBeep(f, 'square', i === 3 ? 0.75 : 0.2, 0.3), i * 190));
+
+  closeBtn.style.display = 'block';
+  await new Promise(resolve => {
+    hofResolver = resolve;
+    const done = () => {
+      closeBtn.removeEventListener('click', done);
+      show('hof-modal', false);
+      if (hofResolver) { hofResolver = null; resolve(); }
+    };
+    closeBtn.addEventListener('click', done);
+  });
+}

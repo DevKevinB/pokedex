@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=18.5.0">
-    <link rel="stylesheet" href="css/gba.css?v=18.5.0">
+    <link rel="stylesheet" href="css/main.css?v=18.7.0">
+    <link rel="stylesheet" href="css/gba.css?v=18.7.0">
 </head>
 <body>
 
@@ -104,7 +104,7 @@
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
-            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 18.5 - TRAINER'S JOURNEY</div>
+            <div style="text-align: center; font-size: 10px; color: #555; margin-top: 30px; font-weight: bold; letter-spacing: 1px;">VERSION 18.7 - TRAINER'S JOURNEY</div>
         </div>
     </div>
 </div>
@@ -191,6 +191,22 @@
     </div>
 </div>
 
+<!-- Nickname prompt, in-world. Replaces window.prompt(), which in an
+     installed iOS PWA is SUPPRESSED and returns null without throwing — so
+     the nickname feature silently did nothing on the boys' actual device,
+     and on desktop it guillotined the confetti mid-celebration. -->
+<div class="overlay-screen" id="nick-modal" style="z-index: 2500; background: rgba(4,4,16,0.96);">
+    <div class="modal-box" style="text-align:center;">
+        <img id="nick-sprite" alt="" style="width:96px;height:96px;object-fit:contain;image-rendering:pixelated;">
+        <h2 id="nick-title" style="margin:10px 0;">NAME ME?</h2>
+        <input type="text" id="nick-input" maxlength="12" placeholder="NICKNAME" autocomplete="off">
+        <div style="display:flex; gap:10px; margin-top:14px;">
+            <button class="btn-large btn-reg" id="nick-skip" style="flex:1;">SKIP</button>
+            <button class="btn-large btn-reg" id="nick-ok" style="flex:1;">✏️ NAME</button>
+        </div>
+    </div>
+</div>
+
 <!-- The failure net's in-world apology. Icon-led and four words, because the
      person most likely to see it cannot read a stack trace or a sentence. -->
 <div class="overlay-screen" id="oops-modal" style="z-index: 2700; background: rgba(4,4,16,0.98);">
@@ -234,6 +250,20 @@
     <div class="modal-box">
         <div id="victory-lines"></div>
         <button class="btn-large btn-reg" id="victory-continue">CONTINUE ▶</button>
+    </div>
+</div>
+
+<!-- HALL OF FAME. The ending. Before v18.7 becoming Champion was a single
+     line of 9px text in a victory list, rendered beside "#006 Lv53", and the
+     save had no field to remember it by. -->
+<div class="overlay-screen" id="hof-modal" style="z-index: 3200; background: #05050e; flex-direction: column;">
+    <div id="hof-inner">
+        <div id="hof-crown">👑</div>
+        <h1 id="hof-title">HALL OF FAME</h1>
+        <div id="hof-trainer"></div>
+        <div id="hof-team"></div>
+        <div id="hof-date"></div>
+        <button class="btn-large btn-reg" id="hof-close" style="margin-top:16px; display:none;">CONTINUE ▶</button>
     </div>
 </div>
 
@@ -354,6 +384,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=18.5.0"></script>
+<script type="module" src="js/main.js?v=18.7.0"></script>
 </body>
 </html>

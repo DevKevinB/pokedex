@@ -777,3 +777,125 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
   height: 100%; width: 0%; background: linear-gradient(90deg, #ffd040, #ffec80);
   transition: width 0.45s ease-out;
 }
+
+/* ============================================================
+   v18.6: SHOW, DON'T TELL
+   ART is a pre-reader. Before this release ~100% of the battle narrative was
+   text, which means half the audience was playing a game that never told them
+   anything. Everything below replaces a word with a picture, a colour or a
+   movement. Nothing here is decoration.
+   ============================================================ */
+
+/* ---- move tiles: the type IS the button ---- */
+.move-btn.type-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 10px 4px; border: 3px solid var(--px-ink); border-radius: 3px;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.45); text-transform: none;
+}
+.move-btn.type-tile:active { transform: translate(3px, 3px); box-shadow: none; }
+.move-emoji { font-size: 24px; line-height: 1; filter: drop-shadow(0 2px 0 rgba(0,0,0,0.35)); }
+.move-name { font-size: 7px; letter-spacing: 0; opacity: 0.92; text-align: center; }
+/* ART gets a picture and almost no caption; GABE keeps the name readable. */
+body.junior .move-emoji { font-size: 38px; }
+body.junior .move-name { font-size: 8px; }
+.move-btn.type-tile[disabled] { opacity: 0.45; }
+
+/* ---- impact marks: the wordless half of "super effective" ---- */
+.impact-mark {
+  position: absolute; left: 50%; top: 18%; transform: translateX(-50%);
+  font-size: 40px; z-index: 30; pointer-events: none;
+  animation: markRise 0.85s ease-out forwards;
+  text-shadow: 0 3px 0 rgba(0,0,0,0.5);
+}
+.fx-super  { color: #ff4d4d; font-size: 52px; }
+.fx-weak   { color: #9aa0b0; font-size: 30px; opacity: 0.85; }
+.fx-immune { color: #9aa0b0; font-size: 46px; }
+.fx-crit   { color: #ffffff; font-size: 46px; }
+@keyframes markRise {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(10px) scale(0.6); }
+  25%  { opacity: 1; transform: translateX(-50%) translateY(-4px) scale(1.15); }
+  70%  { opacity: 1; transform: translateX(-50%) translateY(-16px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-34px) scale(0.95); }
+}
+
+/* Super-effective hits shake harder than ordinary ones — the difference is
+   felt before it is read. */
+.battle-view.shake-hard { animation: shakeHard 0.42s cubic-bezier(.36,.07,.19,.97); }
+@keyframes shakeHard {
+  10%, 90% { transform: translate(-4px, 2px); }
+  20%, 80% { transform: translate(7px, -3px); }
+  30%, 50%, 70% { transform: translate(-9px, 3px); }
+  40%, 60% { transform: translate(9px, -2px); }
+}
+
+/* Crit: a single white frame, not a strobe. */
+.battle-arena.crit-flash::after {
+  content: ''; position: absolute; inset: 0; background: #fff; z-index: 25;
+  pointer-events: none; animation: critFlash 0.25s ease-out forwards;
+}
+@keyframes critFlash { 0% { opacity: 0.85; } 100% { opacity: 0; } }
+
+/* ---- icon-led status ---- */
+/* A fainted Pokémon greys out and tips over. Previously the ONLY signal that
+   your Pokémon had fainted was a line of text. */
+.battle-sprite.fainted, #player-sprite.fainted, #wild-sprite.fainted {
+  filter: grayscale(1) brightness(0.65);
+  transform: rotate(-75deg) translateY(14px);
+  opacity: 0.55;
+  transition: transform 0.55s ease-in, filter 0.4s, opacity 0.4s;
+}
+/* Below 20% health the bar pulses — urgency you can see from across a room. */
+.hp-fill.critical { animation: hpPulse 0.9s ease-in-out infinite; }
+@keyframes hpPulse { 50% { opacity: 0.45; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .impact-mark, .battle-view.shake-hard, .battle-arena.crit-flash::after,
+  .hp-fill.critical { animation: none !important; }
+  .impact-mark { opacity: 1; }
+}
+
+/* ============================================================
+   v18.7: THE HALL OF FAME
+   The ending the game never had. Six sprites march on one at a time, each
+   with its own beep, and the crown stays on the trainer card forever.
+   ============================================================ */
+#hof-inner {
+  text-align: center; padding: 20px 14px; max-width: 340px;
+  animation: hofFade 0.8s ease-out;
+}
+@keyframes hofFade { from { opacity: 0; } to { opacity: 1; } }
+#hof-crown { font-size: 52px; animation: hofCrown 2.4s ease-in-out infinite; }
+@keyframes hofCrown { 50% { transform: translateY(-6px) scale(1.06); } }
+#hof-title {
+  font-size: 16px; margin: 6px 0 2px; letter-spacing: 1px;
+  color: #ffd040; text-shadow: 0 0 12px rgba(255,208,64,0.55), 0 3px 0 #6b4a00;
+}
+#hof-trainer { font-size: 9px; color: #fff; margin-bottom: 14px; }
+#hof-team {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  min-height: 158px; align-content: center;
+}
+.hof-slot {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  opacity: 0; transform: translateY(14px) scale(0.7);
+}
+.hof-slot.marched { animation: hofMarch 0.5s cubic-bezier(.2,1.5,.4,1) forwards; }
+@keyframes hofMarch {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.hof-slot img {
+  width: 62px; height: 62px; object-fit: contain; image-rendering: pixelated;
+  filter: drop-shadow(0 0 8px rgba(255,208,64,0.5));
+}
+.hof-slot small { font-size: 8px; color: #ffd040; }
+.hof-slot .hof-lv { font-size: 8px; color: #e6eaf2; }
+#hof-date { font-size: 8px; color: #b6bccb; margin-top: 12px; }
+
+/* The crown that stays. */
+#card-title .champ-crown { color: #ffd040; text-shadow: 0 0 8px rgba(255,208,64,0.6); }
+
+@media (prefers-reduced-motion: reduce) {
+  #hof-crown, #hof-inner { animation: none !important; }
+  .hof-slot { opacity: 1; transform: none; }
+  .hof-slot.marched { animation: none !important; }
+}
