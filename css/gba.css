@@ -693,7 +693,7 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
   box-shadow: inset -3px -3px 0 var(--px-cream-dark), 4px 4px 0 rgba(0,0,0,0.35);
   padding: 12px; margin-bottom: 12px; cursor: pointer;
 }
-.trainer-card.beaten { opacity: 0.65; cursor: default; border-color: #2e8048; }
+.trainer-card.beaten { opacity: 0.8; cursor: pointer; border-color: #2e8048; }
 .trainer-card.locked { filter: grayscale(1) opacity(0.4); cursor: default; }
 .trainer-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .trainer-name { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink); }
@@ -929,3 +929,24 @@ body.junior .move-name { font-size: 8px; }
 @media (prefers-reduced-motion: reduce) {
   #pin-dots.pin-wrong { animation: none !important; }
 }
+
+/* ---------- v18.9: gym reopened (spoils ceremony, rematches, badge case) ---------- */
+.trainer-cta.rematch { color: #2e8048; animation: none; }
+#spoils-grid { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 6px; }
+.spoils-pick {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: #fffef2; border: 3px solid var(--px-ink); border-radius: 4px;
+  padding: 6px 6px 4px; cursor: pointer; box-shadow: 0 3px 0 var(--px-ink);
+}
+.spoils-pick:active { transform: translateY(3px); box-shadow: none; }
+.spoils-pick img { width: 48px; height: 48px; object-fit: contain; image-rendering: pixelated; }
+.spoils-pick small { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); }
+#spoils-grid.picked .spoils-pick { opacity: 0.45; pointer-events: none; }
+#spoils-grid.picked .spoils-pick.chosen { opacity: 1; border-color: #b8952a; box-shadow: 0 0 8px rgba(255,208,64,0.6); }
+#spoils-hint { color: #b8952a !important; font-weight: bold; }
+.card-badge { min-width: 0; }
+.card-badge em { font-style: normal; font-family: var(--pixel-font); font-size: 8px; color: #706848; text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
+.card-badge span.badge-prog { font-family: var(--pixel-font); font-size: 8px; color: #a02020; }
+/* 17 badges with visible goals need more room than the old 4-wide emoji grid */
+#card-badges { grid-template-columns: repeat(3, 1fr); }
+.card-badge.legacy small::after { content: ' ★'; color: #b8952a; }

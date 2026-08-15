@@ -2,6 +2,49 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.9.0] - REOPEN THE GYM
+
+The Gym Circuit is the biggest thing ever built in this game — 58 hand-made
+trainers — and it had three quiet problems: winning sometimes paid less than
+the screen claimed, a beaten trainer could never be fought again, and the badge
+case had nothing to do with any of it.
+
+### Added
+- **The spoils ceremony.** Beating a trainer now shows their team as big
+  tappable sprites. Tap your favorite and it gets the full capture animation —
+  ball, shake, "CAUGHT!" — and a spot on your battle team, marked with a ⭐.
+  The whole team still joins your PC Box either way; the pick is pure ceremony,
+  and skipping it costs nothing.
+- **Rematches!** Beaten trainers now show 🔁 REMATCH and can be fought again
+  for half XP. All 58 trainers were one-shot — beaten once, dead forever
+  behind a checkmark. Beating Champion Rex again replays the whole Hall of
+  Fame ceremony (the recorded "first became Champion" date never changes).
+- **A badge case worth opening.** Badges are now earned by beating Gym
+  Leaders — ROCKO BADGE, MARINA BADGE, one per Leader, plus a VICTORY BADGE
+  for the Victory Road + Elite Four gauntlet — with a late tier that outlasts
+  the circuit: 100 / 300 / all-649 caught, first shiny, a Lv60, and Champion.
+  17 badges total, each still worth a Master Ball, and every badge now shows
+  its goal and live progress right on the card (it used to be hover-only text,
+  on a tablet with no hover). The old 8 badges retired — but any already
+  earned stay in the case with a ★. Nothing is ever taken away.
+
+### Fixed
+- **Gym prizes are honest now.** "You caught their whole team: #095 Lv40"
+  sometimes lied: if you already owned that Pokémon at a lower level, nothing
+  happened at all — 24 of the game's 164 gym awards hit this. An award now
+  raises an owned Pokémon to the promised level (it never lowers one).
+- **Gym wins no longer auto-complete "Catch N Pokémon" quests.** A trainer win
+  was counted as up to six "catches" with no ball thrown.
+- **Daily quests stop resetting at dinnertime.** The quest board rolled over
+  on the world clock (UTC), which in Ohio is 8pm — so evening progress was
+  wiped mid-play, every day. It now rolls at local midnight. (One-time effect
+  of the fix: the current day's board reshuffles once after updating.)
+
+### Testing
+- 144 browser checks plus 18 engine unit tests. New ones cover the ceremony (tap a spoil → it joins the team),
+  rematch availability, the level-raise honesty rule, leader badges firing
+  from gym wins, and gym spoils leaving catch quests alone.
+
 ## [18.8.0] - THE PARENT GATE
 
 The lock and the door finally match. Until now the *reversible* thing (Parent

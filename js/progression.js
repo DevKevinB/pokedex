@@ -7,17 +7,62 @@
 import { MAX_POKEMON } from './config.js';
 import { state, player, persist, addXp, playerName } from './state.js';
 import { sfx, triggerVibration } from './audio.js';
+import { GYMS, trainerKey } from './gymdata.js';
 
-// ---- Badges ----
+// ---- Badges (rebased in v18.9 onto the Gym Circuit) ----
+// The old 8 activity badges were all exhausted by gym win 23 of 58, and five
+// of them fired off gym spoils rather than deliberate play. Badges now read
+// straight from gyms.beaten — one per Leader — plus a late tier that outlasts
+// the circuit. `progress` returns [current, target] for the visible pips.
+const leaderIdxOf = g => g.trainers.length - 1;
+const GYM_BADGES = GYMS.slice(0, 10).map(g => {
+  const li = leaderIdxOf(g);
+  const leader = g.trainers[li].name.replace('LEADER ', '');
+  return {
+    id: `gym-${g.key}`, emoji: g.emoji, name: `${leader} BADGE`,
+    desc: `Beat ${g.trainers[li].name}`,
+    check: p => !!p.gyms?.beaten?.[trainerKey(g.key, li)],
+    progress: p => [p.gyms?.beaten?.[trainerKey(g.key, li)] ? 1 : 0, 1]
+  };
+});
+// 11th circuit badge: the gauntlet — Victory Road + the Elite Four (Champion
+// Rex himself is the late-tier crown, not a badge).
+const GAUNTLET = [
+  ...GYMS.find(g => g.key === 'victory').trainers.map((_, i) => trainerKey('victory', i)),
+  ...GYMS.find(g => g.key === 'elite').trainers.slice(0, -1).map((_, i) => trainerKey('elite', i))
+];
+const gauntletDone = p => GAUNTLET.filter(k => p.gyms?.beaten?.[k]).length;
+
 export const BADGES = [
-  { id: 'boulder', emoji: '🪨', name: 'BOULDER BADGE', desc: 'Catch 3 Pokémon',   check: p => p.caught.length >= 3 },
-  { id: 'cascade', emoji: '💧', name: 'CASCADE BADGE', desc: 'Catch 10 Pokémon',  check: p => p.caught.length >= 10 },
-  { id: 'thunder', emoji: '⚡', name: 'THUNDER BADGE', desc: 'Win 3 battles',     check: p => p.stats.battlesWon >= 3 },
-  { id: 'rainbow', emoji: '🌈', name: 'RAINBOW BADGE', desc: 'Catch 25 Pokémon',  check: p => p.caught.length >= 25 },
-  { id: 'soul',    emoji: '💗', name: 'SOUL BADGE',    desc: 'Win 10 battles',    check: p => p.stats.battlesWon >= 10 },
-  { id: 'marsh',   emoji: '🌿', name: 'MARSH BADGE',   desc: 'Explore 15 times',  check: p => (p.stats.explores || 0) >= 15 },
-  { id: 'volcano', emoji: '🔥', name: 'VOLCANO BADGE', desc: 'Catch 50 Pokémon',  check: p => p.caught.length >= 50 },
-  { id: 'earth',   emoji: '🌍', name: 'EARTH BADGE',   desc: 'Raise one to Lv30', check: p => Object.values(p.mons).some(m => m.level >= 30) }
+  ...GYM_BADGES,
+  { id: 'gauntlet', emoji: '🏔️', name: 'VICTORY BADGE', desc: 'Beat Victory Road & the Elite 4',
+    check: p => gauntletDone(p) === GAUNTLET.length, progress: p => [gauntletDone(p), GAUNTLET.length] },
+  { id: 'dex100', emoji: '📕', name: 'COLLECTOR BADGE', desc: 'Catch 100 Pokémon',
+    check: p => p.caught.length >= 100, progress: p => [Math.min(p.caught.length, 100), 100] },
+  { id: 'dex300', emoji: '📗', name: 'CURATOR BADGE', desc: 'Catch 300 Pokémon',
+    check: p => p.caught.length >= 300, progress: p => [Math.min(p.caught.length, 300), 300] },
+  { id: 'dex649', emoji: '📘', name: 'PROFESSOR BADGE', desc: `Catch all ${MAX_POKEMON}!`,
+    check: p => p.caught.length >= MAX_POKEMON, progress: p => [p.caught.length, MAX_POKEMON] },
+  { id: 'shiny1', emoji: '✨', name: 'SPARKLE BADGE', desc: 'Catch your first shiny',
+    check: p => (p.shinies || []).length >= 1, progress: p => [Math.min((p.shinies || []).length, 1), 1] },
+  { id: 'lv60', emoji: '🚀', name: 'EXPERT BADGE', desc: 'Raise one to Lv60',
+    check: p => Object.values(p.mons).some(m => m.level >= 60),
+    progress: p => [Math.min(Object.values(p.mons).reduce((a, m) => Math.max(a, m.level), 0), 60), 60] },
+  { id: 'champion', emoji: '👑', name: 'CHAMPION BADGE', desc: 'Become the Champion',
+    check: p => !!p.champion, progress: p => [p.champion ? 1 : 0, 1] }
+];
+
+// The retired activity badges. Never awarded any more, but NEVER taken away:
+// one already earned keeps its place in the badge case with a ★.
+const LEGACY_BADGES = [
+  { id: 'boulder', emoji: '🪨', name: 'BOULDER BADGE', desc: 'Caught 3 Pokémon' },
+  { id: 'cascade', emoji: '💧', name: 'CASCADE BADGE', desc: 'Caught 10 Pokémon' },
+  { id: 'thunder', emoji: '⚡', name: 'THUNDER BADGE', desc: 'Won 3 battles' },
+  { id: 'rainbow', emoji: '🌈', name: 'RAINBOW BADGE', desc: 'Caught 25 Pokémon' },
+  { id: 'soul',    emoji: '💗', name: 'SOUL BADGE',    desc: 'Won 10 battles' },
+  { id: 'marsh',   emoji: '🌿', name: 'MARSH BADGE',   desc: 'Explored 15 times' },
+  { id: 'volcano', emoji: '🔥', name: 'VOLCANO BADGE', desc: 'Caught 50 Pokémon' },
+  { id: 'earth',   emoji: '🌍', name: 'EARTH BADGE',   desc: 'Raised one to Lv30' }
 ];
 
 // ---- Daily quests ----
@@ -34,7 +79,12 @@ const QUEST_POOL = [
   { key: 'bug1', label: 'Catch a BUG type', target: 1, kind: 'catch_type', type: 'bug' }
 ];
 
-function todayNumber() { return Math.floor(Date.now() / 86400000); }
+function todayNumber() {
+  // LOCAL days, not UTC. floor(Date.now()/86400000) rolled the quest board
+  // at 8pm in Ohio — a dinnertime progress wipe, every single day.
+  const now = new Date();
+  return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
+}
 
 function pickDailyQuests() {
   // deterministic per day & player, no repeats
@@ -151,10 +201,19 @@ export function openTrainerCard() {
   document.getElementById('card-dex-pct').innerText = `${p.caught.length}/${MAX_POKEMON} (${pct}%)`;
   document.getElementById('card-dex-fill').style.width = `${pct}%`;
 
-  document.getElementById('card-badges').innerHTML = BADGES.map(b =>
-    `<div class="card-badge ${p.badges.includes(b.id) ? 'earned' : ''}" title="${b.desc}">
+  // desc + live progress are VISIBLE now, not hover-only title= text — the
+  // boys play on a tablet, where hover does not exist.
+  const badgeTile = (b, earned, extraClass = '') => {
+    const [cur, target] = earned || !b.progress ? [1, 1] : b.progress(p);
+    return `<div class="card-badge ${earned ? 'earned' : ''} ${extraClass}">
        <span>${b.emoji}</span><small>${b.name.replace(' BADGE', '')}</small>
-     </div>`).join('');
+       <em>${b.desc}</em>
+       ${earned ? '' : `<span class="badge-prog">${cur}/${target}</span>`}
+     </div>`;
+  };
+  document.getElementById('card-badges').innerHTML =
+    BADGES.map(b => badgeTile(b, p.badges.includes(b.id))).join('') +
+    LEGACY_BADGES.filter(b => p.badges.includes(b.id)).map(b => badgeTile(b, true, 'legacy')).join('');
 
   const maxLv = Object.values(p.mons).reduce((a, m) => Math.max(a, m.level), 0) || '--';
   document.getElementById('card-stats').innerHTML = `
@@ -163,7 +222,7 @@ export function openTrainerCard() {
     <div>EXPLORES <strong>${p.stats.explores || 0}</strong></div>
     <div>TOP LEVEL <strong>${maxLv}</strong></div>
     <div>MASTER BALLS <strong>x${p.items.masterBalls}</strong></div>
-    <div>BADGES <strong>${p.badges.length}/8</strong></div>
+    <div>BADGES <strong>${BADGES.filter(b => p.badges.includes(b.id)).length}/${BADGES.length}</strong></div>
     <div>VS WINS <strong>${p.stats.versusWins || 0}</strong></div>
     <div>SHINIES <strong>✨${(p.shinies || []).length}</strong></div>`;
 

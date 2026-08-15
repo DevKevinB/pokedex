@@ -12,12 +12,12 @@ import {
   pickMove as enginePickMove, usableMoves, clampPower, shuffle, xpProgress,
   wildLevel as engineWildLevel
 } from './engine.js';
-import { getPokemon, getMove, getSpecies, getEvolution } from './api.js';
-import { state, player, recordCatch, ensureMon, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName, recordChampion, championRecord } from './state.js';
+import { getPokemon, getMove, getSpecies, getEvolution, nameOf } from './api.js';
+import { state, player, recordCatch, ensureMon, ensureMonAtLeast, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName, recordChampion, championRecord } from './state.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
 import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
-import { GYMS } from './gymdata.js';
+import { GYMS, trainerKey } from './gymdata.js';
 import { gymRun, clearGymRun, recordGymWin } from './gym.js';
 import { activeHabitat, habitatEncounterLevel } from './explore.js';
 import { askNickname } from './nickname.js';
@@ -270,7 +270,12 @@ export async function startTrainerBattle(gymKey, idx) {
   battleState.wildShiny = false;
   battleState.origin = 'gym';
   battleState.canCatch = false;
-  battleState.trainer = { gymKey, idx, def, enemyNum: 0, kos: [], xpLines: [] };
+  // Rematches (unlocked in v18.9) pay half XP — the circuit stays a training
+  // ground without out-earning new challenges.
+  battleState.trainer = {
+    gymKey, idx, def, enemyNum: 0, kos: [], xpLines: [],
+    rematch: !!player().gyms.beaten[trainerKey(gymKey, idx)]
+  };
   battleState.teamIds = player().team.length ? [...player().team] : player().caught.slice(0, 6);
   battleState.activeIdx = 0;
   battleState.loaded = {};
@@ -720,8 +725,8 @@ async function handleEnemyDown() {
   logMsg(`${w.name.toUpperCase()} FAINTED!`);
   triggerVibration([100, 100, 100]);
 
-  // XP per KO
-  const gained = xpForKO(w);
+  // XP per KO (rematches pay half)
+  const gained = t.rematch ? Math.max(1, Math.floor(xpForKO(w) / 2)) : xpForKO(w);
   const before = monLevel(f.id);
   const levelLines = awardPartyXp(f.id, gained);
   const ups = monLevel(f.id) - before;
@@ -772,39 +777,87 @@ async function handleEnemyDown() {
     Object.values(battleState.loaded).forEach(pf => { gymRun.hp[pf.id] = Math.max(1, Math.floor(pf.hp)); });
   }
 
-  // the spoils: their WHOLE team joins your box
-  const caughtNames = [];
+  // the spoils: their WHOLE team joins your box, at the trainer's level
   t.def.team.forEach(m => {
-    const isNew = recordCatch(m.id);
-    ensureMon(m.id, m.level);
-    document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: [] } }));
-    caughtNames.push(`${isNew ? '🆕 ' : ''}#${String(m.id).padStart(3, '0')} Lv${m.level}`);
+    recordCatch(m.id);
+    ensureMonAtLeast(m.id, m.level);
+    // 'gymCatch', not 'catch': a trainer win must never auto-complete a
+    // "Catch N Pokémon" quest with no ball thrown.
+    document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'gymCatch', types: [] } }));
   });
 
   const circuitDone = recordGymWin(t.gymKey, t.idx);
   await sleep(1500);
   if (stale(e0)) return;   // spoils are already banked; just don't paint a dead screen
 
-  const lines = [
-    `🏆 ${t.def.name} DEFEATED!`,
-    `You caught their whole team:`,
-    caughtNames.join(' · '),
-    ...t.xpLines
-  ];
-  document.getElementById('victory-lines').innerHTML = lines.map(l => `<p>${l}</p>`).join('');
+  // The spoils CEREMONY: the beaten roster as tappable sprites. Picking a
+  // favorite plays the full capture animation and takes a team slot — but
+  // the whole team is awarded either way, and CONTINUE never requires a pick.
+  const grid = t.def.team.map(m =>
+    `<button class="spoils-pick" data-id="${m.id}" data-level="${m.level}" title="${nameOf(m.id) || ''}">
+       <img src="${PIXEL_SPRITE(m.id)}" alt="${nameOf(m.id) || ''}"><small>Lv${m.level}</small>
+     </button>`).join('');
+  document.getElementById('victory-lines').innerHTML =
+    `<p>🏆 ${t.def.name} DEFEATED!</p>` +
+    `<p>You caught their whole team:</p>` +
+    `<div id="spoils-grid">${grid}</div>` +
+    `<p id="spoils-hint">⭐ PICK YOUR FAVORITE!</p>` +
+    t.xpLines.map(l => `<p>${l}</p>`).join('');
+  document.getElementById('spoils-grid').addEventListener('click', ev => {
+    const btn = ev.target.closest('.spoils-pick');
+    if (!btn || stale(e0)) return;
+    pickSpoilsFavorite(parseInt(btn.dataset.id), btn, e0);
+  });
   show('victory-modal');
 
   // Becoming Champion is the biggest thing that happens in this game. It used
   // to be one <p> appended to the list above, sitting beside "#006 Lv53".
+  // With rematches unlocked, circuitDone is true on EVERY win once all 58 are
+  // beaten — so the Hall of Fame replays only for the first-ever completion,
+  // or when Champion Rex himself is beaten again.
   if (circuitDone) {
+    const firstTime = !championRecord();
     recordChampion(battleState.teamIds.filter(Boolean));
-    await playHallOfFame();
-    if (stale(e0)) return;
+    const beatRexAgain = t.gymKey === 'elite' && t.idx === GYMS[GYMS.length - 1].trainers.length - 1;
+    if (firstTime || beatRexAgain) {
+      await playHallOfFame();
+      if (stale(e0)) return;
+    }
   }
   // NOTE: pendingEvolution is deliberately NOT cleared here — it is consumed by
   // maybeEvolveThenExit() when the modal is dismissed. Clearing it at this point
   // is exactly what made evolution impossible from a gym win, the game's single
   // biggest source of XP. (Defeat and VS paths below still clear it; correct.)
+}
+
+// ---- spoils ceremony: tap a beaten trainer's Pokémon to make it a favorite ----
+// Plays the full capture animation on the battle stage and gives it a team
+// slot. One pick per victory; the rest of the roster is already banked.
+async function pickSpoilsFavorite(id, btn, e0) {
+  const grid = document.getElementById('spoils-grid');
+  if (!grid || grid.classList.contains('picked')) return;
+  grid.classList.add('picked');
+  btn.classList.add('chosen');
+
+  const sprite = document.getElementById('wild-sprite');
+  sprite.classList.remove('fainted');
+  sprite.src = PIXEL_SPRITE(id);
+  sprite.style.opacity = 1;
+  show('victory-modal', false);
+  await playCaptureAnimation('poke-ball');
+  if (stale(e0)) return;
+
+  const team = player().team;
+  let slotLine;
+  if (team.includes(id)) slotLine = '⭐ ALREADY ON YOUR TEAM!';
+  else if (team.length < 6) { team.push(id); slotLine = '⭐ IT JOINED YOUR TEAM!'; }
+  else { team[5] = id; slotLine = '⭐ IT TOOK TEAM SLOT 6!'; }
+  persist();
+  sfx.catch();
+
+  const hint = document.getElementById('spoils-hint');
+  if (hint) hint.innerText = slotLine;
+  show('victory-modal');
 }
 
 // ---- shared capture conclusion (KO'd or balled) ----

@@ -124,11 +124,13 @@ function renderTrainerList() {
         </div>
         <div class="trainer-taunt">"${t.taunt}"</div>
         <div class="trainer-roster">${roster}</div>
-        ${unlocked && !beaten ? '<div class="trainer-cta">⚔️ TAP TO BATTLE</div>' : ''}
+        ${unlocked ? (beaten ? '<div class="trainer-cta rematch">🔁 REMATCH — HALF XP</div>' : '<div class="trainer-cta">⚔️ TAP TO BATTLE</div>') : ''}
       </div>`;
     }).join('');
 
-  body.querySelectorAll('.trainer-card:not(.locked):not(.beaten)').forEach(el =>
+  // Beaten trainers are re-fightable (v18.9). They were dead behind this
+  // selector's :not(.beaten) — 58 hand-authored trainers, each playable once.
+  body.querySelectorAll('.trainer-card:not(.locked)').forEach(el =>
     el.addEventListener('click', () => {
       const idx = parseInt(el.dataset.idx);
       if (player().caught.length === 0) { dialog({ icon: '🔴', title: 'CATCH ONE FIRST!', text: 'You need a Pokémon to battle.' }); return; }

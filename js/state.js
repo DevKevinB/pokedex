@@ -259,6 +259,16 @@ export function ensureMon(id, level = DEFAULT_LEVEL) {
   return p.mons[id];
 }
 
+// Spoils honesty: a gym award arrives at the trainer's level. If the species
+// is already owned at a lower level it is RAISED to match what the victory
+// screen claims — never lowered. ensureMon alone silently kept the old level
+// for the 24 of 164 awards that duplicate an earlier catch.
+export function ensureMonAtLeast(id, level) {
+  const mon = ensureMon(id, level);
+  if (mon.level < level) { mon.level = level; mon.xp = 0; persist(); }
+  return mon;
+}
+
 export function monLevel(id) {
   return player().mons[id]?.level ?? DEFAULT_LEVEL;
 }

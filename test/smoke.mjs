@@ -214,16 +214,9 @@ check('nickname saved', await page.evaluate(() => {
   return s.players && s.players[1] && s.players[1].nicks && s.players[1].nicks[26] === 'SPARKY';
 }));
 
-// 3rd catch → celebrations. A random daily quest can also complete on this same
-// catch, and quests and badges share #badge-modal, so the Boulder Badge is NOT
-// reliably the first one shown. Drain the whole queue and assert Boulder is in
-// it. (Asserting on the first modal made this check flaky at random.)
-await page.waitForFunction(() => {
-  const m = document.getElementById('badge-modal');
-  const t = document.getElementById('badge-title');
-  return m && m.style.display === 'flex' && t && t.innerText.trim().length > 0;
-}, null, { timeout: 10000 }).catch(() => {});
-check('boulder badge celebration', await page.locator('#badge-modal').isVisible());
+// 3rd catch → maybe a quest celebration, but since the v18.9 badge rebase a
+// plain catch must NEVER fire a badge — badges live on the gym circuit now.
+await page.waitForTimeout(1200);
 const celebrations = [];
 for (let i = 0; i < 6; i++) {
   if (!(await page.locator('#badge-modal').isVisible())) break;
@@ -231,7 +224,8 @@ for (let i = 0; i < 6; i++) {
   await page.locator('#badge-ok').evaluate(el => el.click());
   await page.waitForTimeout(450);
 }
-check('badge title correct', celebrations.some(t => t.includes('BOULDER')));
+check('no badge fires from a plain catch (badges rebased to gyms)',
+  !celebrations.some(t => t.includes('BADGE')));
 await dismissCelebrations(page);
 
 // PC box
@@ -429,15 +423,16 @@ await page.waitForTimeout(300);
 await page.click('#card-btn');
 await page.waitForTimeout(500);
 check('trainer card opens', await page.locator('#card-modal').isVisible());
-check('8 badge slots', await page.locator('.card-badge').count() === 8);
-check('boulder badge earned on card', await page.locator('.card-badge.earned').count() >= 1);
+check('17 badge slots (11 circuit + 6 late tier)', await page.locator('.card-badge').count() === 17);
+check('badges show live progress, not hover text', await page.locator('.badge-prog').count() >= 1);
+check('badges show their goal as visible text', await page.locator('.card-badge em').count() === 17);
 check('3 daily quests', await page.locator('.card-quest').count() === 3);
 check('oak speaks', (await page.locator('#card-oak').innerText()).includes('OAK'));
 const mbOk = await page.evaluate(() => {
   const s2 = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
-  return s2.players[1].items.masterBalls >= 1 && s2.players[1].badges.length >= 1;
+  return s2.players[1].items.masterBalls >= 1;
 });
-check('badge + master ball persisted', mbOk);
+check('starting master ball persisted', mbOk);
 await page.click('#card-close');
 await page.waitForTimeout(300);
 
@@ -658,15 +653,69 @@ for (let turn = 0; turn < 8 && !gymWon; turn++) {
 await page.evaluate(() => { Math.random = window.__r2; });
 check('gym trainer defeated', gymWon);
 check('spoils listed', (await page.locator('#victory-lines').innerText()).toLowerCase().includes('whole team'));
+
+// SPOILS CEREMONY (v18.9): the beaten roster is tappable sprites; picking a
+// favorite plays the capture animation and takes a team slot.
+check('spoils shown as tappable sprites', await page.locator('.spoils-pick').count() >= 1);
+await page.locator('.spoils-pick').first().evaluate(el => el.click());
+await page.waitForFunction(() => {
+  const m = document.getElementById('victory-modal');
+  const hint = document.getElementById('spoils-hint');
+  return m.style.display === 'flex' && hint && hint.innerText.includes('TEAM');
+}, null, { timeout: 15000 });
+check('favorite captured with ceremony and joins the team',
+  await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].team.includes(74)));
 await page.locator('#victory-continue').evaluate(el => el.click());
 await page.waitForTimeout(1200);
 check('returned to gym trainer list', await page.locator('#gym-container.active').count() === 1);
 check('trainer 1 marked beaten', (await page.locator('.trainer-card').first().innerText()).includes('✅'));
+check('beaten trainer offers a REMATCH', (await page.locator('.trainer-card').first().innerText()).includes('REMATCH'));
 const gymSave = await page.evaluate(() => {
   const sv = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
   return sv.players[1].caught.includes(74) && sv.players[1].mons['74']?.level === 8 && !!sv.players[1].gyms.beaten['rock:0'];
 });
 check('trainer team captured + progress saved', gymSave);
+await dismissCelebrations(page);
+
+// SPOILS HONESTY: an award for an already-owned species raises its level to
+// what the victory screen claims (never lowers it). Old code silently no-oped
+// on 24 of the 164 awards.
+const honesty = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  S.ensureMon(60, 5);
+  S.ensureMonAtLeast(60, 40);
+  const raised = S.player().mons[60].level === 40;
+  S.ensureMonAtLeast(60, 10);
+  const kept = S.player().mons[60].level === 40;
+  delete S.player().mons[60];
+  return raised && kept;
+});
+check('spoils raise an owned mon to the claimed level, never lower', honesty);
+
+// BADGE REBASE: beating a gym leader awards that leader's badge + master ball.
+const badgeUnit = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const P = await import('/js/progression.js');
+  const p = S.player();
+  const ballsBefore = p.items.masterBalls;
+  ['rock:1', 'rock:2', 'rock:3', 'rock:4'].forEach(k => { p.gyms.beaten[k] = true; });
+  P.onProgress('win');
+  return { badge: p.badges.includes('gym-rock'), ball: p.items.masterBalls === ballsBefore + 1 };
+});
+check('leader badge fires from gyms.beaten', badgeUnit.badge);
+check('leader badge still pays a master ball', badgeUnit.ball);
+await dismissCelebrations(page);
+
+// QUEST HONESTY: gym spoils dispatch 'gymCatch', which must not tick
+// "Catch N Pokémon" quests — no ball was thrown.
+const questGuard = await page.evaluate(async () => {
+  const P = await import('/js/progression.js');
+  const snap = () => JSON.stringify(P.ensureDailyQuests().list.filter(q => q.key.startsWith('catch')));
+  const before = snap();
+  document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'gymCatch', types: [] } }));
+  return before === snap();
+});
+check('gym spoils no longer tick catch quests', questGuard);
 await dismissCelebrations(page);
 await page.locator('#gym-back-btn').evaluate(el => el.click());
 await page.waitForTimeout(400);
