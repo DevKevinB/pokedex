@@ -10,6 +10,7 @@ import { getPokemon, getNameIndex, nameOf } from './api.js';
 import { state, persist, playerName, DEFAULT_LEVEL } from './state.js';
 import { updateCatchUI } from './dex.js';
 import { triggerVibration, sfx } from './audio.js';
+import { dialog, pinPad } from './dialog.js';
 
 let target = 1;
 
@@ -150,10 +151,10 @@ function wireHoldToOpen() {
     e.preventDefault();
     held = false;
     btn.classList.add('holding');
-    timer = setTimeout(() => {
+    timer = setTimeout(async () => {
       held = true;
       btn.classList.remove('holding');
-      if (!requirePin()) return;
+      if (!(await requirePin())) return;
       document.getElementById('settings-modal').style.display = 'none';
       openDevTools();
     }, HOLD_MS);
@@ -171,23 +172,41 @@ function wireHoldToOpen() {
 }
 
 // ---- PIN gate: set on first open, required ever after ----
+// Runs on the in-app keypad (js/dialog.js), never on prompt(): an installed
+// iOS PWA suppresses prompt() entirely, which made Parent Tools unreachable
+// on the boys' iPad — and the old error path returned true, failing OPEN.
+// Any failure here now fails CLOSED.
 const PIN_KEY = 'pokedexos_devpin';
 
-function requirePin() {
-  let stored = null;
-  try { stored = localStorage.getItem(PIN_KEY); } catch (e) { /* noop */ }
+async function setNewPin(title) {
+  const pin = await pinPad({ title, sub: 'SET A NEW PIN' });
+  if (pin === null) return false;
+  // The confirm pad stays open on a mismatch (shake + clear) until it
+  // matches or the grown-up cancels.
+  const again = await pinPad({ title, sub: 'TYPE IT AGAIN', verify: v => v === pin });
+  if (again === null) return false;
+  localStorage.setItem(PIN_KEY, pin);
+  return true;
+}
+
+export async function requirePin() {
   try {
-    if (!stored) {
-      const pin = prompt('Set a 4-digit PIN for Parent Tools:');
-      if (!pin || !/^\d{4}$/.test(pin.trim())) { alert('PIN not set — must be exactly 4 digits. Try again.'); return false; }
-      localStorage.setItem(PIN_KEY, pin.trim());
-      return true;
+    let stored = null;
+    try { stored = localStorage.getItem(PIN_KEY); } catch (e) { /* fall through: no PIN yet */ }
+    if (!stored) return await setNewPin('🔒 GROWN-UPS ONLY');
+    const entry = await pinPad({ title: '🔒 GROWN-UPS ONLY', sub: 'ENTER PIN', verify: v => v === stored });
+    return entry !== null;
+  } catch (e) {
+    return false; // fail CLOSED — a broken gate stays shut
+  }
+}
+
+async function changePin() {
+  try {
+    if (await setNewPin('🔑 CHANGE PIN')) {
+      await dialog({ icon: '🔑', title: 'PIN CHANGED', text: 'The new PIN starts now.' });
     }
-    const entry = prompt('Enter Parent Tools PIN:');
-    if (entry && entry.trim() === stored) return true;
-    alert('Wrong PIN.');
-    return false;
-  } catch (e) { return true; } // prompt unavailable (kiosk) — fail open for the parent
+  } catch (e) { /* noop — nothing changed */ }
 }
 
 // ---- live name suggestions with sprites ----
@@ -217,6 +236,7 @@ export function initDevTools() {
   const on = (id, fn) => document.getElementById(id)?.addEventListener('click', fn);
   on('dev-close', closeDevTools);
   on('dev-add-btn', addMon);
+  on('dev-change-pin', changePin);
   on('dev-target-1', () => { target = 1; render(); });
   on('dev-target-2', () => { target = 2; render(); });
   document.getElementById('dev-filter')?.addEventListener('input', renderList);

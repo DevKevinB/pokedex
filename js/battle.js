@@ -21,6 +21,7 @@ import { GYMS } from './gymdata.js';
 import { gymRun, clearGymRun, recordGymWin } from './gym.js';
 import { activeHabitat, habitatEncounterLevel } from './explore.js';
 import { askNickname } from './nickname.js';
+import { dialog } from './dialog.js';
 import { spawnConfetti } from './catch.js';
 
 export const battleState = {
@@ -175,7 +176,7 @@ export function exitBattleMode() {
 
 export function initBattleMode() {
   if (player().caught.length === 0) {
-    alert('You need to CATCH a Pokémon before you can battle!');
+    dialog({ icon: '🔴', title: 'CATCH ONE FIRST!', text: 'You need a Pokémon to battle.' });
     return;
   }
   state.appMode = 'battle';
@@ -238,7 +239,7 @@ async function launchBattle(wildId, { sparkle = false, origin = 'arena' } = {}) 
     }
   } catch (e) {
     show('loading-modal', false);
-    alert('Error loading battle data. Network issue?');
+    dialog({ icon: '📡', title: 'NETWORK HICCUP', text: 'The battle could not load. Try again!' });
     exitBattleMode();
   }
 }
@@ -292,7 +293,7 @@ export async function startTrainerBattle(gymKey, idx) {
     logMsg(`${def.name}: "${def.taunt}"`);
   } catch (e) {
     show('loading-modal', false);
-    alert('Error loading battle data. Network issue?');
+    dialog({ icon: '📡', title: 'NETWORK HICCUP', text: 'The battle could not load. Try again!' });
     exitBattleMode();
   }
 }
@@ -698,7 +699,7 @@ async function checkFaints() {
       } else {
         logMsg('YOUR TEAM IS OUT OF FIGHTERS...');
         await sleep(1600);
-        alert('DEFEAT! The wild Pokémon got away. Your team is healed up for next time!');
+        await dialog({ icon: '💨', title: 'IT GOT AWAY!', text: 'Your team is healed and ready to go again.' });
         exitBattleMode();
       }
     }
@@ -744,7 +745,7 @@ async function handleEnemyDown() {
       battleState.wild = next;
     } catch (e) {
       show('loading-modal', false);
-      alert('Network hiccup — the gym battle ended safely.');
+      dialog({ icon: '📡', title: 'NETWORK HICCUP', text: 'The gym battle ended safely.' });
       exitBattleMode();
       return;
     }
@@ -1085,7 +1086,7 @@ function waitForPass(n) {
 export async function startVersusBattle() {
   const P = state.save.players;
   if (!P[1].caught.length || !P[2].caught.length) {
-    alert('Both players need at least 1 Pokémon before a VS battle!');
+    dialog({ icon: '🎮', title: 'NEED TWO TEAMS!', text: 'Both players need a Pokémon first.' });
     return;
   }
   state.appMode = 'battle';
@@ -1130,7 +1131,7 @@ export async function startVersusBattle() {
     await versusRound();
   } catch (e) {
     show('loading-modal', false);
-    alert('Error loading battle data. Network issue?');
+    dialog({ icon: '📡', title: 'NETWORK HICCUP', text: 'The battle could not load. Try again!' });
     battleState.versusActive = false;
     exitBattleMode();
   }

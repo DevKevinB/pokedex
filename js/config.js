@@ -3,7 +3,7 @@
 // ============================================================
 
 export const MAX_POKEMON = 649; // Gens 1–5 — the animated pixel sprite era
-export const APP_VERSION = '18.7.0';
+export const APP_VERSION = '18.8.0';
 
 // generation ranges for PC Box tabs
 export const GENERATIONS = [

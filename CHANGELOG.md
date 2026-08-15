@@ -2,6 +2,48 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.8.0] - THE PARENT GATE
+
+The lock and the door finally match. Until now the *reversible* thing (Parent
+Tools) was locked behind a PIN, while the *irreversible* things (PASTE CODE and
+LOAD FILE, which can replace both boys' entire collections) were one tap from
+the gear icon with no lock at all. And on the iPad the PIN never even appeared —
+installed home-screen apps silently swallow the browser's built-in pop-ups, so
+Parent Tools were unreachable on the boys' actual device.
+
+### Added
+- **A real PIN pad.** Parent Tools now asks for its 4-digit PIN on a big
+  in-game keypad — dots fill in as you type, a wrong PIN shakes and clears.
+  Works everywhere, including the installed iPad app.
+- **PASTE CODE, LOAD FILE and UNDO IMPORT now ask for the PIN first.** These
+  are the only buttons in the game that can replace a save, so they sit behind
+  the same gate as Parent Tools.
+- **🔑 CHANGE PIN** inside Parent Tools.
+- **If you ever forget the PIN:** on a computer, open the game in Chrome,
+  press F12, click "Console", type
+  `localStorage.removeItem('pokedexos_devpin')` and press Enter. The next
+  visit to Parent Tools asks you to set a fresh PIN. (Your PIN is only stored
+  on that one device — each device sets its own.)
+
+### Fixed
+- **The gate now fails SHUT.** If anything went wrong while checking the PIN,
+  the old code let you through. Now it keeps the door closed.
+- **No more grey system pop-ups, anywhere.** All two dozen remaining browser
+  pop-ups (wrong-PIN warnings, "catch a Pokémon first!", network hiccups,
+  save-loaded notices, the defeat message...) are now proper in-game screens
+  with a big icon — which matters twice: the browser ones were invisible on
+  the installed iPad app, and unreadable for ART anyway.
+
+### Testing
+- The suite now instruments the browser's alert/confirm/prompt before the game
+  boots and fails if any of them ever fires — the same permanent-guard
+  treatment the speech ban got in v18.3.
+- New checks: the PIN pad appears in-game, a wrong PIN keeps the gate shut,
+  the right PIN opens it, and PASTE CODE demands the PIN before showing the
+  paste box.
+- Screenshots of the PIN pad and the new dialogs at 375×667 and 390×844, in
+  normal and Junior mode — everything fits on screen.
+
 ## [18.7.0] - THE HALL OF FAME
 
 The game finally has an ending, and it remembers it.

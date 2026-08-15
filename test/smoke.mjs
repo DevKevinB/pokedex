@@ -127,6 +127,18 @@ await page.addInitScript(() => {
   } catch (e) { /* noop */ }
 });
 
+// NO NATIVE DIALOGS, ever. An installed iOS PWA suppresses alert/confirm/
+// prompt (they return null without throwing), so any flow that reaches one
+// is a flow that silently dead-ends on the boys' iPad. v18.8 moved every
+// site to the in-world dialog system; this guard keeps them out for good.
+await page.addInitScript(() => {
+  window.__NATIVE_DIALOG__ = false;
+  for (const fn of ['alert', 'confirm', 'prompt']) {
+    const orig = window[fn].bind(window);
+    window[fn] = function (...args) { window.__NATIVE_DIALOG__ = true; return orig(...args); };
+  }
+});
+
 // Seed a legacy save to validate migration
 await page.addInitScript(() => {
   if (!localStorage.getItem('pokedexos_save_v2')) {
@@ -478,16 +490,28 @@ await page.click('#player-btn');
 await page.waitForTimeout(300);
 check('P1 junior persists', await page.evaluate(() => document.body.classList.contains('junior')));
 
-// PARENT TOOLS: hold to open, add a Pokémon at a chosen level
+// PARENT TOOLS: hold to open, set the PIN on the in-app keypad (the old
+// prompt()-based PIN was unreachable in an installed PWA and failed OPEN)
+const tapPin = async digits => {
+  for (const d of digits) {
+    await page.locator(`#pin-keys button[data-k="${d}"]`).evaluate(el => el.click());
+    await page.waitForTimeout(60);
+  }
+  await page.waitForTimeout(450); // 4th digit resolves after a beat
+};
 await page.click('#settings-btn');
 await page.waitForTimeout(400);
 const devBtn = await page.locator('#dev-open-btn').boundingBox();
-page.once('dialog', d => d.accept('1234')); // set the PIN on first open
 await page.mouse.move(devBtn.x + devBtn.width / 2, devBtn.y + devBtn.height / 2);
 await page.mouse.down();
 await page.waitForTimeout(1500);
 await page.mouse.up();
-await page.waitForTimeout(500);
+await page.waitForTimeout(400);
+check('in-app PIN pad shown (not a native prompt)', await page.locator('#pin-modal').isVisible());
+await tapPin('1234');                  // SET A NEW PIN
+check('pad asks to confirm the new PIN', await page.locator('#pin-modal').isVisible());
+await tapPin('1234');                  // TYPE IT AGAIN
+await page.waitForTimeout(300);
 check('parent tools open after PIN setup', await page.locator('#dev-modal').isVisible());
 check('PIN stored', await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === '1234'));
 // live name suggestions
@@ -519,9 +543,29 @@ check('remove works', removed);
 await page.click('#dev-close');
 await page.waitForTimeout(300);
 
-// turn junior back off for the remaining checks
+// THE PARENT GATE: importing a save can wipe both boys, so PASTE CODE sits
+// behind the PIN — and a wrong PIN keeps the gate SHUT (it used to fail open).
 await page.click('#settings-btn');
 await page.waitForTimeout(400);
+await page.locator('#set-import-paste').evaluate(el => el.click());
+await page.waitForTimeout(300);
+check('paste code asks for the PIN', await page.locator('#pin-modal').isVisible());
+await tapPin('9999');                  // wrong on purpose
+check('wrong PIN keeps the pad up, gate shut',
+  await page.locator('#pin-modal').isVisible() && !(await page.locator('#dlg-input').isVisible()));
+await page.locator('#pin-keys button[data-k="cancel"]').evaluate(el => el.click());
+await page.waitForTimeout(300);
+check('cancelling the PIN never reaches the import', !(await page.locator('#dlg-modal').isVisible()));
+await page.locator('#set-import-paste').evaluate(el => el.click());
+await page.waitForTimeout(300);
+await tapPin('1234');                  // the right PIN opens the in-world paste box
+await page.waitForTimeout(300);
+check('right PIN reaches the in-world paste box', await page.locator('#dlg-input').isVisible());
+await page.locator('#dlg-cancel').evaluate(el => el.click());
+await page.waitForTimeout(300);
+
+// turn junior back off for the remaining checks
+await page.waitForTimeout(100);
 await page.locator('#set-p1-junior').evaluate(el => el.click());
 await page.waitForTimeout(200);
 await page.click('#settings-close');
@@ -832,6 +876,9 @@ check(`every type chip clears WCAG AA (worst: ${visual.worstType} ${visual.worst
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);
 check('speech synthesis never invoked', await page.evaluate(() => window.__SPOKE__ === false));
+
+// ---- and it never opens a native dialog (suppressed in installed PWAs) ----
+check('native alert/confirm/prompt never invoked', await page.evaluate(() => window.__NATIVE_DIALOG__ === false));
 
 await page.screenshot({ path: 'test/screen-dex.png' });
 

@@ -6,6 +6,8 @@
 import { state, player, persist, playerName, setPlayerName, exportCode, importCode, hasPreviousSave, restorePreviousSave } from './state.js';
 import { isMuted, toggleMute, triggerVibration } from './audio.js';
 import { updateCatchUI } from './dex.js';
+import { dialog } from './dialog.js';
+import { requirePin } from './devtools.js';
 
 function applyJuniorClass() {
   document.body.classList.toggle('junior', player().settings.junior);
@@ -69,9 +71,12 @@ function toggleSound() {
 function copySaveCode() {
   const code = exportCode();
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(code).then(() => alert('SAVE CODE COPIED! Paste it on another device to transfer your game.'));
+    navigator.clipboard.writeText(code).then(
+      () => dialog({ icon: '💾', title: 'CODE COPIED!', text: 'Paste it on another device to move your game.' }),
+      () => dialog({ icon: '💾', title: 'COPY THIS CODE', text: 'Select it all, then copy.', input: true, value: code, ok: 'DONE' })
+    );
   } else {
-    prompt('COPY THIS SAVE CODE:', code);
+    dialog({ icon: '💾', title: 'COPY THIS CODE', text: 'Select it all, then copy.', input: true, value: code, ok: 'DONE' });
   }
 }
 
@@ -102,28 +107,31 @@ function applyImportedCode(code) {
     // Tell the truth about what just happened. The old code said "Welcome back"
     // no matter what — including when the import had just emptied both boxes.
     if (after < before) {
-      alert(`SAVE LOADED, BUT HEADS UP:\n\nBefore: ${before} Pokémon\nNow: ${after} Pokémon\n\n` +
-            `That code has FEWER Pokémon than you had. If this is wrong, tap ↩️ UNDO IMPORT ` +
-            `in Settings right now to put it back.`);
+      dialog({ icon: '⚠️', title: 'SAVE LOADED — HEADS UP', text:
+        `Before: ${before} Pokémon\nNow: ${after} Pokémon\n\n` +
+        `That code has FEWER Pokémon than you had. If this is wrong, tap ↩️ UNDO IMPORT right now to put it back.` });
     } else {
-      alert(`SAVE LOADED! ${after} Pokémon across both trainers.`);
+      dialog({ icon: '💾', title: 'SAVE LOADED!', text: `${after} Pokémon across both trainers.` });
     }
   } catch (e) {
     const why = e && e.message === 'EMPTY_SAVE'
       ? 'That code is empty — it has no Pokémon in it.\n\nNothing was changed.'
       : 'That save code was not recognized.\n\nNothing was changed.';
-    alert('ERROR: ' + why);
+    dialog({ icon: '❌', title: 'NOT LOADED', text: why });
   }
 }
 
 // The reversible half of the import fence. Swaps back to the snapshot taken
 // immediately before the last import — and is itself undoable, because the
 // swap keeps the replaced save in the same slot.
-function undoImport() {
-  if (!hasPreviousSave()) { alert('Nothing to undo — no import has been made on this device.'); return; }
+async function undoImport() {
+  if (!(await requirePin())) return;
+  if (!hasPreviousSave()) { dialog({ icon: '↩️', title: 'NOTHING TO UNDO', text: 'No import has been made on this device.' }); return; }
   const now = state.save.players[1].caught.length + state.save.players[2].caught.length;
-  if (!confirm(`UNDO THE LAST IMPORT?\n\nRight now you have ${now} Pokémon. ` +
-               `This swaps back to the save from just before the last import.`)) return;
+  const go = await dialog({ icon: '↩️', title: 'UNDO THE LAST IMPORT?', text:
+    `Right now you have ${now} Pokémon. This swaps back to the save from just before the last import.`,
+    ok: 'UNDO IT', cancel: 'KEEP THIS', danger: true });
+  if (!go) return;
   try {
     restorePreviousSave();
     syncHeaderPlayerBtn();
@@ -131,18 +139,23 @@ function undoImport() {
     refreshSettingsUI();
     updateCatchUI();
     const after = state.save.players[1].caught.length + state.save.players[2].caught.length;
-    alert(`RESTORED. You now have ${after} Pokémon. Tap UNDO again to swap back.`);
+    dialog({ icon: '↩️', title: 'RESTORED', text: `You now have ${after} Pokémon. Tap UNDO again to swap back.` });
   } catch (e) {
-    alert('ERROR: The backup could not be read. Nothing was changed.');
+    dialog({ icon: '❌', title: 'COULD NOT RESTORE', text: 'The backup could not be read. Nothing was changed.' });
   }
 }
 
-function pasteSaveCode() {
-  const code = prompt('PASTE YOUR SAVE CODE HERE:');
+// Importing a save can overwrite BOTH boys' collections, so it sits behind
+// the parent PIN — until v18.8 the reversible Parent Tools were locked while
+// this irreversible pair was one tap from the gear icon.
+async function pasteSaveCode() {
+  if (!(await requirePin())) return;
+  const code = await dialog({ icon: '📋', title: 'PASTE SAVE CODE', text: 'This replaces the save for BOTH trainers.', input: true, placeholder: 'PASTE HERE', ok: 'LOAD', cancel: 'CANCEL' });
   if (code) applyImportedCode(code);
 }
 
-function uploadSaveFile() {
+async function uploadSaveFile() {
+  if (!(await requirePin())) return;
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.json,application/json,.txt';
@@ -158,7 +171,7 @@ function uploadSaveFile() {
         if (!code) throw new Error('NO_CODE');
         applyImportedCode(code);
       } catch (e) {
-        alert('ERROR: Could not read that save file.');
+        dialog({ icon: '❌', title: 'NOT LOADED', text: 'Could not read that save file. Nothing was changed.' });
       }
     };
     reader.readAsText(file);

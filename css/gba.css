@@ -899,3 +899,33 @@ body.junior .move-name { font-size: 8px; }
   .hof-slot { opacity: 1; transform: none; }
   .hof-slot.marched { animation: none !important; }
 }
+
+/* ---------- v18.8: the Parent Gate (PIN pad + in-world dialog) ---------- */
+#pin-dots { display: flex; justify-content: center; gap: 14px; margin: 14px 0 18px; }
+#pin-dots span {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 3px solid var(--px-ink); background: transparent;
+}
+#pin-dots span.filled { background: var(--px-ink); }
+#pin-dots.pin-wrong { animation: pin-shake 0.4s; }
+#pin-dots.pin-wrong span { border-color: #c03028; background: #c03028; }
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+#pin-keys {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  max-width: 220px; margin: 0 auto;
+}
+#pin-keys button {
+  font-family: var(--pixel-font); font-size: 14px; padding: 12px 0;
+  border: 3px solid var(--px-ink); border-radius: 2px;
+  background: #f8f8e8; color: var(--px-ink); box-shadow: 0 3px 0 var(--px-ink);
+  cursor: pointer; touch-action: manipulation;
+}
+#pin-keys button:active { transform: translateY(3px); box-shadow: none; }
+#pin-keys button.pin-cancel { color: #c03028; }
+@media (prefers-reduced-motion: reduce) {
+  #pin-dots.pin-wrong { animation: none !important; }
+}

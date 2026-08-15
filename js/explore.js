@@ -6,6 +6,7 @@
 import { state, player, persist, monLevel } from './state.js';
 import { wildLevel } from './engine.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
+import { dialog } from './dialog.js';
 
 // Gen-1 habitat pools. c=common u=uncommon r=rare L=legendary
 //
@@ -137,7 +138,7 @@ async function enterHabitat(key) {
   const habitat = HABITATS.find(h => h.key === key);
   if (!habitat) return;
   if (player().caught.length === 0) {
-    alert('You need to CATCH a Pokémon before exploring! Try the CATCH button first.');
+    dialog({ icon: '🔴', title: 'CATCH ONE FIRST!', text: 'Tap CATCH on the Pokédex, then come explore.' });
     return;
   }
   currentHabitat = habitat;
