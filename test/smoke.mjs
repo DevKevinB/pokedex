@@ -388,7 +388,29 @@ await dismissCelebrations(page);
 await page.click('#explore-btn');
 await page.waitForTimeout(600);
 check('explore opens', await page.locator('#explore-container.active').count() === 1);
-check('8 habitats listed', await page.locator('.habitat-card').count() === 8);
+check('9 habitats listed (8 + FARAWAY LAND)', await page.locator('#habitat-grid .habitat-card').count() === 9);
+check('FARAWAY LAND locked before Champion', await page.locator('#habitat-grid .habitat-card.locked').count() === 1);
+await page.locator('.habitat-card[data-habitat="faraway"]').click();
+await page.waitForTimeout(400);
+check('locked FARAWAY explains itself instead of starting an encounter',
+  await page.locator('#dlg-modal').isVisible() && !(await page.locator('#encounter-scene').isVisible()));
+await page.locator('#dlg-ok').evaluate(el => el.click());
+await page.waitForTimeout(300);
+
+// WORLD COVERAGE: with the backfill merged, every one of the 649 species must
+// be findable somewhere — a habitat pool or a gym roster. 336 were nowhere.
+const unhomed = await page.evaluate(async () => {
+  const E = await import('/js/explore.js');
+  const G = await import('/js/gymdata.js');
+  const world = new Set();
+  E.HABITATS.forEach(h => ['c', 'u', 'r', 'L'].forEach(k => h[k].forEach(id => world.add(id))));
+  G.GYMS.forEach(g => g.trainers.forEach(t => t.team.forEach(m => world.add(m.id))));
+  let missing = 0;
+  for (let i = 1; i <= 649; i++) if (!world.has(i)) missing++;
+  return missing;
+});
+check('all 649 species reachable in the world', unhomed === 0);
+
 await page.locator('.habitat-card[data-habitat="forest"]').click();
 await page.waitForTimeout(800);
 check('encounter scene plays', await page.locator('#encounter-scene').isVisible());
@@ -897,6 +919,13 @@ const crown = await page.evaluate(async () => {
   return html;
 });
 check('crown appears on the trainer card once Champion', crown.includes('champ-crown'));
+
+// ...and the crown opens FARAWAY LAND.
+await page.click('#explore-btn');
+await page.waitForTimeout(500);
+check('FARAWAY LAND unlocks for the Champion', await page.locator('#habitat-grid .habitat-card.locked').count() === 0);
+await page.click('#explore-back-btn');
+await page.waitForTimeout(400);
 
 // ---- v18.6: the battle screen works without words ----
 // ART cannot read. These assert that the wordless channel actually exists,

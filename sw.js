@@ -9,7 +9,7 @@
 // Bump CACHE_VERSION on every release to purge old shells.
 // ============================================================
 
-const CACHE_VERSION = 'pokedexos-v18.9.0';
+const CACHE_VERSION = 'pokedexos-v18.10.0';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 // DELIBERATELY version-independent. Sprites never change, and at a weekly
 // release cadence a versioned asset cache is emptied every single push — which
@@ -22,7 +22,7 @@ const SHELL_FILES = [
   './css/main.css', './css/gba.css',
   './js/main.js', './js/config.js', './js/state.js', './js/api.js', './js/engine.js',
   './js/audio.js', './js/dex.js', './js/catch.js', './js/battle.js', './js/pc.js',
-  './js/music.js', './js/explore.js', './js/progression.js', './js/settings.js', './js/devtools.js', './js/gym.js', './js/gymdata.js', './js/nickname.js', './js/dialog.js',
+  './js/music.js', './js/explore.js', './js/progression.js', './js/settings.js', './js/devtools.js', './js/gym.js', './js/gymdata.js', './js/nickname.js', './js/dialog.js', './js/habitatfill.js',
   './manifest.webmanifest'
 ];
 

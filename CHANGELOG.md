@@ -2,6 +2,35 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.10.0] - FARAWAY LAND
+
+Until today, 336 of the game's 649 Pokémon lived *nowhere*. Habitats and gym
+trainers between them covered 313 species; the rest could only ever be met by
+flipping to their Pokédex page. Now every single one of the 649 has a home in
+the world.
+
+### Added
+- **336 Pokémon moved into the wild.** Every previously-homeless species now
+  appears in the habitat that matches its type — new bugs and plants in the
+  Deep Forest, new sea creatures in the Ocean, new ghosts in the Tower, and so
+  on. How rare each one is comes from its real in-game strength, so the
+  commons stay common and the powerhouses stay special. (Built from PokeAPI's
+  own type data, checked by a test that fails if even one of the 649 is ever
+  homeless again.)
+- **🌈 FARAWAY LAND** — a ninth region on the Explore map, and the reason to
+  become Champion. It holds **all 28 legendary and mythical Pokémon that live
+  nowhere else** (the Regis, the lake trio, Deoxys, Arceus, Genesect...) plus
+  the strongest fully-evolved Pokémon from the whole dex, at the highest wild
+  levels in the game. It shows on the map with a 🔒 and "👑 BECOME CHAMPION!"
+  until this player finishes the Gym Circuit — a door with a prize behind it,
+  visible from day one. Tapping it early explains what opens it. (Junior Mode's
+  usual safety leash applies inside, so it can never become a wall for Art.)
+
+### Testing
+- 148 browser checks. New ones: all 649 species reachable somewhere in the
+  world, FARAWAY LAND locked before Champion and open after, and the locked
+  card explaining itself instead of failing silently.
+
 ## [18.9.0] - REOPEN THE GYM
 
 The Gym Circuit is the biggest thing ever built in this game — 58 hand-made

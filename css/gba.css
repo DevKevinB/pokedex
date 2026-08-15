@@ -950,3 +950,10 @@ body.junior .move-name { font-size: 8px; }
 /* 17 badges with visible goals need more room than the old 4-wide emoji grid */
 #card-badges { grid-template-columns: repeat(3, 1fr); }
 .card-badge.legacy small::after { content: ' ★'; color: #b8952a; }
+
+/* ---------- v18.10: FARAWAY LAND ---------- */
+.habitat-card.locked { filter: grayscale(1) opacity(0.55); }
+.habitat-card[data-habitat="faraway"]:not(.locked) {
+  border-color: #b8952a;
+  box-shadow: inset -3px -3px 0 var(--px-cream-dark), 4px 4px 0 rgba(0,0,0,0.35), 0 0 10px rgba(255,208,64,0.4);
+}

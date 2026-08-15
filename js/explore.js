@@ -7,6 +7,7 @@ import { state, player, persist, monLevel } from './state.js';
 import { wildLevel } from './engine.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
 import { dialog } from './dialog.js';
+import { BACKFILL, FARAWAY } from './habitatfill.js';
 
 // Gen-1 habitat pools. c=common u=uncommon r=rare L=legendary
 //
@@ -59,6 +60,18 @@ export const HABITATS = [
     L: [149, 151, 384, 483, 487, 643] }
 ];
 
+// v18.10: home the 336 orphans. Every species the hand-curated pools and gym
+// rosters missed is merged into its type's habitat, and FARAWAY LAND — the
+// champion-gated postgame safari holding every remaining legendary — joins
+// the map as a 9th region.
+HABITATS.forEach(h => {
+  const extra = BACKFILL[h.key];
+  if (!extra) return;
+  ['c', 'u', 'r', 'L'].forEach(k =>
+    extra[k].forEach(id => { if (!h[k].includes(id)) h[k].push(id); }));
+});
+HABITATS.push(FARAWAY);
+
 let currentHabitat = null;
 
 const leadLevel = () => {
@@ -108,16 +121,19 @@ function renderHabitats() {
   grid.innerHTML = HABITATS.map(h => {
     // Three pips relative to YOUR lead. Information, never a lock — every
     // habitat stays open, because telling a 4-year-old "not yet" is worse
-    // than letting him wander somewhere hard and come back.
+    // than letting him wander somewhere hard and come back. The one
+    // exception is FARAWAY LAND, which is a PRIZE with a door, not a wall:
+    // it opens the day this player becomes Champion.
+    const locked = h.championOnly && !player().champion;
     const expected = habitatLevel(h);
     const pips = expected > lead + 4 ? 3 : expected > lead - 2 ? 2 : 1;
     const dots = '●'.repeat(pips) + '○'.repeat(3 - pips);
     return `
-    <div class="habitat-card" data-habitat="${h.key}">
-      <span class="habitat-emoji">${h.emoji}</span>
+    <div class="habitat-card ${locked ? 'locked' : ''}" data-habitat="${h.key}">
+      <span class="habitat-emoji">${locked ? '🔒' : h.emoji}</span>
       <span class="habitat-name">${h.name}</span>
-      <small class="habitat-sub">${h.sub}</small>
-      <small class="habitat-diff" data-pips="${pips}">${dots} Lv~${expected}</small>
+      <small class="habitat-sub">${locked ? '👑 BECOME CHAMPION!' : h.sub}</small>
+      ${locked ? '' : `<small class="habitat-diff" data-pips="${pips}">${dots} Lv~${expected}</small>`}
     </div>`;
   }).join('');
   grid.querySelectorAll('.habitat-card').forEach(el =>
@@ -139,6 +155,10 @@ async function enterHabitat(key) {
   if (!habitat) return;
   if (player().caught.length === 0) {
     dialog({ icon: '🔴', title: 'CATCH ONE FIRST!', text: 'Tap CATCH on the Pokédex, then come explore.' });
+    return;
+  }
+  if (habitat.championOnly && !player().champion) {
+    dialog({ icon: '👑', title: 'CHAMPIONS ONLY!', text: 'Beat the whole Gym Circuit to open FARAWAY LAND.' });
     return;
   }
   currentHabitat = habitat;
