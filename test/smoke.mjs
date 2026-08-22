@@ -411,6 +411,27 @@ const unhomed = await page.evaluate(async () => {
 });
 check('all 649 species reachable in the world', unhomed === 0);
 
+// v18.11: habitat difficulty reads LEADER badges (0-11), not all 58 trainer
+// keys — the old count saturated every band at the leash cap, flattening the
+// world's shape.
+const bandGuard = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const E = await import('/js/explore.js');
+  const p = S.player();
+  const forest = E.HABITATS[0];
+  const before = E.habitatLevel(forest);            // deterministic (rng pinned at 0.5)
+  for (let i = 0; i < 20; i++) p.gyms.beaten[`fake${i}:0`] = true;   // plain trainer wins
+  const afterTrainers = E.habitatLevel(forest);
+  p.gyms.beaten['faketown:4'] = true;               // one leader badge
+  const afterLeader = E.habitatLevel(forest);
+  for (let i = 0; i < 20; i++) delete p.gyms.beaten[`fake${i}:0`];
+  delete p.gyms.beaten['faketown:4'];
+  S.persist();
+  return { flat: afterTrainers === before, rises: afterLeader > afterTrainers };
+});
+check('habitat bands ignore plain trainer wins (no saturation)', bandGuard.flat);
+check('habitat bands still rise with leader badges', bandGuard.rises);
+
 await page.locator('.habitat-card[data-habitat="forest"]').click();
 await page.waitForTimeout(800);
 check('encounter scene plays', await page.locator('#encounter-scene').isVisible());
@@ -457,6 +478,29 @@ const mbOk = await page.evaluate(() => {
 check('starting master ball persisted', mbOk);
 await page.click('#card-close');
 await page.waitForTimeout(300);
+
+// v18.11: an earned legacy badge counts in the BADGES stat and renders with
+// its ★ — a boy who had 8/8 must never see his number drop to 0.
+const legacyCount = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const P = await import('/js/progression.js');
+  const p = S.player();
+  p.badges.push('boulder');
+  P.openTrainerCard();
+  // expectation computed from state — earlier parts of the run may have
+  // legitimately earned new-track badges (e.g. a lucky shiny)
+  const newEarned = P.BADGES.filter(b => p.badges.includes(b.id)).length;
+  const expect = `${newEarned + 1}/${P.BADGES.length + 1}`;
+  const txt = document.getElementById('card-stats').innerText;
+  const tiles = document.querySelectorAll('.card-badge').length;
+  const legacyTiles = document.querySelectorAll('.card-badge.legacy').length;
+  P.closeTrainerCard();
+  p.badges = p.badges.filter(b => b !== 'boulder');
+  S.persist();
+  return { ok: txt.includes(expect), tilesOk: tiles === P.BADGES.length + 1, legacyOk: legacyTiles === 1 };
+});
+check('earned legacy badge keeps its place and its count',
+  legacyCount.ok && legacyCount.tilesOk && legacyCount.legacyOk);
 
 // SETTINGS: names, junior mode, sound toggle, save tools
 await page.click('#settings-btn');
@@ -553,10 +597,23 @@ await page.locator('.dev-row[data-id="150"] .dev-mini[data-act="up"]').evaluate(
 await page.waitForTimeout(400);
 const bumped = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].mons['150'].level);
 check('level +5 button works (75)', bumped === 75);
+// Removal confirms first (v18.11): a mis-tapped ✕ used to destroy an earned
+// Pokémon instantly with no undo.
 await page.locator('.dev-row[data-id="150"] .dev-mini[data-act="del"]').evaluate(el => el.click());
 await page.waitForTimeout(400);
+check('remove asks first', await page.locator('#dlg-modal').isVisible());
+const stillThere = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].caught.includes(150));
+check('nothing removed before the answer', stillThere);
+await page.locator('#dlg-cancel').evaluate(el => el.click());
+await page.waitForTimeout(300);
+check('KEEP keeps it', await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].caught.includes(150)));
+await page.locator('.dev-row[data-id="150"] .dev-mini[data-act="del"]').evaluate(el => el.click());
+await page.waitForTimeout(400);
+await page.locator('#dlg-ok').evaluate(el => el.click());
+await page.waitForTimeout(400);
 const removed = await page.evaluate(() => !JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].caught.includes(150));
-check('remove works', removed);
+check('remove works after confirming', removed);
+check('PIN set-date shown to the grown-up', (await page.locator('#dev-pin-date').innerText()).includes('PIN SET'));
 await page.click('#dev-close');
 await page.waitForTimeout(300);
 
@@ -658,6 +715,18 @@ await page.locator('.gym-card[data-gym="rock"]').click();
 await page.waitForTimeout(500);
 check('5 trainers in boulder gym', await page.locator('.trainer-card').count() === 5);
 check('trainer 1 challengeable', (await page.locator('.trainer-card').first().innerText()).includes('TAP TO BATTLE'));
+// v18.11 regression: the 'gymwin' badge event must fire AFTER the win is
+// recorded — circuit badges read gyms.beaten, and until this fix the leader
+// badge only arrived on the NEXT unrelated event.
+await page.evaluate(() => {
+  window.__gymwinFresh = null;
+  document.addEventListener('game-progress', e => {
+    if (e.detail?.kind === 'gymwin' && window.__gymwinFresh === null) {
+      const sv = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+      window.__gymwinFresh = sv.players[1].gyms.beaten['rock:0'] === true;
+    }
+  });
+});
 await page.evaluate(() => { window.__r2 = Math.random; Math.random = () => 0.011; });
 await page.locator('.trainer-card').first().evaluate(el => el.click());
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
@@ -674,6 +743,8 @@ for (let turn = 0; turn < 8 && !gymWon; turn++) {
 }
 await page.evaluate(() => { Math.random = window.__r2; });
 check('gym trainer defeated', gymWon);
+check('badge event fires with the win already recorded',
+  await page.evaluate(() => window.__gymwinFresh === true));
 check('spoils listed', (await page.locator('#victory-lines').innerText()).toLowerCase().includes('whole team'));
 
 // SPOILS CEREMONY (v18.9): the beaten roster is tappable sprites; picking a
@@ -738,6 +809,49 @@ const questGuard = await page.evaluate(async () => {
   return before === snap();
 });
 check('gym spoils no longer tick catch quests', questGuard);
+await dismissCelebrations(page);
+
+// REMATCH, end to end — and the no-evict rule: with a FULL team, picking a
+// spoils favorite must not silently bench anyone (v18.11; team[5] used to be
+// overwritten on one invited tap).
+const originalTeam = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const saved = [...S.player().team];
+  [10, 16, 13].forEach(id => S.recordCatch(id));
+  S.player().team = [25, 1, 26, 10, 16, 13];   // full six, none is #74
+  S.persist();
+  return saved;
+});
+await page.evaluate(() => { window.__r2 = Math.random; Math.random = () => 0.011; });
+await page.locator('.trainer-card').first().evaluate(el => el.click());
+await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 15000 });
+await page.waitForTimeout(500);
+let rematchWon = false;
+for (let turn = 0; turn < 8 && !rematchWon; turn++) {
+  if (await page.locator('#victory-modal').isVisible()) { rematchWon = true; break; }
+  const can = await page.evaluate(() => { const b = document.querySelector('.move-btn[data-move="0"]'); return b && !b.disabled; });
+  if (can) await page.locator('.move-btn[data-move="0"]').evaluate(el => el.click());
+  await page.waitForTimeout(3800);
+  if (await page.locator('#victory-modal').isVisible()) rematchWon = true;
+}
+await page.evaluate(() => { Math.random = window.__r2; });
+check('rematch battle plays and is won', rematchWon);
+await page.locator('.spoils-pick').first().evaluate(el => el.click());
+await page.waitForFunction(() => {
+  const m = document.getElementById('victory-modal');
+  const hint = document.getElementById('spoils-hint');
+  return m.style.display === 'flex' && hint && hint.innerText.includes('BOX');
+}, null, { timeout: 15000 });
+const fullTeamKept = await page.evaluate(() =>
+  JSON.stringify(JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].team) === JSON.stringify([25, 1, 26, 10, 16, 13]));
+check('full team: favorite stays in the box, nobody gets benched', fullTeamKept);
+await page.locator('#victory-continue').evaluate(el => el.click());
+await page.waitForTimeout(1200);
+await page.evaluate(async team => {
+  const S = await import('/js/state.js');
+  S.player().team = team;
+  S.persist();
+}, originalTeam);
 await dismissCelebrations(page);
 await page.locator('#gym-back-btn').evaluate(el => el.click());
 await page.waitForTimeout(400);
@@ -821,6 +935,21 @@ check('exit bumps the battle epoch (orphaned turns go stale)', teardown.epochBum
 check("exit clears versusActive (ART keeps his no-faint shield)", teardown.versusCleared);
 check('exit clears busy, pendingEvolution and bankedCatch',
   teardown.busyCleared && teardown.evoCleared && teardown.catchCleared);
+
+// v18.11: teardown must SETTLE an open nickname prompt, not just hide it —
+// the leaked listeners used to rename the previously caught Pokémon too.
+const nickLeak = await page.evaluate(async () => {
+  const N = await import('/js/nickname.js');
+  const B = await import('/js/battle.js');
+  let settled = 'pending';
+  N.askNickname(25, 'PIKACHU').then(v => { settled = v === null ? 'null' : 'value'; });
+  await new Promise(r => setTimeout(r, 30));
+  B.exitBattleMode();
+  await new Promise(r => setTimeout(r, 80));
+  return { settled, hidden: document.getElementById('nick-modal').style.display === 'none' };
+});
+check('teardown settles an open nickname prompt (no listener leak)',
+  nickLeak.settled === 'null' && nickLeak.hidden);
 
 const fences = await page.evaluate(async () => {
   const S = await import('/js/state.js');

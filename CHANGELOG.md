@@ -2,6 +2,52 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [18.11.0] - THE TUNE-UP
+
+A deep audit of the last three updates — dozens of reviewers combing the code,
+then a second pass trying to disprove every complaint. Fourteen survived.
+Eight were worth fixing; here they are.
+
+### Fixed
+- **Badges arrive at the moment you earn them.** Beating a Gym Leader awarded
+  the badge and its Master Ball only at the *next* thing you did — the win was
+  recorded a beat after the celebration check ran. Same for the Champion
+  badge. Now the badge fires right at the victory (and the Champion badge
+  politely waits until after the Hall of Fame instead of covering it).
+- **Picking a spoils favorite never benches anyone.** With a full team of six,
+  tapping your favorite used to silently overwrite team slot 6 — a team a boy
+  arranged himself, changed by one invited tap with only words as warning.
+  Now a full team is left alone ("⭐ SAFE IN YOUR BOX!") and the confirmation
+  leads with the Pokémon's picture, so Art can read it too. The team spot is
+  also locked in the moment you tap, not after the animation — same rule
+  catches have followed since v18.4.
+- **The world got its shape back.** Habitat difficulty was scaling with every
+  one of the 58 trainers you'd beaten instead of your 11 real badges, so after
+  a handful of wins *every* habitat maxed out at the same level and the
+  difficulty dots all matched. Deep Forest is gentle again; Dragon's Den is not.
+- **Removing a Pokémon in Parent Tools asks first.** The red ✕ sat one slip of
+  the finger from the level buttons and deleted instantly, permanently. It
+  now shows the Pokémon and asks REMOVE or KEEP.
+- **A rare nickname mix-up.** If a nickname box was open when the game hit an
+  error, the *next* nickname you typed could silently apply to the previous
+  Pokémon as well. The prompt now closes properly in every case.
+- **A boy's badge count can't drop.** The BADGES number on the trainer card
+  ignored earned classic badges — someone with 8/8 would have read 0/17.
+  Classic badges now count (8/25 in that case), matching the badge case.
+- **Parent Tools shows when the PIN was set.** Setting a PIN the first time is
+  first-come-first-served by design (like a TV's parental lock) — so if a
+  certain seven-year-old claims it first, the date inside Parent Tools gives
+  it away. Set your PIN soon after updating; forgot-the-PIN recovery is in
+  the v18.8.0 notes below.
+- Two keypad nits: mashing the Parent Tools button with two fingers could pop
+  the PIN pad after fingers left the screen, and two gated taps at once could
+  double-run the keypad. Both squashed.
+
+### Testing
+- 159 browser checks (11 new), including a full rematch played end-to-end
+  with a six-Pokémon team to prove nobody gets benched, and a
+  badge-fires-at-the-win regression guard.
+
 ## [18.10.0] - FARAWAY LAND
 
 Until today, 336 of the game's 649 Pokémon lived *nowhere*. Habitats and gym

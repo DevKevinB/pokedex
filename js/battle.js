@@ -20,7 +20,7 @@ import { openPC } from './pc.js';
 import { GYMS, trainerKey } from './gymdata.js';
 import { gymRun, clearGymRun, recordGymWin } from './gym.js';
 import { activeHabitat, habitatEncounterLevel } from './explore.js';
-import { askNickname } from './nickname.js';
+import { askNickname, cancelNickname } from './nickname.js';
 import { dialog } from './dialog.js';
 import { spawnConfetti } from './catch.js';
 
@@ -156,6 +156,10 @@ export function exitBattleMode() {
   // timeout, so teardown has to release it or the ceremony deadlocks the
   // victory path behind a hidden modal.
   if (hofResolver) { const r = hofResolver; hofResolver = null; r(); }
+  // Settle any open nickname prompt PROPERLY. Hiding the modal directly left
+  // its promise pending and its listeners attached — the next prompt's OK
+  // then fired both, renaming the previously caught Pokémon too.
+  cancelNickname();
   versus.sides = null; versus.order = []; versus.qi = 0;
   ['sparkle-modal', 'victory-modal', 'switch-modal', 'evo-modal', 'loading-modal',
    'pass-modal', 'ballpick-modal', 'hof-modal', 'nick-modal'].forEach(id => show(id, false));
@@ -787,6 +791,10 @@ async function handleEnemyDown() {
   });
 
   const circuitDone = recordGymWin(t.gymKey, t.idx);
+  // Fire AFTER recordGymWin: circuit badges read gyms.beaten, and the earlier
+  // 'win'/'gymCatch' dispatches run while it is still stale — without this the
+  // leader badge and its Master Ball only arrived on the NEXT unrelated event.
+  document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'gymwin' } }));
   await sleep(1500);
   if (stale(e0)) return;   // spoils are already banked; just don't paint a dead screen
 
@@ -823,6 +831,9 @@ async function handleEnemyDown() {
       await playHallOfFame();
       if (stale(e0)) return;
     }
+    // The CHAMPION badge reads p.champion, so its event fires here — after
+    // recordChampion, and after the ceremony rather than on top of it.
+    document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'gymwin' } }));
   }
   // NOTE: pendingEvolution is deliberately NOT cleared here — it is consumed by
   // maybeEvolveThenExit() when the modal is dismissed. Clearing it at this point
@@ -839,6 +850,17 @@ async function pickSpoilsFavorite(id, btn, e0) {
   grid.classList.add('picked');
   btn.classList.add('chosen');
 
+  // Bank the team slot at DECISION time, before the ~3s animation — the same
+  // fence catches got in v18.4, so a teardown mid-animation can't eat a slot
+  // the child watched being promised. And a FULL team is never touched: the
+  // favorite is already banked in the box, and silently benching the 6th
+  // member a boy arranged himself would be taking something away.
+  const team = player().team;
+  let slotLine;
+  if (team.includes(id)) slotLine = '⭐ ON YOUR TEAM!';
+  else if (team.length < 6) { team.push(id); persist(); slotLine = '⭐ IT JOINED YOUR TEAM!'; }
+  else slotLine = '⭐ SAFE IN YOUR BOX!';
+
   const sprite = document.getElementById('wild-sprite');
   sprite.classList.remove('fainted');
   sprite.src = PIXEL_SPRITE(id);
@@ -846,17 +868,11 @@ async function pickSpoilsFavorite(id, btn, e0) {
   show('victory-modal', false);
   await playCaptureAnimation('poke-ball');
   if (stale(e0)) return;
-
-  const team = player().team;
-  let slotLine;
-  if (team.includes(id)) slotLine = '⭐ ALREADY ON YOUR TEAM!';
-  else if (team.length < 6) { team.push(id); slotLine = '⭐ IT JOINED YOUR TEAM!'; }
-  else { team[5] = id; slotLine = '⭐ IT TOOK TEAM SLOT 6!'; }
-  persist();
   sfx.catch();
 
+  // Sprite-led confirmation — the words are for GABE, the picture is for ART.
   const hint = document.getElementById('spoils-hint');
-  if (hint) hint.innerText = slotLine;
+  if (hint) hint.innerHTML = `<img class="spoils-hint-img" src="${PIXEL_SPRITE(id)}" alt=""> ${slotLine}`;
   show('victory-modal');
 }
 

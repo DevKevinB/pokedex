@@ -27,6 +27,12 @@ function setStatus(msg, ok = true) {
 export function openDevTools() {
   document.getElementById('dev-modal').style.display = 'flex';
   setStatus('');
+  const dateEl = document.getElementById('dev-pin-date');
+  if (dateEl) {
+    let setOn = null;
+    try { setOn = localStorage.getItem(PIN_KEY + '_set'); } catch (e) { /* noop */ }
+    dateEl.innerText = setOn ? `PIN SET ON ${setOn}` : '';
+  }
   render();
 }
 
@@ -98,7 +104,16 @@ function setLevel(id, level) {
   renderList();
 }
 
-function removeMon(id) {
+// Removal is the one action in here that destroys something a boy earned —
+// and re-adding can't restore the lost level. It confirms first, sprite-led,
+// like every other destructive action since v18.8.
+async function removeMon(id) {
+  const go = await dialog({
+    sprite: id, title: 'REMOVE IT?',
+    text: `#${String(id).padStart(3, '0')} leaves ${playerName(target)}'s box and team. Its level is lost.`,
+    ok: 'REMOVE', cancel: 'KEEP', danger: true
+  });
+  if (!go) return;
   P().caught = P().caught.filter(c => c !== id);
   P().team = P().team.filter(t => t !== id);
   delete P().mons[id];
@@ -149,6 +164,7 @@ function wireHoldToOpen() {
 
   const start = e => {
     e.preventDefault();
+    clearTimeout(timer);   // a second finger must not orphan the first timer
     held = false;
     btn.classList.add('holding');
     timer = setTimeout(async () => {
@@ -186,6 +202,10 @@ async function setNewPin(title) {
   const again = await pinPad({ title, sub: 'TYPE IT AGAIN', verify: v => v === pin });
   if (again === null) return false;
   localStorage.setItem(PIN_KEY, pin);
+  // First-use PIN setup is trust-on-first-use by design (like a TV's parental
+  // PIN) — a reading 7-year-old could claim an unset gate. The date makes a
+  // surprise claim VISIBLE to Kevin inside Parent Tools.
+  try { localStorage.setItem(PIN_KEY + '_set', new Date().toLocaleDateString()); } catch (e) { /* cosmetic */ }
   return true;
 }
 

@@ -80,7 +80,12 @@ const leadLevel = () => {
   return id ? monLevel(id) : 5;
 };
 
-const badgeCount = () => Object.keys(player().gyms?.beaten || {}).length;
+// LEADER wins only (the ':4' keys — ten gym Leaders plus Champion Rex), a
+// 0-11 scale. Counting all 58 per-trainer keys fed engine.wildLevel up to
+// +116 levels of "badge" inflation, pinning every habitat at the leash cap —
+// which flattened the per-habitat difficulty design back into uniform
+// lead-scaling and made the difficulty pips identical everywhere.
+const badgeCount = () => Object.keys(player().gyms?.beaten || {}).filter(k => k.endsWith(':4')).length;
 
 /** Mid-band level for a habitat, for display on the cards. */
 export function habitatLevel(h) {

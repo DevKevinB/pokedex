@@ -211,9 +211,10 @@ export function openTrainerCard() {
        ${earned ? '' : `<span class="badge-prog">${cur}/${target}</span>`}
      </div>`;
   };
+  const legacyEarned = LEGACY_BADGES.filter(b => p.badges.includes(b.id));
   document.getElementById('card-badges').innerHTML =
     BADGES.map(b => badgeTile(b, p.badges.includes(b.id))).join('') +
-    LEGACY_BADGES.filter(b => p.badges.includes(b.id)).map(b => badgeTile(b, true, 'legacy')).join('');
+    legacyEarned.map(b => badgeTile(b, true, 'legacy')).join('');
 
   const maxLv = Object.values(p.mons).reduce((a, m) => Math.max(a, m.level), 0) || '--';
   document.getElementById('card-stats').innerHTML = `
@@ -222,7 +223,7 @@ export function openTrainerCard() {
     <div>EXPLORES <strong>${p.stats.explores || 0}</strong></div>
     <div>TOP LEVEL <strong>${maxLv}</strong></div>
     <div>MASTER BALLS <strong>x${p.items.masterBalls}</strong></div>
-    <div>BADGES <strong>${BADGES.filter(b => p.badges.includes(b.id)).length}/${BADGES.length}</strong></div>
+    <div>BADGES <strong>${BADGES.filter(b => p.badges.includes(b.id)).length + legacyEarned.length}/${BADGES.length + legacyEarned.length}</strong></div>
     <div>VS WINS <strong>${p.stats.versusWins || 0}</strong></div>
     <div>SHINIES <strong>✨${(p.shinies || []).length}</strong></div>`;
 

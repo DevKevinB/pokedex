@@ -72,7 +72,16 @@ function showDialog({ icon, sprite, title = '', text = '', input = false, value 
 // pinPad({ title, sub, verify }) — the in-app keypad. Resolves the 4-digit
 // string (once `verify`, if given, accepts it) or null on ✖. A rejected entry
 // shakes the dots and clears; the pad stays open for another try.
-export function pinPad({ title = '🔒 GROWN-UPS ONLY', sub = 'ENTER PIN', verify = null } = {}) {
+// Shares the dialog queue: two gated actions triggered together get one pad
+// each, in turn — never two listener sets on the same shared keypad.
+export function pinPad(opts = {}) {
+  const run = () => showPinPad(opts);
+  const p = queue.then(run, run);
+  queue = p.then(() => {}, () => {});
+  return p;
+}
+
+function showPinPad({ title = '🔒 GROWN-UPS ONLY', sub = 'ENTER PIN', verify = null } = {}) {
   return new Promise(resolve => {
     const modal = document.getElementById('pin-modal');
     const keys = document.getElementById('pin-keys');
