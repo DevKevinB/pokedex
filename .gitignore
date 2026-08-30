@@ -13,3 +13,8 @@ test/debug*.png
 Thumbs.db
 test/shots/
 test/playtest/
+test/film/
+test/chase/
+test/emoji/
+test/kevin*/
+test/_*

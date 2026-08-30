@@ -29,7 +29,8 @@ const MODE = process.env.MODE === 'junior' ? 'junior' : 'normal';
 const ONLY = process.env.SCRIPT || '';
 const SLOW = process.env.SLOW === '1';
 const REAL = process.env.REAL === '1';   // use the live sprite CDN
-const OUT = join(HERE, 'playtest', MODE + (REAL ? '-real' : ''));
+const VW = +(process.env.VW || 390), VH = +(process.env.VH || 844);
+const OUT = join(HERE, 'playtest', MODE + (REAL ? '-real' : '') + (VW !== 390 ? `-${VW}x${VH}` : ''));
 mkdirSync(OUT, { recursive: true });
 
 const SPRITE = readFileSync(join(HERE, 'fake-sprite.png'));
@@ -327,8 +328,22 @@ const SCRIPTS = {
           await step(`${label} after switching in`);
           continue;
         }
-        const tiles = p.locator('.move-btn.type-tile:not([disabled])');
-        if (!(await tiles.count())) { await p.waitForTimeout(1200); if (!(await tiles.count())) break; }
+        let tiles = p.locator('.move-btn.type-tile:not([disabled])');
+        if (!(await tiles.count())) {
+          // The moves went dead. Either a modal is coming, or the fight is
+          // over, or the buttons simply stopped responding — wait it out and
+          // say which, because "nothing happens" is the worst outcome.
+          let woke = false;
+          for (let w = 0; w < 12; w++) {
+            await p.waitForTimeout(700);
+            if (await p.locator('#switch-modal').isVisible().catch(() => false)) { woke = true; break; }
+            if (await p.locator('#victory-modal').isVisible().catch(() => false)) { woke = true; break; }
+            if (await p.locator('#badge-modal, #nick-modal, #dlg-modal').first().isVisible().catch(() => false)) { woke = true; break; }
+            if (await tiles.count()) { woke = true; break; }
+          }
+          if (!woke) { await step(`${label} MOVES WENT DEAD, nothing came back`); break; }
+          if (!(await tiles.count())) continue;
+        }
         await tiles.nth(turn % Math.min(4, await tiles.count())).click().catch(() => {});
         await p.waitForTimeout(SLOW ? 3400 : 1700);
         await dump(`${label}-t${turn + 1}`);
@@ -343,23 +358,31 @@ const SCRIPTS = {
     };
 
     const clearModals = async () => {
+      // Dismiss the TOP-MOST modal first. A lower one cannot be tapped through
+      // the one covering it — which is exactly what a child would discover.
+      const LAYERS = [
+        ['#badge-modal', '#badge-ok', 1300],
+        ['#nick-modal', '#nick-skip', 1000],
+        ['#dlg-modal', '#dlg-ok', 1000],
+        ['#oops-modal', '#oops-ok', 1000],
+        ['#sparkle-modal', '#sparkle-modal', 1000],
+        ['#victory-modal', '#victory-continue', 1700],
+      ];
       for (let i = 0; i < 14; i++) {
-        if (await p.locator('#victory-modal').isVisible().catch(() => false)) {
-          await p.click('#victory-continue').catch(() => {}); await p.waitForTimeout(1500); continue;
+        let did = false;
+        for (const [modal, btn, wait] of LAYERS) {
+          if (await p.locator(modal).isVisible().catch(() => false)) {
+            const before = await p.locator(modal).isVisible().catch(() => false);
+            await p.click(btn, { timeout: 4000 }).catch(async () => {
+              await step(`STUCK: ${modal} would not dismiss`);
+            });
+            await p.waitForTimeout(wait);
+            const after = await p.locator(modal).isVisible().catch(() => false);
+            if (before && after) await step(`STILL OPEN after tapping ${btn}`);
+            did = true; break;
+          }
         }
-        if (await p.locator('#nick-modal').isVisible().catch(() => false)) {
-          await p.click('#nick-skip').catch(() => {}); await p.waitForTimeout(900); continue;
-        }
-        if (await p.locator('#dlg-modal').isVisible().catch(() => false)) {
-          await p.click('#dlg-ok').catch(() => {}); await p.waitForTimeout(900); continue;
-        }
-        if (await p.locator('#badge-modal').isVisible().catch(() => false)) {
-          await p.click('#badge-ok').catch(() => {}); await p.waitForTimeout(1200); continue;
-        }
-        if (await p.locator('#sparkle-modal').isVisible().catch(() => false)) {
-          await p.click('#sparkle-modal').catch(() => {}); await p.waitForTimeout(900); continue;
-        }
-        break;
+        if (!did) break;
       }
     };
 
@@ -474,6 +497,131 @@ const SCRIPTS = {
     await step('end of the session');
   },
 
+  // ---- ART's lens: he cannot read a word, so the PICTURE is the whole UI ----
+  // Each of these watches the sprite, not the text, and screenshots the moments
+  // where the picture is missing, stale, or contradicts the caption.
+  async artdex(p, step) {
+    // Tap ▶ and watch the gap between the caption changing and the picture
+    // catching up. Art navigates by the picture alone.
+    for (let tap = 0; tap < 3; tap++) {
+      await p.click('#nav-next');
+      for (const wait of [400, 400, 400, 500]) {
+        await p.waitForTimeout(wait);
+        const s = await p.evaluate(() => {
+          const sp = document.getElementById('poke-sprite');
+          return { id: document.getElementById('id-text').innerText,
+                   src: (sp.src.match(/(\d+)\.(gif|png)/) || [])[1],
+                   op: +getComputedStyle(sp).opacity, nw: sp.naturalWidth };
+        });
+        // the picture is gone, or it is not the one the caption names
+        if (s.op < 0.5 || s.nw === 0 || (s.src && !s.id.includes(s.src.padStart(4, '0'))))
+          await step(`tap ${tap + 1}: caption ${s.id} picture=${s.src} op=${s.op.toFixed(2)}`);
+      }
+    }
+    await step('dex settled');
+  },
+  async artcatch(p, step) {
+    await p.click('#nav-next'); await p.waitForTimeout(2400);
+    await p.click('#catch-btn'); await p.waitForTimeout(900);
+    await step('ball drawer open');
+    await p.locator('.ball-opt').first().click();
+    for (let i = 0; i < 16; i++) {
+      await p.waitForTimeout(500);
+      const s = await p.evaluate(() => {
+        const sp = document.getElementById('poke-sprite');
+        return { w: Math.round(sp.getBoundingClientRect().width), cls: sp.className,
+                 msg: document.getElementById('dex-catch-msg')?.innerText };
+      });
+      if (i % 4 === 3 || s.msg === 'GOTCHA!') await step(`catch +${(i + 1) * 500}ms picture=${s.w}px ${s.msg}`);
+      if (s.msg === 'GOTCHA!') { await p.waitForTimeout(700); await step('one second after GOTCHA'); break; }
+    }
+  },
+  async artexit(p, step) {
+    // The exit chip is the one way out of a fight. In junior mode a TAP is a
+    // no-op by design — this records what Art actually sees when he taps it.
+    await p.click('#battle-btn');
+    await p.waitForFunction(() => document.getElementById('battle-container')?.classList.contains('active'), null, { timeout: 25000 });
+    await p.waitForTimeout(300);
+    await step('battle opened — is anyone on the field yet?');
+    await p.waitForTimeout(2200);
+    const box = await p.locator('#escape-btn').boundingBox();
+    for (let i = 0; i < 3; i++) {
+      await p.mouse.move(box.x + 22, box.y + 22);
+      await p.mouse.down(); await p.waitForTimeout(60); await p.mouse.up();
+      await p.waitForTimeout(400);
+    }
+    await step('after three taps on the BACK chip');
+    console.log('  still in battle after 3 taps: ' +
+      await p.evaluate(() => document.getElementById('battle-container').classList.contains('active')));
+    await p.mouse.down(); await p.waitForTimeout(1200); await p.mouse.up();
+    await p.waitForTimeout(1200);
+    await step('after holding the BACK chip for 1.2s');
+  },
+  // The three controls a long session keeps bumping into: the PC team strip,
+  // the ball drawer and the switch menu. Screenshot each one on its own so a
+  // reviewer can look at the CANCEL button and count the team slots.
+  async spotcheck(p, step) {
+    // Kevin's "spacing between emojis and text": measure the painted gap
+    // between an emoji and the character straight after it, everywhere.
+    await p.click('#card-btn'); await p.waitForTimeout(1800);
+    await p.evaluate(() => { const b = document.querySelector('#card-modal .card-box'); if (b) b.scrollTop = b.scrollHeight; });
+    await p.waitForTimeout(700);
+    await step('trainer card, scrolled to the stats');
+    console.log('  EMOJI GAPS', JSON.stringify(await p.evaluate(() => {
+      const RE = /([\u{1F000}-\u{1FAFF}\u{2190}-\u{2BFF}\u{2600}-\u{27BF}]\uFE0F?)([A-Za-z0-9])/u;
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const out = []; let n;
+      while ((n = w.nextNode())) {
+        const m = RE.exec(n.nodeValue || ''); if (!m) continue;
+        const host = n.parentElement; if (!host) continue;
+        const r = host.getBoundingClientRect(); if (!r.width || getComputedStyle(host).display === 'none') continue;
+        const a = document.createRange(); a.setStart(n, m.index); a.setEnd(n, m.index + m[1].length);
+        const b = document.createRange(); b.setStart(n, m.index + m[1].length); b.setEnd(n, m.index + m[0].length);
+        out.push({ where: host.id || host.className || host.tagName, text: (n.nodeValue || '').trim().slice(0, 24),
+                   gapPx: Math.round(b.getBoundingClientRect().left - a.getBoundingClientRect().right),
+                   fontSize: getComputedStyle(host).fontSize });
+      }
+      return out;
+    })));
+    await p.click('#card-close').catch(() => {}); await p.waitForTimeout(800);
+
+    await p.click('#pc-btn'); await p.waitForTimeout(2400);
+    await step('PC box: the TEAM strip');
+    const strip = await p.evaluate(() => {
+      const s = document.getElementById('team-strip'); const sr = s.getBoundingClientRect();
+      return { scrollWidth: s.scrollWidth, clientWidth: s.clientWidth,
+        slots: [...s.querySelectorAll('.team-slot')].map(k => { const r = k.getBoundingClientRect();
+          return { right: Math.round(r.right), hidden: r.left > sr.right - 2, clipped: r.right > sr.right + 1 }; }),
+        team: JSON.parse(localStorage.getItem('pokedexos_save_v2')).players['1'].team };
+    });
+    console.log('  TEAM STRIP', JSON.stringify(strip));
+    await p.locator('#team-strip').screenshot({ path: join(OUT, 'spot-team-strip.png') }).catch(() => {});
+    await p.click('#close-pc-btn').catch(() => {}); await p.waitForTimeout(800);
+
+    // a wild fight: the BALL drawer and the SWITCH menu, one at a time
+    await p.click('#explore-btn');
+    await p.waitForFunction(() => document.querySelectorAll('#habitat-grid .habitat-card').length > 0, null, { timeout: 20000 });
+    await p.locator('#habitat-grid .habitat-card:not(.locked)').first().click();
+    await p.waitForFunction(() => document.getElementById('battle-container')?.classList.contains('active'), null, { timeout: 30000 }).catch(() => {});
+    await p.waitForTimeout(2200);
+    await p.click('#ball-btn').catch(() => {}); await p.waitForTimeout(1200);
+    await step('the BALL drawer');
+    console.log('  BALLPICK CANCEL', JSON.stringify(await p.evaluate(() => {
+      const c = document.getElementById('ballpick-cancel'); const s = getComputedStyle(c);
+      const l = document.getElementById('ballpick-list');
+      return { background: s.backgroundColor, color: s.color, listScrollH: l.scrollHeight, listClientH: l.clientHeight };
+    })));
+    await p.click('#ballpick-cancel').catch(() => {}); await p.waitForTimeout(900);
+    await p.click('#switch-btn').catch(() => {}); await p.waitForTimeout(1200);
+    await step('the SWITCH menu');
+    console.log('  SWITCH CANCEL', JSON.stringify(await p.evaluate(() => {
+      const c = document.getElementById('switch-cancel'); const s = getComputedStyle(c);
+      const l = document.getElementById('switch-list');
+      return { background: s.backgroundColor, color: s.color, listScrollH: l.scrollHeight, listClientH: l.clientHeight,
+               itemsRendered: l.querySelectorAll('.switch-item').length };
+    })));
+  },
+
   // A four-year-old with a fast finger. Nothing here should ever produce an
   // error overlay or a screen with no way out.
   async mash(p, step) {
@@ -499,7 +647,7 @@ const browser = await chromium.launch();
 for (const [name, fn] of Object.entries(SCRIPTS)) {
   if (ONLY && name !== ONLY) continue;
   const ctx = await browser.newContext({
-    viewport: { width: 390, height: 844 }, serviceWorkers: 'block', deviceScaleFactor: 2,
+    viewport: { width: VW, height: VH }, serviceWorkers: 'block', deviceScaleFactor: 2,
   });
   await mock(ctx);
   const page = await ctx.newPage();
