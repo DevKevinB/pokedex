@@ -1,0 +1,717 @@
+[
+ {
+  "run": 0,
+  "samples": [
+   {
+    "tag": "t0",
+    "cls": "battle-sprite-wild sendout",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "0",
+    "anim": "sendOut",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/556.gif",
+    "nw": 0,
+    "nh": 0,
+    "name": "WILD MARACTUS LV35",
+    "rect": {
+     "x": 288.5,
+     "y": 1047.101318359375,
+     "w": 0,
+     "h": 8.608154296875
+    },
+    "log": "WILD MARACTUS APPEARED!",
+    "px": {
+     "opaque": 0,
+     "meanSat": 0,
+     "samples": 0
+    }
+   },
+   {
+    "tag": "t400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/556.gif",
+    "nw": 62,
+    "nh": 71,
+    "name": "WILD MARACTUS LV35",
+    "rect": {
+     "x": 225.859375,
+     "y": 129.7292022705078,
+     "w": 125.28125,
+     "h": 143.46873474121094
+    },
+    "log": "WILD MARACTUS APPEARED!",
+    "px": {
+     "opaque": 72037,
+     "meanSat": 0.5096,
+     "samples": 72037
+    }
+   },
+   {
+    "tag": "t1400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/556.gif",
+    "nw": 62,
+    "nh": 71,
+    "name": "WILD MARACTUS LV35",
+    "rect": {
+     "x": 225.859375,
+     "y": 137.92579650878906,
+     "w": 125.28125,
+     "h": 143.46873474121094
+    },
+    "log": "WILD MARACTUS APPEARED!",
+    "px": {
+     "opaque": 72037,
+     "meanSat": 0.5122,
+     "samples": 72037
+    }
+   },
+   {
+    "tag": "t2900",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/556.gif",
+    "nw": 62,
+    "nh": 71,
+    "name": "WILD MARACTUS LV35",
+    "rect": {
+     "x": 225.859375,
+     "y": 130.1742706298828,
+     "w": 125.28125,
+     "h": 143.46873474121094
+    },
+    "log": "WILD MARACTUS APPEARED!",
+    "px": {
+     "opaque": 72037,
+     "meanSat": 0.5032,
+     "samples": 72037
+    }
+   },
+   {
+    "tag": "hit+1200",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/556.gif",
+    "nw": 62,
+    "nh": 71,
+    "name": "WILD MARACTUS LV35",
+    "rect": {
+     "x": 222.16542053222656,
+     "y": 140.2547149658203,
+     "w": 125.28123474121094,
+     "h": 143.46873474121094
+    },
+    "log": "IT'S SUPER EFFECTIVE!",
+    "px": {
+     "opaque": 72037,
+     "meanSat": 0.5593,
+     "samples": 71975
+    }
+   },
+   {
+    "tag": "hit+3000",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/556.gif",
+    "nw": 62,
+    "nh": 71,
+    "name": "WILD MARACTUS LV35",
+    "rect": {
+     "x": 225.859375,
+     "y": 129.5521697998047,
+     "w": 125.28125,
+     "h": 143.46876525878906
+    },
+    "log": "WHAT WILL CHARIZARD DO?",
+    "px": {
+     "opaque": 72037,
+     "meanSat": 0.5098,
+     "samples": 72037
+    }
+   }
+  ]
+ },
+ {
+  "run": 1,
+  "samples": [
+   {
+    "tag": "t0",
+    "cls": "battle-sprite-wild sendout",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "0",
+    "anim": "sendOut",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/40.gif",
+    "nw": 0,
+    "nh": 0,
+    "name": "WILD WIGGLYTUFF LV35",
+    "rect": {
+     "x": 288.5,
+     "y": 1049.6116943359375,
+     "w": 0,
+     "h": 8.608154296875
+    },
+    "log": "WILD WIGGLYTUFF APPEARED!",
+    "px": {
+     "opaque": 0,
+     "meanSat": 0,
+     "samples": 0
+    }
+   },
+   {
+    "tag": "t400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/40.gif",
+    "nw": 48,
+    "nh": 82,
+    "name": "WILD WIGGLYTUFF LV35",
+    "rect": {
+     "x": 246.515625,
+     "y": 131.85134887695312,
+     "w": 83.96875,
+     "h": 143.46875
+    },
+    "log": "WILD WIGGLYTUFF APPEARED!",
+    "px": {
+     "opaque": 48216,
+     "meanSat": 0.3676,
+     "samples": 48216
+    }
+   },
+   {
+    "tag": "t1400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/40.gif",
+    "nw": 48,
+    "nh": 82,
+    "name": "WILD WIGGLYTUFF LV35",
+    "rect": {
+     "x": 246.515625,
+     "y": 133.3911590576172,
+     "w": 83.96875,
+     "h": 143.46876525878906
+    },
+    "log": "WILD WIGGLYTUFF APPEARED!",
+    "px": {
+     "opaque": 48216,
+     "meanSat": 0.3647,
+     "samples": 48216
+    }
+   },
+   {
+    "tag": "t2900",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/40.gif",
+    "nw": 48,
+    "nh": 82,
+    "name": "WILD WIGGLYTUFF LV35",
+    "rect": {
+     "x": 246.515625,
+     "y": 133.03378295898438,
+     "w": 83.96875,
+     "h": 143.46875
+    },
+    "log": "WILD WIGGLYTUFF APPEARED!",
+    "px": {
+     "opaque": 48216,
+     "meanSat": 0.364,
+     "samples": 48216
+    }
+   },
+   {
+    "tag": "hit+1200",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/40.gif",
+    "nw": 48,
+    "nh": 82,
+    "name": "WILD WIGGLYTUFF LV35",
+    "rect": {
+     "x": 246.515625,
+     "y": 134.9083251953125,
+     "w": 83.96875,
+     "h": 143.46875
+    },
+    "log": "WIGGLYTUFF USED STORED POWER!",
+    "px": {
+     "opaque": 48216,
+     "meanSat": 0.3713,
+     "samples": 48216
+    }
+   },
+   {
+    "tag": "hit+3000",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/40.gif",
+    "nw": 48,
+    "nh": 82,
+    "name": "WILD WIGGLYTUFF LV35",
+    "rect": {
+     "x": 246.515625,
+     "y": 130.44761657714844,
+     "w": 83.96875,
+     "h": 143.46876525878906
+    },
+    "log": "WHAT WILL CHARIZARD DO?",
+    "px": {
+     "opaque": 48216,
+     "meanSat": 0.3667,
+     "samples": 48216
+    }
+   }
+  ]
+ },
+ {
+  "run": 2,
+  "samples": [
+   {
+    "tag": "t0",
+    "cls": "battle-sprite-wild sendout",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "0",
+    "anim": "sendOut",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/shiny/129.gif",
+    "nw": 0,
+    "nh": 0,
+    "name": "✨ SHINY MAGIKARP LV35",
+    "rect": {
+     "x": 288.5,
+     "y": 1044.28369140625,
+     "w": 0,
+     "h": 8.6080322265625
+    },
+    "log": "✨ WOW! A SHINY MAGIKARP APPEARED!! ✨",
+    "px": {
+     "opaque": 0,
+     "meanSat": 0,
+     "samples": 0
+    }
+   },
+   {
+    "tag": "t400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/shiny/129.gif",
+    "nw": 47,
+    "nh": 64,
+    "name": "✨ SHINY MAGIKARP LV35",
+    "rect": {
+     "x": 235.8125,
+     "y": 129.5335235595703,
+     "w": 105.359375,
+     "h": 143.46873474121094
+    },
+    "log": "✨ WOW! A SHINY MAGIKARP APPEARED!! ✨",
+    "px": {
+     "opaque": 60557,
+     "meanSat": 0.471,
+     "samples": 58738
+    }
+   },
+   {
+    "tag": "t1400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/shiny/129.gif",
+    "nw": 47,
+    "nh": 64,
+    "name": "✨ SHINY MAGIKARP LV35",
+    "rect": {
+     "x": 235.8125,
+     "y": 138.61656188964844,
+     "w": 105.359375,
+     "h": 143.46876525878906
+    },
+    "log": "✨ WOW! A SHINY MAGIKARP APPEARED!! ✨",
+    "px": {
+     "opaque": 60557,
+     "meanSat": 0.4873,
+     "samples": 58905
+    }
+   },
+   {
+    "tag": "t2900",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/shiny/129.gif",
+    "nw": 47,
+    "nh": 64,
+    "name": "✨ SHINY MAGIKARP LV35",
+    "rect": {
+     "x": 235.8125,
+     "y": 129.55284118652344,
+     "w": 105.359375,
+     "h": 143.46876525878906
+    },
+    "log": "✨ WOW! A SHINY MAGIKARP APPEARED!! ✨",
+    "px": {
+     "opaque": 60557,
+     "meanSat": 0.4792,
+     "samples": 58680
+    }
+   },
+   {
+    "tag": "hit+1200",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/shiny/129.gif",
+    "nw": 47,
+    "nh": 64,
+    "name": "✨ SHINY MAGIKARP LV35",
+    "rect": {
+     "x": 235.8125,
+     "y": 139.04188537597656,
+     "w": 105.359375,
+     "h": 143.46873474121094
+    },
+    "log": "IT'S NOT VERY EFFECTIVE...",
+    "px": {
+     "opaque": 60557,
+     "meanSat": 0.5206,
+     "samples": 58800
+    }
+   },
+   {
+    "tag": "hit+3000",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/shiny/129.gif",
+    "nw": 47,
+    "nh": 64,
+    "name": "✨ SHINY MAGIKARP LV35",
+    "rect": {
+     "x": 235.8125,
+     "y": 130.08961486816406,
+     "w": 105.359375,
+     "h": 143.46873474121094
+    },
+    "log": "WHAT WILL CHARIZARD DO?",
+    "px": {
+     "opaque": 60557,
+     "meanSat": 0.4748,
+     "samples": 58646
+    }
+   }
+  ]
+ },
+ {
+  "run": 3,
+  "samples": [
+   {
+    "tag": "t0",
+    "cls": "battle-sprite-wild sendout",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "0",
+    "anim": "sendOut",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/240.gif",
+    "nw": 0,
+    "nh": 0,
+    "name": "WILD MAGBY LV35",
+    "rect": {
+     "x": 288.5,
+     "y": 1049.4892578125,
+     "w": 0,
+     "h": 8.608154296875
+    },
+    "log": "WILD MAGBY APPEARED!",
+    "px": {
+     "opaque": 0,
+     "meanSat": 0,
+     "samples": 0
+    }
+   },
+   {
+    "tag": "t400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/240.gif",
+    "nw": 34,
+    "nh": 56,
+    "name": "WILD MAGBY LV35",
+    "rect": {
+     "x": 244.953125,
+     "y": 131.5512237548828,
+     "w": 87.09375,
+     "h": 143.46873474121094
+    },
+    "log": "WILD MAGBY APPEARED!",
+    "px": {
+     "opaque": 50225,
+     "meanSat": 0.5458,
+     "samples": 50225
+    }
+   },
+   {
+    "tag": "t1400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/240.gif",
+    "nw": 34,
+    "nh": 56,
+    "name": "WILD MAGBY LV35",
+    "rect": {
+     "x": 244.953125,
+     "y": 134.52757263183594,
+     "w": 87.09375,
+     "h": 143.46876525878906
+    },
+    "log": "WILD MAGBY APPEARED!",
+    "px": {
+     "opaque": 50225,
+     "meanSat": 0.5435,
+     "samples": 50225
+    }
+   },
+   {
+    "tag": "t2900",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/240.gif",
+    "nw": 34,
+    "nh": 56,
+    "name": "WILD MAGBY LV35",
+    "rect": {
+     "x": 244.953125,
+     "y": 131.85247802734375,
+     "w": 87.09375,
+     "h": 143.46875
+    },
+    "log": "WILD MAGBY APPEARED!",
+    "px": {
+     "opaque": 50225,
+     "meanSat": 0.5411,
+     "samples": 50225
+    }
+   },
+   {
+    "tag": "hit+1200",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/240.gif",
+    "nw": 34,
+    "nh": 56,
+    "name": "WILD MAGBY LV35",
+    "rect": {
+     "x": 244.953125,
+     "y": 135.6631622314453,
+     "w": 87.09375,
+     "h": 143.46873474121094
+    },
+    "log": "IT'S NOT VERY EFFECTIVE...",
+    "px": {
+     "opaque": 50225,
+     "meanSat": 0.5757,
+     "samples": 50205
+    }
+   },
+   {
+    "tag": "hit+3000",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/240.gif",
+    "nw": 34,
+    "nh": 56,
+    "name": "WILD MAGBY LV35",
+    "rect": {
+     "x": 244.953125,
+     "y": 130.02053833007812,
+     "w": 87.09375,
+     "h": 143.46875
+    },
+    "log": "WHAT WILL CHARIZARD DO?",
+    "px": {
+     "opaque": 50225,
+     "meanSat": 0.5447,
+     "samples": 50225
+    }
+   }
+  ]
+ },
+ {
+  "run": 4,
+  "samples": [
+   {
+    "tag": "t0",
+    "cls": "battle-sprite-wild sendout",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "0",
+    "anim": "sendOut",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/597.gif",
+    "nw": 0,
+    "nh": 0,
+    "name": "WILD FERROSEED LV35",
+    "rect": {
+     "x": 288.5,
+     "y": 1044.282958984375,
+     "w": 0,
+     "h": 8.608154296875
+    },
+    "log": "WILD FERROSEED APPEARED!",
+    "px": {
+     "opaque": 0,
+     "meanSat": 0,
+     "samples": 0
+    }
+   },
+   {
+    "tag": "t400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/597.gif",
+    "nw": 31,
+    "nh": 42,
+    "name": "WILD FERROSEED LV35",
+    "rect": {
+     "x": 235.546875,
+     "y": 129.5523223876953,
+     "w": 105.890625,
+     "h": 143.46873474121094
+    },
+    "log": "WILD FERROSEED APPEARED!",
+    "px": {
+     "opaque": 60844,
+     "meanSat": 0.348,
+     "samples": 60760
+    }
+   },
+   {
+    "tag": "t1400",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/597.gif",
+    "nw": 31,
+    "nh": 42,
+    "name": "WILD FERROSEED LV35",
+    "rect": {
+     "x": 235.546875,
+     "y": 138.8037567138672,
+     "w": 105.890625,
+     "h": 143.46876525878906
+    },
+    "log": "WILD FERROSEED APPEARED!",
+    "px": {
+     "opaque": 60844,
+     "meanSat": 0.3497,
+     "samples": 60760
+    }
+   },
+   {
+    "tag": "t2900",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/597.gif",
+    "nw": 31,
+    "nh": 42,
+    "name": "WILD FERROSEED LV35",
+    "rect": {
+     "x": 235.546875,
+     "y": 129.6873321533203,
+     "w": 105.890625,
+     "h": 143.46873474121094
+    },
+    "log": "WILD FERROSEED APPEARED!",
+    "px": {
+     "opaque": 60844,
+     "meanSat": 0.3312,
+     "samples": 60844
+    }
+   },
+   {
+    "tag": "hit+1200",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/597.gif",
+    "nw": 31,
+    "nh": 42,
+    "name": "WILD FERROSEED LV35",
+    "rect": {
+     "x": 232.119140625,
+     "y": 140.54237365722656,
+     "w": 105.890625,
+     "h": 143.46873474121094
+    },
+    "log": "IT'S SUPER EFFECTIVE!",
+    "px": {
+     "opaque": 60844,
+     "meanSat": 0.4399,
+     "samples": 60793
+    }
+   },
+   {
+    "tag": "hit+3000",
+    "cls": "battle-sprite-wild",
+    "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+    "opacity": "1",
+    "anim": "none",
+    "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/597.gif",
+    "nw": 31,
+    "nh": 42,
+    "name": "WILD FERROSEED LV35",
+    "rect": {
+     "x": 235.546875,
+     "y": 129.6851043701172,
+     "w": 105.890625,
+     "h": 143.46876525878906
+    },
+    "log": "WHAT WILL CHARIZARD DO?",
+    "px": {
+     "opaque": 60844,
+     "meanSat": 0.3261,
+     "samples": 60605
+    }
+   }
+  ]
+ }
+]

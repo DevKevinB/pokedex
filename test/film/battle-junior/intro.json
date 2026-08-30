@@ -1,0 +1,922 @@
+[
+ {
+  "t": 54,
+  "file": "001-intro-0000ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1079,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1437,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 230,
+  "file": "002-intro-0188ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1077,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1436,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 408,
+  "file": "003-intro-0365ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1076,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1435,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 594,
+  "file": "004-intro-0542ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1076,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1434,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 778,
+  "file": "005-intro-0727ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1076,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1435,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 961,
+  "file": "006-intro-0910ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1077,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1435,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 1159,
+  "file": "007-intro-1095ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1078,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1437,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 1313,
+  "file": "008-intro-1292ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1080,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1439,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 1506,
+  "file": "009-intro-1445ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1082,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1441,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 1682,
+  "file": "010-intro-1639ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1084,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1443,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 1861,
+  "file": "011-intro-1814ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1085,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1444,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 2061,
+  "file": "012-intro-1995ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1085,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1444,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 2276,
+  "file": "013-intro-2194ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1085,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1444,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 2454,
+  "file": "014-intro-2410ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1085,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1443,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 2617,
+  "file": "015-intro-2587ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1083,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1442,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 2780,
+  "file": "016-intro-2750ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1081,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1440,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 3000,
+  "file": "017-intro-2913ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    289,
+    1079,
+    0,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "",
+   "rect": [
+    102,
+    1438,
+    0,
+    186
+   ]
+  },
+  "log": "WILD POKEMON APPEARED!",
+  "wildBar": "",
+  "wildGhost": "",
+  "plBar": "",
+  "plGhost": "",
+  "plHpText": "100/100",
+  "title": "BATTLE ARENA",
+  "fx": []
+ },
+ {
+  "t": 3217,
+  "file": "018-intro-3132ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild sendout",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "0.75",
+   "transform": "matrix(0.855, 0, 0, 0.855, 0, -4.5)",
+   "anim": "sendOut",
+   "src": "412.gif",
+   "rect": [
+    214,
+    192,
+    148,
+    123
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    424,
+    179,
+    186
+   ]
+  },
+  "log": "WILD BURMY APPEARED!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3413,
+  "file": "019-intro-3349ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "412.gif",
+   "rect": [
+    202,
+    112,
+    173,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    349,
+    179,
+    186
+   ]
+  },
+  "log": "WILD BURMY APPEARED!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3595,
+  "file": "020-intro-3546ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "412.gif",
+   "rect": [
+    202,
+    111,
+    173,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    348,
+    179,
+    186
+   ]
+  },
+  "log": "WILD BURMY APPEARED!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3798,
+  "file": "021-intro-3728ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "412.gif",
+   "rect": [
+    202,
+    111,
+    173,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    349,
+    179,
+    186
+   ]
+  },
+  "log": "WILD BURMY APPEARED!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3990,
+  "file": "022-intro-3931ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "412.gif",
+   "rect": [
+    202,
+    112,
+    173,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    350,
+    179,
+    186
+   ]
+  },
+  "log": "WILD BURMY APPEARED!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 4169,
+  "file": "023-intro-4123ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "412.gif",
+   "rect": [
+    202,
+    113,
+    173,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    351,
+    179,
+    186
+   ]
+  },
+  "log": "WILD BURMY APPEARED!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ }
+]

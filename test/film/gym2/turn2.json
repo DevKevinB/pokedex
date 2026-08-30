@@ -1,0 +1,2102 @@
+[
+ {
+  "t": 87,
+  "f": "121-turn2-0000ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "153px",
+  "wGhost": "153px",
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 267,
+  "f": "122-turn2-0188ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    137,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    394,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "153px",
+  "wGhost": "153px",
+  "log": "CHARIZARD USED BLAZE KICK! / ▼",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 411,
+  "f": "123-turn2-0368ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    136,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    393,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "153px",
+  "wGhost": "153px",
+  "log": "CHARIZARD USED BLAZE KICK! / ▼",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 545,
+  "f": "124-turn2-0512ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    134,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player lunge",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "lungeFwd",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "153px",
+  "wGhost": "153px",
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 678,
+  "f": "125-turn2-0645ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    133,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player lunge",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "lungeFwd",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    380,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "153px",
+  "wGhost": "153px",
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 850,
+  "f": "126-turn2-0779ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild hit-anim",
+   "f": "brightness(1) invert(0)",
+   "op": "1",
+   "anim": "flashHit",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    132,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    389,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "153px",
+  "wGhost": "153px",
+  "log": "IT'S NOT VERY EFFECTIVE...",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 1010,
+  "f": "127-turn2-0951ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild hit-anim",
+   "f": "brightness(0) invert(1)",
+   "op": "1",
+   "anim": "flashHit",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    131,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "130.047px",
+  "wGhost": "153px",
+  "log": "IT'S NOT VERY EFFECTIVE...",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 1158,
+  "f": "128-turn2-1111ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "95.625px",
+  "wGhost": "144.609px",
+  "log": "IT'S NOT VERY EFFECTIVE...",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 1311,
+  "f": "129-turn2-1259ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "72.6719px",
+  "wGhost": "111.453px",
+  "log": "IT'S NOT VERY EFFECTIVE...",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 1483,
+  "f": "130-turn2-1411ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "82.3594px",
+  "log": "ROGGENROLA USED ROCK TOMB!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 1627,
+  "f": "131-turn2-1583ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "65.2656px",
+  "log": "ROGGENROLA USED ROCK TOMB!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 1790,
+  "f": "132-turn2-1728ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    131,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    388,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "ROGGENROLA USED ROCK TOMB! / ▼",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 1945,
+  "f": "133-turn2-1891ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild lunge",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "lungeFwd",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    137,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    389,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "ROGGENROLA USED ROCK TOMB!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 2095,
+  "f": "134-turn2-2046ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild lunge",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "lungeFwd",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    144,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    391,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "ROGGENROLA USED ROCK TOMB!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 2232,
+  "f": "135-turn2-2196ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    135,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    392,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "ROGGENROLA USED ROCK TOMB!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 2408,
+  "f": "136-turn2-2332ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player hit-anim",
+   "f": "brightness(0.333333) invert(0.6666",
+   "op": "1",
+   "anim": "flashHit",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "IT'S SUPER EFFECTIVE!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 2593,
+  "f": "137-turn2-2509ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    136,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    393,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "IT'S SUPER EFFECTIVE!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 2745,
+  "f": "138-turn2-2693ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "IT'S SUPER EFFECTIVE!",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 2893,
+  "f": "139-turn2-2845ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 3053,
+  "f": "140-turn2-2993ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 3217,
+  "f": "141-turn2-3154ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 3382,
+  "f": "142-turn2-3318ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    138,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    395,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 3544,
+  "f": "143-turn2-3483ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    136,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    393,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 3685,
+  "f": "144-turn2-3645ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    135,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    392,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 3832,
+  "f": "145-turn2-3785ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    133,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    390,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 3964,
+  "f": "146-turn2-3932ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    132,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    389,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 4108,
+  "f": "147-turn2-4065ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    131,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 4245,
+  "f": "148-turn2-4208ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 4378,
+  "f": "149-turn2-4346ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 4528,
+  "f": "150-turn2-4477ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 4683,
+  "f": "151-turn2-4628ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 4819,
+  "f": "152-turn2-4782ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    131,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 4967,
+  "f": "153-turn2-4920ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    132,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    389,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 5114,
+  "f": "154-turn2-5068ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    133,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    390,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 5269,
+  "f": "155-turn2-5213ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    135,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    392,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 5414,
+  "f": "156-turn2-5369ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    137,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    394,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 5551,
+  "f": "157-turn2-5514ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    138,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    395,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 5730,
+  "f": "158-turn2-5652ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 5868,
+  "f": "159-turn2-5830ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 6009,
+  "f": "160-turn2-5968ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    140,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 6145,
+  "f": "161-turn2-6109ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 6293,
+  "f": "162-turn2-6246ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    395,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 6450,
+  "f": "163-turn2-6393ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    137,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    394,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 6594,
+  "f": "164-turn2-6551ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    136,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    393,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 6733,
+  "f": "165-turn2-6695ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    134,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    391,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 6907,
+  "f": "166-turn2-6833ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    132,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    389,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 7048,
+  "f": "167-turn2-7008ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    131,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    388,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 7183,
+  "f": "168-turn2-7148ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 7316,
+  "f": "169-turn2-7283ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 7445,
+  "f": "170-turn2-7416ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 7581,
+  "f": "171-turn2-7546ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 7716,
+  "f": "172-turn2-7682ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    130,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 7847,
+  "f": "173-turn2-7816ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    131,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    388,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 7978,
+  "f": "174-turn2-7948ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    132,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    389,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 8113,
+  "f": "175-turn2-8078ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    133,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    390,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 8315,
+  "f": "176-turn2-8214ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    136,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    392,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 8446,
+  "f": "177-turn2-8416ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    137,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    394,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 8644,
+  "f": "178-turn2-8547ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    395,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 8804,
+  "f": "179-turn2-8745ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    139,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ },
+ {
+  "t": 8943,
+  "f": "180-turn2-8904ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "524.gif",
+   "nw": 24,
+   "cw": true,
+   "r": [
+    140,
+    88
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "ROGGENROLA\nLV9 · 2/2",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "title": "CAMPER SANDY"
+ }
+]

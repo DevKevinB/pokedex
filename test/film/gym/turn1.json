@@ -1,0 +1,1157 @@
+[
+ {
+  "t": 30,
+  "f": "034-turn1-0000ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    130,
+    179
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 258,
+  "f": "035-turn1-0201ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    130,
+    179
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "CHARIZARD USED BLAZE KICK! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 469,
+  "f": "036-turn1-0429ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    130,
+    179
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player lunge",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "lungeFwd",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 688,
+  "f": "037-turn1-0640ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    131,
+    179
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player lunge",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "lungeFwd",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    379,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "61.1875px",
+  "wGhost": "61.1875px",
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 912,
+  "f": "038-turn1-0859ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild hit-anim",
+   "f": "brightness(0.666667) invert(0.3333",
+   "op": "1",
+   "anim": "flashHit",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    133,
+    179
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    389,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "53.5469px",
+  "wGhost": "61.1875px",
+  "log": "IT'S NOT VERY EFFECTIVE...",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 1136,
+  "f": "039-turn1-1083ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild hit-anim",
+   "f": "brightness(0.666667) invert(0.3333",
+   "op": "1",
+   "anim": "flashHit",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    135,
+    179
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    392,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "30.5938px",
+  "wGhost": "61.1875px",
+  "log": "IT'S NOT VERY EFFECTIVE...",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 1359,
+  "f": "040-turn1-1307ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    138,
+    179
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    394,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "27.0625px",
+  "log": "IT'S NOT VERY EFFECTIVE...",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 1583,
+  "f": "041-turn1-1530ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.740676",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    129,
+    194
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "5.70312px",
+  "log": "GEODUDE FAINTED!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 1802,
+  "f": "042-turn1-1754ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.554065",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    103,
+    229
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "GEODUDE FAINTED! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 2016,
+  "f": "043-turn1-1973ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    110,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "GEODUDE FAINTED! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 2231,
+  "f": "044-turn1-2187ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    108,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    395,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "GEODUDE FAINTED! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 2453,
+  "f": "045-turn1-2402ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    106,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    393,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "GEODUDE FAINTED! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 2689,
+  "f": "046-turn1-2624ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    104,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    390,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "GEODUDE FAINTED! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 2913,
+  "f": "047-turn1-2860ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    101,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    388,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 3130,
+  "f": "048-turn1-3084ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    100,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 3337,
+  "f": "049-turn1-3300ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    100,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 3581,
+  "f": "050-turn1-3507ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    100,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 3806,
+  "f": "051-turn1-3751ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    102,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    388,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 4030,
+  "f": "052-turn1-3977ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    104,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    391,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL! / ▼",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 4260,
+  "f": "053-turn1-4201ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    107,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    393,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 4461,
+  "f": "054-turn1-4431ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    109,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    395,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 4659,
+  "f": "055-turn1-4631ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    110,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 4866,
+  "f": "056-turn1-4830ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    110,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 5089,
+  "f": "057-turn1-5036ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    109,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    396,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 5323,
+  "f": "058-turn1-5259ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    108,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    394,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 5540,
+  "f": "059-turn1-5494ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    105,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    392,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 5746,
+  "f": "060-turn1-5710ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    103,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    389,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 5948,
+  "f": "061-turn1-5916ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    101,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    388,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 6147,
+  "f": "062-turn1-6118ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    100,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 6369,
+  "f": "063-turn1-6318ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    100,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    386,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 6581,
+  "f": "064-turn1-6540ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    100,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    387,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 6796,
+  "f": "065-turn1-6752ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    102,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    388,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ },
+ {
+  "t": 7015,
+  "f": "066-turn1-6967ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild fainted",
+   "f": "grayscale(1) brightness(0.65)",
+   "op": "0.55",
+   "anim": "none",
+   "src": "74.gif",
+   "nw": 61,
+   "cw": true,
+   "r": [
+    104,
+    185
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "f": "drop-shadow(rgba(0, 0, 0, 0.25) 0p",
+   "op": "1",
+   "anim": "none",
+   "src": "6.gif",
+   "nw": 100,
+   "cw": true,
+   "r": [
+    391,
+    179
+   ]
+  },
+  "wildName": "GEODUDE\nLV8 · 1/1",
+  "wBar": "0px",
+  "wGhost": "0px",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "title": "HIKER CARL"
+ }
+]

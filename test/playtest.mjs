@@ -298,7 +298,7 @@ const SCRIPTS = {
           log: txt('battle-log'), title: txt('battle-title'),
           pSprite: sp('player-sprite'), wSprite: sp('wild-sprite'),
           moves: [...document.querySelectorAll('#battle-moves .move-btn')].map(b => ({ t: b.innerText.replace(/\s+/g,' ').trim().slice(0,22), dis: b.disabled, eff: b.dataset.eff })),
-          openModals: ['victory-modal','switch-modal','pc-modal','dlg-modal','ballpick-modal','evo-modal','nick-modal','sparkle-modal','loading-modal','hof-modal','oops-modal'].filter(id => vis(g(id))),
+          openModals: ['victory-modal','switch-modal','pc-modal','dlg-modal','ballpick-modal','evo-modal','nick-modal','sparkle-modal','loading-modal','hof-modal','oops-modal','badge-modal','card-modal','settings-modal'].filter(id => vis(g(id))),
           battleActive: !!g('battle-container')?.classList.contains('active'),
           gymActive: !!g('gym-container')?.classList.contains('active'),
           team: P?.team, mons: P?.mons, beaten: Object.keys(P?.gyms?.beaten || {}),
@@ -343,7 +343,7 @@ const SCRIPTS = {
     };
 
     const clearModals = async () => {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 14; i++) {
         if (await p.locator('#victory-modal').isVisible().catch(() => false)) {
           await p.click('#victory-continue').catch(() => {}); await p.waitForTimeout(1500); continue;
         }
@@ -352,6 +352,9 @@ const SCRIPTS = {
         }
         if (await p.locator('#dlg-modal').isVisible().catch(() => false)) {
           await p.click('#dlg-ok').catch(() => {}); await p.waitForTimeout(900); continue;
+        }
+        if (await p.locator('#badge-modal').isVisible().catch(() => false)) {
+          await p.click('#badge-ok').catch(() => {}); await p.waitForTimeout(1200); continue;
         }
         if (await p.locator('#sparkle-modal').isVisible().catch(() => false)) {
           await p.click('#sparkle-modal').catch(() => {}); await p.waitForTimeout(900); continue;

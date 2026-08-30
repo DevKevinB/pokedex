@@ -52,17 +52,24 @@ try{
    if(!(await t.count())) break;
    await t.first().click().catch(()=>{});
    await page.waitForTimeout(3500);
-   if(await page.locator('#victory-modal').isVisible().catch(()=>false)) break;
-   if(await page.locator('#quest-modal, #sticker-modal').first().isVisible().catch(()=>false)) break;
+   const anyModal = await page.evaluate(()=>['victory-modal','badge-modal','nick-modal','sticker-modal'].some(id=>{
+     const e=document.getElementById(id); if(!e) return false; const r=e.getBoundingClientRect();
+     return r.width>0 && getComputedStyle(e).display!=='none' && +getComputedStyle(e).opacity>0.02;}));
+   if(anyModal) break;
  }
+ await page.waitForFunction(()=>['victory-modal','badge-modal','nick-modal','sticker-modal'].some(id=>{
+     const e=document.getElementById(id); if(!e) return false; const r=e.getBoundingClientRect();
+     return r.width>0 && getComputedStyle(e).display!=='none' && +getComputedStyle(e).opacity>0.02;}),null,{timeout:30000}).catch(()=>console.log('no modal ever'));
+ await page.waitForTimeout(600);
  await shot('after-fight');
  // step through every modal
  for(let i=0;i<8;i++){
    const btns = await page.locator('button:visible').evaluateAll(els=>els.map(e=>({id:e.id,t:e.textContent.trim().slice(0,20)})));
    console.log('  buttons:',JSON.stringify(btns));
-   const b = page.locator('#quest-ok, #dlg-ok, #victory-ok, #sticker-ok, button:visible').first();
+   const b = page.locator('#badge-ok:visible, #victory-continue:visible, #nick-skip:visible, #dlg-ok:visible').first();
    if(!(await b.count())) break;
-   await b.click().catch(()=>{});
+   const bid = await b.getAttribute('id'); console.log('  clicking', bid);
+   await b.click({force:true}).catch(e=>console.log('  clickfail',e.message.split('\n')[0]));
    await page.waitForTimeout(300); await shot(`modal-step-${i}-t300`);
    await page.waitForTimeout(900); await shot(`modal-step-${i}-t1200`);
  }
