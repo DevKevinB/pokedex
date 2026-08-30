@@ -504,11 +504,28 @@ function refreshMoveEff() {
   });
 }
 
+// An <img> keeps painting its LAST decoded frame until the replacement
+// arrives, so a bare `src =` assignment left the previous fighter standing on
+// the platform under the new one's name and HP bar. Worse, renderEnemy clears
+// .fainted first, so the Pokémon that had just fainted stood back up, in full
+// colour, and played the next one's send-out animation. Hiding the element
+// while the new bitmap decodes turns "the wrong Pokémon" into "an empty
+// platform for a moment", which is strictly better and self-corrects.
+function setFighterSprite(el, url) {
+  if (!el || !url || el.getAttribute('src') === url) return;
+  el.style.visibility = 'hidden';
+  el.src = url;
+  const show = () => { el.style.visibility = ''; };
+  Promise.resolve(el.decode ? el.decode() : null).then(show, show);
+  // A dead CDN must never leave a child staring at an empty platform.
+  setTimeout(show, 2500);
+}
+
 function renderActive() {
   const f = active();
   unfaintSprites();
   document.getElementById('player-name').innerHTML = `${nickOf(f.id) || f.name} <span class="lvl">Lv${f.level}</span>`;
-  document.getElementById('player-sprite').src = f.spriteBack;
+  setFighterSprite(document.getElementById('player-sprite'), f.spriteBack);
   xpBarMark = null;   // a fresh send-out PAINTS the bar, it never tweens it
   updateHP('player');
   // Move tiles lead with the TYPE, not the name. A pre-reader picks a move by
@@ -590,7 +607,7 @@ function renderEnemy() {
   const label = t ? `${w.name} <span class="lvl">Lv${w.level} · ${t.enemyNum + 1}/${t.def.team.length}</span>`
                   : `${w.shiny ? '✨ SHINY ' : 'WILD '}${w.name} <span class="lvl">Lv${w.level}</span>`;
   document.getElementById('wild-name').innerHTML = label;
-  document.getElementById('wild-sprite').src = w.spriteFront;
+  setFighterSprite(document.getElementById('wild-sprite'), w.spriteFront);
   updateHP('wild');
   sendout('wild');
   // A new enemy is a new type chart. Re-mark the tiles here or the gold outline
@@ -1020,7 +1037,22 @@ export function wireExitChip() {
   const isJunior = () => document.body.classList.contains('junior');
 
   chip.addEventListener('click', () => {
-    if (isJunior()) return;                    // ART leaves by holding, not by tapping
+    if (isJunior()) {
+      // ART leaves by HOLDING, not by tapping — that is deliberate, so a
+      // mashing four-year-old cannot lose the Pokémon he was chasing. But a
+      // tap used to do nothing whatsoever once his finger lifted, and a
+      // control that answers a pre-reader with nothing teaches him it is
+      // broken. Replay the fill bar with his finger out of the way: it shows
+      // him the gesture instead of telling him.
+      chip.classList.remove('holding');
+      void chip.offsetWidth;
+      chip.classList.add('holding');
+      sfx.shake();
+      haptic('denied');
+      clearTimeout(exitArmTimer);
+      exitArmTimer = setTimeout(() => chip.classList.remove('holding'), 950);
+      return;
+    }
     if (chip.classList.contains('armed')) { disarmExit(chip); exitBattleMode(); return; }
     chip.classList.add('armed');
     sfx.shake();
@@ -1167,7 +1199,16 @@ async function handleEnemyDown() {
 
   // save endurance HP for the rest of this gym run
   if (!player().settings.junior) {
-    Object.values(battleState.loaded).forEach(pf => { gymRun.hp[pf.id] = Math.max(1, Math.floor(pf.hp)); });
+    // Bank the survivors' damage; drop the fallen. `Math.max(1, ...)` was a
+    // "never store 0" guard, but a fainted fighter IS 0, so it was banked as 1
+    // and handed back at 1 HP for the rest of the run — every win left GABE's
+    // team more fragile than the last, and the switch menu still called them
+    // READY. Endurance still bites (survivors keep their damage); a child is
+    // just never handed a Pokémon that is already one hit from fainting.
+    Object.values(battleState.loaded).forEach(pf => {
+      if (pf.hp > 0) gymRun.hp[pf.id] = Math.floor(pf.hp);
+      else delete gymRun.hp[pf.id];
+    });
   }
 
   // the spoils: their WHOLE team joins your box, at the trainer's level
@@ -1608,15 +1649,19 @@ export async function startVersusBattle() {
 
 function renderVersusSide(n) {
   const f = sideActive(n);
+  // .fainted is not cleared by exitBattleMode, so a Pokémon that fainted in
+  // the LAST fight walked into a versus match grey and tipped over on a full
+  // green HP bar. This is the greyscale Kevin reported.
+  unfaintSprites();
   const owner = state.save.players[n];
   const nick = owner.nicks[f.id];
   if (n === 1) {
     document.getElementById('player-name').innerHTML = `${nick || f.name} <span class="lvl">Lv${f.level} · ${playerName(1)}</span>`;
-    document.getElementById('player-sprite').src = f.spriteBack;
+    setFighterSprite(document.getElementById('player-sprite'), f.spriteBack);
     updateHP('player');
   } else {
     document.getElementById('wild-name').innerHTML = `${nick || f.name} <span class="lvl">Lv${f.level} · ${playerName(2)}</span>`;
-    document.getElementById('wild-sprite').src = f.spriteFront;
+    setFighterSprite(document.getElementById('wild-sprite'), f.spriteFront);
     updateHP('wild');
   }
 }

@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.5.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.5.0">
+    <link rel="stylesheet" href="css/main.css?v=19.5.1">
+    <link rel="stylesheet" href="css/gba.css?v=19.5.1">
 </head>
 <body>
 
@@ -37,10 +37,10 @@
         </div>
         <button class="player-toggle" id="player-btn" title="Switch player (P1/P2)">P1</button>
         <div style="flex: 1;"></div>
-        <button class="header-btn" id="music-btn" title="Sound on/off">🔊</button>
-        <button class="header-btn" id="settings-btn" title="Settings: names, junior mode, sound, save data">⚙️</button>
-        <button class="header-btn" id="pc-btn" title="PC Box: your Pokémon collection">💻 PC</button>
-        <button class="header-btn" id="battle-btn" title="Battle Arena: fight with your team" style="color: #ffcc00; border-color: #ffcc00;">⚔️ BTL</button>
+        <button class="header-btn" id="music-btn" title="Sound on/off"><span class="btn-glyph">🔊</span></button>
+        <button class="header-btn" id="settings-btn" title="Settings: names, junior mode, sound, save data"><span class="btn-glyph">⚙️</span></button>
+        <button class="header-btn" id="pc-btn" title="PC Box: your Pokémon collection"><span class="btn-glyph">💻</span> PC</button>
+        <button class="header-btn" id="battle-btn" title="Battle Arena: fight with your team" style="color: #ffcc00; border-color: #ffcc00;"><span class="btn-glyph">⚔️</span> BTL</button>
     </div>
 
     <div class="visual-display">
@@ -113,7 +113,7 @@
 
 <div id="explore-container">
     <div class="battle-header">
-        <button class="btn-escape" id="explore-back-btn">🔙 BACK</button>
+        <button class="btn-escape" id="explore-back-btn"><span class="btn-glyph">🔙</span> BACK</button>
         <span>EXPLORE THE WILD</span>
     </div>
     <div class="explore-body">
@@ -127,7 +127,7 @@
 
 <div id="gym-container">
     <div class="battle-header">
-        <button class="btn-escape" id="gym-back-btn">🔙 BACK</button>
+        <button class="btn-escape" id="gym-back-btn"><span class="btn-glyph">🔙</span> BACK</button>
         <span id="gym-title">GYM CIRCUIT</span>
     </div>
     <div class="explore-body" id="gym-body"></div>
@@ -461,6 +461,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.5.0"></script>
+<script type="module" src="js/main.js?v=19.5.1"></script>
 </body>
 </html>

@@ -2,6 +2,49 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.5.1] - PLAYTEST FIXES
+
+Six agents played the game properly for the first time — as Art, as Gabe on a
+long Saturday, at real speed, as a brand-new player, and as you in Parent
+Tools — and every bug they reported was independently reproduced before it got
+written down. 56 were real. These are the ones that mattered most.
+
+### Fixed
+- **A save the game cannot read is no longer quietly replaced with an empty
+  one.** This was the worst thing found. If the save file was ever damaged, the
+  game started fresh, said nothing, and then wrote that empty save straight
+  over the real one the moment it rolled the daily quests — both boys'
+  collections gone, silently, before either of them had touched anything. The
+  old save was always kept safely in the background, but nothing told anyone
+  to stop. Now it stops the screen with the SHOW A GROWN-UP message and
+  refuses to write anything at all until you have seen it.
+- **Winning a gym battle no longer leaves your team more fragile.** Any
+  Pokémon that fainted was being brought back at exactly 1 HP for the rest of
+  the gym run — and the SWITCH menu still cheerfully called it READY. Each win
+  made the next fight harder. Fainted Pokémon now come back properly healed for
+  the next trainer; the ones that survived still carry their damage, so a gym
+  run still means something.
+- **The Pokémon you just beat no longer stands back up as the next one.** When
+  a new opponent came out, the picture of the *previous* one stayed on screen
+  until the new one finished downloading — so the Pokémon that had just fainted
+  got up, turned back to full colour, and played the next one's entrance under
+  the wrong name and a full health bar. **This is almost certainly the
+  "greyscale Pokémon" you saw.**
+- **A grey, keeled-over Pokémon no longer walks into a versus match.** The
+  fainted look was never cleared when a fight ended, so the next brother battle
+  started with a tipped-over grey Pokémon on a full green health bar.
+- **Tapping BACK in a battle does something for Art now.** Art has to *hold*
+  BACK to leave a fight — deliberately, so a mashing four-year-old can't lose
+  the Pokémon he was chasing. But a tap did absolutely nothing once his finger
+  lifted, which just teaches him the button is broken. A tap now plays the
+  hold-bar through once so he can see what the gesture is, and the bar fills
+  the whole button instead of being a 5-pixel sliver hidden under his thumb.
+- **The little pictures on buttons are the right size.** The emoji on the
+  header buttons and the BACK buttons was being drawn at the text size — the
+  smallest thing on the screen — while the toolbar buttons got proper big
+  icons. **This is the "spacing between emojis and text" you spotted**; it was
+  a size problem rather than a spacing one. They now match.
+
 ## [19.5.0] - IT TALKS BACK
 
 The Pokémon answer back now, and the CRY button finally works on the iPad.

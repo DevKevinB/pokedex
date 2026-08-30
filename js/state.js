@@ -163,7 +163,23 @@ function quarantine(rawText, why) {
     localStorage.setItem(QUARANTINE_PREFIX + Date.now(), rawText);
     console.warn('Save quarantined (' + why + '). Original text preserved.');
   } catch (e) { /* out of space — nothing more we can do */ }
+  // A console warning is not a signal: nobody is watching a console on an
+  // iPad. Until now an unreadable save started the game EMPTY and then the
+  // first persist() (boot rolls the daily quests) wrote that empty save over
+  // the real key — two boys' collections gone, silently, before either of
+  // them touched anything. The quarantined copy is recoverable, but only if
+  // somebody knows to stop. So this blocks the screen and says so.
+  quarantined = true;
+  showSaveFailureBanner(
+    'The saved game on this tablet could not be read, so the game has started ' +
+    'empty. The old save has been kept safely — but playing on will write over ' +
+    'it. Please stop and tell Dad now.');
 }
+
+// While this is true the save is NOT ours to write: the real one is sitting in
+// quarantine and every write takes it further away.
+let quarantined = false;
+export const saveIsQuarantined = () => quarantined;
 
 export function loadSave() {
   const rawText = (() => { try { return localStorage.getItem(SAVE_KEY); } catch (e) { return null; } })();
@@ -187,6 +203,10 @@ export function loadSave() {
 // that also fails, stop the game and say so in words a grown-up will see.
 let persistBroken = false;
 export function persist() {
+  // Refuse to write over a save we could not read. The recoverable original is
+  // in quarantine; every write from the empty session buries it further. The
+  // banner is already up telling a grown-up to stop.
+  if (quarantined) return false;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state.save));
     persistBroken = false;
@@ -210,7 +230,7 @@ export function persist() {
 
 // Deliberately blocking and deliberately wordy — this is the one message in
 // the game aimed at Kevin rather than at a child.
-function showSaveFailureBanner() {
+function showSaveFailureBanner(msg) {
   try {
     if (document.getElementById('save-fail-banner')) return;
     const el = document.createElement('div');
@@ -221,8 +241,9 @@ function showSaveFailureBanner() {
       'text-align:center;padding:24px;font-family:sans-serif;font-size:16px;line-height:1.5;';
     el.innerHTML = '<div style="font-size:56px">⚠️</div>' +
       '<div style="font-weight:800;font-size:20px;margin:12px 0">SHOW A GROWN-UP</div>' +
-      '<div style="max-width:420px">This tablet is out of storage, so the game cannot save. ' +
-      'Please stop playing and tell Dad now, before anything is lost.</div>';
+      '<div style="max-width:420px">' + (msg ||
+        'This tablet is out of storage, so the game cannot save. ' +
+        'Please stop playing and tell Dad now, before anything is lost.') + '</div>';
     document.body.appendChild(el);
   } catch (e) { /* if even this fails, the console warning is all we have */ }
 }
