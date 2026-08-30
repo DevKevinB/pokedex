@@ -14,6 +14,46 @@
   --crt-green: #6bff6b;
   --crt-dark: #0f2810;
   --pixel-font: 'Press Start 2P', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Courier New', monospace;
+
+  /* ---- v19.1 design tokens (ROADMAP §3.1-3.3) -------------------------
+     ADDITIVE. Every --px-* name above still works and still holds the same
+     value; rules move onto these names screen by screen, sprint by sprint,
+     so nothing shifts in one big commit. No value here is new — they are
+     the colours already in the stylesheet, given names. */
+
+  /* night surfaces (the shell) */
+  --night:   #16162a;   /* = --px-shell */
+  --night-2: #23233f;   /* = --px-shell-2 */
+  --night-3: #0b0b1a;
+  /* paper surfaces (the panels) */
+  --paper:   #f8f8e8;   /* = --px-cream */
+  --paper-2: #e0d8b0;   /* = --px-cream-dark */
+  --paper-3: #fffef2;   /* inner panel white */
+  /* ink */
+  --ink:   #24243a;     /* = --px-ink; borders and text on paper */
+  --ink-2: #706848;     /* secondary text on paper */
+  --ink-3: #a02020;     /* section titles / danger text on paper */
+  /* accents — fills only, never text on night */
+  --red:   #e84040;  --red-2:   #c02828;
+  --green: #38c060;  --green-2: #2e8048;
+  --gold:  #ffd040;  --gold-2:  #b8952a;
+  --blue:  #4592c4;
+  --pink:  #f8b0c8;
+  /* per player (main.js swaps --p-primary / --p-dark at boot) */
+  --p1: #d32f2f;  --p1-dark: #b71c1c;
+  --p2: #1976d2;  --p2-dark: #0d47a1;
+  /* shadows */
+  --sh-text:  2px 2px 0 var(--ink);
+  --sh-panel: 3px 3px 0 rgba(0,0,0,.45);
+  --sh-btn:   0 3px 0 var(--ink);
+  /* type scale — 8px is the floor, and nothing goes under it */
+  --t-xs: 8px;    /* captions, dots, counts */
+  --t-sm: 10px;   /* body, labels, buttons */
+  --t-md: 13px;   /* section titles, modal h2 */
+  --t-lg: 20px;   /* screen title, Pokémon name */
+  --t-xl: 26px;   /* junior Pokémon name */
+  /* spacing scale */
+  --s1: 4px;  --s2: 8px;  --s3: 12px;  --s4: 16px;  --s5: 24px;  --s6: 32px;
 }
 
 /* ---------- global ---------- */
@@ -77,17 +117,20 @@ img { image-rendering: pixelated; }
 .visual-display { flex: 1 1 auto; min-height: 0; margin-top: 0 !important; padding-top: 10px; }
 .img-container { height: auto !important; flex: 1 1 auto; min-height: 88px; }
 #poke-sprite { height: 100%; width: auto; max-height: 230px; max-width: 68%; object-fit: contain; }
-.toolbar { flex: 0 0 auto; margin-bottom: calc(96px + env(safe-area-inset-bottom)); }
+/* The toolbar reserves exactly the peek plus a 6px breathing gap. This used to
+   be a hand-tuned 96px (and 60px in junior) that nothing tied to the sheet's
+   own 90px/54px — change one and the buttons quietly slid under the sheet. */
+.toolbar { flex: 0 0 auto; margin-bottom: calc(var(--sheet-peek) + 6px + env(safe-area-inset-bottom)); }
 
 /* header hardware */
 .player-toggle, .header-btn {
   font-family: var(--pixel-font); font-size: 9px; border-radius: 2px;
-  background: var(--px-cream); color: var(--px-ink);
-  border: 3px solid var(--px-ink); box-shadow: 2px 2px 0 rgba(0,0,0,0.45);
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--ink); box-shadow: 2px 2px 0 rgba(0,0,0,0.45);
   padding: 7px 8px;
 }
 .header-btn:active, .player-toggle:active { transform: translate(2px, 2px); box-shadow: 0 0 0 rgba(0,0,0,0.45); }
-#battle-btn { color: #a02020 !important; border-color: var(--px-ink) !important; }
+#battle-btn { color: var(--ink-3) !important; border-color: var(--ink) !important; }
 
 /* identity */
 #poke-id { font-size: 9px; letter-spacing: 1px; margin-bottom: 8px; color: rgba(255,255,255,0.95); text-shadow: 2px 2px 0 rgba(0,0,0,0.8); }
@@ -109,6 +152,10 @@ img { image-rendering: pixelated; }
   background: var(--px-cream); color: var(--px-ink); border: 3px solid var(--px-ink);
   box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
 }
+/* Without min-width:0 a flex item cannot shrink below its intrinsic width,
+   so the search box pushed the ▶ arrow off the right edge of the screen
+   (5px at 390, 20px at 375). */
+.search-row input { min-width: 0; }
 .search-row input::placeholder { color: #888060; }
 .search-row input:focus { outline: 3px solid var(--p-primary); }
 .nav-btn {
@@ -128,9 +175,13 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 
 /* ball drawer */
 #ball-drawer { background: var(--px-cream); border-top: 4px solid var(--px-ink); }
-.ball-opt span { color: var(--px-ink); font-family: var(--pixel-font); font-size: 7px; }
-.ball-opt small { color: #706848; font-family: var(--pixel-font); font-size: 6px; }
-.ball-count { font-family: var(--pixel-font); font-size: 6px; color: #a02020; }
+/* The ball names and rates come up to the 8px floor. The tighter gap pays
+   for the extra line height, so the drawer keeps the height it has and the
+   closed drawer stays under the fold. */
+.ball-opt { gap: 3px; }
+.ball-opt span { color: var(--ink); font-family: var(--pixel-font); font-size: var(--t-xs); }
+.ball-opt small { color: var(--ink-2); font-family: var(--pixel-font); font-size: var(--t-xs); }
+.ball-count { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-3); }
 
 /* ---------- data sheet: GBA dialog box ---------- */
 .bottom-sheet {
@@ -139,11 +190,11 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   box-shadow: inset -4px 0 0 var(--px-cream-dark), 0 -6px 0 rgba(0,0,0,0.3);
 }
 .handle { background: var(--px-ink); opacity: 0.35; }
-.quick-stats { color: #706848; font-size: 8px; font-family: var(--pixel-font); }
+.quick-stats { color: var(--ink-2); font-size: var(--t-xs); font-family: var(--pixel-font); }
 .quick-stats strong { color: var(--px-ink); font-size: 10px; }
 .sheet-handle-area { border-bottom: 2px dashed rgba(36,36,58,0.25); }
 .bottom-sheet h3 {
-  color: #a02020; font-size: 10px; font-family: var(--pixel-font);
+  color: var(--ink-3); font-size: var(--t-sm); font-family: var(--pixel-font);
   border-bottom: 2px solid rgba(36,36,58,0.2);
 }
 .desc-text {
@@ -154,15 +205,15 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 }
 .desc-text.typing::after { content: '▼'; margin-left: 4px; animation: blinker 0.8s infinite; font-size: 8px; }
 @keyframes blinker { 50% { opacity: 0; } }
-.info-box { background: #fffef2; border: 2px solid var(--px-ink); border-radius: 4px; color: #706848; font-size: 8px; font-family: var(--pixel-font); }
-.info-box strong { color: var(--px-ink); font-size: 9px; line-height: 1.6; }
-.stat-name { color: #706848; font-size: 7px; }
+.info-box { background: var(--paper-3); border: 2px solid var(--ink); border-radius: 4px; color: var(--ink-2); font-size: var(--t-xs); font-family: var(--pixel-font); }
+.info-box strong { color: var(--ink); font-size: 9px; line-height: 1.6; }
+.stat-name { color: var(--ink-2); font-size: var(--t-xs); }
 .stat-val { color: var(--px-ink); font-size: 9px; font-family: var(--pixel-font); }
 .stat-bar-bg { background: #d8d0a8; border: 2px solid var(--px-ink); height: 10px; border-radius: 0; }
 .stat-bar-fill { border-radius: 0; background-image: repeating-linear-gradient(to right, transparent 0 4px, rgba(255,255,255,0.25) 4px 6px); }
-.evo-box { background: #fffef2; border: 2px solid var(--px-ink); border-radius: 4px; }
-.evo-item span { color: var(--px-ink); font-size: 7px; font-family: var(--pixel-font); }
-.evo-arrow { color: #a02020; }
+.evo-box { background: var(--paper-3); border: 2px solid var(--ink); border-radius: 4px; }
+.evo-item span { color: var(--ink); font-size: var(--t-xs); font-family: var(--pixel-font); }
+.evo-arrow { color: var(--ink-3); }
 
 /* ---------- battle: GBA battle scene ---------- */
 #battle-container { background: var(--px-ink); }
@@ -207,11 +258,11 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   box-shadow: inset -3px -3px 0 var(--px-cream-dark), 3px 3px 0 rgba(0,0,0,0.35);
   width: 195px;
 }
-.pkmn-name { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); }
-.lvl { font-family: var(--pixel-font); font-size: 7px; color: #706848; }
-.hp-bar-container { border: 2px solid var(--px-ink); background: #d8d0a8; height: 10px; border-radius: 0; }
-.hp-fill { background: #38c060; }
-#player-hp-text { font-family: var(--pixel-font); font-size: 7px !important; }
+.pkmn-name { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink); }
+.lvl { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); }
+.hp-bar-container { border: 2px solid var(--ink); background: #d8d0a8; height: 10px; border-radius: 0; }
+.hp-fill { background: var(--green); }
+#player-hp-text { font-family: var(--pixel-font); font-size: var(--t-xs) !important; }
 
 /* battle text + moves */
 .battle-controls { background: var(--px-cream); border-top: 4px solid var(--px-ink); border-radius: 0; height: auto; min-height: 200px; }
@@ -231,7 +282,7 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 }
 .move-btn:disabled { opacity: 0.55; }
 .move-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--px-ink); }
-.type-badge { font-family: var(--pixel-font); font-size: 6px; border: 1px solid var(--px-ink); border-radius: 2px; }
+.type-badge { font-family: var(--pixel-font); font-size: var(--t-xs); border: 1px solid var(--ink); border-radius: 2px; }
 
 /* battle FX */
 .battle-view.shake { animation: bvShake 0.4s steps(2, end); }
@@ -246,7 +297,7 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   color: #fff; text-shadow: 2px 2px 0 var(--px-ink), -2px 2px 0 var(--px-ink), 2px -2px 0 var(--px-ink), -2px -2px 0 var(--px-ink);
   animation: dmgFloat 0.9s steps(6, end) forwards; pointer-events: none;
 }
-.dmg-pop.super { color: #ffd040; font-size: 20px; }
+.dmg-pop.super { color: var(--gold); font-size: 20px; }
 .dmg-pop.weak { color: #b8b8b8; font-size: 13px; }
 @keyframes dmgFloat { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-56px); } }
 .fx-particle {
@@ -274,7 +325,7 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .pc-item {
   background: rgba(107,255,107,0.06); border: 2px solid rgba(107,255,107,0.4); border-radius: 2px;
 }
-.pc-item span { color: var(--crt-green); font-family: var(--pixel-font); font-size: 7px; }
+.pc-item span { color: var(--crt-green); font-family: var(--pixel-font); font-size: var(--t-xs); }
 .pc-item.uncaught { border-color: rgba(107,255,107,0.12); }
 .pc-item.uncaught img { filter: grayscale(100%) brightness(0.35) sepia(1) hue-rotate(60deg); }
 .pc-item.uncaught span { color: rgba(107,255,107,0.25); }
@@ -296,19 +347,20 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   box-shadow: inset -4px -4px 0 var(--px-cream-dark), 6px 6px 0 rgba(0,0,0,0.4);
 }
 .modal-box h2 { font-family: var(--pixel-font); font-size: 13px; color: var(--px-ink) !important; }
-.modal-box p { font-family: var(--pixel-font); font-size: 8px; color: #706848 !important; line-height: 1.8; }
-.btn-large { font-family: var(--pixel-font); font-size: 10px; border-radius: 2px; border: 3px solid var(--px-ink) !important; box-shadow: 0 4px 0 var(--px-ink); }
-.btn-large:active { transform: translateY(4px); box-shadow: 0 0 0 var(--px-ink); }
-.btn-reg { background: #fffef2; color: var(--px-ink); }
+.modal-box p { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2) !important; line-height: 1.8; }
+/* .btn-large now presses like every other button: one 3px hard shadow. */
+.btn-large { font-family: var(--pixel-font); font-size: var(--t-sm); border-radius: 2px; border: 3px solid var(--ink) !important; box-shadow: var(--sh-btn); }
+.btn-large:active { transform: translateY(3px); box-shadow: none; }
+.btn-reg { background: var(--paper-3); color: var(--ink); }
 .btn-danger { background: #e84040; color: #fff; }
 
 /* music toggle */
 #music-btn { min-width: 38px; }
 
 /* ---------- Phase 2: teams, switching, victory, evolution ---------- */
-.ball-count { font-family: var(--pixel-font); font-size: 7px; color: #a02020; font-weight: 900; }
+.ball-count { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-3); font-weight: 900; }
 
-.pc-lvl { font-family: var(--pixel-font); font-size: 6px; font-style: normal; color: rgba(107,255,107,0.7); margin-top: 2px; }
+.pc-lvl { font-family: var(--pixel-font); font-size: var(--t-xs); font-style: normal; color: rgba(107,255,107,0.7); margin-top: 2px; }
 .pc-item.uncaught .pc-lvl { display: none; }
 .pc-item.picked {
   border-color: #ffd040; background: rgba(255,208,64,0.12);
@@ -322,7 +374,7 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   padding: 10px; cursor: pointer;
 }
 
-.switch-list { display: flex; flex-direction: column; gap: 8px; max-height: 40dvh; overflow-y: auto; margin: 10px 0; }
+.switch-list { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; max-height: 40dvh; overflow-y: auto; overscroll-behavior: contain; margin: 10px 0; }
 .switch-item {
   display: flex; align-items: center; gap: 10px; cursor: pointer;
   background: #fffef2; border: 3px solid var(--px-ink); border-radius: 4px; padding: 6px 10px;
@@ -332,12 +384,12 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .switch-item img { width: 44px; height: 44px; }
 .switch-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .switch-meta span { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink); }
-.switch-meta small { font-family: var(--pixel-font); font-size: 7px; color: #38845c; }
+.switch-meta small { font-family: var(--pixel-font); font-size: var(--t-xs); color: #38845c; }
 
-.moves-grid .aux-btn { background: var(--px-cream-dark); font-size: 7px; }
+.moves-grid .aux-btn { background: var(--paper-2); font-size: var(--t-xs); }
 
 #victory-lines p { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink) !important; line-height: 1.9; margin: 8px 0; }
-#victory-lines p:first-child { font-size: 13px; color: #a02020 !important; }
+#victory-lines p:first-child { font-size: var(--t-md); color: var(--ink-3) !important; }
 
 #evo-sprite { width: 180px; height: 180px; image-rendering: pixelated; }
 /* PHOTOSENSITIVITY: this was the worst offender in the app — a full-screen
@@ -366,7 +418,9 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   color: #fff !important; font-size: 10px !important;
 }
 #explore-container {
-  position: fixed; top: 100dvh; left: 0; width: 100vw; height: 100dvh; z-index: 480;
+  /* parks and slides on transform, not `top` — see #battle-container */
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: 480;
+  transform: translateY(100%); will-change: transform;
   display: flex; flex-direction: column;
   background:
     radial-gradient(closest-side at 50% 0%, rgba(46,128,72,0.35) 0%, transparent 100%) no-repeat 0 0 / 100% 40%,
@@ -375,10 +429,10 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
     radial-gradient(1.5px 1.5px at 45% 80%, rgba(255,255,255,0.25) 49%, transparent 51%),
     linear-gradient(180deg, #131328 0%, #0b0b1a 100%);
   background-size: 100% 40%, 260px 260px, 260px 260px, 260px 260px, 100% 100%;
-  transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-#explore-container.active { top: 0; }
-.explore-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)) 16px; }
+#explore-container.active { transform: translateY(0); }
+.explore-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)) 16px; }
 #habitat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .habitat-card {
   background: var(--px-cream); border: 3px solid var(--px-ink); border-radius: 4px;
@@ -389,7 +443,7 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .habitat-card:active { transform: translate(3px, 3px); box-shadow: inset -3px -3px 0 var(--px-cream-dark); }
 .habitat-emoji { font-size: 34px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.25)); }
 .habitat-name { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); line-height: 1.6; }
-.habitat-sub { font-family: var(--pixel-font); font-size: 6px; color: #706848; }
+.habitat-sub { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); }
 #encounter-scene { flex-direction: column; align-items: center; justify-content: center; height: 100%; display: flex; gap: 30px; }
 #rustle-art { font-size: 80px; }
 #rustle-art.rustling { animation: rustle 0.5s steps(2) infinite; }
@@ -410,10 +464,10 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 #badge-title { color: #a02020 !important; }
 #badge-sub { white-space: pre-line; }
 
-.card-box { max-height: 86dvh; overflow-y: auto; width: min(380px, 92vw); padding: 20px; text-align: left; }
+.card-box { max-height: 86vh; max-height: 86dvh; overflow-y: auto; overscroll-behavior: contain; width: min(380px, 92vw); padding: 20px; text-align: left; }
 .card-box h2 { text-align: center; }
 .card-section { margin: 14px 0; }
-.card-label { font-family: var(--pixel-font); font-size: 8px; color: #a02020; margin-bottom: 8px; border-bottom: 2px solid rgba(36,36,58,0.15); padding-bottom: 4px; }
+.card-label { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-3); margin-bottom: var(--s2); border-bottom: 2px solid rgba(36,36,58,0.15); padding-bottom: var(--s1); }
 .card-row { display: flex; justify-content: space-between; font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); margin-bottom: 6px; }
 .card-dex-bar { height: 12px; background: #d8d0a8; border: 2px solid var(--px-ink); }
 #card-dex-fill { height: 100%; width: 0%; background: linear-gradient(180deg, #e84040, #c02828); transition: width 0.8s ease-out; background-image: repeating-linear-gradient(to right, transparent 0 4px, rgba(255,255,255,0.25) 4px 6px), linear-gradient(180deg, #e84040, #c02828); }
@@ -425,12 +479,12 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 }
 .card-badge.earned { filter: none; box-shadow: 0 0 8px rgba(255,208,64,0.5); border-color: #b8952a; }
 .card-badge span { font-size: 20px; }
-.card-badge small { font-family: var(--pixel-font); font-size: 5px; color: var(--px-ink); text-align: center; }
+.card-badge small { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink); text-align: center; overflow-wrap: anywhere; }
 .card-quest { display: flex; justify-content: space-between; align-items: center; font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); background: #fffef2; border: 2px solid var(--px-ink); border-radius: 4px; padding: 8px 10px; margin-bottom: 6px; line-height: 1.6; }
 .card-quest.done { background: #e2f8e2; border-color: #2e8048; }
-.card-quest small { color: #706848; }
+.card-quest small { color: var(--ink-2); font-size: var(--t-xs); }
 #card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-#card-stats div { font-family: var(--pixel-font); font-size: 7px; color: #706848; background: #fffef2; border: 2px solid var(--px-ink); border-radius: 4px; padding: 7px 8px; display: flex; justify-content: space-between; }
+#card-stats div { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); background: var(--paper-3); border: 2px solid var(--ink); border-radius: 4px; padding: 7px var(--s2); display: flex; justify-content: space-between; }
 #card-stats strong { color: var(--px-ink); }
 #card-oak { font-family: var(--pixel-font); font-size: 8px !important; line-height: 1.9 !important; color: var(--px-ink) !important; background: #fffef2; border: 3px solid var(--px-ink); border-radius: 4px; padding: 10px; }
 
@@ -449,10 +503,12 @@ body.junior .search-row input { display: none; }
 body.junior .nav-btn { flex: 1; font-size: 20px; padding: 13px 0; }
 body.junior button.tool-btn { font-size: 10px; padding: 13px 0; }
 body.junior .btn-icon { font-size: 26px; }
-/* collapsed sheet is just a handle in junior (quick stats hidden) */
-body.junior .bottom-sheet { transform: translateY(calc(100% - 54px)); }
+/* Collapsed sheet is just a handle in junior (quick stats hidden). Setting the
+   token here is the whole junior override: .bottom-sheet and .toolbar in
+   main.css/gba.css both read it, so the peek and the reserve above it can no
+   longer drift apart. calc(54 + 6) reproduces the old 60px toolbar reserve. */
+body.junior { --sheet-peek: 54px; }
 body.junior .bottom-sheet.open { transform: translateY(0); }
-body.junior .toolbar { margin-bottom: calc(60px + env(safe-area-inset-bottom)); }
 /* every ball works in junior mode — never advertise it */
 body.junior .ball-count { display: none; }
 body.junior .ball-opt img { width: 56px; height: 56px; }
@@ -480,12 +536,12 @@ body.junior .quick-stats { display: none; }
   border: 2px solid rgba(107,255,107,0.3); border-radius: 2px; padding: 7px 2px;
   display: flex; flex-direction: column; gap: 3px; align-items: center;
 }
-.gen-tab small { font-size: 6px; opacity: 0.8; }
+.gen-tab small { font-size: var(--t-xs); opacity: 0.8; }
 .gen-tab.active { background: rgba(107,255,107,0.18); color: var(--crt-green); border-color: var(--crt-green); box-shadow: 0 0 8px rgba(107,255,107,0.35); }
 .pc-empty { grid-column: 1 / -1; font-family: var(--pixel-font); font-size: 8px; color: rgba(107,255,107,0.5); text-align: center; padding: 40px 10px; line-height: 2; }
 
 /* settings */
-.set-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; font-family: var(--pixel-font); font-size: 7px; color: #706848; }
+.set-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: var(--s2); font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); }
 .set-input {
   font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink);
   background: #fffef2; border: 2px solid var(--px-ink); border-radius: 2px;
@@ -501,9 +557,9 @@ body.junior .quick-stats { display: none; }
 .set-toggle:active { transform: translateY(2px); box-shadow: none; }
 .set-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .set-action {
-  font-family: var(--pixel-font); font-size: 7px; cursor: pointer;
-  background: #fffef2; color: var(--px-ink); border: 2px solid var(--px-ink); border-radius: 2px;
-  padding: 10px 4px; box-shadow: 0 3px 0 var(--px-ink);
+  font-family: var(--pixel-font); font-size: var(--t-xs); cursor: pointer;
+  background: var(--paper-3); color: var(--ink); border: 2px solid var(--ink); border-radius: 2px;
+  padding: 10px 4px; box-shadow: var(--sh-btn);
 }
 .set-action:active { transform: translateY(3px); box-shadow: none; }
 
@@ -531,7 +587,7 @@ body.junior .quick-stats { display: none; }
 }
 
 /* ---------- v17.1: parent trainer tools ---------- */
-.set-action.dev-open { width: 100%; font-size: 7px; padding: 12px 6px; position: relative; overflow: hidden; }
+.set-action.dev-open { width: 100%; font-size: var(--t-xs); padding: var(--s3) 6px; position: relative; overflow: hidden; }
 .set-action.dev-open.holding::after {
   content: ''; position: absolute; left: 0; bottom: 0; height: 4px; width: 0;
   background: #38c060; animation: holdFill 1.2s linear forwards;
@@ -540,7 +596,7 @@ body.junior .quick-stats { display: none; }
 
 .dev-targets { display: flex; gap: 8px; }
 .dev-targets .set-toggle { flex: 1; }
-.dev-count { font-family: var(--pixel-font); font-size: 7px; color: #706848; text-align: center; margin-top: 8px; }
+.dev-count { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); text-align: center; margin-top: var(--s2); }
 .dev-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; }
 .dev-wide { flex: 1 1 100%; width: auto; min-width: 0; }
 .dev-narrow { flex: 0 0 74px; width: 74px; }
@@ -549,17 +605,17 @@ body.junior .quick-stats { display: none; }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; appearance: textfield; }
-.dev-status { font-family: var(--pixel-font); font-size: 6px; line-height: 1.8; margin-top: 8px; min-height: 12px; color: #706848; }
-.dev-status.ok { color: #2e8048; }
-.dev-status.err { color: #a02020; }
+.dev-status { font-family: var(--pixel-font); font-size: var(--t-xs); line-height: 1.8; margin-top: var(--s2); min-height: var(--s3); color: var(--ink-2); }
+.dev-status.ok { color: var(--green-2); }
+.dev-status.err { color: var(--ink-3); }
 
-.dev-list { display: flex; flex-direction: column; gap: 6px; max-height: 34dvh; overflow-y: auto; margin-top: 8px; }
+.dev-list { display: flex; flex-direction: column; gap: 6px; max-height: 34vh; max-height: 34dvh; overflow-y: auto; overscroll-behavior: contain; margin-top: 8px; }
 .dev-row {
   display: flex; align-items: center; gap: 4px; overflow: hidden;
   background: #fffef2; border: 2px solid var(--px-ink); border-radius: 4px; padding: 5px;
 }
 .dev-row img { width: 30px; height: 30px; flex: 0 0 30px; }
-.dev-id { font-family: var(--pixel-font); font-size: 7px; color: var(--px-ink); flex: 1 1 auto; min-width: 0; }
+.dev-id { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink); flex: 1 1 auto; min-width: 0; }
 .dev-lvl {
   font-family: var(--pixel-font); font-size: 9px; flex: 0 0 44px; width: 44px; text-align: center;
   background: #fff; color: var(--px-ink); border: 2px solid var(--px-ink); border-radius: 2px; padding: 5px 1px;
@@ -571,7 +627,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 }
 .dev-mini.danger { background: #e84040; color: #fff; }
 .dev-mini:active { transform: translateY(2px); }
-.dev-empty { font-family: var(--pixel-font); font-size: 7px; color: #706848; text-align: center; padding: 20px 8px; line-height: 2; }
+.dev-empty { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); text-align: center; padding: 20px var(--s2); line-height: 2; }
 
 
 /* ---------- narrow screens: keep the header on one line ---------- */
@@ -595,7 +651,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 }
 .pc-search::placeholder { color: rgba(107,255,107,0.4); }
 .pc-search:focus { outline: none; border-color: var(--crt-green); box-shadow: 0 0 8px rgba(107,255,107,0.3); }
-.pc-name { font-family: var(--pixel-font); font-size: 5px; font-style: normal; color: rgba(107,255,107,0.75); text-transform: uppercase; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-name { font-family: var(--pixel-font); font-size: var(--t-xs); font-style: normal; color: rgba(107,255,107,0.75); text-transform: uppercase; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-item.uncaught .pc-name { color: rgba(107,255,107,0.25); }
 .pc-order {
   position: absolute; top: 2px; left: 4px; font-family: var(--pixel-font); font-size: 8px;
@@ -605,10 +661,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 #team-strip {
   display: none; align-items: center; gap: 6px; margin-bottom: 10px;
   background: rgba(107,255,107,0.06); border: 2px solid rgba(107,255,107,0.35);
-  border-radius: 2px; padding: 6px; overflow-x: auto;
+  border-radius: 2px; padding: 6px; overflow-x: auto; overscroll-behavior-x: contain;
 }
-.team-strip-label { font-family: var(--pixel-font); font-size: 7px; color: var(--crt-green); display: flex; flex-direction: column; gap: 3px; flex: 0 0 auto; padding: 0 4px; }
-.team-strip-label small { font-size: 5px; opacity: 0.6; }
+.team-strip-label { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--crt-green); display: flex; flex-direction: column; gap: 3px; flex: 0 0 auto; padding: 0 var(--s1); }
+.team-strip-label small { font-size: var(--t-xs); opacity: 0.6; }
 .team-slot {
   position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;
   border: 2px solid rgba(107,255,107,0.3); border-radius: 2px; padding: 3px 5px; flex: 0 0 auto;
@@ -616,7 +672,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 }
 .team-slot:active { transform: scale(0.92); }
 .team-slot img { width: 34px; height: 34px; }
-.team-slot small { font-family: var(--pixel-font); font-size: 6px; color: var(--crt-green); }
+.team-slot small { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--crt-green); }
 .team-slot.lead { border-color: #ffd040; background: rgba(255,208,64,0.12); box-shadow: 0 0 8px rgba(255,208,64,0.3); }
 .team-slot.lead em { position: absolute; top: -2px; right: 0; font-style: normal; font-size: 9px; color: #ffd040; }
 
@@ -641,7 +697,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   width: 34px; height: 34px; object-fit: contain; image-rendering: pixelated;
   filter: drop-shadow(0 2px 0 rgba(0,0,0,0.35));
 }
-#lead-label { font-size: 7px; letter-spacing: 0; }
+#lead-label { font-size: var(--t-xs); letter-spacing: 0; }
 body.junior #lead-sprite { width: 42px; height: 42px; }
 body.junior #lead-label { font-size: 8px; }
 
@@ -655,7 +711,9 @@ body.junior #lead-label { font-size: 8px; }
 body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important; }
 
 #gym-container {
-  position: fixed; top: 100dvh; left: 0; width: 100vw; height: 100dvh; z-index: 480;
+  /* parks and slides on transform, not `top` — see #battle-container */
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: 480;
+  transform: translateY(100%); will-change: transform;
   display: flex; flex-direction: column;
   background:
     radial-gradient(closest-side at 50% 0%, rgba(184,149,42,0.3) 0%, transparent 100%) no-repeat 0 0 / 100% 40%,
@@ -663,15 +721,15 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
     radial-gradient(1px 1px at 75% 70%, rgba(255,255,255,0.3) 49%, transparent 51%),
     linear-gradient(180deg, #131328 0%, #0b0b1a 100%);
   background-size: 100% 40%, 260px 260px, 260px 260px, 100% 100%;
-  transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-#gym-container.active { top: 0; }
+#gym-container.active { transform: translateY(0); }
 @media (min-width: 760px) {
   #gym-container { width: 520px; left: 50%; margin-left: -260px; border-left: 3px solid rgba(255,255,255,0.07); border-right: 3px solid rgba(0,0,0,0.6); box-shadow: 0 0 90px rgba(0,0,0,0.85); }
 }
 
 .gym-progress {
-  font-family: var(--pixel-font); font-size: 8px; color: #ffd040; text-align: center;
+  font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--gold); text-align: center;
   line-height: 1.8; margin-bottom: 10px; text-shadow: 2px 2px 0 rgba(0,0,0,0.6);
 }
 .poke-center-btn {
@@ -698,8 +756,8 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
 .trainer-card.locked { filter: grayscale(1) opacity(0.4); cursor: default; }
 .trainer-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .trainer-name { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink); }
-.trainer-lvl { font-family: var(--pixel-font); font-size: 8px; color: #a02020; }
-.trainer-taunt { font-family: var(--pixel-font); font-size: 7px; color: #706848; line-height: 1.8; margin-bottom: 8px; }
+.trainer-lvl { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-3); }
+.trainer-taunt { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); line-height: 1.8; margin-bottom: var(--s2); }
 .trainer-roster { display: flex; gap: 4px; flex-wrap: wrap; }
 .trainer-roster img { width: 34px; height: 34px; background: rgba(0,0,0,0.06); border-radius: 2px; }
 .trainer-card.locked .trainer-roster img { filter: brightness(0); }
@@ -725,7 +783,7 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
 .dev-sug:active { background: var(--px-cream-dark); }
 .dev-sug img { width: 26px; height: 26px; }
 .dev-sug span { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); flex: 1; text-transform: uppercase; }
-.dev-sug small { font-family: var(--pixel-font); font-size: 7px; color: #706848; }
+.dev-sug small { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); }
 #variant-sparkle:disabled { opacity: 0.55; box-shadow: 0 4px 0 var(--px-ink); transform: none; cursor: default; }
 
 /* ---------- v18.4: WHO'S PLAYING picker ----------
@@ -795,7 +853,7 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
 }
 .move-btn.type-tile:active { transform: translate(3px, 3px); box-shadow: none; }
 .move-emoji { font-size: 24px; line-height: 1; filter: drop-shadow(0 2px 0 rgba(0,0,0,0.35)); }
-.move-name { font-size: 7px; letter-spacing: 0; opacity: 0.92; text-align: center; }
+.move-name { font-size: var(--t-xs); letter-spacing: 0; opacity: 0.92; text-align: center; }
 /* ART gets a picture and almost no caption; GABE keeps the name readable. */
 body.junior .move-emoji { font-size: 38px; }
 body.junior .move-name { font-size: 8px; }
@@ -946,8 +1004,8 @@ body.junior .move-name { font-size: 8px; }
 #spoils-grid.picked .spoils-pick.chosen { opacity: 1; border-color: #b8952a; box-shadow: 0 0 8px rgba(255,208,64,0.6); }
 #spoils-hint { color: #b8952a !important; font-weight: bold; }
 .card-badge { min-width: 0; }
-.card-badge em { font-style: normal; font-family: var(--pixel-font); font-size: 8px; color: #706848; text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
-.card-badge span.badge-prog { font-family: var(--pixel-font); font-size: 8px; color: #a02020; }
+.card-badge em { font-style: normal; font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
+.card-badge span.badge-prog { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-3); }
 /* 17 badges with visible goals need more room than the old 4-wide emoji grid */
 #card-badges { grid-template-columns: repeat(3, 1fr); }
 .card-badge.legacy small::after { content: ' ★'; color: #b8952a; }
@@ -961,7 +1019,7 @@ body.junior .move-name { font-size: 8px; }
 
 /* ---------- v18.11: audit fix pack ---------- */
 .spoils-hint-img { width: 28px; height: 28px; object-fit: contain; vertical-align: middle; image-rendering: pixelated; }
-.dev-pin-date { font-family: var(--pixel-font); font-size: 8px; color: #706848; margin-top: 6px; }
+.dev-pin-date { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); margin-top: 6px; }
 
 /* The tap-to-hurry affordance. A pre-reader will never find an invisible
    skip, so every skippable wait advertises itself with a blinking arrow.
@@ -973,3 +1031,111 @@ body.junior .move-name { font-size: 8px; }
 }
 @keyframes skipBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
 @media (prefers-reduced-motion: reduce) { .skip-arrow { animation: none; } }
+
+/* ============================================================
+   v19.1: MOTION FOUNDATION
+   Transform and opacity only, chunky steps, nothing longer than a third of a
+   second. Every keyframe added here is switched off again in the reduced-motion
+   block at the end of this section.
+   ============================================================ */
+
+/* ---- entrances ----
+   Modals and the PC box are toggled display:none <-> flex from JS. A CSS
+   animation restarts every time an element becomes rendered again, so these
+   need no JavaScript at all. `backwards` (not `forwards`) so nothing is left
+   holding a transform after the entrance finishes. */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes boxIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes boxPop {
+  0%   { transform: scale(0.72); }
+  100% { transform: scale(1); }
+}
+.overlay-screen { animation: fadeIn 0.15s steps(3, end) backwards; }
+.overlay-screen .modal-box { animation: boxIn 0.18s steps(3, end) backwards; }
+/* Rewards spring instead of stepping — these are the boxes a child WANTS. */
+#victory-modal .modal-box, #badge-modal .modal-box {
+  animation: boxPop 0.3s cubic-bezier(.2, 1.5, .4, 1) backwards;
+}
+#pc-modal { animation: fadeIn 0.18s steps(3, end) backwards; }
+#pc-modal .pc-grid { animation: boxIn 0.22s steps(3, end) backwards; }
+
+/* ---- the faint tip-over, finally visible ----
+   v18.6 gave a fainted sprite `transform: rotate(-75deg)`, but the `float`
+   loop lives on the <img> itself and an animation always beats a plain
+   declaration for the same property — so the tip-over has never once rendered.
+   Stopping the loop lets it through. The structural fix (move `float` onto a
+   .sprite-bob wrapper so one-shot classes own `transform`) belongs with the
+   battle rebuild; this is the cheap version that works today. */
+#player-sprite.fainted, #wild-sprite.fainted, .battle-sprite.fainted {
+  animation: none !important;
+}
+/* the player's back sprite is drawn mirrored — keep it mirrored as it tips */
+#player-sprite.fainted { transform: rotate(-75deg) translateY(14px) scaleX(-1); }
+
+/* ---- EXPLORE difficulty pips ----
+   Shipped in v18.10 with no CSS rule anywhere: white body text on a cream
+   card, in the fallback system font, i.e. invisible in both modes. Three
+   squares filled left to right and coloured by band — green comfortable,
+   amber a stretch, red tough — so the signal survives without reading. */
+.habitat-diff {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink);
+  line-height: 1.6; margin-top: 2px;
+}
+.habitat-diff i {
+  width: 8px; height: 8px; flex: 0 0 8px; font-style: normal;
+  background: var(--px-cream-dark); box-shadow: 0 0 0 2px var(--px-ink);
+}
+.habitat-diff[data-pips="1"] i:nth-child(1)    { background: #38c060; }
+.habitat-diff[data-pips="2"] i:nth-child(-n+2) { background: #ffd040; }
+.habitat-diff[data-pips="3"] i                 { background: #e84040; }
+
+/* ---- reduced motion ----
+   Nothing here hides information: the modal still appears, the fainted sprite
+   is still grey and tipped over, the pips are still coloured. Only movement
+   stops. */
+@media (prefers-reduced-motion: reduce) {
+  .overlay-screen, .overlay-screen .modal-box,
+  #victory-modal .modal-box, #badge-modal .modal-box,
+  #pc-modal, #pc-modal .pc-grid,
+  .scanning .scanner-line, #screen-wipe.wipe { animation: none !important; }
+  #battle-container, #explore-container, #gym-container { transition: none !important; }
+}
+
+
+/* ============================================================
+   v19.1: .btn — the one button primitive (ROADMAP §3.4)
+
+   Defined once here, then handed to the three families this slice owns:
+   .btn-large (modal buttons), .set-action (settings) and the two header
+   buttons. Only the properties they ALREADY agreed on are unified — pixel
+   font, uppercase, ink border, cursor — so every screen keeps its exact
+   geometry and the harness baselines do not move. Size, fill and press
+   depth still live with each component until its own sprint rebuilds it.
+
+   .move-btn is deliberately NOT in this list: v19.2/19.3 rebuild the move
+   tiles, and no !important is removed anywhere yet.
+   ============================================================ */
+.btn {
+  font-family: var(--pixel-font); font-size: var(--t-sm); line-height: 1;
+  text-transform: uppercase; cursor: pointer;
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 3px;
+  box-shadow: var(--sh-btn);
+  padding: var(--s3) 10px; min-height: 44px;
+}
+.btn--fill  { background: var(--btn-color, var(--red)); color: var(--btn-ink, #fff); }
+.btn--ghost { background: transparent; border-width: 2px; box-shadow: none; }
+.btn:disabled, .btn[disabled] { opacity: .45; }
+.btn:active { transform: translateY(3px); box-shadow: none; }
+
+/* the hand-off: shared behaviour only, never geometry */
+.btn, .btn-large, .set-action, .header-btn, .player-toggle {
+  font-family: var(--pixel-font);
+  text-transform: uppercase;
+  cursor: pointer;
+  border-color: var(--ink);
+}

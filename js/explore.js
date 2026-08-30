@@ -132,13 +132,12 @@ function renderHabitats() {
     const locked = h.championOnly && !player().champion;
     const expected = habitatLevel(h);
     const pips = expected > lead + 4 ? 3 : expected > lead - 2 ? 2 : 1;
-    const dots = '●'.repeat(pips) + '○'.repeat(3 - pips);
     return `
     <div class="habitat-card ${locked ? 'locked' : ''}" data-habitat="${h.key}">
       <span class="habitat-emoji">${locked ? '🔒' : h.emoji}</span>
       <span class="habitat-name">${h.name}</span>
       <small class="habitat-sub">${locked ? '👑 BECOME CHAMPION!' : h.sub}</small>
-      ${locked ? '' : `<small class="habitat-diff" data-pips="${pips}">${dots} Lv~${expected}</small>`}
+      ${locked ? '' : `<small class="habitat-diff" data-pips="${pips}"><i></i><i></i><i></i>Lv~${expected}</small>`}
     </div>`;
   }).join('');
   grid.querySelectorAll('.habitat-card').forEach(el =>

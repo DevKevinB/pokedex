@@ -28,9 +28,21 @@ export function typeText(el, text, speed = 16) {
 }
 
 // screen-wipe transition
+// PHOTOSENSITIVITY: the wipe is a full-screen black sweep and loadPoke() fires
+// one on every dex navigation, so holding down the arrows strobed the whole
+// screen at tap speed — inside the 3-49Hz band the seizure guidelines warn
+// about, on the screen a bored child is most likely to drum on. One wipe per
+// 700ms (1.4Hz) is the ceiling. Extra taps still load their Pokemon; they just
+// do not each get their own flash.
+const WIPE_MIN_GAP_MS = 700;
+let lastWipeAt = 0;
+
 export function screenWipe() {
   const w = document.getElementById('screen-wipe');
   if (!w) return;
+  const now = Date.now();
+  if (now - lastWipeAt < WIPE_MIN_GAP_MS) return;
+  lastWipeAt = now;
   w.classList.remove('wipe');
   void w.offsetWidth;
   w.classList.add('wipe');
@@ -126,7 +138,13 @@ function updateUISafe() {
 
     const maxStat = 255;
     document.getElementById('stats-area').innerHTML = (d.stats || []).map(st => {
-      const statName = st.stat?.name?.toUpperCase().replace('SPECIAL-', 'SP. ') || 'STAT';
+      // Six three-letter labels (ROADMAP §3.7). At the 8px floor 'DEFENSE'
+      // no longer fits the 50px column in Press Start 2P, and the rule is
+      // shorten-or-remove, never shrink.
+      const SHORT = { HP: 'HP', ATTACK: 'ATK', DEFENSE: 'DEF',
+                      'SPECIAL-ATTACK': 'SPA', 'SPECIAL-DEFENSE': 'SPD', SPEED: 'SPE' };
+      const rawName = st.stat?.name?.toUpperCase() || 'STAT';
+      const statName = SHORT[rawName] || rawName.replace('SPECIAL-', 'SP. ');
       const percent = ((st.base_stat || 0) / maxStat) * 100;
       const barColor = st.base_stat > 90 ? '#4caf50' : st.base_stat > 50 ? '#ffeb3b' : '#f44336';
       return `<div class="stat-row"><div class="stat-name">${statName}</div><div class="stat-val">${st.base_stat || 0}</div><div class="stat-bar-bg"><div class="stat-bar-fill" style="width: ${percent}%; background: ${barColor}"></div></div></div>`;

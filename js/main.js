@@ -2,7 +2,7 @@
 // Pokédex OS — bootstrap & event wiring
 // ============================================================
 
-import { APP_VERSION, PIXEL_SPRITE, initPace } from './config.js';
+import { APP_VERSION, PIXEL_SPRITE, initPace, typeColors } from './config.js';
 
 // ?fast=1 clamps every battle wait to its floor (used by the test suite).
 initPace();
@@ -84,8 +84,8 @@ document.addEventListener('team-changed', refreshLeadChip);
 function applyPlayerChrome() {
   document.getElementById('player-btn').innerText = playerName();
   refreshLeadChip();
-  document.documentElement.style.setProperty('--p-primary', state.currentPlayer === 1 ? '#d32f2f' : '#1976D2');
-  document.documentElement.style.setProperty('--p-dark', state.currentPlayer === 1 ? '#b71c1c' : '#0D47A1');
+  document.documentElement.style.setProperty('--p-primary', state.currentPlayer === 1 ? 'var(--p1)' : 'var(--p2)');
+  document.documentElement.style.setProperty('--p-dark', state.currentPlayer === 1 ? 'var(--p1-dark)' : 'var(--p2-dark)');
   applyJuniorClass();
   updateCatchUI();
 }
@@ -137,6 +137,13 @@ function showPlayerPicker() {
 function wireGestures() {
   let touchStartX = 0, touchStartY = 0;
   const appBody = document.getElementById('app-body');
+
+  // iOS Safari only runs :active styles on non-<button> elements once the
+  // document itself carries a touch listener. Without this one empty line the
+  // habitat cards, ball options, PC tiles, switch rows and spoils picks never
+  // look pressed on the iPad — and a tap with no feedback is the single most
+  // confusing thing you can hand a 4-year-old. Passive, so it costs nothing.
+  document.addEventListener('touchstart', () => {}, { passive: true });
 
   appBody.addEventListener('touchstart', e => {
     touchStartX = e.changedTouches[0].screenX;
@@ -228,9 +235,17 @@ function wireUI() {
     if (state.appMode === 'battle' && !battleState.isBattling) exitBattleMode();
   });
 
-  // music reacts to battle lifecycle
-  document.addEventListener('battle-started', e => playMusic(e.detail?.origin === 'gym' ? 'gym' : 'battle'));
-  document.addEventListener('battle-victory', () => playFanfare());
+  // Music reacts to battle lifecycle. playFanfare() was called with NO return
+  // track, so once the four-second victory jingle finished the sequencer
+  // stopped and never restarted: the arena went silent for the rest of the
+  // session, through every remaining gym fight. Remember which arena theme was
+  // playing and hand it back.
+  let arenaTrack = 'battle';
+  document.addEventListener('battle-started', e => {
+    arenaTrack = e.detail?.origin === 'gym' ? 'gym' : 'battle';
+    playMusic(arenaTrack);
+  });
+  document.addEventListener('battle-victory', () => playFanfare(arenaTrack));
   document.addEventListener('battle-exited', () => playMusic('dex'));
 
   // mute toggle (global: music + sfx + cries + speech)
@@ -292,7 +307,20 @@ function registerSW() {
   }
 }
 
+// ---- Design tokens ----
+// The 18 type colours are data (config.js) but the stylesheet wants them as
+// CSS variables. Publish them once, at boot, on the root element, so a rule
+// can say `background: var(--type-fire)` instead of carrying its own hex and
+// the two copies drifting apart.
+function applyTypeTokens() {
+  const root = document.documentElement;
+  for (const [type, hex] of Object.entries(typeColors)) {
+    root.style.setProperty(`--type-${type}`, hex);
+  }
+}
+
 // ---- Init ----
+applyTypeTokens();
 loadSave();
 initProgression();
 wireUI();

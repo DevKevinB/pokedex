@@ -2,6 +2,57 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.1.0] - ONE CONSOLE
+
+The app stops looking like five different apps stitched together, and the
+writing gets big enough to actually read. Nothing in the game changed — this
+is all how it looks and feels.
+
+### Fixed
+- **Every label is readable now.** Thirty different pieces of writing around
+  the app were printed smaller than the 8-pixel floor the project set itself —
+  some as small as 5 pixels, which in the blocky game font is a smear rather
+  than a word. The Pokémon names in the PC box, the levels, the badge captions,
+  the settings rows, the move names in battle and the ball names in the drawer
+  are all up to a readable size. Where a label genuinely could not fit at a
+  readable size it was shortened rather than shrunk — the stat rows now read
+  HP / ATK / DEF / SPA / SPD / SPE.
+- **The difficulty dots on the map are visible.** Every habitat card has shown
+  a one-to-three difficulty rating since the FARAWAY LAND update, but the dots
+  were being drawn in white on a cream card, so nobody has ever seen them.
+  They are now green, amber and red squares — Deep Forest reads as easy and
+  Dragon's Den as hard at a glance, with no reading required.
+- **The CLOSE button can always be reached.** On the trainer card the button
+  sat 1216 pixels down a 667-pixel screen — off the bottom, unreachable, with
+  the only way out being to guess. It now sticks to the bottom of any long box.
+- **A fainted Pokémon finally keels over.** The tip-over added in v18.6 never
+  once appeared: the gentle floating animation was overriding it every frame.
+- **The XP bar stopped running backwards** when a Pokémon levelled up.
+- **The music comes back after a win.** The victory fanfare was replacing the
+  area music and never handing it back, so the game went silent for the rest of
+  the session after your first win.
+- **The screen can't strobe.** Holding down the Pokédex arrows fired a
+  full-screen wipe on every press; it is now limited to well under the rate
+  that can trigger photosensitive seizures.
+- **The search box no longer pushes the ▶ arrow off the screen.**
+- Boxes and menus now fade and pop in instead of appearing instantly, and the
+  screens slide in a way that does not stutter on an older iPad.
+
+### Added
+- **One set of colours, sizes and spacings for the whole app.** Every screen
+  now draws from the same named palette and the same type scale, so the next
+  few updates change one thing in one place instead of ninety scattered ones.
+- **iPhone and iPad manners:** a long press on a Pokémon no longer pops up the
+  phone's share sheet, the keyboard stops autocorrecting Pokémon names into
+  English words, lists no longer drag the whole page around, and the ball
+  drawer can't peek above the home bar on a notched phone.
+
+### Testing
+- 166 browser checks and 38 layout checks pass. The layout net that shipped
+  last release found 144 real problems; **140 of them are now fixed**. The four
+  that remain are the battle-screen buttons running off a small phone — that is
+  the next release.
+
 ## [19.0.0] - THE SAFETY NET
 
 The first update of the v19 run. Almost all of this is invisible to the boys on

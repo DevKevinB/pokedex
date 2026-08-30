@@ -287,7 +287,7 @@ const INVARIANTS = `(opts) => {
     if (!el || !vis(el)) continue;
     const size = parseFloat(getComputedStyle(el).fontSize);
     if (size < floorPx - 0.01) {
-      const cls = (el.className && el.className.toString().trim().split(/\s+/).join('.')) || '';
+      const cls = (el.className && el.className.toString().trim().split(/\\s+/).join('.')) || '';
       const rule = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (cls ? '.' + cls : '');
       const key = rule + '|' + size;
       if (!seen.has(key)) {

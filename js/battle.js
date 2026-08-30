@@ -374,6 +374,7 @@ function renderActive() {
   unfaintSprites();
   document.getElementById('player-name').innerHTML = `${nickOf(f.id) || f.name} <span class="lvl">Lv${f.level}</span>`;
   document.getElementById('player-sprite').src = f.spriteBack;
+  xpBarMark = null;   // a fresh send-out PAINTS the bar, it never tweens it
   updateHP('player');
   // Move tiles lead with the TYPE, not the name. A pre-reader picks a move by
   // recognising fire vs water vs lightning; the name is a caption for GABE.
@@ -429,7 +430,9 @@ function updateHP(target) {
   const pct = Math.max(0, (obj.hp / obj.maxHp) * 100);
   const bar = document.getElementById(`${target}-hp-bar`);
   bar.style.width = `${pct}%`;
-  bar.style.background = pct < 20 ? '#f44336' : pct < 50 ? '#ffeb3b' : '#38c060';
+  // One HP green everywhere (--green). The low/mid colours become --red and
+  // --gold in a later sprint; changing them now would change the picture.
+  bar.style.background = pct < 20 ? '#f44336' : pct < 50 ? '#ffeb3b' : 'var(--green)';
   bar.classList.toggle('critical', pct > 0 && pct < 20);
   if (target === 'player') {
     document.getElementById('player-hp-text').innerText = `${Math.max(0, Math.floor(obj.hp))}/${obj.maxHp}`;
@@ -437,12 +440,35 @@ function updateHP(target) {
   }
 }
 
+// The XP bar must never tween BACKWARDS. addXp() subtracts the threshold on a
+// level-up, so mon.xp wraps from "nearly full" to a small remainder and the
+// gold sliver slid from 95% down to 4% — which reads, at the single most
+// rewarding moment in the game, as "you LOST your progress". A level-up now
+// fills the bar to the end, snaps to empty with the transition switched off,
+// then grows into the remainder. Forwards only, always.
+let xpBarMark = null;   // { id, level } the bar was last painted for
+
 function updateXpBar() {
   const bar = document.getElementById('player-xp-bar');
   if (!bar) return;
   const f = active();
   if (!f) return;
-  bar.style.width = `${Math.round(xpProgress(player().mons[f.id] || { level: f.level, xp: 0 }) * 100)}%`;
+  const mon = player().mons[f.id] || { level: f.level, xp: 0 };
+  const pct = Math.round(xpProgress(mon) * 100);
+  const levelled = !!xpBarMark && xpBarMark.id === f.id && mon.level > xpBarMark.level;
+  xpBarMark = { id: f.id, level: mon.level };
+  if (!levelled) { bar.style.width = `${pct}%`; return; }
+
+  const e0 = battleState.epoch;
+  bar.style.width = '100%';
+  setTimeout(() => {
+    if (stale(e0)) return;         // a battle that already ended owns nothing
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    void bar.offsetWidth;          // commit the empty state before easing back
+    bar.style.transition = '';
+    bar.style.width = `${pct}%`;
+  }, 460);   // just past the 0.45s .xp-fill width transition in gba.css
 }
 
 function enableMoves(enabled) {
@@ -741,6 +767,7 @@ async function handleEnemyDown() {
   // the victory modal explicitly nulled it out. Keep the LAST mon that gained
   // a level across the whole trainer fight.
   if (ups > 0) battleState.pendingEvolution = { id: f.id, name: f.name, level: monLevel(f.id) };
+  updateXpBar();   // run the level-up fill NOW, while the KO is still on screen
   t.kos.push(w.id);
   await awaitOrTap(1300);
   if (stale(e0)) return;

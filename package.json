@@ -1,6 +1,6 @@
 {
   "name": "pokedex-os",
-  "version": "19.0.0",
+  "version": "19.1.0",
   "private": true,
   "description": "A Pokedex game built for two brothers, 7 and 4. Vanilla JS, no build step.",
   "scripts": {

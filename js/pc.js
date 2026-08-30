@@ -50,7 +50,9 @@ function renderTeamStrip() {
   if (team.length === 0) { strip.style.display = 'none'; return; }
 
   strip.style.display = 'flex';
-  strip.innerHTML = `<span class="team-strip-label">TEAM<small>TAP = MAKE LEAD</small></span>` +
+  // 'TAP = LEAD' at the 8px floor is the same width the 5px caption used to
+  // be, so the team strip still shows the same number of sprites.
+  strip.innerHTML = `<span class="team-strip-label">TEAM<small>TAP = LEAD</small></span>` +
     team.map((id, i) => `
       <div class="team-slot ${i === 0 ? 'lead' : ''}" data-team-id="${id}" title="${nameOf(id)} — tap to make it your lead">
         ${i === 0 ? '<em>★</em>' : ''}

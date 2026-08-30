@@ -25,7 +25,7 @@ export function openBag() {
 // celebration confetti (extra generous in junior mode)
 export function spawnConfetti(host, count = 24) {
   if (!host) return;
-  const colors = ['#e84040', '#ffd040', '#38c060', '#4592c4', '#f366b9', '#fff'];
+  const colors = ['var(--red)', 'var(--gold)', 'var(--green)', 'var(--blue)', 'var(--type-psychic)', '#fff'];
   for (let i = 0; i < count; i++) {
     const c = document.createElement('span');
     c.className = 'confetti-piece';

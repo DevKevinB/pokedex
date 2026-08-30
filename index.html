@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.0.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.0.0">
+    <link rel="stylesheet" href="css/main.css?v=19.1.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.1.0">
 </head>
 <body>
 
@@ -55,7 +55,7 @@
         <div class="img-container" id="scanner-container">
             <div id="bg-glow"></div>
             <div class="scanner-line"></div>
-            <img id="poke-sprite" src="">
+            <img id="poke-sprite" src="" draggable="false">
             <img class="throw-ball" id="dex-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
         </div>
     </div>
@@ -63,7 +63,7 @@
     <div class="toolbar">
         <div class="search-row">
             <button class="nav-btn" id="nav-prev">◀</button>
-            <input type="text" id="search" placeholder="Search Name or ID...">
+            <input type="text" id="search" placeholder="Search Name or ID..." autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search">
             <button class="nav-btn" id="nav-next">▶</button>
         </div>
 
@@ -147,13 +147,13 @@
                     <div class="hp-bar-container"><div class="hp-fill" id="wild-hp-bar"></div></div>
                 </div>
                 <div style="position:relative;">
-                    <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;">
+                    <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;" draggable="false">
                     <img class="throw-ball" id="battle-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="left: 40px;">
                 </div>
             </div>
 
             <div class="player-side">
-                <img id="player-sprite" class="battle-sprite-player" src="" style="--sx: -1;">
+                <img id="player-sprite" class="battle-sprite-player" src="" style="--sx: -1;" draggable="false">
                 <div class="hp-box-player">
                     <h3 class="pkmn-name" id="player-name">PLAYER PKMN <span class="lvl">Lv50</span></h3>
                     <div class="hp-bar-container"><div class="hp-fill" id="player-hp-bar"></div></div>
@@ -176,7 +176,7 @@
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
     <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:10px; font-size:12px;" id="pc-instruction"></div>
     <div id="team-strip"></div>
-    <input id="pc-search" class="pc-search" placeholder="🔍 SEARCH NAME OR NUMBER" maxlength="20">
+    <input id="pc-search" class="pc-search" type="text" placeholder="🔍 SEARCH NAME OR NUMBER" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done">
     <div id="gen-tabs"></div>
     <div class="pc-grid" id="pc-grid"></div>
     <button class="close-pc-btn" id="close-pc-btn">CANCEL / CLOSE PC</button>
@@ -199,7 +199,7 @@
     <div class="modal-box" style="text-align:center;">
         <img id="nick-sprite" alt="" style="width:96px;height:96px;object-fit:contain;image-rendering:pixelated;">
         <h2 id="nick-title" style="margin:10px 0;">NAME ME?</h2>
-        <input type="text" id="nick-input" maxlength="12" placeholder="NICKNAME" autocomplete="off">
+        <input type="text" id="nick-input" maxlength="12" placeholder="NICKNAME" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done">
         <div style="display:flex; gap:10px; margin-top:14px;">
             <button class="btn-large btn-reg" id="nick-skip" style="flex:1;">SKIP</button>
             <button class="btn-large btn-reg" id="nick-ok" style="flex:1;">✏️ NAME</button>
@@ -217,7 +217,7 @@
         <div id="dlg-icon" style="font-size:48px;"></div>
         <h2 id="dlg-title" style="margin:10px 0;"></h2>
         <p id="dlg-text" style="white-space:pre-line;"></p>
-        <input type="text" id="dlg-input" class="set-input" style="display:none;width:100%;margin-top:8px;" autocomplete="off">
+        <input type="text" id="dlg-input" class="set-input" style="display:none;width:100%;margin-top:8px;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
         <div style="display:flex; gap:10px; margin-top:14px;">
             <button class="btn-large btn-danger" id="dlg-cancel" style="flex:1;">CANCEL</button>
             <button class="btn-large btn-reg" id="dlg-ok" style="flex:1;">OK</button>
@@ -312,9 +312,9 @@
         <h2>⚙️ SETTINGS</h2>
         <div class="card-section">
             <div class="card-label">PLAYERS</div>
-            <div class="set-row"><span>PLAYER 1 NAME</span><input id="set-p1-name" class="set-input" maxlength="12" placeholder="P1"></div>
+            <div class="set-row"><span>PLAYER 1 NAME</span><input id="set-p1-name" class="set-input" type="text" maxlength="12" placeholder="P1" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done"></div>
             <div class="set-row"><span>P1 JUNIOR MODE</span><button class="set-toggle" id="set-p1-junior" title="Big buttons, spoken names, catches never fail, battles can't be lost">OFF</button></div>
-            <div class="set-row"><span>PLAYER 2 NAME</span><input id="set-p2-name" class="set-input" maxlength="12" placeholder="P2"></div>
+            <div class="set-row"><span>PLAYER 2 NAME</span><input id="set-p2-name" class="set-input" type="text" maxlength="12" placeholder="P2" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done"></div>
             <div class="set-row"><span>P2 JUNIOR MODE</span><button class="set-toggle" id="set-p2-junior" title="Big buttons, spoken names, catches never fail, battles can't be lost">OFF</button></div>
         </div>
         <div class="card-section">
@@ -353,8 +353,8 @@
         <div class="card-section">
             <div class="card-label">ADD A POKÉMON</div>
             <div class="dev-add">
-                <input id="dev-add-name" class="set-input dev-wide" placeholder="NAME OR NUMBER" maxlength="20" autocomplete="off">
-                <input id="dev-add-level" class="set-input dev-narrow" type="number" min="1" max="100" value="5" title="Level">
+                <input id="dev-add-name" class="set-input dev-wide" type="text" placeholder="NAME OR NUMBER" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done">
+                <input id="dev-add-level" class="set-input dev-narrow" type="number" inputmode="numeric" min="1" max="100" value="5" title="Level" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
                 <button class="set-action" id="dev-add-btn">ADD</button>
             </div>
             <div id="dev-suggest"></div>
@@ -362,7 +362,7 @@
         </div>
         <div class="card-section">
             <div class="card-label">OWNED — TAP A LEVEL TO EDIT</div>
-            <input id="dev-filter" class="set-input dev-wide" placeholder="FILTER BY NUMBER">
+            <input id="dev-filter" class="set-input dev-wide" type="text" inputmode="numeric" placeholder="FILTER BY NUMBER" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
             <div class="dev-list" id="dev-list"></div>
         </div>
         <div class="card-section">
@@ -424,6 +424,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.0.0"></script>
+<script type="module" src="js/main.js?v=19.1.0"></script>
 </body>
 </html>

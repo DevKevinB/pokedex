@@ -1,9 +1,14 @@
 :root { --p-primary: #d32f2f; --p-dark: #b71c1c; --bg-color: #121212; --panel-bg: #1e1e1e; --pc-cyan: #00e5ff; }
+/* ONE number drives the collapsed data sheet, the toolbar reserve above it and
+   the handle strip the boys grab. It used to be four unlinked magic numbers in
+   two files, which is how Junior Mode slid off the bottom of the screen twice.
+   gba.css overrides it on body.junior. */
+:root { --sheet-peek: 90px; }
 * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-body, html { margin: 0; padding: 0; height: 100dvh; width: 100vw; background: var(--bg-color); font-family: 'SF Pro Display', -apple-system, sans-serif; overflow: hidden; color: white; touch-action: pan-y; }
+body, html { margin: 0; padding: 0; height: 100vh; height: 100dvh; width: 100vw; background: var(--bg-color); font-family: 'SF Pro Display', -apple-system, sans-serif; overflow: hidden; color: white; touch-action: pan-y; }
 
 /* --- BOOT SCREEN --- */
-#boot-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #8bac0f; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #0f380f; font-family: 'Courier New', Courier, monospace; font-weight: bold; transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+#boot-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: #8bac0f; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #0f380f; font-family: 'Courier New', Courier, monospace; font-weight: bold; transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
 .boot-logo { border: 4px solid #0f380f; padding: 10px 20px; border-radius: 20px; font-size: 32px; letter-spacing: 2px; margin-bottom: 50px; animation: dropDown 1s forwards; transform: translateY(-200px); opacity: 0; }
 @keyframes dropDown { to { transform: translateY(0); opacity: 1; } }
 .tap-start { font-size: 18px; animation: blinker 1s infinite; margin-top: 20px;}
@@ -40,9 +45,21 @@ body, html { margin: 0; padding: 0; height: 100dvh; width: 100vw; background: va
 #bg-glow { position: absolute; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); z-index: 1; transition: background 0.5s;}
 
 #poke-sprite { height: 200px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); transition: transform 0.5s cubic-bezier(0.5, 0, 0.5, 1), opacity 0.5s; z-index: 2; }
+/* iOS fires its share/save callout on a long press over an <img>. ART holds his
+   finger on the Pokemon he is trying to catch — the callout menu lands on the
+   exact target the game is asking him to tap. Killed on the three big sprites
+   only; every other image in the app is still saveable by a grown-up. */
+#poke-sprite, #wild-sprite, #player-sprite { -webkit-touch-callout: none; -webkit-user-drag: none; }
 .sucked-in { transform: scale(0) translateY(100px) !important; opacity: 0; }
 .scanner-line { position: absolute; width: 150px; height: 3px; background: rgba(0, 255, 255, 0.9); box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; border-radius: 50%; z-index: 10; opacity: 0; left: 50%; transform: translateX(-50%); pointer-events: none; }
 .scanning .scanner-line { animation: scan 1.2s ease-in-out infinite alternate; opacity: 1; }
+/* The scan sweep. This animation has been referenced since v1 and never
+   defined, so the scanner line just sat there. translateX(-50%) is the line's
+   own centering and must be repeated in every frame or it jumps left. */
+@keyframes scan {
+  from { transform: translateX(-50%) translateY(-46px); opacity: 0.35; }
+  to   { transform: translateX(-50%) translateY(46px); opacity: 1; }
+}
 
 /* CATCH MECHANIC UI */
 .throw-ball { position: absolute; width: 40px; height: 40px; z-index: 10; opacity: 0; pointer-events: none; transform: translateY(-150px) scale(2); transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.8));}
@@ -65,8 +82,15 @@ button.tool-btn:active { transform: scale(0.95); }
 .btn-catch.owned { background: linear-gradient(135deg, #11998e, #38ef7d) !important; }
 
 /* ITEM DRAWER */
-#ball-drawer { position: absolute; bottom: -120px; left: 0; width: 100%; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 15px 10px calc(15px + env(safe-area-inset-bottom)) 10px; border-top: 2px solid #444; transition: bottom 0.3s ease-out; z-index: 30; box-shadow: 0 -10px 20px rgba(0,0,0,0.5);}
-#ball-drawer.open { bottom: 0; }
+/* The drawer parks with a transform, not a negative `bottom`. -120px was a
+   guess at the drawer's own height: on a notched phone the safe-area padding
+   makes it TALLER than 120px, so the top of the parked drawer leaked back up
+   over the home indicator and a stray ball sat there waiting to be tapped.
+   translateY(100%) is always exactly its own height, whatever that turns out
+   to be, and visibility:hidden takes the parked balls out of hit-testing and
+   the accessibility tree until the drawer is really open. */
+#ball-drawer { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 15px 10px calc(15px + env(safe-area-inset-bottom)) 10px; border-top: 2px solid #444; transform: translateY(100%); visibility: hidden; transition: transform 0.3s ease-out, visibility 0s linear 0.3s; z-index: 30; box-shadow: 0 -10px 20px rgba(0,0,0,0.5);}
+#ball-drawer.open { transform: translateY(0); visibility: visible; transition: transform 0.3s ease-out, visibility 0s linear 0s; }
 .ball-opt { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: transform 0.2s; text-align: center;}
 .ball-opt:active { transform: scale(0.9); }
 .ball-opt img { width: 45px; height: 45px; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));}
@@ -74,13 +98,13 @@ button.tool-btn:active { transform: scale(0.95); }
 .ball-opt small { font-size: 8px; color: #aaa; }
 
 /* BOTTOM SHEET */
-.bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; height: 75dvh; background: var(--panel-bg); border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); transform: translateY(calc(100% - 90px)); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; z-index: 20; }
+.bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; height: 75vh; height: 75dvh; background: var(--panel-bg); border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); transform: translateY(calc(100% - var(--sheet-peek))); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; z-index: 20; }
 .bottom-sheet.open { transform: translateY(0); }
 .sheet-handle-area { padding: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .handle { width: 40px; height: 5px; background: rgba(255,255,255,0.3); border-radius: 5px; margin-bottom: 15px; }
 .quick-stats { display: flex; width: 100%; justify-content: space-around; color: #aaa; font-size: 12px; font-weight: 700; }
 .quick-stats strong { color: #fff; font-size: 14px; }
-.sheet-content { padding: 20px; overflow-y: auto; flex: 1; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+.sheet-content { padding: 20px; overflow-y: auto; overscroll-behavior: contain; flex: 1; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 
 h3 { font-size: 14px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin: 25px 0 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
 h3:first-child { margin-top: 0; }
@@ -101,8 +125,12 @@ h3:first-child { margin-top: 0; }
 .evo-arrow { color: #555; font-size: 20px; font-weight: bold; }
 
 /* --- FULL SCREEN BATTLE FOLDER --- */
-#battle-container { position: fixed; top: 100dvh; left: 0; width: 100vw; height: 100dvh; z-index: 500; display: flex; flex-direction: column; background: #222; transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-#battle-container.active { top: 0; }
+/* Slides on TRANSFORM, not `top`. Animating `top` on a full-viewport fixed
+   layer relayouts the page every frame; translateY is composited, so the panel
+   stops stuttering on the way in on an older iPad. The vh fallback stays for
+   iOS below 15.4, where dvh does not exist. */
+#battle-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: 500; display: flex; flex-direction: column; background: #222; transform: translateY(100%); will-change: transform; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+#battle-container.active { transform: translateY(0); }
 
 .battle-header { background: #111; padding: calc(env(safe-area-inset-top) + 10px) 20px 15px 20px; display: flex; align-items: center; border-bottom: 4px solid #444; color: #fff; font-weight: 900; letter-spacing: 2px;}
 .btn-escape { background: #333; color: #fff; border: 2px solid #555; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-right: 15px; box-shadow: 0 4px 0 #111;}
@@ -130,7 +158,10 @@ h3:first-child { margin-top: 0; }
 .hp-bar-container { width: 100%; height: 8px; background: #333; border-radius: 4px; border: 2px solid #555; margin-top: 5px; overflow: hidden; }
 .hp-fill { height: 100%; width: 100%; background: #4caf50; transition: width 0.5s ease-out, background 0.5s; }
 
-.battle-controls { z-index: 2; background: var(--panel-bg); border-radius: 20px 20px 0 0; border-top: 4px solid #333; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); height: 200px;}
+/* No bottom safe-area padding here. .moves-grid (gba.css) already adds it, and
+   the two stacked put a phantom home-indicator gap under the move tiles that
+   pushed BALL and SWITCH further down an already tight 375x667 screen. */
+.battle-controls { z-index: 2; background: var(--panel-bg); border-radius: 20px 20px 0 0; border-top: 4px solid #333; display: flex; flex-direction: column; height: 200px;}
 .battle-log { flex: 1; padding: 15px; color: #fff; font-size: 16px; font-family: 'Courier New', Courier, monospace; font-weight: bold; line-height: 1.4; border-bottom: 2px solid #333; overflow-y: hidden; text-transform: uppercase;}
 .moves-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
 .move-btn { background: #eee; border: 2px solid #999; border-radius: 10px; padding: 12px 5px; font-weight: 900; font-size: 12px; text-transform: uppercase; cursor: pointer; color: #000; box-shadow: 0 4px #aaa; transition: transform 0.1s;}
@@ -138,9 +169,9 @@ h3:first-child { margin-top: 0; }
 .type-badge { display: block; font-size: 8px; margin-top: 4px; color: #fff; padding: 2px 4px; border-radius: 4px; width: fit-content; margin-inline: auto;}
 
 /* PC BOX & OVERLAYS */
-#pc-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: rgba(10, 20, 30, 0.95); backdrop-filter: blur(15px); z-index: 1000; display: none; flex-direction: column; padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)) 20px;}
+#pc-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(10, 20, 30, 0.95); backdrop-filter: blur(15px); z-index: 1000; display: none; flex-direction: column; padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)) 20px;}
 .pc-header { color: var(--pc-cyan); font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;}
-.pc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 12px; overflow-y: auto; flex: 1; padding-bottom: 20px; align-content: start; }
+.pc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 12px; overflow-y: auto; overscroll-behavior: contain; flex: 1; padding-bottom: 20px; align-content: start; }
 .pc-grid::-webkit-scrollbar { display: none; }
 .pc-item { background: rgba(255,255,255,0.05); border-radius: 12px; border: 2px solid rgba(0, 229, 255, 0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 5px; cursor: pointer; transition: transform 0.1s; }
 .pc-item:active { transform: scale(0.9); }
@@ -155,10 +186,23 @@ h3:first-child { margin-top: 0; }
 .close-pc-btn { background: #fff; color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: 900; font-size: 14px; margin-top: 10px; cursor: pointer; }
 
 /* Full Screen Modals */
-.overlay-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 20px;}
-.modal-box { background: #222; border: 4px solid var(--p-primary); border-radius: 20px; padding: 30px; text-align: center; max-width: 90%; width: 350px;}
+.overlay-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 20px;}
+.modal-box { background: #222; border: 4px solid var(--p-primary); border-radius: 20px; padding: 30px; text-align: center; max-width: 90%; width: 350px; max-height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
+/* The last button in a box is always the way OUT — CONTINUE, CLOSE, DONE. A big
+   Elite-Four win pushes it past the bottom of the screen, and a child stuck in
+   a modal he cannot read is stuck for good. Pin it to the bottom of the box.
+   Every .btn-large variant has an opaque background, so nothing shows through. */
+/* The last button in a tall modal sticks to the bottom so CONTINUE / CLOSE is
+   always under a thumb — an Elite win used to push it off the screen with no
+   way to reach it. It gets an opaque backing and a margin so it never sits on
+   top of the last row of content it is covering. */
+.modal-box > .btn-large:last-child {
+  position: sticky; bottom: 0; z-index: 1;
+  margin-top: 14px;
+  background: var(--paper); 
+  box-shadow: 0 -10px 0 var(--paper), 0 3px 0 var(--ink);
+}
 .btn-large { display: block; width: 100%; padding: 15px; margin-top: 15px; border-radius: 10px; border: none; font-size: 16px; font-weight: 900; cursor: pointer;}
 .btn-reg { background: #eee; color: #000; }
 .btn-sparkle { background: linear-gradient(45deg, #ff00ff, #ffee00); color: #000; }
 .btn-danger { background: #ff4444; color: #fff; }
-    </style>
