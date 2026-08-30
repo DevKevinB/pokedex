@@ -20,7 +20,7 @@ import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
 import { GYMS, trainerKey } from './gymdata.js';
 import { gymRun, clearGymRun, recordGymWin } from './gym.js';
-import { activeHabitat, habitatEncounterLevel } from './explore.js';
+import { activeHabitat, habitatEncounterLevel, habitatBackdrop } from './explore.js';
 import { askNickname, cancelNickname } from './nickname.js';
 import { dialog } from './dialog.js';
 import { spawnConfetti } from './catch.js';
@@ -369,8 +369,15 @@ function setBattleBackdrop() {
   const arena = document.querySelector('.battle-arena');
   if (!arena) return;
   HABITAT_TYPES.forEach(k => arena.classList.remove(`bg-${k}`));
+  // THE PLACE decides how the place looks. This used to read the wild
+  // Pokémon's type, so walking into DEEP FOREST and meeting a water-type
+  // painted an ocean underneath a chip that still said DEEP FOREST. The
+  // type is only the fallback, for fights that happen nowhere in particular
+  // (the dex arena and versus).
+  const fromPlace = habitatBackdrop();
   const t = battleState.wild.types?.[0]?.type?.name || 'grass';
-  arena.classList.add(`bg-${HABITAT_TYPES.includes(t) ? t : (HABITAT_ALIAS[t] || 'grass')}`);
+  const byType = HABITAT_TYPES.includes(t) ? t : (HABITAT_ALIAS[t] || 'grass');
+  arena.classList.add(`bg-${fromPlace || byType}`);
 }
 
 // A super-effective hit should FEEL different from an ordinary one, not just

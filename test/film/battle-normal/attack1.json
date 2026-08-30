@@ -1,0 +1,1242 @@
+[
+ {
+  "t": 47,
+  "file": "023-attack1-0000ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    134,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    391,
+    179,
+    186
+   ]
+  },
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 263,
+  "file": "024-attack1-0199ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    136,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    393,
+    179,
+    186
+   ]
+  },
+  "log": "CHARIZARD USED BLAZE KICK!\n▼",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 466,
+  "file": "025-attack1-0415ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    138,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player lunge",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "lungeFwd",
+   "src": "6.gif",
+   "rect": [
+    12,
+    395,
+    179,
+    186
+   ]
+  },
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 700,
+  "file": "026-attack1-0619ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    139,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player lunge",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 7.33333, -4.66667)",
+   "anim": "lungeFwd",
+   "src": "6.gif",
+   "rect": [
+    19,
+    391,
+    179,
+    186
+   ]
+  },
+  "log": "CHARIZARD USED BLAZE KICK!",
+  "wildBar": "100%",
+  "wildGhost": "100%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 913,
+  "file": "027-attack1-0853ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild hit-anim",
+   "filter": "brightness(0.666667) invert(0.333333)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 3.33333, 0)",
+   "anim": "flashHit",
+   "src": "314.gif",
+   "rect": [
+    222,
+    137,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    18,
+    394,
+    179,
+    186
+   ]
+  },
+  "log": "IT'S SUPER EFFECTIVE!",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 1116,
+  "file": "028-attack1-1065ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild hit-anim",
+   "filter": "brightness(0.666667) invert(0.333333)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 3.33333, 0)",
+   "anim": "flashHit",
+   "src": "314.gif",
+   "rect": [
+    215,
+    140,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    11,
+    397,
+    179,
+    186
+   ]
+  },
+  "log": "IT'S SUPER EFFECTIVE!",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 1315,
+  "file": "029-attack1-1268ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    138,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    395,
+    179,
+    186
+   ]
+  },
+  "log": "IT'S SUPER EFFECTIVE!",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 1515,
+  "file": "030-attack1-1468ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    137,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    393,
+    179,
+    186
+   ]
+  },
+  "log": "ILLUMISE USED ACROBATICS!",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 1713,
+  "file": "031-attack1-1667ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    134,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    391,
+    179,
+    186
+   ]
+  },
+  "log": "ILLUMISE USED ACROBATICS!\n▼",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 1910,
+  "file": "032-attack1-1866ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild lunge",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "lungeFwd",
+   "src": "314.gif",
+   "rect": [
+    213,
+    132,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    389,
+    179,
+    186
+   ]
+  },
+  "log": "ILLUMISE USED ACROBATICS!",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 2120,
+  "file": "033-attack1-2062ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild lunge",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, -14.6667, 9.33333)",
+   "anim": "lungeFwd",
+   "src": "314.gif",
+   "rect": [
+    198,
+    140,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    387,
+    179,
+    186
+   ]
+  },
+  "log": "ILLUMISE USED ACROBATICS!",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "100%",
+  "plGhost": "100%",
+  "plHpText": "45/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 2345,
+  "file": "034-attack1-2274ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    130,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player hit-anim",
+   "filter": "brightness(0.666667) invert(0.333333)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, -3.33333, 0)",
+   "anim": "flashHit",
+   "src": "6.gif",
+   "rect": [
+    9,
+    387,
+    179,
+    186
+   ]
+  },
+  "log": "ILLUMISE USED ACROBATICS!",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "44/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 2571,
+  "file": "035-attack1-2498ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    130,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player hit-anim",
+   "filter": "brightness(0.666667) invert(0.333333)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, -3.33333, 0)",
+   "anim": "flashHit",
+   "src": "6.gif",
+   "rect": [
+    9,
+    386,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "42/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 2806,
+  "file": "036-attack1-2725ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    130,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    387,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3039,
+  "file": "037-attack1-2960ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    132,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    388,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3259,
+  "file": "038-attack1-3192ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    134,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    391,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3459,
+  "file": "039-attack1-3412ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    136,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    393,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3670,
+  "file": "040-attack1-3612ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    138,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    395,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 3908,
+  "file": "041-attack1-3823ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    139,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    396,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 4143,
+  "file": "042-attack1-4061ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    139,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    396,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 4352,
+  "file": "043-attack1-4297ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    139,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    396,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 4573,
+  "file": "044-attack1-4506ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    137,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    394,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 4796,
+  "file": "045-attack1-4726ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    135,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    391,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 5012,
+  "file": "046-attack1-4949ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    132,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    389,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 5224,
+  "file": "047-attack1-5165ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    131,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    387,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 5434,
+  "file": "048-attack1-5377ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    130,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    386,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 5620,
+  "file": "049-attack1-5587ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    130,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    386,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 5816,
+  "file": "050-attack1-5773ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    130,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    387,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 5999,
+  "file": "051-attack1-5968ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    131,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    388,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 6205,
+  "file": "052-attack1-6151ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    133,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    390,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ },
+ {
+  "t": 6406,
+  "file": "053-attack1-6357ms.png",
+  "wild": {
+   "cls": "battle-sprite-wild",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "314.gif",
+   "rect": [
+    213,
+    136,
+    152,
+    143
+   ]
+  },
+  "player": {
+   "cls": "battle-sprite-player",
+   "filter": "drop-shadow(rgba(0, 0, 0, 0.25) 0px 4px 0px)",
+   "opacity": "1",
+   "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+   "anim": "none",
+   "src": "6.gif",
+   "rect": [
+    12,
+    392,
+    179,
+    186
+   ]
+  },
+  "log": "WHAT WILL CHARIZARD DO?",
+  "wildBar": "40%",
+  "wildGhost": "40%",
+  "plBar": "89.2935%",
+  "plGhost": "89.2935%",
+  "plHpText": "40/45",
+  "title": "🌲 DEEP FOREST",
+  "fx": []
+ }
+]

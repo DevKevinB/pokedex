@@ -194,6 +194,7 @@ const OBSERVE = `() => {
 }`;
 
 // ---- the scenarios: things the boys actually do ----
+const SAT = [];
 const SCRIPTS = {
   async dex(p, step) {
     await step('opened the dex');
@@ -270,6 +271,206 @@ const SCRIPTS = {
     await p.click('#card-btn'); await p.waitForTimeout(1200);
     await step('opened the trainer card');
   },
+
+  // ============================================================
+  // GABE ON A SATURDAY — one long unbroken session.
+  // Catch a few, run a whole gym stop trainer-after-trainer, switch mid
+  // fight, faint someone, heal, rearrange the team in the PC, fight again.
+  // The point is ACCUMULATION: state that is fine once and wrong the
+  // fifth time.
+  // ============================================================
+  async saturday(p, step) {
+    const dump = async tag => {
+      const d = await p.evaluate(() => {
+        const g = id => document.getElementById(id);
+        const txt = id => (g(id)?.innerText || '').trim();
+        const w = id => g(id)?.style.width || '';
+        const sp = id => { const e = g(id); return e ? { src: String(e.src).split('/').pop(), cls: e.className, filter: getComputedStyle(e).filter, op: getComputedStyle(e).opacity, tr: getComputedStyle(e).transform } : null; };
+        let save = null;
+        try { save = JSON.parse(localStorage.getItem('pokedexos_save_v2')); } catch (e) {}
+        const P = save?.players?.[1];
+        const vis = el => { if (!el) return false; const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0.05; };
+        return {
+          playerName: txt('player-name'), playerHp: txt('player-hp-text'),
+          playerBar: w('player-hp-bar'), playerGhost: w('player-hp-ghost'),
+          xpBar: w('player-xp-bar'),
+          wildName: txt('wild-name'), wildBar: w('wild-hp-bar'), wildGhost: w('wild-hp-ghost'),
+          log: txt('battle-log'), title: txt('battle-title'),
+          pSprite: sp('player-sprite'), wSprite: sp('wild-sprite'),
+          moves: [...document.querySelectorAll('#battle-moves .move-btn')].map(b => ({ t: b.innerText.replace(/\s+/g,' ').trim().slice(0,22), dis: b.disabled, eff: b.dataset.eff })),
+          openModals: ['victory-modal','switch-modal','pc-modal','dlg-modal','ballpick-modal','evo-modal','nick-modal','sparkle-modal','loading-modal','hof-modal','oops-modal'].filter(id => vis(g(id))),
+          battleActive: !!g('battle-container')?.classList.contains('active'),
+          gymActive: !!g('gym-container')?.classList.contains('active'),
+          team: P?.team, mons: P?.mons, beaten: Object.keys(P?.gyms?.beaten || {}),
+          stats: P?.stats, caught: P?.caught?.length,
+        };
+      });
+      SAT.push({ tag, ...d });
+      return d;
+    };
+
+    const fight = async (label, maxTurns = 12, opts = {}) => {
+      for (let turn = 0; turn < maxTurns; turn++) {
+        if (await p.locator('#switch-modal').isVisible().catch(() => false)) {
+          const it = p.locator('#switch-modal .switch-item').first();
+          if (await it.count()) { await it.click(); await p.waitForTimeout(2200); await step(`${label} forced switch`); }
+          else break;
+        }
+        if (await p.locator('#victory-modal').isVisible().catch(() => false)) break;
+        if (opts.switchOn === turn) {
+          await p.click('#switch-btn').catch(() => {});
+          await p.waitForTimeout(700);
+          await step(`${label} switch menu`);
+          const it = p.locator('#switch-modal .switch-item').first();
+          if (await it.count()) { await it.click(); await p.waitForTimeout(2400); }
+          await dump(`${label}-after-switch`);
+          await step(`${label} after switching in`);
+          continue;
+        }
+        const tiles = p.locator('.move-btn.type-tile:not([disabled])');
+        if (!(await tiles.count())) { await p.waitForTimeout(1200); if (!(await tiles.count())) break; }
+        await tiles.nth(turn % Math.min(4, await tiles.count())).click().catch(() => {});
+        await p.waitForTimeout(SLOW ? 3400 : 1700);
+        await dump(`${label}-t${turn + 1}`);
+        if (turn % 3 === 2) await step(`${label} turn ${turn + 1}`);
+        if (await p.locator('#victory-modal').isVisible().catch(() => false)) break;
+        if (!(await p.locator('#battle-container.active').count())) break;
+      }
+      await p.waitForTimeout(900);
+      const d = await dump(`${label}-end`);
+      await step(`${label} ended`);
+      return d;
+    };
+
+    const clearModals = async () => {
+      for (let i = 0; i < 8; i++) {
+        if (await p.locator('#victory-modal').isVisible().catch(() => false)) {
+          await p.click('#victory-continue').catch(() => {}); await p.waitForTimeout(1500); continue;
+        }
+        if (await p.locator('#nick-modal').isVisible().catch(() => false)) {
+          await p.click('#nick-skip').catch(() => {}); await p.waitForTimeout(900); continue;
+        }
+        if (await p.locator('#dlg-modal').isVisible().catch(() => false)) {
+          await p.click('#dlg-ok').catch(() => {}); await p.waitForTimeout(900); continue;
+        }
+        if (await p.locator('#sparkle-modal').isVisible().catch(() => false)) {
+          await p.click('#sparkle-modal').catch(() => {}); await p.waitForTimeout(900); continue;
+        }
+        break;
+      }
+    };
+
+    // ---- 1. catch a few on the dex screen ----
+    for (let c = 0; c < 3; c++) {
+      await step(`catch ${c + 1}: before NEXT`);
+      await p.click('#nav-next', { timeout: 8000 }).catch(async e => { await step(`catch ${c + 1}: NEXT DEAD`); });
+      await p.waitForTimeout(1100);
+      await step(`catch ${c + 1}: on a new Pokemon`);
+      await p.click('#catch-btn', { timeout: 8000 }).catch(async e => { await step(`catch ${c + 1}: CATCH DEAD`); });
+      await p.waitForTimeout(800);
+      await step(`catch ${c + 1}: ball drawer`);
+      await p.locator('.ball-opt').first().click({ timeout: 8000 }).catch(() => {});
+      await p.waitForTimeout(7000);
+      await step(`catch ${c + 1}: after the throw`);
+      await clearModals();
+      await p.waitForTimeout(600);
+      await step(`catch ${c + 1}: modals cleared`);
+    }
+    await dump('after-3-catches');
+    await step('after three catches');
+
+    // ---- 2. one wild fight from the map ----
+    await p.click('#explore-btn');
+    await p.waitForTimeout(1200);
+    await step('tapped EXPLORE');
+    await p.waitForFunction(() => document.querySelectorAll('#habitat-grid .habitat-card').length > 0, null, { timeout: 20000 })
+      .catch(async () => { await step('EXPLORE NEVER OPENED'); await p.click('#explore-btn').catch(()=>{}); await p.waitForTimeout(2500); await step('tapped EXPLORE again'); });
+    await p.locator('#habitat-grid .habitat-card:not(.locked)').first().click();
+    await p.waitForFunction(() => document.getElementById('battle-container')?.classList.contains('active'), null, { timeout: 30000 }).catch(() => {});
+    await p.waitForTimeout(1800);
+    await dump('wild-start');
+    await step('wild fight begins');
+    await fight('wild', 8);
+    await clearModals();
+    await p.waitForTimeout(1200);
+    await dump('back-from-wild');
+    await step('back on the dex after the wild fight');
+    if (await p.locator('#explore-container.active').count()) { await p.click('#explore-back-btn').catch(() => {}); await p.waitForTimeout(700); }
+
+    // ---- 3. a whole gym stop, trainer after trainer ----
+    await p.click('#gyms-btn');
+    await p.waitForFunction(() => document.querySelectorAll('#gym-body .gym-card').length > 0, null, { timeout: 20000 });
+    await p.locator('#gym-body .gym-card:not(.locked)').first().click();
+    await p.waitForTimeout(1400);
+    await step('the first gym stop');
+
+    for (let t = 0; t < 5; t++) {
+      const card = p.locator('.trainer-card:not(.locked):not(.beaten)').first();
+      if (!(await card.count())) { await step(`no unlocked trainer left at #${t}`); break; }
+      await card.click(); await p.waitForTimeout(1400);
+      await clearModals();
+      await p.waitForFunction(() => document.getElementById('battle-container')?.classList.contains('active'), null, { timeout: 30000 }).catch(() => {});
+      await p.waitForTimeout(1800);
+      await dump(`trainer${t}-start`);
+      await step(`trainer ${t + 1} appears`);
+      await fight(`trainer${t}`, 16, { switchOn: t === 1 ? 1 : -1 });
+      await clearModals();
+      await p.waitForTimeout(1500);
+      await dump(`trainer${t}-back`);
+      await step(`back at the gym after trainer ${t + 1}`);
+      if (!(await p.locator('#gym-container.active').count())) {
+        await step(`NOT BACK AT THE GYM after trainer ${t + 1}`);
+        await p.click('#gyms-btn').catch(() => {});
+        await p.waitForTimeout(1200);
+        await p.locator('#gym-body .gym-card:not(.locked)').first().click().catch(() => {});
+        await p.waitForTimeout(1200);
+      }
+    }
+
+    // ---- 4. Poké Center ----
+    await p.click('#gym-back-btn').catch(() => {}); await p.waitForTimeout(900);
+    await step('gym list before healing');
+    await p.click('#poke-center-btn').catch(() => {}); await p.waitForTimeout(1600);
+    await dump('after-heal');
+    await step('after the Poke Center');
+
+    // ---- 5. PC: rearrange the team ----
+    await p.click('#gym-back-btn').catch(() => {}); await p.waitForTimeout(800);
+    await p.click('#pc-btn'); await p.waitForTimeout(2000);
+    await dump('pc-open');
+    await step('PC box open');
+    const strip = p.locator('#team-strip > *');
+    const n = await strip.count();
+    if (n > 1) { await strip.nth(0).click().catch(() => {}); await p.waitForTimeout(700); await step('tapped team slot 1'); }
+    await p.locator('.pc-item').nth(2).click().catch(() => {}); await p.waitForTimeout(900);
+    await step('tapped a box Pokemon');
+    await clearModals();
+    await p.locator('.pc-item').nth(5).click().catch(() => {}); await p.waitForTimeout(900);
+    await step('tapped another box Pokemon');
+    await clearModals();
+    await dump('pc-after-fiddling');
+    await p.click('#close-pc-btn').catch(() => {}); await p.waitForTimeout(900);
+    await step('closed the PC');
+
+    // ---- 6. fight again after all of that ----
+    await p.click('#gyms-btn'); await p.waitForTimeout(1400);
+    await p.locator('#gym-body .gym-card:not(.locked)').first().click().catch(() => {});
+    await p.waitForTimeout(1400);
+    const card2 = p.locator('.trainer-card:not(.locked)').first();
+    if (await card2.count()) {
+      await card2.click(); await p.waitForTimeout(1400);
+      await clearModals();
+      await p.waitForTimeout(2000);
+      await dump('final-fight-start');
+      await step('the last fight of the session');
+      await fight('final', 10);
+      await clearModals();
+    }
+    await p.waitForTimeout(1200);
+    await dump('end-of-session');
+    await step('end of the session');
+  },
+
   // A four-year-old with a fast finger. Nothing here should ever produce an
   // error overlay or a screen with no way out.
   async mash(p, step) {
@@ -339,6 +540,7 @@ for (const [name, fn] of Object.entries(SCRIPTS)) {
 }
 await browser.close();
 
+writeFileSync(join(OUT, 'sat.json'), JSON.stringify(SAT, null, 1));
 writeFileSync(join(OUT, 'report.json'), JSON.stringify(report, null, 1));
 const noteCount = Object.values(report.scenarios).flat().reduce((a, s) => a + (s.notes?.length || 0), 0);
 console.log(`\n${MODE}: ${Object.keys(report.scenarios).length} scenarios, ${noteCount} observations, ${report.consoleErrors.length} console/page errors`);
