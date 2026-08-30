@@ -21,6 +21,19 @@ familiarity with git, npm, or build tooling.
 not authenticity to the real games, not architectural purity. When two good
 options conflict, pick the one that makes a 4- and a 7-year-old happier.
 
+## The boys' devices
+
+**Target: latest iPad Pro on the latest iOS**, plus a phone-class screen (Art
+plays on a phone too). Consequences that decide real code:
+
+- `dvh` is supported — the `vh` fallbacks are belt-and-braces, keep them but
+  don't design around missing `dvh`.
+- `navigator.share({files})` works, so a save file can go out via AirDrop.
+- **375x667 is a hard requirement**, not a nicety. `npm run scenes` enforces it.
+- **Safari does not play Ogg Vorbis, and PokeAPI serves cries as `.ogg` only.**
+  Anything that plays a cry must feature-detect (`canPlayType('audio/ogg')`)
+  and fall back, or it is a silent no-op nobody will ever report.
+
 ## Hard product rules
 
 1. **The game does not talk.** No `SpeechSynthesis`, no TTS, no synthesised voice,
