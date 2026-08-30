@@ -1,6 +1,6 @@
 {
   "name": "pokedex-os",
-  "version": "19.2.0",
+  "version": "19.3.0",
   "private": true,
   "description": "A Pokedex game built for two brothers, 7 and 4. Vanilla JS, no build step.",
   "scripts": {
@@ -11,7 +11,8 @@
     "test:engine": "node --test test/engine.test.mjs",
     "scenes": "node test/scenes.mjs",
     "scenes:update": "UPDATE_BASELINE=1 UPDATE_KNOWN=1 node test/scenes.mjs",
-    "release": "node tools/release.mjs"
+    "release": "node tools/release.mjs",
+    "bake:moves": "node tools/bake-moves.mjs"
   },
   "devDependencies": {
     "playwright": "^1.56.1"

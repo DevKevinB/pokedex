@@ -130,5 +130,47 @@ export const getPokemon = idOrName =>
     .then(d => { if (!cache[`pkmn:${d.id}`]) { cache[`pkmn:${d.id}`] = d; saveCache(); } return d; });
 
 export const getSpecies = url => cached(`spec:${url}`, url, slimSpecies);
-export const getMove = url => cached(`move:${url}`, url, slimMove);
+
+// ---- the baked move table (data/moves.json) ----
+// Every Gen 1-5 move, committed by `node tools/bake-moves.mjs`. It is DATA in
+// git, not a build step — the file is served exactly as authored.
+// Before it, building one fighter cost ten /move/ requests, so a cold
+// Champion fight was ~66 requests spread over ten mid-battle stalls. Now it
+// is one small same-origin file, precached by the service worker, and every
+// lookup is SYNCHRONOUS — which is also what makes seeded movesets possible.
+const MOVES_URL = new URL('../data/moves.json', import.meta.url).href;
+let moveTable = null;
+let moveTablePromise = null;
+let moveTableTried = 0;
+
+/** Resolves once the table is loaded (or has failed). Cheap to await twice. */
+export function movesReady() {
+  if (moveTable) return Promise.resolve(moveTable);
+  // On failure, retry at most once a minute: without the guard a missing file
+  // would mean a fresh 404 on every single send-out.
+  if (!moveTablePromise && Date.now() - moveTableTried > 60000) {
+    moveTableTried = Date.now();
+    moveTablePromise = apiFetch(MOVES_URL, 6000)
+      .then(d => { moveTable = (d && typeof d === 'object') ? d : {}; return moveTable; })
+      // A miss is survivable: getMove still falls back to the network below.
+      .catch(() => { moveTablePromise = null; return null; });
+  }
+  return moveTablePromise || Promise.resolve(null);
+}
+// Warm it at boot, so the first fight of the day never waits on it.
+movesReady();
+
+/** Move stats for a NAME, synchronously, or null if the table has no entry. */
+export function moveStats(name) {
+  const key = String(name || '').toLowerCase();
+  const e = moveTable && moveTable[key];
+  return e ? { name: key, power: typeof e.p === 'number' ? e.p : null, type: e.t || 'normal', damage_class: e.c || 'status' } : null;
+}
+
+// Returns the baked entry SYNCHRONOUSLY when we have one; otherwise the old
+// network + slim-cache path, unchanged. `await` works on both.
+export function getMove(url, name) {
+  return moveStats(name || url) || cached(`move:${url}`, url, slimMove);
+}
+
 export const getEvolution = url => cached(`evo:${url}`, url, slimEvo);

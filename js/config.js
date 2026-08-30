@@ -3,7 +3,7 @@
 // ============================================================
 
 export const MAX_POKEMON = 649; // Gens 1–5 — the animated pixel sprite era
-export const APP_VERSION = '19.2.0';
+export const APP_VERSION = '19.3.0';
 
 // generation ranges for PC Box tabs
 export const GENERATIONS = [
@@ -151,7 +151,11 @@ export const typeEmoji = {
   fire: '🔥', water: '💧', grass: '🌿', electric: '⚡', ice: '❄️',
   fighting: '🥊', poison: '☠️', ground: '⛰️', flying: '🪶', psychic: '🔮',
   bug: '🐛', rock: '🪨', ghost: '👻', dragon: '🐉', dark: '🌑',
-  steel: '⚙️', fairy: '🧚', normal: '⭐'
+  // NORMAL is a FIST, not a star. A star means "reward" everywhere else in the
+  // game — quest complete, joined your team, VICTORY — so a star on an attack
+  // button read as "the special one" to a four-year-old, and he picked it every
+  // time. A fist is the only glyph on the board that means "hit it".
+  steel: '⚙️', fairy: '🧚', normal: '👊'
 };
 
 const INK_DARK = '#1a1a2a';

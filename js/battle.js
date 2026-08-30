@@ -9,10 +9,10 @@ import { MAX_POKEMON, getTypeMultiplier, typeColors, typeEmoji, inkFor, sleep, a
 // file should recompute damage, catch odds or XP by hand ever again.
 import {
   computeStats, computeDamage, catchProbability, xpForKO,
-  pickMove as enginePickMove, usableMoves, clampPower, shuffle, xpProgress,
+  pickMove as enginePickMove, seedMoveset, moveSeed, seededRng, shuffle, xpProgress,
   wildLevel as engineWildLevel
 } from './engine.js';
-import { getPokemon, getMove, getSpecies, getEvolution, nameOf } from './api.js';
+import { getPokemon, getMove, getSpecies, getEvolution, nameOf, movesReady, moveStats } from './api.js';
 import { state, player, recordCatch, ensureMon, ensureMonAtLeast, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName, recordChampion, championRecord } from './state.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
 import { loadPoke } from './dex.js';
@@ -90,7 +90,7 @@ const show = (id, on = true) => { document.getElementById(id).style.display = on
 
 // computeStats now comes from engine.js (and includes spatk/spdef).
 
-async function buildFighter(id, level, side) {
+async function buildFighter(id, level, side, owner = null) {
   const data = await getPokemon(id);
   const stats = computeStats(data, level);
   const sp = data.sprites;
@@ -101,24 +101,31 @@ async function buildFighter(id, level, side) {
     catch (e) { /* default stands */ }
   }
 
-  // Fetch a few more than we need, THEN filter to real attacks. The old code
-  // took 4 at random and defaulted every null power to 40, which is how
-  // Hypnosis became a 40-power attack and Growl became a punch.
-  const candidates = shuffle(data.moves).slice(0, 10);
-  const fetched = await Promise.all(candidates.map(async m => {
-    try {
-      const d = await getMove(m.url);
-      return { name: d.name.replace(/-/g, ' '), rawName: d.name, power: d.power, type: d.type, damage_class: d.damage_class };
-    } catch (e) { return null; }
-  }));
-  const moves = usableMoves(fetched.filter(Boolean).map(m => ({ ...m, name: m.rawName })))
-    .slice(0, 4)
-    .map(m => ({
-      name: m.name.replace(/-/g, ' '),
-      power: clampPower(m.power),      // a 250-power nuke the AI would spam
-      type: m.type,
-      damage_class: m.damage_class
+  // Movesets are BAKED and SEEDED, not fetched and reshuffled.
+  //
+  // Before: ten /move/ requests per send-out (a cold Champion fight was ~66
+  // requests across ten mid-battle stalls) and a fresh shuffle every time, so
+  // "my CHARIZARD knows FLAMETHROWER" could never be true.
+  // Now: data/moves.json answers every lookup synchronously, and the seed
+  // fixes the set — a boy's Pokémon keeps its moves for a whole 10-level
+  // band, and a gym trainer's ONIX is the same ONIX on every rematch.
+  await movesReady();
+  const ownerNum = owner ?? (side === 'player' ? state.currentPlayer : 0);
+  const seed = ownerNum ? moveSeed(ownerNum, id) : moveSeed(0, id, level);
+  let moves = seedMoveset((data.moves || []).map(m => m.name), { seed, level, lookup: moveStats, types: data.types });
+  if (!moves.length) {
+    // No baked table (a first run offline, or data/moves.json missing): the
+    // old network path still works — seeded now, so it is at least repeatable.
+    const candidates = shuffle(data.moves || [], seededRng(seed)).slice(0, 10);
+    const fetched = await Promise.all(candidates.map(async m => {
+      try {
+        const d = await getMove(m.url, m.name);
+        return { name: d.name, power: d.power, type: d.type, damage_class: d.damage_class };
+      } catch (e) { return null; }
     }));
+    moves = seedMoveset(fetched.filter(Boolean), { seed, level, types: data.types });
+  }
+  moves = moves.map(m => ({ ...m, name: m.name.replace(/-/g, ' ') }));
   if (moves.length === 0) moves.push({ name: 'tackle', power: 40, type: 'normal', damage_class: 'physical' });
 
   const sparkle = side === 'player' && battleState.isSparkle;
@@ -384,6 +391,42 @@ function spawnParticles(defenderRole, color) {
 }
 
 // ---- UI ----
+
+// ---- effectiveness, as a picture on the button ----
+// getTypeMultiplier has been imported into this file since v18 and never once
+// called. The chart it holds is the only piece of strategy a four-year-old can
+// actually play — "the gold one hurts more" — but only if it is on the tile
+// BEFORE the tap, as a shape and a colour, instead of a sentence in the log
+// afterwards that he cannot read.
+//
+// This stays ON in junior mode. It is a picture, not a word; it never disables
+// a button, never says no, and never removes a choice — it only ever points at
+// a better one. ART can still tap whatever he likes and it still works.
+const EFF_GLYPH = { super: '⏫', weak: '⏬', immune: '✖', even: '' };
+
+function effOf(moveType) {
+  const types = battleState.wild?.types;
+  if (!Array.isArray(types) || !types.length) return 'even';
+  const mult = getTypeMultiplier(moveType, types);
+  return mult === 0 ? 'immune' : mult > 1 ? 'super' : mult < 1 ? 'weak' : 'even';
+}
+
+// A trainer's NEXT Pokémon changes every answer on the board, and only
+// renderEnemy() runs when one is sent out — so the tiles are re-marked there
+// as well as when they are built. Versus mode uses data-vmove and is untouched.
+function refreshMoveEff() {
+  const f = active();
+  if (!f) return;
+  document.querySelectorAll('.move-btn[data-move]').forEach(btn => {
+    const m = f.moves[parseInt(btn.dataset.move)];
+    if (!m) return;
+    const eff = effOf(m.type);
+    btn.dataset.eff = eff;
+    const mark = btn.querySelector('.tile-eff');
+    if (mark) mark.textContent = EFF_GLYPH[eff];
+  });
+}
+
 function renderActive() {
   const f = active();
   unfaintSprites();
@@ -394,13 +437,33 @@ function renderActive() {
   // Move tiles lead with the TYPE, not the name. A pre-reader picks a move by
   // recognising fire vs water vs lightning; the name is a caption for GABE.
   // This is the difference between ART choosing and ART mashing.
+  // ---- the move tile, v2 ----
+  // Three FIXED rows, in this order. v1 put a colour emoji and the move name in
+  // one flex line, so the emoji drew straight over the words and neither read;
+  // and two normal-type moves came out as two identical grey stars, which is a
+  // board a pre-reader cannot play at all.
+  //   1. picture — the type, in a box of its own so nothing can overdraw it
+  //   2. caption — 8px UPPERCASE for GABE, hidden for ART
+  //   3. dots    — how big the hit is: ceil(power / 40), out of three
+  // Plus a corner mark for what it will do to THIS enemy, and a stripe on the
+  // second tile of a repeated type so no two tiles are ever twins.
   document.getElementById('battle-moves').innerHTML =
     f.moves.map((m, i) => {
       const bg = typeColors[m.type] || '#777';
+      const dots = Math.max(1, Math.min(3, Math.ceil((m.power || 40) / 40)));
+      const dup = f.moves.some((o, j) => j < i && o.type === m.type);
+      const eff = effOf(m.type);
+      const caption = String(m.name || '').replace(/-/g, ' ').toUpperCase();
+      const pips = [1, 2, 3].map(n => `<i${n > dots ? ' class="off"' : ''}></i>`).join('');
+      // background-COLOR, not the background shorthand: the shorthand would
+      // wipe the stripe that tells two same-type moves apart.
       return `<button class="move-btn type-tile" data-move="${i}" data-type="${m.type}"
-        style="background:${bg}; color:${inkFor(bg)}">
-        <span class="move-emoji">${typeEmoji[m.type] || '⭐'}</span>
-        <span class="move-name">${m.name}</span>
+        data-eff="${eff}"${dup ? ' data-dup="1"' : ''}
+        style="background-color:${bg}; color:${inkFor(bg)}">
+        <span class="tile-ico" aria-hidden="true">${typeEmoji[m.type] || typeEmoji.normal}</span>
+        <span class="tile-name">${caption}</span>
+        <span class="tile-dots" aria-hidden="true">${pips}</span>
+        <span class="tile-eff" aria-hidden="true">${EFF_GLYPH[eff]}</span>
       </button>`;
     }).join('') +
     // ONE hero row, no RUN. BALL is the biggest thing on the screen because
@@ -449,6 +512,9 @@ function renderEnemy() {
   document.getElementById('wild-name').innerHTML = label;
   document.getElementById('wild-sprite').src = w.spriteFront;
   updateHP('wild');
+  // A new enemy is a new type chart. Re-mark the tiles here or the gold outline
+  // keeps pointing at the Pokémon that already fainted.
+  refreshMoveEff();
 }
 
 function updateHP(target) {
@@ -500,6 +566,8 @@ function updateXpBar() {
 
 function enableMoves(enabled) {
   document.querySelectorAll('.move-btn').forEach(btn => (btn.disabled = !enabled));
+  // The turn is over — the tile you tapped stops being lit.
+  if (enabled) document.querySelectorAll('.move-btn.chosen').forEach(btn => btn.classList.remove('chosen'));
   // ESCAPE follows the move buttons. Leaving it live mid-turn is how a tap
   // during an animation tore a battle down from underneath its own async work.
   const esc = document.getElementById('escape-btn');
@@ -592,6 +660,11 @@ async function executeTurn(playerMoveIdx) {
   const e = battleState.epoch;
   battleState.busy = true;
   enableMoves(false);
+  // Show the choice on the board, not only in the log: the tile ART tapped
+  // stays lit for the whole turn, so he can see the game heard him. Cleared in
+  // enableMoves(true) when it is his go again.
+  document.querySelectorAll('.move-btn.chosen').forEach(b => b.classList.remove('chosen'));
+  document.querySelector(`.move-btn[data-move="${playerMoveIdx}"]`)?.classList.add('chosen');
   try {
     const f = active();
     const playerMove = f.moves[playerMoveIdx];
@@ -643,6 +716,11 @@ async function performAttack(attackerRole, defenderRole, move) {
   }
   updateHP(defenderRole);
   triggerVibration([50]);
+  // Each type now SOUNDS like itself — the same information the tile's picture
+  // carries, in the one channel that still works while your eyes are on the
+  // sprite. Immunity stays silent here: nothing happened, so nothing may sound
+  // like it did.
+  if (typeMult > 0) sfx.type[move.type]?.();
   impactFx(defenderRole, { damage, typeMult, crit, moveType: move.type });
 
   // The text line stays for GABE, but it is no longer the ONLY channel — the
@@ -1296,8 +1374,8 @@ export async function startVersusBattle() {
 
   try {
     const [f1, f2] = await Promise.all([
-      buildFighter(ids1[0], pLevel(1, ids1[0]), 'player'),
-      buildFighter(ids2[0], pLevel(2, ids2[0]), 'wild')
+      buildFighter(ids1[0], pLevel(1, ids1[0]), 'player', 1),
+      buildFighter(ids2[0], pLevel(2, ids2[0]), 'wild', 2)
     ]);
     versus.sides[1].loaded[ids1[0]] = f1;
     versus.sides[2].loaded[ids2[0]] = f2;
@@ -1406,7 +1484,7 @@ async function versusNextMon(n) {
     if (i === side.activeIdx) continue;
     if (!side.loaded[id]) {
       show('loading-modal');
-      try { side.loaded[id] = await buildFighter(id, pLevel(n, id), n === 1 ? 'player' : 'wild'); }
+      try { side.loaded[id] = await buildFighter(id, pLevel(n, id), n === 1 ? 'player' : 'wild', n); }
       catch (e) { show('loading-modal', false); continue; }
       show('loading-modal', false);
     }

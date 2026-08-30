@@ -2,6 +2,49 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.3.0] - PICK THE GOLD ONE
+
+Art can tell his four attacks apart now, and the game stops asking the
+internet mid-fight.
+
+### Fixed
+- **Two attacks no longer look identical.** If a Pokémon knew two moves of the
+  same type, both buttons were the same colour with the same picture, and Art
+  had no way to tell them apart — he was picking at random. The second one now
+  wears a diagonal stripe.
+- **The picture stopped covering the word.** The type symbol was drawn on top
+  of the move name, so neither read properly. They now have their own rows.
+- **A normal-type move is a fist, not a star.** A gold star reads as "special"
+  or "the best one" to a four-year-old. QUICK ATTACK was wearing it.
+- **Move names are readable** — bigger, and in capitals instead of the
+  lowercase the Pokémon database hands over ("tera blast").
+
+### Added
+- **Every attack shows how strong it is,** as one, two or three little squares.
+  No reading needed.
+- **A gold outline on the move that will really hurt this opponent** — with a
+  small up-arrow — and a faded look with a down-arrow on one that will barely
+  scratch it. This is on in Art's mode too, because it is a picture, not a
+  sentence. It never disables anything and never says no; it just points.
+- **The tile you tapped stays lit** while the turn plays out, so you can see
+  what you chose.
+- **Each type sounds different** — fire crackles, water sweeps, electric
+  buzzes — so the fight reads with the screen barely glanced at.
+- **Your Pokémon keeps its moves.** Charizard used to be handed four random
+  attacks every single time it was sent out, so "my Charizard knows
+  Flamethrower" was never true. Movesets are now stable, and a gym trainer's
+  Onix has the same moves on a rematch as it did the first time.
+- **Battles start instantly.** The game used to ask the internet about ten
+  moves every time a Pokémon appeared — roughly 66 requests during one
+  Champion fight, each a pause mid-battle. All 559 moves from the first five
+  generations now ship inside the app (29 KB), so there is nothing to wait
+  for, and battles work with no signal at all.
+
+### Testing
+- 167 browser checks, 18 engine tests and 38 layout checks pass, with no
+  layout drift — the new three-row tiles fit inside the exact tile height the
+  arena rebuild was measured against, so the Pokéball stays reachable.
+
 ## [19.2.0] - THE ARENA
 
 The battle screen — the screen the boys spend the most time on — rebuilt so it

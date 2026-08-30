@@ -182,6 +182,93 @@ export function clampPower(power) {
   return Math.min(MAX_MOVE_POWER, Math.max(10, power || 40));
 }
 
+// ---- deterministic movesets ----
+// Movesets used to be re-rolled from a fresh shuffle on every send-out, so no
+// Pokémon in the game ever "knew" anything. These functions make a moveset a
+// FACT about a Pokémon instead of a dice roll.
+
+/**
+ * The same LCG as pickDailyQuests() in progression.js — glibc's constants,
+ * masked to 31 bits. It is not a strong generator; it is a REPEATABLE one,
+ * which is the entire point: the same seed must produce the same four moves
+ * on every device, forever.
+ */
+export function seededRng(seed) {
+  let s = Math.floor(Math.abs(Number(seed) || 0)) % 0x7fffffff;
+  if (s === 0) s = 1;
+  return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+}
+
+/** Mixes small integers (player, species id, level…) into one 31-bit seed. */
+export function moveSeed(...parts) {
+  let h = 5381;
+  for (const p of parts) h = ((h * 33) + ((Math.floor(Number(p)) || 0) * 7919)) & 0x7fffffff;
+  return h;
+}
+
+/** A moveset is re-rolled at most once every this many levels. */
+export const LEVEL_BAND = 10;
+
+// Distinct types first: four attacks in four colours are four DIFFERENT
+// buttons to a 4-year-old who cannot read their names.
+function typeSpread(list) {
+  const seen = new Set(), first = [], rest = [];
+  for (const m of list) {
+    if (seen.has(m.type)) rest.push(m); else { seen.add(m.type); first.push(m); }
+  }
+  return first.concat(rest);
+}
+
+// A CHARIZARD with no fire move is a broken promise, and now it would be a
+// PERMANENT one. Slot 1 goes to a move of the Pokémon's own primary type when
+// the pool has one (its secondary type otherwise) — which is also the move
+// that gets the STAB bonus, so the obvious-looking button is the strong one.
+function stabFirst(list, types) {
+  const names = (types || []).map(t => (typeof t === 'string' ? t : t && t.type && t.type.name)).filter(Boolean);
+  for (const t of names) {
+    const i = list.findIndex(m => m.type === t);
+    if (i > 0) return [list[i], ...list.slice(0, i), ...list.slice(i + 1)];
+    if (i === 0) return list;
+  }
+  return list;
+}
+
+/**
+ * Four moves that stay the same until the Pokémon grows.
+ *
+ * `moves` may be move NAMES (resolved through `lookup`, normally api.moveStats
+ * reading the baked data/moves.json) or already-resolved move objects.
+ *
+ * Three slots are fixed for the life of the Pokémon; the fourth is re-rolled
+ * once per `band` levels, so levelling can bring a new attack without ever
+ * rewriting a moveset a child has learned. Adjacent bands differ by at most
+ * one move.
+ *
+ * Returns [] when nothing usable resolved, so the caller can fall back.
+ */
+export function seedMoveset(moves, { seed = 0, level = 0, lookup = null, types = null, limit = 4, band = LEVEL_BAND } = {}) {
+  const resolved = (moves || []).map(m => {
+    if (m && typeof m === 'object') return m;
+    const name = String(m || '').toLowerCase();
+    const d = name && lookup ? lookup(name) : null;
+    return d ? { name, power: d.power ?? d.p ?? null, type: d.type ?? d.t ?? 'normal', damage_class: d.damage_class ?? d.c ?? 'status' } : null;
+  }).filter(Boolean);
+
+  const pool = usableMoves(resolved).map(m => ({
+    name: m.name, power: clampPower(m.power), type: m.type, damage_class: m.damage_class
+  }));
+  if (!pool.length) return [];
+
+  const ordered = stabFirst(typeSpread(shuffle(pool, seededRng(seed))), types);
+  const core = ordered.slice(0, Math.max(1, limit - 1));
+  if (pool.length <= core.length) return core;
+
+  const rest = ordered.filter(m => !core.includes(m));
+  const bandIdx = Math.max(0, Math.floor((Number(level) || 0) / (band || LEVEL_BAND)));
+  const grown = rest[Math.floor(seededRng(moveSeed(seed, bandIdx))() * rest.length)] || rest[0];
+  return core.concat([grown]).slice(0, limit);
+}
+
 // ---- wild level bands ----
 /**
  * Wild levels used to be lead*(0.8+rand*0.4) everywhere, which is why week 4

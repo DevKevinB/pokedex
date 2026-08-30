@@ -936,25 +936,86 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
    movement. Nothing here is decoration.
    ============================================================ */
 
-/* ---- move tiles: the type IS the button ---- */
+/* ---- move tiles v2: picture / caption / power ----
+   Three fixed rows. The icon box has a HEIGHT, which is the whole point: a
+   colour emoji has no reliable metrics, and in v1 it grew out of its flex line
+   and drew over the caption, so neither the picture nor the word read.
+   Heights are chosen to keep the tile within a few px of the v1 tile in both
+   modes — the controls panel is the tightest layout in the app. */
 .move-btn.type-tile {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2px; padding: 10px 4px; border: 3px solid var(--px-ink); border-radius: 3px;
-  box-shadow: 3px 3px 0 rgba(0,0,0,0.45); text-transform: none;
+  display: grid; grid-template-rows: auto auto auto;
+  justify-items: center; align-content: center;
+  gap: 2px; padding: 6px 4px; border: 3px solid var(--px-ink); border-radius: 3px;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.45); text-transform: uppercase;
+  position: relative; min-height: 44px;
+}
+.tile-ico {
+  height: 26px; line-height: 26px; font-size: 22px; overflow: hidden;
+  text-align: center; filter: drop-shadow(0 2px 0 rgba(0,0,0,0.35));
+}
+.tile-name {
+  font-size: 8px; line-height: 10px; letter-spacing: 0; opacity: 0.92;
+  width: 100%; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* power as a picture: ceil(power / 40) filled squares out of three */
+.tile-dots { display: flex; gap: 3px; height: 6px; align-items: center; }
+.tile-dots i { width: 6px; height: 6px; display: block; background: currentColor; box-shadow: 0 0 0 1px rgba(0,0,0,0.45); }
+.tile-dots i.off { background: transparent; opacity: 0.5; }
+/* the effectiveness mark is absolute, so it can never push the rows around */
+.tile-eff { position: absolute; top: 1px; right: 3px; font-size: 13px; line-height: 1; pointer-events: none; }
+
+/* ART's tile is the picture and the dots. The caption is GABE's; for a
+   pre-reader it is not a small word, it is no word at all, and the space is
+   worth more given to the picture. */
+body.junior .tile-name { display: none; }
+body.junior .tile-ico { height: 40px; line-height: 40px; font-size: 36px; }
+body.junior .tile-dots { height: 8px; gap: 4px; }
+body.junior .tile-dots i { width: 8px; height: 8px; }
+body.junior .tile-eff { font-size: 18px; }
+
+/* Two moves of the same type used to be two identical tiles — the exact thing
+   ART could not get past. The second one wears a stripe. */
+.move-btn.type-tile[data-dup="1"] {
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.22) 0 6px, rgba(255,255,255,0) 6px 12px);
+}
+
+/* data-eff: what this move will do to THIS enemy, said before the tap and
+   without a word. On in junior too — it points at a better choice, it never
+   disables anything and it never says no. */
+.move-btn.type-tile[data-eff="super"] { box-shadow: inset 0 0 0 3px #ffd040, 3px 3px 0 rgba(0,0,0,0.45); }
+.move-btn.type-tile[data-eff="weak"] { filter: saturate(0.5) brightness(0.94); }
+.move-btn.type-tile[data-eff="weak"] .tile-eff { opacity: 0.7; }
+.move-btn.type-tile[data-eff="immune"] { filter: grayscale(1) brightness(0.9); }
+
+.move-btn.type-tile[disabled] { opacity: 0.45; }
+/* the tile you just tapped stays lit while the turn plays out */
+.move-btn.type-tile.chosen,
+.move-btn.type-tile.chosen[disabled] {
+  opacity: 1;
+  box-shadow: inset 0 0 0 3px #ffd040, 0 0 0 3px #ffd040, 3px 3px 0 rgba(0,0,0,0.45);
 }
 .move-btn.type-tile:active { transform: translate(3px, 3px); box-shadow: none; }
-.move-emoji { font-size: 24px; line-height: 1; filter: drop-shadow(0 2px 0 rgba(0,0,0,0.35)); }
-.move-name { font-size: 8px; letter-spacing: 0; opacity: 0.92; text-align: center; line-height: 1.2; }
-/* The tile states its own height so the panel's arithmetic is knowable. The
-   3-class selector is deliberate: it has to out-rank .move-btn.type-tile's
-   own `padding: 10px 4px` a few lines above. Normal: 24 emoji + 2 gap + 9.6
-   caption = 35.6 inside 56 - 8 padding - 6 border = 42. */
-.moves-grid > .move-btn.type-tile { height: clamp(54px, 8.4vh, 66px); height: clamp(54px, 8.4dvh, 66px); padding: 4px; }
-/* ART gets a picture and almost no caption; GABE keeps the name readable.
-   34px (was 38) so emoji + caption clear the tile at 375x667. */
-body.junior .move-emoji { font-size: 34px; }
-body.junior .move-name { font-size: 8px; }
-.move-btn.type-tile[disabled] { opacity: 0.45; }
+
+/* v19.2's arithmetic is preserved deliberately: the OUTER tile height is the
+   number the controls panel was measured against, so the new three-row content
+   scales inside it rather than pushing the panel back off a 375x667 screen.
+   The 3-class selector out-ranks .move-btn.type-tile's own padding above. */
+.moves-grid > .move-btn.type-tile {
+  height: clamp(54px, 8.4vh, 66px); height: clamp(54px, 8.4dvh, 66px);
+  padding: 4px; grid-template-rows: 1fr auto auto;
+}
+.moves-grid > .move-btn.type-tile .tile-ico {
+  height: auto; min-height: 0; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(17px, 3.1vh, 23px); font-size: clamp(17px, 3.1dvh, 23px);
+}
+body.junior .moves-grid > .move-btn.type-tile .tile-ico {
+  /* ART has no caption to make room for, so the picture takes the space. The
+     icon row is 1fr inside a fixed-height tile, so a bigger glyph fills the
+     box it already has and cannot push the panel off a small screen. */
+  font-size: clamp(28px, 5.6vh, 40px); font-size: clamp(28px, 5.6dvh, 40px);
+}
 
 /* ---- impact marks: the wordless half of "super effective" ---- */
 .impact-mark {
