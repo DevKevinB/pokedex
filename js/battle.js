@@ -4,7 +4,7 @@
 // wild level scaling. Wild Pokémon are auto-caught on victory.
 // ============================================================
 
-import { MAX_POKEMON, getTypeMultiplier, typeColors, typeEmoji, inkFor, sleep, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
+import { MAX_POKEMON, getTypeMultiplier, typeColors, typeEmoji, inkFor, sleep, awaitOrTap, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
 // All fight maths lives in engine.js and is unit-tested there. Nothing in this
 // file should recompute damage, catch odds or XP by hand ever again.
 import {
@@ -506,11 +506,11 @@ async function doSwitch(newIdx, forced) {
   // of how the real games work, and it teaches GABE that switching is a trap.
   const punish = (!forced && battleState.wild.hp > 0) ? pickEnemyMove() : null;
   battleState.activeIdx = newIdx;
-  if (!forced) { logMsg(`COME BACK, ${old.name.toUpperCase()}!`); await sleep(800); }
+  if (!forced) { logMsg(`COME BACK, ${old.name.toUpperCase()}!`); await awaitOrTap(800); }
   if (stale(e0)) return;
   renderActive();
   logMsg(`GO, ${active().name.toUpperCase()}!`);
-  await sleep(800);
+  await awaitOrTap(800);
   if (stale(e0)) return;
 
   if (punish) {
@@ -569,7 +569,7 @@ async function performAttack(attackerRole, defenderRole, move) {
   const defender = defenderRole === 'wild' ? battleState.wild : active();
   if (!attacker || !defender) return;
   logMsg(`${attacker.name.toUpperCase()} used ${move.name.toUpperCase()}!`);
-  await sleep(900);
+  await awaitOrTap(900);
   // Bail before touching HP if the battle ended during that pause.
   if (stale(e)) return;
 
@@ -594,10 +594,10 @@ async function performAttack(attackerRole, defenderRole, move) {
 
   // The text line stays for GABE, but it is no longer the ONLY channel — the
   // chevron, the shake and the number above already said it.
-  if (crit) { logMsg('A CRITICAL HIT!'); await sleep(750); }
-  if (typeMult > 1) { logMsg("It's super effective!"); await sleep(750); }
-  else if (typeMult < 1 && typeMult > 0) { logMsg("It's not very effective..."); await sleep(750); }
-  else if (typeMult === 0) { logMsg('It had no effect!'); await sleep(750); }
+  if (crit) { logMsg('A CRITICAL HIT!'); await awaitOrTap(750); }
+  if (typeMult > 1) { logMsg("It's super effective!"); await awaitOrTap(750); }
+  else if (typeMult < 1 && typeMult > 0) { logMsg("It's not very effective..."); await awaitOrTap(750); }
+  else if (typeMult === 0) { logMsg('It had no effect!'); await awaitOrTap(750); }
   await sleep(350);
 }
 
@@ -689,7 +689,7 @@ async function checkFaints() {
     faintSprite('player');
     logMsg(`${active().name.toUpperCase()} FAINTED!`);
     triggerVibration([500]);
-    await sleep(1200);
+    await awaitOrTap(1200);
     const anyAlive = battleState.teamIds.some((id, idx) =>
       idx !== battleState.activeIdx && (!battleState.loaded[id] || battleState.loaded[id].hp > 0));
     if (anyAlive) {
@@ -700,14 +700,14 @@ async function checkFaints() {
       if (battleState.trainer) {
         logMsg(`${battleState.trainer.def.name} WINS THIS TIME...`);
         clearGymRun(); // free Poké Center visit after a loss
-        await sleep(1600);
+        await awaitOrTap(1600);
         document.getElementById('victory-lines').innerHTML =
           `<p>💫 DEFEAT...</p><p>${battleState.trainer.def.name} was too strong this time.</p><p>Your team was rushed to the Poké Center and fully healed. Train up and try again!</p>`;
         show('victory-modal');
         battleState.pendingEvolution = null;
       } else {
         logMsg('YOUR TEAM IS OUT OF FIGHTERS...');
-        await sleep(1600);
+        await awaitOrTap(1600);
         await dialog({ icon: '💨', title: 'IT GOT AWAY!', text: 'Your team is healed and ready to go again.' });
         exitBattleMode();
       }
@@ -742,7 +742,7 @@ async function handleEnemyDown() {
   // a level across the whole trainer fight.
   if (ups > 0) battleState.pendingEvolution = { id: f.id, name: f.name, level: monLevel(f.id) };
   t.kos.push(w.id);
-  await sleep(1300);
+  await awaitOrTap(1300);
   if (stale(e0)) return;
 
   if (t.enemyNum + 1 < t.def.team.length) {
@@ -761,7 +761,7 @@ async function handleEnemyDown() {
     show('loading-modal', false);
     renderEnemy();
     logMsg(`${t.def.name} SENT OUT ${battleState.wild.name.toUpperCase()}!`);
-    await sleep(1100);
+    await awaitOrTap(1100);
     if (stale(e0)) return;
     logMsg(`What will ${active().name.toUpperCase()} do?`);
     enableMoves(true);
@@ -795,7 +795,7 @@ async function handleEnemyDown() {
   // 'win'/'gymCatch' dispatches run while it is still stale — without this the
   // leader badge and its Master Ball only arrived on the NEXT unrelated event.
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'gymwin' } }));
-  await sleep(1500);
+  await awaitOrTap(1500);
   if (stale(e0)) return;   // spoils are already banked; just don't paint a dead screen
 
   // The spoils CEREMONY: the beaten roster as tappable sprites. Picking a
@@ -891,7 +891,7 @@ async function playCaptureAnimation(ballName = 'poke-ball') {
   sfx.catch();
   triggerVibration([100, 50, 100]);
   msg.style.opacity = 1;
-  await sleep(1400);
+  await awaitOrTap(1400);
   msg.style.opacity = 0;
   ball.style.opacity = 0;
   ball.style.transform = 'translateY(-150px) scale(2)';
@@ -1021,7 +1021,7 @@ async function executeBallThrow(ballMod, ballName) {
     ball.classList.add('ball-shake');
     sfx.shake();
     triggerVibration([50]);
-    await sleep(950);
+    await awaitOrTap(950);
     if (stale(e0)) return;
   }
   ball.classList.remove('ball-shake');
@@ -1032,7 +1032,7 @@ async function executeBallThrow(ballMod, ballName) {
     triggerVibration([100, 50, 100]);
     document.getElementById('battle-catch-msg').style.opacity = 1;
     document.dispatchEvent(new CustomEvent('battle-victory'));
-    await sleep(1400);
+    await awaitOrTap(1400);
     if (stale(e0)) return;
     document.getElementById('battle-catch-msg').style.opacity = 0;
     ball.style.opacity = 0;
@@ -1050,7 +1050,7 @@ async function executeBallThrow(ballMod, ballName) {
   ball.style.transform = 'translateY(-150px) scale(2)';
   sprite.classList.remove('sucked-in');
   logMsg('OH NO! IT BROKE FREE!');
-  await sleep(1100);
+  await awaitOrTap(1100);
   if (stale(e0)) return;
   if (battleState.wild.hp > 0 && active().hp > 0) {
     await performAttack('wild', 'player', pickEnemyMove());
@@ -1073,7 +1073,7 @@ async function handleVictory() {
   logMsg(`${w.name.toUpperCase()} FAINTED!`);
   document.dispatchEvent(new CustomEvent('battle-victory'));
   triggerVibration([100, 100, 100]);
-  await sleep(1400);
+  await awaitOrTap(1400);
   if (stale(e0)) return;
 
   logMsg(`CATCHING ${w.name.toUpperCase()}...`);
@@ -1113,7 +1113,7 @@ async function playEvolution(fromMon, toMon) {
   img.className = '';
   text.innerText = `What? ${fromMon.name.toUpperCase()} is evolving!`;
   show('evo-modal');
-  await sleep(1200);
+  await awaitOrTap(1200);
   img.className = 'evolving';
   for (let i = 0; i < 6; i++) { playBeep(300 + i * 120, 'square', 0.12, 0.12); await sleep(320); }
   img.src = PIXEL_SPRITE(toMon.id);
@@ -1122,7 +1122,7 @@ async function playEvolution(fromMon, toMon) {
   triggerVibration([100, 60, 100, 60, 200]);
   evolveMon(fromMon.id, toMon.id);
   text.innerText = `${fromMon.name.toUpperCase()} evolved into ${toMon.name.toUpperCase()}!`;
-  await sleep(2600);
+  await awaitOrTap(2600);
   show('evo-modal', false);
 }
 
@@ -1196,7 +1196,7 @@ export async function startVersusBattle() {
     renderVersusSide(1);
     renderVersusSide(2);
     logMsg(`${playerName(1)} VS ${playerName(2)} — LET'S GO!`);
-    await sleep(1200);
+    await awaitOrTap(1200);
     await versusRound();
   } catch (e) {
     show('loading-modal', false);
@@ -1267,7 +1267,7 @@ async function executeVersusMove(n, moveIdx) {
     const owner = state.save.players[defSide];
     logMsg(`${owner.nicks[def.id] || def.name.toUpperCase()} FAINTED!`);
     triggerVibration([300]);
-    await sleep(1300);
+    await awaitOrTap(1300);
     const replaced = await versusNextMon(defSide);
     if (!replaced) { await versusMatchOver(n); return; }
     await versusRound(); // fresh round after a KO swap
@@ -1295,7 +1295,7 @@ async function versusNextMon(n) {
     else { battleState.wild = side.loaded[id]; }
     renderVersusSide(n);
     logMsg(`${playerName(n)} SENT OUT ${side.loaded[id].name.toUpperCase()}!`);
-    await sleep(1100);
+    await awaitOrTap(1100);
     return true;
   }
   return false;

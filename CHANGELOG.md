@@ -2,6 +2,44 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.0.0] - THE SAFETY NET
+
+The first update of the v19 run. Almost all of this is invisible to the boys on
+purpose: it is the seatbelt that makes the next few updates — a rebuilt battle
+screen and a proper look for the whole app — safe to attempt.
+
+### Added
+- **Tapping hurries a battle along.** Gabe sat through roughly forty seconds of
+  waiting per gym fight with no way to move it on. Now a tap skips ahead to the
+  next line, and a small blinking arrow appears to show that tapping works —
+  Art would never find an invisible shortcut. A wait can only ever be *hurried*,
+  never skipped outright, so no celebration flashes past him because a finger
+  happened to be down.
+- **The computer now checks every screen before you push.** A new check walks
+  the game to fifteen screens, on two phone sizes, in both boys' modes, and
+  makes sure nothing has fallen off the edge, the Pokéball is always reachable
+  in a fight, and no writing has shrunk below readable size. Junior Mode has
+  slid off the bottom of the screen twice before without anything noticing;
+  it cannot happen again silently. Run it with `npm run scenes`.
+- **A promise to Art, written down as a test.** Five new checks prove his
+  Pokémon cannot be knocked out, that his attacks always do real damage so a
+  fight is winnable, and that the game never mentions anywhere on screen that
+  it is going easy on him. Nothing changed for him — it is a promise the tests
+  now keep every single release.
+- **A release helper.** `npm run release 19.1.0 "Name"` sets the version number
+  in all four places it has to match, warns if the offline file list is
+  incomplete, starts the changelog entry, runs the tests, and prints the exact
+  git commands to run. Getting one of those four places wrong is what leaves
+  the boys with a half-updated app.
+
+### Known issues, now written down
+- The check above found 144 real problems that were already there, and they are
+  recorded in `test/known-issues.json` so new breakage stands out immediately.
+  The two worst are being fixed next: on a small phone the battle buttons run
+  off the bottom of the screen (in Art's mode the **Pokéball itself is
+  unreachable**), and 22 pieces of writing around the app are too small to read
+  comfortably.
+
 ## [18.11.0] - THE TUNE-UP
 
 A deep audit of the last three updates — dozens of reviewers combing the code,

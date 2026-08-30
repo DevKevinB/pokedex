@@ -1,0 +1,222 @@
+{
+ "dex-390x844-normal": [
+  "OFF-SCREEN RIGHT by 5px: button#nav-next.nav-btn \"▶\"   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#lead-label   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]",
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#mb-count.ball-count   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]"
+ ],
+ "dex-390x844-junior": [
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]"
+ ],
+ "dex-375x667-normal": [
+  "OFF-SCREEN RIGHT by 20px: button#nav-next.nav-btn \"▶\"   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#lead-label   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]",
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#mb-count.ball-count   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]"
+ ],
+ "dex-375x667-junior": [
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]"
+ ],
+ "dex-drawer-390x844-normal": [
+  "OFF-SCREEN RIGHT by 5px: button#nav-next.nav-btn \"▶\"   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#lead-label   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]",
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#mb-count.ball-count   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]"
+ ],
+ "dex-drawer-390x844-junior": [
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]"
+ ],
+ "dex-drawer-375x667-normal": [
+  "OFF-SCREEN RIGHT by 20px: button#nav-next.nav-btn \"▶\"   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#lead-label   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]",
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#mb-count.ball-count   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]"
+ ],
+ "dex-drawer-375x667-junior": [
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]"
+ ],
+ "data-sheet-390x844-normal": [
+  "OFF-SCREEN RIGHT by 5px: button#nav-next.nav-btn \"▶\"   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#lead-label   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]",
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#mb-count.ball-count   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]"
+ ],
+ "data-sheet-375x667-normal": [
+  "OFF-SCREEN RIGHT by 20px: button#nav-next.nav-btn \"▶\"   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#lead-label   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span   [screen: #app-body]",
+  "TEXT BELOW 8px (6px): small   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): span#mb-count.ball-count   [screen: #app-body]",
+  "TEXT BELOW 8px (7px): div..tat-name   [screen: #app-body]"
+ ],
+ "pc-390x844-normal": [
+  "TEXT BELOW 8px (7px): span.team-.trip-label   [screen: #pc-modal]",
+  "TEXT BELOW 8px (5px): small   [screen: #pc-modal]",
+  "TEXT BELOW 8px (6px): small   [screen: #pc-modal]",
+  "TEXT BELOW 8px (7px): span   [screen: #pc-modal]",
+  "TEXT BELOW 8px (6px): em.pc-lvl   [screen: #pc-modal]"
+ ],
+ "pc-390x844-junior": [
+  "TEXT BELOW 8px (7px): span.team-.trip-label   [screen: #pc-modal]",
+  "TEXT BELOW 8px (5px): small   [screen: #pc-modal]",
+  "TEXT BELOW 8px (6px): small   [screen: #pc-modal]",
+  "TEXT BELOW 8px (7px): span   [screen: #pc-modal]",
+  "TEXT BELOW 8px (6px): em.pc-lvl   [screen: #pc-modal]"
+ ],
+ "pc-375x667-normal": [
+  "TEXT BELOW 8px (7px): span.team-.trip-label   [screen: #pc-modal]",
+  "TEXT BELOW 8px (5px): small   [screen: #pc-modal]",
+  "TEXT BELOW 8px (6px): small   [screen: #pc-modal]",
+  "TEXT BELOW 8px (7px): span   [screen: #pc-modal]",
+  "TEXT BELOW 8px (6px): em.pc-lvl   [screen: #pc-modal]"
+ ],
+ "pc-375x667-junior": [
+  "TEXT BELOW 8px (7px): span.team-.trip-label   [screen: #pc-modal]",
+  "TEXT BELOW 8px (5px): small   [screen: #pc-modal]",
+  "TEXT BELOW 8px (6px): small   [screen: #pc-modal]",
+  "TEXT BELOW 8px (7px): span   [screen: #pc-modal]",
+  "TEXT BELOW 8px (6px): em.pc-lvl   [screen: #pc-modal]"
+ ],
+ "card-390x844-normal": [
+  "TEXT BELOW 8px (5px): small   [screen: #card-modal]",
+  "TEXT BELOW 8px (6.66667px): small   [screen: #card-modal]",
+  "TEXT BELOW 8px (7px): div   [screen: #card-modal]",
+  "TEXT BELOW 8px (7px): strong   [screen: #card-modal]"
+ ],
+ "card-390x844-junior": [
+  "TEXT BELOW 8px (5px): small   [screen: #card-modal]",
+  "TEXT BELOW 8px (6.66667px): small   [screen: #card-modal]",
+  "TEXT BELOW 8px (7px): div   [screen: #card-modal]",
+  "TEXT BELOW 8px (7px): strong   [screen: #card-modal]"
+ ],
+ "card-375x667-normal": [
+  "TEXT BELOW 8px (5px): small   [screen: #card-modal]",
+  "TEXT BELOW 8px (6.66667px): small   [screen: #card-modal]",
+  "TEXT BELOW 8px (7px): div   [screen: #card-modal]",
+  "TEXT BELOW 8px (7px): strong   [screen: #card-modal]"
+ ],
+ "card-375x667-junior": [
+  "TEXT BELOW 8px (5px): small   [screen: #card-modal]",
+  "TEXT BELOW 8px (6.66667px): small   [screen: #card-modal]",
+  "TEXT BELOW 8px (7px): div   [screen: #card-modal]",
+  "TEXT BELOW 8px (7px): strong   [screen: #card-modal]"
+ ],
+ "explore-390x844-normal": [
+  "TEXT BELOW 8px (6px): small.habitat-.ub   [screen: #explore-container]"
+ ],
+ "explore-390x844-junior": [
+  "TEXT BELOW 8px (6px): small.habitat-.ub   [screen: #explore-container]"
+ ],
+ "explore-375x667-normal": [
+  "TEXT BELOW 8px (6px): small.habitat-.ub   [screen: #explore-container]"
+ ],
+ "explore-375x667-junior": [
+  "TEXT BELOW 8px (6px): small.habitat-.ub   [screen: #explore-container]"
+ ],
+ "gyms-390x844-normal": [
+  "TEXT BELOW 8px (6px): small.habitat-.ub   [screen: #gym-container]"
+ ],
+ "gyms-390x844-junior": [
+  "TEXT BELOW 8px (6px): small.habitat-.ub   [screen: #gym-container]"
+ ],
+ "gyms-375x667-normal": [
+  "TEXT BELOW 8px (6px): small.habitat-.ub   [screen: #gym-container]"
+ ],
+ "gyms-375x667-junior": [
+  "TEXT BELOW 8px (6px): small.habitat-.ub   [screen: #gym-container]"
+ ],
+ "gym-trainers-390x844-normal": [
+  "TEXT BELOW 8px (7px): div.trainer-taunt   [screen: #gym-container]"
+ ],
+ "gym-trainers-390x844-junior": [
+  "TEXT BELOW 8px (7px): div.trainer-taunt   [screen: #gym-container]"
+ ],
+ "gym-trainers-375x667-normal": [
+  "TEXT BELOW 8px (7px): div.trainer-taunt   [screen: #gym-container]"
+ ],
+ "gym-trainers-375x667-junior": [
+  "TEXT BELOW 8px (7px): div.trainer-taunt   [screen: #gym-container]"
+ ],
+ "settings-390x844-normal": [
+  "TEXT BELOW 8px (7px): span   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-export-copy..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-export-file..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-import-paste..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-import-file..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-undo-import..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#dev-open-btn..et-action dev-open   [screen: #settings-modal]"
+ ],
+ "settings-390x844-junior": [
+  "TEXT BELOW 8px (7px): span   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-export-copy..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-export-file..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-import-paste..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-import-file..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-undo-import..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#dev-open-btn..et-action dev-open   [screen: #settings-modal]"
+ ],
+ "settings-375x667-normal": [
+  "TEXT BELOW 8px (7px): span   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-export-copy..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-export-file..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-import-paste..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-import-file..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-undo-import..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#dev-open-btn..et-action dev-open   [screen: #settings-modal]"
+ ],
+ "settings-375x667-junior": [
+  "TEXT BELOW 8px (7px): span   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-export-copy..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-export-file..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-import-paste..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-import-file..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#set-undo-import..et-action   [screen: #settings-modal]",
+  "TEXT BELOW 8px (7px): button#dev-open-btn..et-action dev-open   [screen: #settings-modal]"
+ ],
+ "battle-wild-390x844-normal": [
+  "TEXT BELOW 8px (7px): span.lvl   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): div#player-hp-text   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): span.move-name   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): button#ball-btn.move-btn aux-btn ball-btn   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): button#switch-btn.move-btn aux-btn   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): button#run-btn.move-btn aux-btn run-wide   [screen: #battle-container]"
+ ],
+ "battle-wild-390x844-junior": [
+  "TEXT BELOW 8px (7px): span.lvl   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): div#player-hp-text   [screen: #battle-container]"
+ ],
+ "battle-wild-375x667-normal": [
+  "OFF-SCREEN BOTTOM by 16px: button#run-btn.move-btn \"🏃 RUN\"   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): span.lvl   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): div#player-hp-text   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): span.move-name   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): button#ball-btn.move-btn aux-btn ball-btn   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): button#switch-btn.move-btn aux-btn   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): button#run-btn.move-btn aux-btn run-wide   [screen: #battle-container]"
+ ],
+ "battle-wild-375x667-junior": [
+  "OFF-SCREEN BOTTOM by 43px: button#ball-btn.move-btn \"🔴 BALL\"   [screen: #battle-container]",
+  "OFF-SCREEN BOTTOM by 43px: button#switch-btn.move-btn \"🔄 SWITCH\"   [screen: #battle-container]",
+  "UNREACHABLE in battle: #ball-btn at top 661 bottom 710 (viewport 667)   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): span.lvl   [screen: #battle-container]",
+  "TEXT BELOW 8px (7px): div#player-hp-text   [screen: #battle-container]"
+ ]
+}

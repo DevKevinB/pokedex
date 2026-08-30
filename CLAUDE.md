@@ -55,7 +55,7 @@ js/state.js     210  save schema v2, players, mons, levels, XP, export/import
 js/api.js       134  PokeAPI v2 + localStorage slim-projection cache
 js/dex.js       203  the main Pokédex screen
 js/catch.js     140  dex-screen catching + ball drawer
-js/battle.js    979  THE HOTSPOT — wild, gym and versus battles on one
+js/battle.js   1376  THE HOTSPOT — wild, gym and versus battles on one
                      mutable battleState singleton. Most bugs live here.
 js/gym.js       154  gym screens, endurance HP, Poké Center
 js/gymdata.js   135  58 hand-authored trainers across 12 stops, Lv8 → Lv80
@@ -66,7 +66,12 @@ js/settings.js  151  the gear menu: names, junior toggle, save/export
 js/devtools.js  228  Parent Tools behind a PIN
 js/audio.js      74  cries, beeps, mute. NO SPEECH.
 js/music.js     114  procedural chiptune (square lead + triangle bass)
-js/main.js      179  bootstrap and event wiring
+js/engine.js    198  DOM-free battle maths (unit-tested)
+js/dialog.js    127  the in-world replacement for alert/confirm/prompt
+js/nickname.js   56  the NAME ME prompt
+js/habitatfill.js 57 generated: every species' home habitat
+js/main.js      301  bootstrap and event wiring
+tools/release.mjs    version bump + checks + the git commands to run
 sw.js            72  service worker: network-first shell, cache-first assets
 ```
 
@@ -95,15 +100,23 @@ a save shape that older code can't read without checking the migration path.
 ```bash
 npm install                      # first time only — installs playwright
 python3 -m http.server 8321 &    # the suite expects a server on :8321
-node test/smoke.mjs              # ~105 checks, exits non-zero on failure
+node test/smoke.mjs              # ~165 checks, exits non-zero on failure
+npm run scenes                   # layout harness: 15 screens x 2 sizes x 2 modes
 ```
 
 The suite **fully mocks PokeAPI and the sprite CDN**, so it runs with no network
 access to those hosts. If you add a feature that fetches something new, add a
 route mock for it or the suite will hang.
 
-`test/v183shots.mjs` renders the dex screen in both modes — copy it for visual
-checks on new work.
+**`test/scenes.mjs` is the layout net.** It walks the real app to every screen at
+375x667 and 390x844 in both modes and fails if a button leaves the screen, the
+Pokeball becomes unreachable in a fight, or any visible text drops below 8px.
+Known-but-scheduled bugs live in `test/known-issues.json` so only NEW breakage
+fails; delete entries as fixes land. `UPDATE_KNOWN=1 UPDATE_BASELINE=1 npm run
+scenes` re-records. Screenshots land in `test/shots/` — actually look at them.
+
+Every battle wait must go through `awaitOrTap()` from config.js, never `sleep()`,
+so a tap can hurry it and `?fast=1` can run the suite quickly.
 
 ## Conventions
 

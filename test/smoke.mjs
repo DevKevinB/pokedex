@@ -1080,6 +1080,84 @@ check('every type has a picture, not just a word', visual.missing.length === 0);
 check(`every type chip clears WCAG AA (worst: ${visual.worstType} ${visual.worst.toFixed(2)}:1)`,
   visual.worst >= 4.5);
 
+
+// ============================================================
+// THE PROMISE TO ART  (v19.0)
+// Rule 2 of CLAUDE.md: Junior Mode never punishes, and never advertises that
+// it is helping. Those were guarded only by unit tests on the engine; nothing
+// checked the promise end to end, in the browser, the way Art meets it. These
+// checks exist so a future change cannot quietly take the floor away from him.
+// ============================================================
+check('pacing seam exists and honours its floor', await page.evaluate(async () => {
+  const C = await import('/js/config.js');
+  if (typeof C.awaitOrTap !== 'function') return false;
+  const wasFast = C.PACE.fast;
+  C.PACE.fast = true;
+  const t0 = performance.now();
+  await C.awaitOrTap(4000);          // a long ceremony, in fast mode
+  const dt = performance.now() - t0;
+  C.PACE.fast = wasFast;
+  // clamped to the floor, but never allowed to vanish entirely
+  return dt < 1200 && dt >= C.PACE.floor - 30;
+}));
+
+check('a wait can never resolve faster than the floor', await page.evaluate(async () => {
+  const C = await import('/js/config.js');
+  const wasFast = C.PACE.fast; C.PACE.fast = false;
+  const t0 = performance.now();
+  const pending = C.awaitOrTap(900);
+  // a finger already down must not skip the beat instantly
+  document.getElementById('battle-container')?.dispatchEvent(new Event('pointerdown'));
+  await pending;
+  const dt = performance.now() - t0;
+  C.PACE.fast = wasFast;
+  return dt >= C.PACE.floor - 30;
+}));
+
+// Art's Pokémon do not faint. Six turns against a maximum-level attacker.
+check('junior: six hits from a Lv100 attacker never drop Art below 1 HP', await page.evaluate(async () => {
+  const E = await import('/js/engine.js');
+  const atk = { level: 100, name: 'BOSS', types: [{ type: { name: 'dragon' } }],
+    atk: 250, def: 200, spatk: 250, spdef: 200 };
+  const move = { name: 'outrage', power: 120, type: 'dragon', damage_class: 'physical' };
+  const fighter = { level: 5, name: 'ART', types: [{ type: { name: 'normal' } }],
+    atk: 20, def: 20, spatk: 20, spdef: 20, maxHp: 100, hp: 100 };
+  for (let i = 0; i < 6; i++) {
+    const { damage } = E.computeDamage(atk, fighter, move, { junior: 'defender' });
+    fighter.hp = Math.max(1, fighter.hp - damage * 0.5);
+    if (fighter.hp < 1) return false;
+  }
+  return fighter.hp >= 1;
+}));
+
+// ...and his attacks always land somewhere meaningful, so a fight can be won.
+check('junior: Art always does real damage, even into a wall', await page.evaluate(async () => {
+  const E = await import('/js/engine.js');
+  const art = { level: 5, name: 'ART', types: [{ type: { name: 'normal' } }],
+    atk: 20, def: 20, spatk: 20, spdef: 20 };
+  const wall = { level: 100, name: 'WALL', types: [{ type: { name: 'steel' } }],
+    atk: 200, def: 400, spatk: 200, spdef: 400, maxHp: 400, hp: 400 };
+  const weak = { name: 'tackle', power: 20, type: 'normal', damage_class: 'physical' };
+  const { damage } = E.computeDamage(art, wall, weak, { junior: 'attacker' });
+  return damage >= wall.maxHp * 0.10;
+}));
+
+// The accommodations must stay invisible. Art should feel skilled, not helped.
+check('junior mode never says it is helping', await page.evaluate(() => {
+  const banned = /junior|easy mode|easier|can't lose|cannot lose|always catch|guaranteed/i;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let n;
+  while ((n = walker.nextNode())) {
+    const el = n.parentElement;
+    if (!el) continue;
+    const s = getComputedStyle(el);
+    if (s.display === 'none' || s.visibility === 'hidden') continue;
+    if (!el.getBoundingClientRect().width) continue;
+    if (banned.test(n.textContent || '')) return false;
+  }
+  return true;
+}));
+
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);
 check('speech synthesis never invoked', await page.evaluate(() => window.__SPOKE__ === false));

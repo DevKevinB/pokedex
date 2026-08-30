@@ -1,14 +1,17 @@
 {
   "name": "pokedex-os",
-  "version": "18.11.0",
+  "version": "19.0.0",
   "private": true,
   "description": "A Pokedex game built for two brothers, 7 and 4. Vanilla JS, no build step.",
   "scripts": {
     "serve": "python3 -m http.server 8321",
     "test": "node --test test/engine.test.mjs && node test/smoke.mjs",
-    "shots": "node test/v183shots.mjs",
+    "shots": "node test/scenes.mjs",
     "setup": "npm install && npx playwright install --with-deps chromium",
-    "test:engine": "node --test test/engine.test.mjs"
+    "test:engine": "node --test test/engine.test.mjs",
+    "scenes": "node test/scenes.mjs",
+    "scenes:update": "UPDATE_BASELINE=1 UPDATE_KNOWN=1 node test/scenes.mjs",
+    "release": "node tools/release.mjs"
   },
   "devDependencies": {
     "playwright": "^1.56.1"

@@ -2,7 +2,10 @@
 // Pokédex OS — bootstrap & event wiring
 // ============================================================
 
-import { APP_VERSION, PIXEL_SPRITE } from './config.js';
+import { APP_VERSION, PIXEL_SPRITE, initPace } from './config.js';
+
+// ?fast=1 clamps every battle wait to its floor (used by the test suite).
+initPace();
 import { state, loadSave, player, playerName, monLevel } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, triggerVibration, toggleMute } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';

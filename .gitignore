@@ -11,3 +11,4 @@ test/debug*.png
 # OS noise
 .DS_Store
 Thumbs.db
+test/shots/

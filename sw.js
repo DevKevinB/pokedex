@@ -9,7 +9,7 @@
 // Bump CACHE_VERSION on every release to purge old shells.
 // ============================================================
 
-const CACHE_VERSION = 'pokedexos-v18.11.0';
+const CACHE_VERSION = 'pokedexos-v19.0.0';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 // DELIBERATELY version-independent. Sprites never change, and at a weekly
 // release cadence a versioned asset cache is emptied every single push — which

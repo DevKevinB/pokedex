@@ -3,7 +3,7 @@
 // ============================================================
 
 export const MAX_POKEMON = 649; // Gens 1–5 — the animated pixel sprite era
-export const APP_VERSION = '18.11.0';
+export const APP_VERSION = '19.0.0';
 
 // generation ranges for PC Box tabs
 export const GENERATIONS = [
@@ -80,6 +80,69 @@ export function getTypeMultiplier(attackType, defenderTypes) {
 }
 
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ---- the pacing seam ----
+// Every wait in a battle goes through awaitOrTap() instead of sleep(), for two
+// reasons. GABE sat through ~43 seconds of unskippable dead air in a three-
+// Pokémon gym fight, and the test suite had no way to run a battle quickly.
+//
+// Two rules protect ART. A tap can only ever hurry a wait ALONG, never skip it
+// entirely: nothing resolves faster than PACE.floor, so a ceremony can't flash
+// past a four-year-old who happened to have a finger down. And the skip is
+// advertised with a blinking arrow — a pre-reader will never discover an
+// invisible affordance, so without the arrow the feature does not exist for him.
+export const PACE = { fast: false, floor: 250 };
+
+// ?fast=1 (or a sticky localStorage flag) clamps every wait to the floor.
+// Used by the test suite; harmless if a curious seven-year-old finds it.
+export function initPace() {
+  try {
+    const q = new URLSearchParams(location.search).get('fast');
+    if (q === '1') PACE.fast = true;
+    else if (q === '0') { PACE.fast = false; localStorage.removeItem('pokedexos_fast'); }
+    else if (localStorage.getItem('pokedexos_fast') === '1') PACE.fast = true;
+    if (q === '1') localStorage.setItem('pokedexos_fast', '1');
+  } catch (e) { /* private mode / storage blocked — pacing just stays normal */ }
+  return PACE.fast;
+}
+
+function skipArrow() {
+  const log = document.getElementById('battle-log');
+  if (!log) return null;
+  const a = document.createElement('span');
+  a.className = 'skip-arrow';
+  a.setAttribute('aria-hidden', 'true');
+  a.textContent = '▼';
+  log.appendChild(a);
+  return a;
+}
+
+// Resolves after ms, OR early on a tap once the floor has elapsed.
+export function awaitOrTap(ms, { floor = PACE.floor, target = null } = {}) {
+  const total = PACE.fast ? Math.min(ms, floor) : ms;
+  // Short waits are beats of animation timing, not reading pauses — leave them.
+  if (total <= floor + 50) return sleep(total);
+  return new Promise(resolve => {
+    const el = target || document.getElementById('battle-container') || document.body;
+    let done = false, armed = false, arrow = null;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer); clearTimeout(armTimer);
+      el.removeEventListener('pointerdown', onTap);
+      if (arrow) arrow.remove();
+      resolve();
+    };
+    const onTap = () => { if (armed) finish(); };
+    const timer = setTimeout(finish, total);
+    const armTimer = setTimeout(() => {
+      if (done) return;
+      armed = true;
+      arrow = skipArrow();
+      el.addEventListener('pointerdown', onTap);
+    }, floor);
+  });
+}
 
 // ---- the visual language of a type ----
 // ART cannot read "THUNDER SHOCK". He can read a lightning bolt instantly.

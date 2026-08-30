@@ -1,0 +1,14 @@
+{
+ "#settings-modal .modal-box": {
+  "x": 37,
+  "y": 47,
+  "w": 302,
+  "h": 574
+ },
+ "#settings-close": {
+  "x": 61,
+  "y": 578,
+  "w": 254,
+  "h": 47
+ }
+}
