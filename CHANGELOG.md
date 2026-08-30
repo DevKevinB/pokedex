@@ -41,6 +41,41 @@ after a fight finally shows Art what he won.
 - New file `js/fx.js` (all the sprite movement), added to the offline list in
   `sw.js` so it updates with everything else.
 
+## [19.5.0] - IT TALKS BACK
+
+The Pokémon answer back now, and the CRY button finally works on the iPad.
+
+### Added
+- **Pet your Pokémon.** Tap a Pokémon you have already caught — on the dex, or
+  your own Pokémon during a fight — and it hops, hearts pop out of it, the
+  iPad buzzes and it makes its cry. There is no reward and no way to get it
+  wrong. Tap it five times fast and it spins with twelve hearts and a little
+  fanfare. Tapping one you have NOT caught still opens the ball drawer for Art
+  exactly as before.
+- **Every button clicks.** Tapping anything in the game now makes a short click
+  and a small bump under your finger — buttons, habitat cards, PC tiles, balls,
+  team slots, everything.
+- **A BUZZ switch in Settings**, next to MUSIC & SOUND. It only affects the
+  device you set it on; it does not travel in a save file.
+
+### Fixed
+- **The CRY button has probably never made a sound on your iPad.** Pokémon
+  cries are delivered in a format Safari cannot play at all, so every tap has
+  been silently doing nothing. The game now checks first, and where the real
+  cry cannot play it invents one instead — a short chiptune squeak built from
+  that Pokémon's number, size and stats. Each Pokémon always gets the same
+  one, so #25 always sounds like #25. (Still no talking, ever.)
+- **Music no longer dies after a phone call.** When the iPad interrupted the
+  game — a call, a video, backgrounding the app — the sound stopped for good
+  until you force-quit and reopened it. It now comes back by itself.
+- **The beat no longer stumbles.** Confetti, sprite loading and big animations
+  used to drag the music off the beat. The tune is now scheduled against the
+  sound hardware's own clock, so nothing on screen can push it around.
+- **Hits sound and feel different from each other.** A super-effective hit
+  buzzes as three thumps, a weak one as a single tap.
+- The tooltip on JUNIOR MODE still advertised the spoken names removed back in
+  v18.3.0. The CRY button's picture is a speaker now instead of an explosion.
+
 ## [19.3.0] - PICK THE GOLD ONE
 
 Art can tell his four attacks apart now, and the game stops asking the

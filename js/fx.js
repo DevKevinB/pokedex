@@ -14,6 +14,7 @@
 // ============================================================
 
 import { awaitOrTap } from './config.js';
+import { playBeep, triggerVibration, playCryFor, haptic } from './audio.js';
 
 // Every one-shot class, in one list. Two `animation` declarations on one
 // element do not stack — the later rule simply wins — so only ever one of
@@ -118,12 +119,80 @@ export function spawnParticles(defenderRole, color) {
 
 // A single glyph that floats over the defender — the wordless half of the
 // effectiveness message, and now the carrier for LV 13 too.
-export function spawnMark(defenderRole, glyph, cls) {
-  const host = sideOf(defenderRole);
-  if (!host) return;
+// v19.5 generalised this. Passed a ROLE string ('wild' / 'player') it behaves
+// exactly as v19.4 did and prefixes `impact-mark`; passed an ELEMENT it uses
+// the class string as given, which is what the pet hearts need. Merging the
+// two spawners rather than letting v19.5 replace this file is deliberate:
+// v19.5 originally shipped fx.js as a NEW file with a different export set,
+// which would have left battle.js importing names that no longer existed —
+// a missing named export is a module-graph SyntaxError, so main.js would
+// never evaluate and the boys would get a dead black screen, offline copy
+// included.
+export function spawnMark(hostOrRole, glyph, cls, { dx = 0, delay = 0, life = 900 } = {}) {
+  const byRole = typeof hostOrRole === 'string';
+  const host = byRole ? sideOf(hostOrRole) : hostOrRole;
+  if (!host) return null;
   const el = document.createElement('div');
-  el.className = `impact-mark ${cls}`;
+  el.className = byRole ? `impact-mark ${cls}` : (cls || '');
   el.textContent = glyph;
+  el.setAttribute('aria-hidden', 'true');
+  if (dx) el.style.setProperty('--dx', `${dx}px`);
+  if (delay) el.style.animationDelay = `${delay}ms`;
   host.appendChild(el);
-  setTimeout(() => el.remove(), 900);
+  setTimeout(() => el.remove(), life + delay);
+  return el;
 }
+
+// ---- PET YOUR POKEMON (ROADMAP §4 v19.5) ----
+// The one interaction in the whole game with no goal, no reward and no way to
+// fail: it is what a four-year-old does with a toy before he plays with it.
+// Five taps inside 1.2s is a deliberate secret — it costs nothing to miss, and
+// it is exactly the kind of thing a seven-year-old tells his brother about.
+const PET_COMBO_MS = 1200;
+const PET_COMBO_TAPS = 5;
+let petTaps = [];
+const petTimers = new WeakMap();
+
+/**
+ * @param sprite the <img> to animate
+ * @param host   a position:relative ancestor the hearts float out of
+ * @param id     species id, for the cry
+ */
+export function pet(sprite, host, id) {
+  if (!sprite) return;
+
+  const now = Date.now();
+  petTaps = petTaps.filter(t => now - t < PET_COMBO_MS);
+  petTaps.push(now);
+  const spin = petTaps.length >= PET_COMBO_TAPS;
+  if (spin) petTaps = [];
+
+  // Restart the animation cleanly on a fast re-tap, or the fifth tap would
+  // land on a sprite already mid-hop and nothing visible would happen.
+  const cls = spin ? 'pet-spin' : 'pet-hop';
+  sprite.classList.remove('pet-hop', 'pet-spin');
+  void sprite.offsetWidth;
+  sprite.classList.add(cls);
+  clearTimeout(petTimers.get(sprite));
+  petTimers.set(sprite, setTimeout(() => sprite.classList.remove(cls), spin ? 580 : 380));
+
+  const hearts = spin ? 12 : 3;
+  const spread = spin ? 150 : 64;
+  for (let i = 0; i < hearts; i++) {
+    spawnMark(host, '💗', 'pet-heart', {
+      dx: Math.round((i / Math.max(1, hearts - 1) - 0.5) * spread),
+      delay: i * (spin ? 45 : 90)
+    });
+  }
+
+  if (spin) {
+    // A rising three-note flourish: the reward for finding the secret.
+    [659, 880, 1175].forEach((f, i) =>
+      setTimeout(() => playBeep(f, 'square', 0.10, 0.09), i * 90));
+    haptic('levelUp');
+  } else {
+    triggerVibration(20);
+    playCryFor(id);   // throttled to one cry per 400ms inside audio.js
+  }
+}
+

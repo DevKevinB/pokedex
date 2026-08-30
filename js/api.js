@@ -131,6 +131,13 @@ export const getPokemon = idOrName =>
 
 export const getSpecies = url => cached(`spec:${url}`, url, slimSpecies);
 
+/** The slim record for a species IF it is already cached — never a request.
+    audio.js needs a Pokemon's stats and size to synthesise its cry, and a pet
+    tap must be instant: a fetch here would make petting a network operation. */
+export function cachedPokemon(id) {
+  return cache[`pkmn:${id}`.toLowerCase()] || null;
+}
+
 // ---- the baked move table (data/moves.json) ----
 // Every Gen 1-5 move, committed by `node tools/bake-moves.mjs`. It is DATA in
 // git, not a build step — the file is served exactly as authored.

@@ -22,7 +22,7 @@ const SHELL_FILES = [
   './css/main.css', './css/gba.css',
   './js/main.js', './js/config.js', './js/state.js', './js/api.js', './js/engine.js',
   './js/audio.js', './js/dex.js', './js/catch.js', './js/battle.js', './js/fx.js', './js/pc.js',
-  './js/music.js', './js/explore.js', './js/progression.js', './js/settings.js', './js/devtools.js', './js/gym.js', './js/gymdata.js', './js/nickname.js', './js/dialog.js', './js/habitatfill.js',
+  './js/music.js', './js/explore.js', './js/progression.js', './js/settings.js', './js/devtools.js', './js/gym.js', './js/gymdata.js', './js/nickname.js', './js/dialog.js', './js/habitatfill.js', './js/fx.js',
   './data/moves.json',
   './manifest.webmanifest'
 ];

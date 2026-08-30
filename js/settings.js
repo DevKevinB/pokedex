@@ -4,7 +4,7 @@
 // ============================================================
 
 import { state, player, persist, playerName, setPlayerName, exportCode, importCode, hasPreviousSave, restorePreviousSave } from './state.js';
-import { isMuted, toggleMute, triggerVibration } from './audio.js';
+import { isMuted, toggleMute, triggerVibration, hapticsOn, toggleHaptics } from './audio.js';
 import { updateCatchUI } from './dex.js';
 import { dialog } from './dialog.js';
 import { requirePin } from './devtools.js';
@@ -31,6 +31,10 @@ export function refreshToggles() {
   document.getElementById('set-p2-junior').classList.toggle('on', state.save.players[2].settings.junior);
   document.getElementById('set-sound').innerText = isMuted() ? 'OFF' : 'ON';
   document.getElementById('set-sound').classList.toggle('on', !isMuted());
+  // Device-local, NOT in the save: an exported save must not carry the iPad's
+  // buzz setting onto a phone that buzzes differently.
+  const buzz = document.getElementById('set-haptics');
+  if (buzz) { buzz.innerText = hapticsOn() ? 'ON' : 'OFF'; buzz.classList.toggle('on', hapticsOn()); }
 }
 
 export function refreshSettingsUI() {
@@ -186,6 +190,7 @@ export function initSettings() {
   on('set-p1-junior', () => toggleJuniorFor(1));
   on('set-p2-junior', () => toggleJuniorFor(2));
   on('set-sound', toggleSound);
+  on('set-haptics', () => { toggleHaptics(); refreshToggles(); });
   on('set-export-copy', copySaveCode);
   on('set-export-file', downloadSaveFile);
   on('set-import-paste', pasteSaveCode);

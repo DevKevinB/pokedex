@@ -7,10 +7,11 @@ import { APP_VERSION, PIXEL_SPRITE, initPace, typeColors } from './config.js';
 // ?fast=1 clamps every battle wait to its floor (used by the test suite).
 initPace();
 import { state, loadSave, player, playerName, monLevel } from './state.js';
-import { initAudio, stopAllAudio, playCryAudio, triggerVibration, toggleMute } from './audio.js';
+import { initAudio, stopAllAudio, playCryAudio, toggleMute, resumeIfNeeded, haptic, sfx } from './audio.js';
+import { pet } from './fx.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
-import { initBattleMode, exitBattleMode, wireExitChip, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState } from './battle.js';
+import { initBattleMode, exitBattleMode, wireExitChip, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState, petTargetId } from './battle.js';
 import { openPC, closePC, cancelTeamPick, onPCSearchInput } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { openGyms, backFromGym, reopenGyms } from './gym.js';
@@ -101,7 +102,7 @@ function setPlayer(n) {
 
 function togglePlayer() {
   if (state.isCatching || state.appMode === 'battle') return;
-  triggerVibration();
+  haptic('select');
   setPlayer(state.currentPlayer === 1 ? 2 : 1);
 }
 
@@ -176,6 +177,32 @@ function on(id, fn) {
 }
 
 function wireUI() {
+  // ---- v19.5: one tick for every tappable thing (ROADMAP §3.5) ----
+  // Every button in the app already depresses 3px, and until now that was ALL
+  // it did. A tap that also clicks and bumps is a tap a four-year-old is SURE
+  // he made. One delegated PASSIVE capture listener covers every control in
+  // the app, present and future — including the ones battle.js, pc.js and
+  // explore.js build from strings long after this line has run.
+  //
+  // It is also the unlock: iOS will only start an AudioContext inside a real
+  // gesture, and pointerdown is the earliest one we get.
+  const TAPPABLE = 'button, .habitat-card, .pc-item, .ball-opt, .team-slot, ' +
+                   '.spoils-pick, .switch-item, .whoplaying-choice';
+  document.addEventListener('pointerdown', e => {
+    resumeIfNeeded();
+    const el = e.target instanceof Element ? e.target.closest(TAPPABLE) : null;
+    if (!el || el.disabled || el.classList.contains('locked')) return;
+    sfx.tick();
+    haptic('tick');
+  }, { passive: true, capture: true });
+
+  // iOS parks a backgrounded AudioContext, and after a phone call hands it
+  // back in state 'interrupted' — which never clears on its own. This app had
+  // ZERO visibilitychange listeners, which is why one call could silence the
+  // whole game until it was force-quit and relaunched.
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeIfNeeded(); });
+  window.addEventListener('pageshow', () => resumeIfNeeded());
+
   on('boot-screen', startApp);
   on('player-btn', togglePlayer);
   on('lead-btn', () => openPC('team'));
@@ -215,9 +242,32 @@ function wireUI() {
   on('card-close', closeTrainerCard);
   on('badge-ok', dismissCelebration);
 
-  // Junior mode: tapping the Pokémon itself starts a catch
+  // ---- v19.5: PET YOUR POKEMON ----
+  // The sprite is the biggest thing on the dex screen and the one thing a
+  // pre-reader is already touching. If you OWN it, touching it makes it hop,
+  // squeak and pop hearts. If you don't, junior mode still opens the ball
+  // drawer exactly as it did — nothing is taken away.
   on('poke-sprite', () => {
-    if (player().settings.junior && state.appMode === 'dex') openBag();
+    if (state.isCatching || state.appMode !== 'dex') return;
+    if (player().caught.includes(state.curId)) {
+      pet(document.getElementById('poke-sprite'),
+          document.getElementById('scanner-container'),
+          state.curId);
+    } else if (player().settings.junior) {
+      openBag();
+    }
+  });
+
+  // The same hook in a fight — but only between turns. petTargetId() returns
+  // null while the board is busy or the Pokemon is down, so a pet can never
+  // interrupt an attack that is already in flight.
+  on('player-sprite', () => {
+    const id = petTargetId();
+    if (id != null) {
+      pet(document.getElementById('player-sprite'),
+          document.querySelector('.player-side'),
+          id);
+    }
   });
 
   // explore → battle bridges

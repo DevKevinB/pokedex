@@ -5,7 +5,7 @@
 import { MAX_POKEMON, typeColors, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
 import { getPokemon, getSpecies, getEvolution } from './api.js';
 import { state, player } from './state.js';
-import { stopAllAudio, setCry, triggerVibration } from './audio.js';
+import { stopAllAudio, setCry, haptic } from './audio.js';
 import { pxReveal } from './fx.js';
 
 let galleryTimer = null;
@@ -155,7 +155,9 @@ function updateUISafe() {
       return `<div class="stat-row"><div class="stat-name">${statName}</div><div class="stat-val">${st.base_stat || 0}</div><div class="stat-bar-bg"><div class="stat-bar-fill" style="width: ${percent}%; background: ${barColor}"></div></div></div>`;
     }).join('');
 
-    setCry(d.cries?.latest);
+    // The slim record travels with the URL: on Safari, where the .ogg cannot
+    // play at all, audio.js builds this species' cry out of its stats instead.
+    setCry(d.cries?.latest, d);
   } catch (e) { console.error('UI Update Failed', e); }
 }
 
@@ -206,13 +208,13 @@ export function toggleShiny() {
   if (!state.isCatching && state.appMode === 'dex' && state.curData) {
     state.isShiny = !state.isShiny;
     setupGallerySafe();
-    triggerVibration();
+    haptic('select');
   }
 }
 
 export function randomPoke() {
   if (!state.isCatching && state.appMode === 'dex') loadPoke(Math.floor(Math.random() * MAX_POKEMON) + 1);
-  triggerVibration();
+  haptic('select');
 }
 
 export function nav(amt) {
@@ -221,7 +223,7 @@ export function nav(amt) {
   if (state.curId < 1) state.curId = MAX_POKEMON;
   if (state.curId > MAX_POKEMON) state.curId = 1;
   loadPoke(state.curId);
-  triggerVibration();
+  haptic('select');   // nav() is also reached by SWIPE, which the tap listener never sees
 }
 
 export function toggleSheet() {

@@ -14,7 +14,8 @@ import {
 } from './engine.js';
 import { getPokemon, getMove, getSpecies, getEvolution, nameOf, movesReady, moveStats } from './api.js';
 import { state, player, recordCatch, ensureMon, ensureMonAtLeast, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName, recordChampion, championRecord } from './state.js';
-import { sfx, triggerVibration, playBeep } from './audio.js';
+import { sfx, triggerVibration, playBeep, haptic } from './audio.js';
+import { spawnMark as fxMark } from './fx.js';
 import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
 import { GYMS, trainerKey } from './gymdata.js';
@@ -84,6 +85,15 @@ function awardPartyXp(koerId, amount) {
 }
 
 const active = () => battleState.loaded[battleState.teamIds[battleState.activeIdx]];
+
+// v19.5: the species id of the Pokemon on the field, or null when the board is
+// busy, empty or fainted. battle.js owns the question "is it safe to touch the
+// sprite right now" — main.js only wires the tap.
+export function petTargetId() {
+  const f = active();
+  if (!battleState.isBattling || battleState.busy || !f || f.hp <= 0) return null;
+  return f.id;
+}
 
 // Is the current player ART, in a mode where his accommodations apply?
 // The floor/ceiling values themselves live in engine.js.
@@ -863,7 +873,9 @@ async function performAttack(attackerRole, defenderRole, move) {
   await hitStop(90);
   if (stale(e)) return;
   updateHP(defenderRole);
-  triggerVibration([50]);
+  // The buzz moved into impactFx, which is the only function that knows
+  // whether the hit was super, weak or nothing at all. One buzz for every hit
+  // told ART the same thing every time, which is to say nothing.
   // Each type now SOUNDS like itself — the same information the tile's picture
   // carries, in the one channel that still works while your eyes are on the
   // sprite. Immunity stays silent here: nothing happened, so nothing may sound
@@ -919,11 +931,14 @@ function impactFx(defenderRole, { damage, typeMult, crit, moveType }) {
     spawnMark(defenderRole, '⏫', 'fx-super');
     screenShake('hard');
     sfx.superHit();
+    haptic('superHit');
   } else if (kind === 'weak') {
     spawnMark(defenderRole, '⏬', 'fx-weak');
     sfx.hit();
+    haptic('weakHit');
   } else {
     sfx.hit();
+    haptic('hit');
   }
 
   if (crit) {
@@ -1002,7 +1017,7 @@ export function wireExitChip() {
     if (chip.classList.contains('armed')) { disarmExit(chip); exitBattleMode(); return; }
     chip.classList.add('armed');
     sfx.shake();
-    triggerVibration(15);
+    haptic('select');
     clearTimeout(exitArmTimer);
     exitArmTimer = setTimeout(() => disarmExit(chip), 2000);
   });
@@ -1035,7 +1050,7 @@ async function checkFaints() {
   if (active().hp <= 0) {
     faintSprite('player');
     logMsg(`${active().name.toUpperCase()} FAINTED!`);
-    triggerVibration([500]);
+    haptic('faint');
     await awaitOrTap(1200);
     const anyAlive = battleState.teamIds.some((id, idx) =>
       idx !== battleState.activeIdx && (!battleState.loaded[id] || battleState.loaded[id].hp > 0));

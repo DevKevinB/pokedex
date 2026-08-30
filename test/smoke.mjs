@@ -127,6 +127,20 @@ await page.addInitScript(() => {
   } catch (e) { /* noop */ }
 });
 
+// ONE AUDIO GRAPH (v19.5). Two AudioContexts means two hardware clocks, two
+// things iOS can suspend independently and no single place to balance the
+// mix. Count every construction and assert the app only ever made one.
+await page.addInitScript(() => {
+  window.__AUDIO_CTXS__ = 0;
+  for (const key of ['AudioContext', 'webkitAudioContext']) {
+    const Orig = window[key];
+    if (typeof Orig !== 'function') continue;
+    const Wrapped = function (...args) { window.__AUDIO_CTXS__++; return new Orig(...args); };
+    Wrapped.prototype = Orig.prototype;
+    window[key] = Wrapped;
+  }
+});
+
 // NO NATIVE DIALOGS, ever. An installed iOS PWA suppresses alert/confirm/
 // prompt (they return null without throwing), so any flow that reaches one
 // is a flow that silently dead-ends on the boys' iPad. v18.8 moved every
@@ -1210,6 +1224,10 @@ check('the ghost HP bar snaps for a new fighter and lags for a hit', await page.
   const differentFighter = ghost.dataset.mon !== 'SNORLAX|90';
   return sameFighterLags && differentFighter;
 }));
+
+// ---- one audio graph (v19.5) ----
+check('at most one AudioContext for the whole app',
+  await page.evaluate(() => window.__AUDIO_CTXS__ <= 1));
 
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);

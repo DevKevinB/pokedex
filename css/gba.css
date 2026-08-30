@@ -1314,6 +1314,64 @@ body.junior .moves-grid > .move-btn.type-tile .tile-ico {
 }
 
 /* ============================================================
+   v19.5: PET YOUR POKEMON (ROADMAP §4 v19.5)
+
+   --sx is the sprite's FACING. index.html sets it to -1 on #player-sprite so
+   the back sprite faces away, and @keyframes float already carries it. Every
+   keyframe below carries it too, because a transform that forgets --sx
+   un-flips the player's Pokemon in the middle of the hop.
+
+   These selectors are id+class, so they beat .battle-sprite-player's float
+   loop for the duration of the animation and the float resumes afterwards.
+   Nothing here touches .moves-grid, .move-btn, .hero-row or .battle-controls:
+   v19.2's tile-height contract is untouched.
+   ============================================================ */
+#poke-sprite.pet-hop, #player-sprite.pet-hop { animation: petHop 0.35s steps(4) 1; }
+@keyframes petHop {
+  0%   { transform: translateY(0)     scale(var(--sx, 1), 1); }
+  25%  { transform: translateY(0)     scale(calc(var(--sx, 1) * 1.14), 0.86); }
+  55%  { transform: translateY(-16px) scale(calc(var(--sx, 1) * 0.90), 1.12); }
+  80%  { transform: translateY(0)     scale(calc(var(--sx, 1) * 1.06), 0.94); }
+  100% { transform: translateY(0)     scale(var(--sx, 1), 1); }
+}
+
+/* Five taps in 1.2s. A 2D sprite "spins" by flipping through zero width —
+   the GBA did the same thing, and it costs no perspective and no 3D layer. */
+#poke-sprite.pet-spin, #player-sprite.pet-spin { animation: petSpin 0.55s steps(4) 1; }
+@keyframes petSpin {
+  0%   { transform: translateY(0)     scale(var(--sx, 1), 1); }
+  20%  { transform: translateY(-14px) scale(calc(var(--sx, 1) * 0.12), 1.08); }
+  40%  { transform: translateY(-20px) scale(calc(var(--sx, 1) * -1), 1); }
+  60%  { transform: translateY(-14px) scale(calc(var(--sx, 1) * 0.12), 1.08); }
+  80%  { transform: translateY(-4px)  scale(var(--sx, 1), 1); }
+  100% { transform: translateY(0)     scale(var(--sx, 1), 1); }
+}
+
+/* Hearts. --dx is set per heart by fx.js so they fan out instead of stacking.
+   Hosts are #scanner-container and .player-side — both already position:
+   relative, and neither clips its overflow. */
+.pet-heart {
+  position: absolute; left: 50%; bottom: 24%;
+  font-size: 22px; z-index: 30; pointer-events: none;
+  animation: heartFloat 0.9s ease-out forwards;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.35);
+}
+@keyframes heartFloat {
+  0%   { opacity: 0; transform: translate(-50%, 6px) scale(0.5); }
+  20%  { opacity: 1; transform: translate(-50%, -6px) scale(1.15); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), -72px) scale(0.9); }
+}
+
+/* The global reduce-motion block clamps every animation to 0.01ms, which for
+   a `forwards` animation means the LAST keyframe applies instantly — and this
+   one ends at opacity 0. The hearts would be invisible. Same fix .impact-mark
+   already uses: stop the animation, keep the glyph. fx.js removes them on a
+   timer regardless, so nothing is left on screen. */
+@media (prefers-reduced-motion: reduce) {
+  .pet-heart { animation: none !important; opacity: 1; }
+}
+
+/* ============================================================
    v19.4 — LEVEL UP! Living bars, the wordless win card, sprite life.
    Every colour here is a v19.1 token. Nothing is under 8px.
    NOTE: this file deliberately does NOT touch .battle-controls, .battle-log,

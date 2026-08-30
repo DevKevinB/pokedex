@@ -10,7 +10,7 @@ import { PIXEL_SPRITE } from './config.js';
 import { GYMS, trainerKey, TOTAL_TRAINERS } from './gymdata.js';
 import { state, player, persist, playerName } from './state.js';
 import { nameOf, getNameIndex } from './api.js';
-import { sfx, triggerVibration, playBeep } from './audio.js';
+import { sfx, triggerVibration, playBeep, haptic } from './audio.js';
 import { dialog } from './dialog.js';
 
 let openGymKey = null;
@@ -133,7 +133,9 @@ function renderTrainerList() {
   body.querySelectorAll('.trainer-card:not(.locked)').forEach(el =>
     el.addEventListener('click', () => {
       const idx = parseInt(el.dataset.idx);
-      if (player().caught.length === 0) { dialog({ icon: '🔴', title: 'CATCH ONE FIRST!', text: 'You need a Pokémon to battle.' }); return; }
+      // ART cannot read the dialog. A refusal has to be audible in his own
+      // language, or a tap that does nothing just looks broken.
+      if (player().caught.length === 0) { haptic('denied'); dialog({ icon: '🔴', title: 'CATCH ONE FIRST!', text: 'You need a Pokémon to battle.' }); return; }
       sfx.superHit();
       triggerVibration(60);
       document.getElementById('gym-container').classList.remove('active');
