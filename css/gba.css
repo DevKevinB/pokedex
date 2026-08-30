@@ -227,50 +227,113 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   box-shadow: 0 3px 0 #000;
 }
 
-/* habitat backdrops (set as classes on .battle-bg-overlay) */
-.battle-bg-overlay { background: linear-gradient(to bottom, #75bced 0%, #a4e3b5 100%); }
-.battle-bg-overlay.bg-grass    { background: linear-gradient(to bottom, #8ee0f8 0%, #8ee0f8 45%, #58b048 46%, #78c860 70%, #98d878 100%); }
-.battle-bg-overlay.bg-water    { background: linear-gradient(to bottom, #8ee0f8 0%, #b0ecff 44%, #2878c8 46%, #4090d8 70%, #58a8e8 100%); }
-.battle-bg-overlay.bg-fire     { background: linear-gradient(to bottom, #f8b060 0%, #f8d080 45%, #b05828 46%, #c87038 70%, #d88848 100%); }
-.battle-bg-overlay.bg-electric { background: linear-gradient(to bottom, #fff0a0 0%, #f8e070 45%, #a09030 46%, #b8a840 70%, #d0c050 100%); }
-.battle-bg-overlay.bg-rock     { background: linear-gradient(to bottom, #c8b8a0 0%, #b0a088 45%, #706050 46%, #887860 70%, #a09070 100%); }
-.battle-bg-overlay.bg-ghost    { background: linear-gradient(to bottom, #483868 0%, #605080 45%, #282040 46%, #383058 70%, #484068 100%); }
-.battle-bg-overlay.bg-psychic  { background: linear-gradient(to bottom, #e8a0d8 0%, #f0c0e8 45%, #885890 46%, #a070a8 70%, #b888c0 100%); }
-.battle-bg-overlay.bg-ice      { background: linear-gradient(to bottom, #d8f0ff 0%, #f0faff 45%, #88b8d8 46%, #a0d0e8 70%, #c0e0f0 100%); }
-
-/* fighter platforms */
-.opponent-side > div[style*='position:relative']::after,
-.player-side::before {
-  content: ''; position: absolute; height: 24px; width: 180px; z-index: -1;
-  background: radial-gradient(ellipse at center, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.16) 55%, transparent 72%);
-  border-radius: 50%;
+/* ---- v19.2: the exit chip and the scene chip ----
+   RUN is gone. This 44px chip is the only way out of a fight, and it will NOT
+   fire on one touch:
+     GABE  tap once to arm it (it turns red and shows a cross), tap again <2s
+     ART   hold it for 900ms and watch the bar fill — the PARENT TOOLS gesture
+   Both reuse @keyframes holdFill, already defined for .dev-open below. Its own
+   class, so .btn-escape keeps working unchanged for EXPLORE and the GYM. The
+   padding/margin/radius resets undo what .btn-escape inherits from main.css. */
+.exit-chip {
+  width: 44px; height: 44px; min-width: 44px; padding: 0; margin: 0;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden; border-radius: 3px;
+  border: 3px solid var(--px-ink); box-shadow: 0 3px 0 var(--px-ink);
 }
-.opponent-side > div[style*='position:relative']::after { bottom: -8px; left: 50%; transform: translateX(-50%); }
-.player-side::before { bottom: 6px; left: 10px; }
+.exit-glyph { font-size: 20px; line-height: 1; }
+.exit-chip.armed { background: #e84040; }
+.exit-chip.armed .exit-glyph { opacity: 0; }
+.exit-chip.armed::before {
+  content: '\2716'; position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 20px; color: #fff;
+}
+.exit-chip.holding::after {
+  content: ''; position: absolute; left: 0; bottom: 0; height: 5px; width: 0;
+  background: #38c060; animation: holdFill 0.9s linear forwards;
+}
+.exit-chip:active { transform: translateY(3px); box-shadow: none; }
 
-.battle-sprite-wild, .battle-sprite-player { image-rendering: pixelated; }
-.battle-sprite-wild { height: 130px; }
-.battle-sprite-player { height: 150px; }
+/* Where the fight is actually happening. Every habitat encounter used to be
+   titled "BATTLE ARENA" — the one place it never was. */
+.scene-chip {
+  align-self: flex-start; max-width: 62%; padding: 9px 10px;
+  font-family: var(--pixel-font); font-size: 9px; line-height: 1.3;
+  background: var(--px-cream); color: var(--px-ink);
+  border: 3px solid var(--px-ink); border-radius: 3px;
+  box-shadow: 0 3px 0 var(--px-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* habitat backdrops — v19.2: now set on .battle-ARENA itself (js/battle.js
+   setBattleBackdrop). Painted on a full-height overlay, the 45% horizon was
+   45% of a box that INCLUDED the controls panel, so at 375x667 the ground
+   band collapsed to about 19px and both Pokemon floated in mid-air. Every
+   colour is byte-identical to before; --plat / --plat-lo carry that habitat's
+   ground colour down to the two platforms. */
+.battle-arena { background: linear-gradient(to bottom, #8ee0f8 0%, #8ee0f8 45%, #58b048 46%, #78c860 70%, #98d878 100%); --plat: #58b048; --plat-lo: #3d8a34; }
+.battle-arena.bg-grass    { background: linear-gradient(to bottom, #8ee0f8 0%, #8ee0f8 45%, #58b048 46%, #78c860 70%, #98d878 100%); --plat: #58b048; --plat-lo: #3d8a34; }
+.battle-arena.bg-water    { background: linear-gradient(to bottom, #8ee0f8 0%, #b0ecff 44%, #2878c8 46%, #4090d8 70%, #58a8e8 100%); --plat: #2878c8; --plat-lo: #1b5490; }
+.battle-arena.bg-fire     { background: linear-gradient(to bottom, #f8b060 0%, #f8d080 45%, #b05828 46%, #c87038 70%, #d88848 100%); --plat: #b05828; --plat-lo: #7c3c18; }
+.battle-arena.bg-electric { background: linear-gradient(to bottom, #fff0a0 0%, #f8e070 45%, #a09030 46%, #b8a840 70%, #d0c050 100%); --plat: #a09030; --plat-lo: #706320; }
+.battle-arena.bg-rock     { background: linear-gradient(to bottom, #c8b8a0 0%, #b0a088 45%, #706050 46%, #887860 70%, #a09070 100%); --plat: #706050; --plat-lo: #4c4136; }
+.battle-arena.bg-ghost    { background: linear-gradient(to bottom, #483868 0%, #605080 45%, #282040 46%, #383058 70%, #484068 100%); --plat: #282040; --plat-lo: #171227; }
+.battle-arena.bg-psychic  { background: linear-gradient(to bottom, #e8a0d8 0%, #f0c0e8 45%, #885890 46%, #a070a8 70%, #b888c0 100%); --plat: #885890; --plat-lo: #5e3c64; }
+.battle-arena.bg-ice      { background: linear-gradient(to bottom, #d8f0ff 0%, #f0faff 45%, #88b8d8 46%, #a0d0e8 70%, #c0e0f0 100%); --plat: #88b8d8; --plat-lo: #5d8aa8; }
+
+/* ---- fighter platforms ----
+   These used to be a transparent radial blur keyed off an inline style
+   ATTRIBUTE — invisible on every backdrop, so nobody was standing on
+   anything. Now they are opaque slabs with an ink outline and a dither
+   stripe, in the ground colour of the habitat. The near one is tucked 18px
+   past the arena so the text panel crops it, the way a Game Boy battle does. */
+.fighter-slot::after {
+  content: ''; position: absolute; left: 50%; transform: translateX(-50%); z-index: 0;
+  border: 3px solid var(--px-ink); border-radius: 50%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.18) 0 4px, transparent 4px 8px),
+    var(--plat, #58b048);
+  box-shadow: 0 4px 0 var(--plat-lo, #3d8a34);
+}
+.slot-far::after  { bottom: 0;     width: clamp(96px, 30vw, 150px);  height: 16px; }
+.slot-near::after { bottom: -18px; width: clamp(120px, 40vw, 190px); height: 20px; }
+/* the fighter paints ABOVE the slab it stands on */
+.opponent-side, .player-side { z-index: 1; }
+
+.battle-sprite-wild, .battle-sprite-player { image-rendering: pixelated; -webkit-user-drag: none; -webkit-touch-callout: none; }
 
 /* GBA hp boxes */
+/* The hard 195px width overflowed a 375px phone's grid column; the boxes now
+   fill their own cell and wrap a long name instead of spilling out of it. */
 .hp-box-wild, .hp-box-player {
   background: var(--px-cream); border: 3px solid var(--px-ink); border-radius: 6px 6px 6px 0;
   box-shadow: inset -3px -3px 0 var(--px-cream-dark), 3px 3px 0 rgba(0,0,0,0.35);
-  width: 195px;
+  width: auto; max-width: 100%;
 }
-.pkmn-name { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink); }
-.lvl { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); }
+/* "Mine" is a colour, not a word: the player's box wears the player stripe. */
+.hp-box-player { border-left: 6px solid var(--p-primary); }
+.pkmn-name { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink); flex-wrap: wrap; gap: 2px 6px; line-height: 1.3; }
+.lvl { font-family: var(--pixel-font); font-size: 8px; color: #706848; white-space: nowrap; }
 .hp-bar-container { border: 2px solid var(--ink); background: #d8d0a8; height: 10px; border-radius: 0; }
 .hp-fill { background: var(--green); }
-#player-hp-text { font-family: var(--pixel-font); font-size: var(--t-xs) !important; }
+.hp-text { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); text-align: right; margin-top: 3px; }
 
 /* battle text + moves */
-.battle-controls { background: var(--px-cream); border-top: 4px solid var(--px-ink); border-radius: 0; height: auto; min-height: 200px; }
+/* ---- the controls panel adds up ----
+   border-top 4 + log 51 (48px box + the 3px rule under it)
+   + moves-grid (10 + tile + 8 + tile + 8 + hero + 10).
+   At 375x667 that is 259px normal / 286px junior, leaving 408px / 381px of
+   arena. The old panel was min-height:200px UNDER a flex:1 log with no stated
+   row heights, and ended 107px below the bottom of the screen. The 200px
+   floor is gone because it would fight max-height:52dvh and win on a short
+   viewport, re-creating the overflow this sprint exists to kill. */
+.battle-controls { background: var(--px-cream); border-top: 4px solid var(--px-ink); border-radius: 0; height: auto; min-height: 0; flex: 0 0 auto; max-height: 52vh; max-height: 52dvh; }
 .battle-log {
-  font-family: var(--pixel-font); font-size: 10px; line-height: 2;
+  font-family: var(--pixel-font); font-size: 10px; line-height: 1.5;
   color: var(--px-ink); border-bottom: 3px solid var(--px-ink);
   background: #fffef2; text-transform: uppercase;
-  flex: 0 0 auto; min-height: 52px; overflow-y: hidden;
+  flex: 0 0 auto; min-height: 48px; max-height: 64px; overflow: hidden;
+  display: flex; align-items: center; padding: 6px 12px;
   position: relative;   /* anchors .skip-arrow */
 }
 .moves-grid { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) 12px; gap: 8px; }
@@ -386,7 +449,8 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .switch-meta span { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink); }
 .switch-meta small { font-family: var(--pixel-font); font-size: var(--t-xs); color: #38845c; }
 
-.moves-grid .aux-btn { background: var(--paper-2); font-size: var(--t-xs); }
+/* .aux-btn now belongs only to VERSUS's END MATCH button — 9px, not 7px. */
+.moves-grid .aux-btn { background: var(--px-cream-dark); font-size: 9px; }
 
 #victory-lines p { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink) !important; line-height: 1.9; margin: 8px 0; }
 #victory-lines p:first-child { font-size: var(--t-md); color: var(--ink-3) !important; }
@@ -518,7 +582,18 @@ body.junior .btn-explore { font-size: 12px !important; }
 body.junior #poke-name { font-size: 26px !important; }
 /* header stays compact in junior mode — it must fit narrow phones */
 body.junior #poke-sprite { cursor: pointer; }
-body.junior .move-btn { font-size: 10px; padding: 16px 4px; }
+/* ART's tiles are taller, but the panel still states its own height, so the
+   Pokeball lands 10px ABOVE the bottom of a 667px screen instead of 43px
+   below it. 16px of vertical padding was the literal cause of that overflow.
+   Only DIRECT children of the grid are tiles — the hero row is nested, so
+   this can never inflate BALL. */
+body.junior .moves-grid > .move-btn { font-size: 10px; padding: 6px 4px; }
+body.junior .moves-grid > .move-btn.type-tile { height: clamp(62px, 10vh, 82px); height: clamp(62px, 10dvh, 82px); padding: 4px; }
+body.junior .moves-grid .hero-row { height: 62px; }
+body.junior .moves-grid .hero-ico { width: 36px; height: 36px; }
+body.junior .moves-grid #switch-btn { flex: 0 0 62px; }
+body.junior .moves-grid #ball-btn span { font-size: 14px; }
+body.junior .moves-grid .run-wide { height: 62px; }
 body.junior .habitat-emoji { font-size: 44px; }
 body.junior .habitat-name { font-size: 9px; }
 /* hide reading-heavy chrome for little trainers */
@@ -676,8 +751,24 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .team-slot.lead { border-color: #ffd040; background: rgba(255,208,64,0.12); box-shadow: 0 0 8px rgba(255,208,64,0.3); }
 .team-slot.lead em { position: absolute; top: -2px; right: 0; font-style: normal; font-size: 9px; color: #ffd040; }
 
-.moves-grid .ball-btn { background: linear-gradient(180deg, #e84040 0%, #c02828 100%); color: #fff; }
-.moves-grid .run-wide { grid-column: span 2; }
+/* ---- the hero row ----
+   RUN was the widest, lowest, most thumb-adjacent button in the game and it
+   did exactly what the exit chip does: end the fight and lose the wild
+   Pokemon. One bump ended ART's battle. It is deleted. BALL — which is ART's
+   whole game — takes the whole row instead, and SWITCH is a chip wearing the
+   face of whoever comes next. Scoped with .moves-grid so these out-rank the
+   plain .move-btn skin further up the file. */
+.moves-grid .hero-row { grid-column: 1 / -1; display: flex; gap: 8px; height: 56px; }
+.moves-grid .hero-row .move-btn { height: 100%; padding: 2px 8px; display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+.moves-grid .hero-ico { width: 30px; height: 30px; object-fit: contain; image-rendering: pixelated; flex: 0 0 auto; }
+.moves-grid .hero-glyph { font-size: 22px; line-height: 1; }
+.moves-grid #ball-btn { flex: 1 1 auto; background: linear-gradient(180deg, #e84040 0%, #c02828 100%); color: #fff; }
+.moves-grid #ball-btn span { font-size: 12px; letter-spacing: 1px; }
+.moves-grid #switch-btn { flex: 0 0 56px; padding: 2px; background: var(--px-cream-dark); }
+.moves-grid #switch-btn.switch-wide { flex: 1 1 auto; padding: 2px 8px; }
+.moves-grid #switch-btn span { font-size: 10px; }
+/* VERSUS keeps its own full-width END MATCH tile, on the same row height. */
+.moves-grid .run-wide { grid-column: 1 / -1; height: 56px; }
 .switch-item.ballpick.disabled { opacity: 0.4; pointer-events: none; }
 
 /* ---------- v18.5: toolbar with the LEAD chip ----------
@@ -853,9 +944,15 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
 }
 .move-btn.type-tile:active { transform: translate(3px, 3px); box-shadow: none; }
 .move-emoji { font-size: 24px; line-height: 1; filter: drop-shadow(0 2px 0 rgba(0,0,0,0.35)); }
-.move-name { font-size: var(--t-xs); letter-spacing: 0; opacity: 0.92; text-align: center; }
-/* ART gets a picture and almost no caption; GABE keeps the name readable. */
-body.junior .move-emoji { font-size: 38px; }
+.move-name { font-size: 8px; letter-spacing: 0; opacity: 0.92; text-align: center; line-height: 1.2; }
+/* The tile states its own height so the panel's arithmetic is knowable. The
+   3-class selector is deliberate: it has to out-rank .move-btn.type-tile's
+   own `padding: 10px 4px` a few lines above. Normal: 24 emoji + 2 gap + 9.6
+   caption = 35.6 inside 56 - 8 padding - 6 border = 42. */
+.moves-grid > .move-btn.type-tile { height: clamp(54px, 8.4vh, 66px); height: clamp(54px, 8.4dvh, 66px); padding: 4px; }
+/* ART gets a picture and almost no caption; GABE keeps the name readable.
+   34px (was 38) so emoji + caption clear the tile at 375x667. */
+body.junior .move-emoji { font-size: 34px; }
 body.junior .move-name { font-size: 8px; }
 .move-btn.type-tile[disabled] { opacity: 0.45; }
 

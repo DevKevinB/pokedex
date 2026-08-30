@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.1.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.1.0">
+    <link rel="stylesheet" href="css/main.css?v=19.2.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.2.0">
 </head>
 <body>
 
@@ -132,36 +132,52 @@
 </div>
 
 <div id="battle-container">
-    <div class="battle-header">
-        <button class="btn-escape" id="escape-btn">🔙 ESCAPE</button>
-        <span id="battle-title">BATTLE ARENA</span>
+    <!-- v19.2: there is no header BAR any more. A 44px exit chip and a scene
+         chip FLOAT over the sky, so all 61px of that bar goes back to the
+         fight. The chip keeps id=escape-btn: it is the one way out now that
+         RUN is gone, and the layout harness watches it by name. .battle-header
+         and .btn-escape are untouched — #explore-container and #gym-container
+         still use them for their BACK buttons. -->
+    <div class="battle-chips">
+        <button class="btn-escape exit-chip" id="escape-btn" aria-label="LEAVE THE BATTLE"><span class="exit-glyph">🔙</span></button>
+        <span class="scene-chip" id="battle-title">BATTLE ARENA</span>
     </div>
 
     <div class="battle-view">
-        <div class="battle-bg-overlay"></div>
         <div class="catch-msg" id="battle-catch-msg" style="z-index: 20;">CAUGHT!</div>
         <div class="battle-arena">
-            <div class="opponent-side">
-                <div class="hp-box-wild">
-                    <h3 class="pkmn-name" id="wild-name">WILD PKMN <span class="lvl">Lv50</span></h3>
-                    <div class="hp-bar-container"><div class="hp-fill" id="wild-hp-bar"></div></div>
-                </div>
-                <div style="position:relative;">
-                    <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;" draggable="false">
-                    <img class="throw-ball" id="battle-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="left: 40px;">
+            <!-- The arena is a 2x2 grid, bottom-aligned:
+                   row 1   [ wild HP box ][ foe on the far platform ]
+                   row 2   [ me on the near platform ][ my HP box  ]
+                 The HP boxes are GRID SIBLINGS of the sprites now, not absolute
+                 overlays on top of them — which is why the wild's HP box used
+                 to sit across the wild Pokemon's face, and why a damage pop
+                 could land inside the player's HP box instead of on the player.
+                 .opponent-side / .player-side stay as the sprite wrappers, so
+                 spawnMark() and spawnDamagePop() need no JS change at all. -->
+            <div class="hp-box hp-box-wild">
+                <h3 class="pkmn-name" id="wild-name">WILD PKMN <span class="lvl">Lv50</span></h3>
+                <div class="hp-bar-container"><div class="hp-fill" id="wild-hp-bar"></div></div>
+            </div>
+            <div class="fighter-slot slot-far">
+                <div class="opponent-side">
+                    <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;" alt="" draggable="false">
+                    <img class="throw-ball" id="battle-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="left: calc(50% - 20px);" alt="" draggable="false">
                 </div>
             </div>
 
-            <div class="player-side">
-                <img id="player-sprite" class="battle-sprite-player" src="" style="--sx: -1;" draggable="false">
-                <div class="hp-box-player">
+            <div class="fighter-slot slot-near">
+                <div class="player-side">
+                    <img id="player-sprite" class="battle-sprite-player" src="" style="--sx: -1;" alt="" draggable="false">
+                </div>
+            </div>
+            <div class="hp-box hp-box-player">
                     <h3 class="pkmn-name" id="player-name">PLAYER PKMN <span class="lvl">Lv50</span></h3>
                     <div class="hp-bar-container"><div class="hp-fill" id="player-hp-bar"></div></div>
                     <!-- XP bar: the game had no XP readout anywhere, so "how
                          close am I to levelling up" was invisible. -->
                     <div class="xp-bar-container"><div class="xp-fill" id="player-xp-bar"></div></div>
-                    <div style="text-align: right; font-size: 10px; color: #000; font-weight: bold; margin-top:2px;" id="player-hp-text">100/100</div>
-                </div>
+                    <div class="hp-text" id="player-hp-text">100/100</div>
             </div>
         </div>
 
@@ -424,6 +440,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.1.0"></script>
+<script type="module" src="js/main.js?v=19.2.0"></script>
 </body>
 </html>

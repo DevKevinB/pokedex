@@ -2,6 +2,45 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.2.0] - THE ARENA
+
+The battle screen — the screen the boys spend the most time on — rebuilt so it
+looks like a real Game Boy fight and, more importantly, so it fits on a phone.
+
+### Fixed
+- **Art can reach the Pokéball.** This is the big one. On a smaller phone
+  (a 375x667 screen — an iPhone SE, or a hand-me-down) the buttons in Junior
+  Mode ran clean off the bottom of the screen: the Pokéball sat 43 pixels below
+  the edge of the display and simply could not be tapped. Art could enter a
+  battle and had no way to catch anything. The button now sits comfortably on
+  screen with room to spare, at every size, in both modes.
+- **RUN can't end a fight by accident any more.** RUN was the biggest, lowest
+  button on the screen, right under a thumb, and one bump made the wild
+  Pokémon vanish. The row is gone. The way out is the BACK chip in the corner:
+  Gabe taps it twice (it turns red and asks), and Art holds it for a moment
+  while a bar fills — the same gesture that guards Parent Tools.
+
+### Changed
+- **The arena looks like a battle.** The wild Pokémon used to float in the
+  top-right corner with 150 pixels of empty sky beneath it, its health box
+  sitting on top of it, on a strip of ground that collapsed to almost nothing
+  on a small screen. Now both Pokémon stand on proper platforms, sized against
+  the screen so nobody shrinks below the buttons, with your Pokémon big in the
+  foreground and its feet tucked behind the text box — the way the real games
+  frame it.
+- **The Pokéball is the hero.** It is now a full-width red button across the
+  bottom, with SWITCH as a small chip beside it showing who comes in next.
+  On the old screen BALL was half the width of RUN.
+- **The title bar is gone**, replaced by a small BACK chip and a chip naming
+  where you are — so a wild fight in Deep Forest says DEEP FOREST instead of
+  "BATTLE ARENA", and the arena gets that space back.
+- **Art taps the swords and he is in a fight.** Junior Mode skips the team
+  picker and the sparkle question when he already has a team.
+
+### Testing
+- 167 browser checks and 38 layout checks pass. **The layout net now reports
+  zero known issues** — all 144 problems it found two releases ago are fixed.
+
 ## [19.1.0] - ONE CONSOLE
 
 The app stops looking like five different apps stitched together, and the

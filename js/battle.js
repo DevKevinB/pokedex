@@ -184,6 +184,15 @@ export function initBattleMode() {
     return;
   }
   state.appMode = 'battle';
+  // ART cannot read the team picker's instructions or the sparkle question,
+  // and he already has a team — two walls of text between the swords and a
+  // fight. He goes straight in, down the SAME path the picker's START BATTLE
+  // takes (finalizeBattleSetup hides #sparkle-modal itself). No new battle
+  // entry point, and GABE's flow is untouched.
+  if (player().settings.junior && player().team.length > 0) {
+    finalizeBattleSetup(false);
+    return;
+  }
   openPC('team');
 }
 
@@ -319,11 +328,17 @@ const HABITAT_TYPES = ['grass', 'water', 'fire', 'electric', 'rock', 'ghost', 'p
 const HABITAT_ALIAS = { bug: 'grass', poison: 'grass', flying: 'grass', ground: 'rock', fighting: 'rock', steel: 'rock', dark: 'ghost', dragon: 'water', fairy: 'psychic', normal: 'grass' };
 
 function setBattleBackdrop() {
-  const overlay = document.querySelector('.battle-bg-overlay');
-  if (!overlay) return;
-  overlay.className = 'battle-bg-overlay';
+  // v19.2: the sky/ground gradient lives on the ARENA, not on a full-height
+  // overlay that also sat behind the controls panel. Painted there, its 46%
+  // horizon was measured against a box that INCLUDED the panel, so on a 667px
+  // phone the ground band collapsed to ~19px and both fighters floated.
+  // Classes come off one at a time rather than by resetting className, so a
+  // transient .crit-flash mid-swap is never wiped from under its own timeout.
+  const arena = document.querySelector('.battle-arena');
+  if (!arena) return;
+  HABITAT_TYPES.forEach(k => arena.classList.remove(`bg-${k}`));
   const t = battleState.wild.types?.[0]?.type?.name || 'grass';
-  overlay.classList.add(`bg-${HABITAT_TYPES.includes(t) ? t : (HABITAT_ALIAS[t] || 'grass')}`);
+  arena.classList.add(`bg-${HABITAT_TYPES.includes(t) ? t : (HABITAT_ALIAS[t] || 'grass')}`);
 }
 
 // A super-effective hit should FEEL different from an ordinary one, not just
@@ -388,14 +403,22 @@ function renderActive() {
         <span class="move-name">${m.name}</span>
       </button>`;
     }).join('') +
-    (battleState.canCatch !== false ? `<button class="move-btn aux-btn ball-btn" id="ball-btn">🔴 BALL</button>` : '') +
-    `<button class="move-btn aux-btn" id="switch-btn">🔄 SWITCH</button>
-     <button class="move-btn aux-btn run-wide" id="run-btn">🏃 RUN</button>`;
+    // ONE hero row, no RUN. BALL is the biggest thing on the screen because
+    // catching is ART's whole game; SWITCH is a chip wearing the next
+    // teammate's face. RUN is gone: it duplicated the exit chip, it was the
+    // widest control and the closest to the thumb, and one bump ended a fight
+    // and threw away the wild Pokemon a child was chasing.
+    `<div class="hero-row">` +
+      (battleState.canCatch !== false
+        ? `<button class="move-btn hero-btn" id="ball-btn" aria-label="THROW A BALL">` +
+          `<img class="hero-ico" src="${ITEM_SPRITE('poke-ball')}" alt="" draggable="false"><span>BALL</span></button>`
+        : '') +
+      switchChipHtml() +
+    `</div>`;
   document.querySelectorAll('.move-btn[data-move]').forEach(btn =>
     btn.addEventListener('click', () => executeTurn(parseInt(btn.dataset.move))));
   document.getElementById('switch-btn').addEventListener('click', () => openSwitchModal(false));
   document.getElementById('ball-btn')?.addEventListener('click', openBallPick);
-  document.getElementById('run-btn').addEventListener('click', exitBattleMode);
 }
 
 function startBattleUI() {
@@ -408,7 +431,11 @@ function startBattleUI() {
   renderActive();
   renderEnemy();
   const t = battleState.trainer;
-  document.getElementById('battle-title').innerText = t ? t.def.name : 'BATTLE ARENA';
+  // Every habitat encounter used to be titled "BATTLE ARENA" — the one place
+  // it never was. The chip names where you actually are, led by a glyph.
+  const hab = battleState.origin === 'explore' ? activeHabitat() : null;
+  document.getElementById('battle-title').innerText =
+    t ? t.def.name : hab ? `${hab.emoji} ${hab.name}` : '⚔️ BATTLE ARENA';
   if (!t) logMsg(`WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
   enableMoves(true);
 }
@@ -690,6 +717,73 @@ function faintSprite(role) {
 function unfaintSprites() {
   ['player', 'wild'].forEach(r =>
     document.getElementById(`${r}-sprite`)?.classList.remove('fainted'));
+}
+
+// ---- v19.2: the SWITCH chip and the one way out ----
+// The chip wears the face of whoever comes next. "SWITCH" is six letters ART
+// cannot read; a picture of Squirtle is not. Same filter openSwitchModal uses,
+// so the chip can never show someone who cannot fight.
+function nextTeammateId() {
+  const id = battleState.teamIds.find((tid, idx) =>
+    idx !== battleState.activeIdx && (!battleState.loaded[tid] || battleState.loaded[tid].hp > 0));
+  return id == null ? null : id;
+}
+
+function switchChipHtml() {
+  const wide = battleState.canCatch === false;   // no BALL vs a trainer: SWITCH takes the row
+  const mate = nextTeammateId();
+  const face = mate != null
+    ? `<img class="hero-ico" src="${PIXEL_SPRITE(mate)}" alt="" draggable="false">`
+    : `<span class="hero-glyph">🔄</span>`;
+  return `<button class="move-btn hero-btn${wide ? ' switch-wide' : ''}" id="switch-btn" aria-label="SWITCH POKEMON">` +
+         `${face}${wide ? '<span>SWITCH</span>' : ''}</button>`;
+}
+
+// Leaving a fight is deliberately hard to do by accident, because doing it by
+// accident costs a child the Pokemon he was chasing:
+//   GABE  tap once to arm (the chip goes red for 2s), tap again to leave
+//   ART   hold 900ms while a bar fills — the same gesture as PARENT TOOLS
+// Nothing on screen names either mode; the chip just behaves the way that
+// child's hands work. Wired once, from main.js.
+let exitArmTimer = null;
+function disarmExit(chip) {
+  clearTimeout(exitArmTimer);
+  exitArmTimer = null;
+  chip.classList.remove('armed', 'holding');
+}
+
+export function wireExitChip() {
+  const chip = document.getElementById('escape-btn');
+  if (!chip) return;
+  let holdTimer = null, held = false;
+  // The BODY class is the skin the child is actually looking at, so the
+  // gesture always matches the screen. (In versus both boys share one device
+  // and one exit; whoever's profile is loaded sets the class.)
+  const isJunior = () => document.body.classList.contains('junior');
+
+  chip.addEventListener('click', () => {
+    if (isJunior()) return;                    // ART leaves by holding, not by tapping
+    if (chip.classList.contains('armed')) { disarmExit(chip); exitBattleMode(); return; }
+    chip.classList.add('armed');
+    sfx.shake();
+    triggerVibration(15);
+    clearTimeout(exitArmTimer);
+    exitArmTimer = setTimeout(() => disarmExit(chip), 2000);
+  });
+
+  chip.addEventListener('pointerdown', e => {
+    if (!isJunior()) return;
+    e.preventDefault();
+    clearTimeout(holdTimer);                   // a second finger must not orphan the first timer
+    held = false;
+    chip.classList.add('holding');
+    holdTimer = setTimeout(() => { held = true; disarmExit(chip); exitBattleMode(); }, 900);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
+    chip.addEventListener(ev, () => { clearTimeout(holdTimer); if (!held) chip.classList.remove('holding'); }));
+
+  // Never leave the chip armed or half-filled for the NEXT fight.
+  document.addEventListener('battle-exited', () => disarmExit(chip));
 }
 
 // A single glyph that floats over the defender — the wordless half of the

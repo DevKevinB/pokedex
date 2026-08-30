@@ -268,7 +268,7 @@ await page.click('#variant-sparkle');
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 10000 });
 check('battle screen active', true);
 await page.waitForFunction(() => document.querySelectorAll('.move-btn').length > 0, null, { timeout: 5000 });
-check('move buttons + switch/run rendered', await page.locator('.move-btn').count() >= 3 && await page.locator('#switch-btn').count() === 1);
+check('move tiles + hero row rendered', await page.locator('.move-btn').count() >= 3 && await page.locator('#switch-btn').count() === 1 && await page.locator('#run-btn').count() === 0);
 check('player level shown', /lv\d+/i.test(await page.locator('#player-name').innerText()));
 check('wild level shown', /lv\d+/i.test(await page.locator('#wild-name').innerText()));
 
@@ -438,9 +438,14 @@ check('encounter scene plays', await page.locator('#encounter-scene').isVisible(
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 20000 });
 check('explore encounter starts battle', true);
 await page.waitForFunction(() => document.querySelectorAll('.move-btn').length > 0, null, { timeout: 8000 });
-await page.locator('#run-btn').evaluate(el => el.click());
+// v19.2: RUN is gone. The exit chip needs TWO taps in normal mode, so one
+// stray thumb can no longer end a fight and lose the wild Pokemon.
+await page.locator('#escape-btn').evaluate(el => el.click());
+await page.waitForTimeout(150);
+check('one tap on the exit chip does NOT leave the battle', await page.locator('#battle-container.active').count() === 1);
+await page.locator('#escape-btn').evaluate(el => el.click());
 await page.waitForTimeout(900);
-check('run returns to explore', await page.locator('#explore-container.active').count() === 1);
+check('exit chip returns to explore', await page.locator('#explore-container.active').count() === 1);
 await page.click('#explore-back-btn');
 await page.waitForTimeout(600);
 check('back returns to dex', await page.locator('#explore-container.active').count() === 0);
@@ -701,7 +706,9 @@ const hpTxt = await page.locator('#player-hp-text').innerText();
 const maxHp = parseInt(hpTxt.split('/')[1]);
 check('battle shows the parent-set level (Lv80)', /lv80/i.test(lvlTxt));
 check(`Lv80 HP scales up (${maxHp} HP vs ~18 at Lv5)`, maxHp > 100);
-await page.locator('#run-btn').evaluate(el => el.click());
+await page.locator('#escape-btn').evaluate(el => el.click());
+await page.waitForTimeout(150);
+await page.locator('#escape-btn').evaluate(el => el.click());
 await page.waitForTimeout(800);
 
 // GYM CIRCUIT: browse, fight trainer 1 with the Lv80 lead, capture their team

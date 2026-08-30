@@ -10,7 +10,7 @@ import { state, loadSave, player, playerName, monLevel } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, triggerVibration, toggleMute } from './audio.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
-import { initBattleMode, exitBattleMode, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState } from './battle.js';
+import { initBattleMode, exitBattleMode, wireExitChip, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState } from './battle.js';
 import { openPC, closePC, cancelTeamPick, onPCSearchInput } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { openGyms, backFromGym, reopenGyms } from './gym.js';
@@ -189,7 +189,9 @@ function wireUI() {
   on('catch-btn', openBag);
   on('data-btn', toggleSheet);
   on('sheet-handle', toggleSheet);
-  on('escape-btn', exitBattleMode);
+  // v19.2: the exit is not a plain click any more — two taps for GABE, a
+  // 900ms hold for ART — so battle.js owns its wiring.
+  wireExitChip();
   on('close-pc-btn', closePC);
   on('pc-cancel-btn', cancelTeamPick);
   on('variant-regular', () => finalizeBattleSetup(false));

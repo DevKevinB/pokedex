@@ -1,10 +1,1 @@
-{
- "battle-wild-375x667-normal": [
-  "OFF-SCREEN BOTTOM by 20px: button#run-btn.move-btn \"\ud83c\udfc3 RUN\"   [screen: #battle-container]"
- ],
- "battle-wild-375x667-junior": [
-  "OFF-SCREEN BOTTOM by 43px: button#ball-btn.move-btn \"\ud83d\udd34 BALL\"   [screen: #battle-container]",
-  "OFF-SCREEN BOTTOM by 43px: button#switch-btn.move-btn \"\ud83d\udd04 SWITCH\"   [screen: #battle-container]",
-  "UNREACHABLE in battle: #ball-btn at top 661 bottom 710 (viewport 667)   [screen: #battle-container]"
- ]
-}
+{}
