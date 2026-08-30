@@ -131,7 +131,17 @@ function renderGrid() {
     if (!caught && pcContext !== 'dex') continue;
     html += itemHtml(i, caught);
   }
-  grid.innerHTML = html || `<div class="pc-empty">${q ? 'NO MATCHES FOR "' + q.toUpperCase() + '"' : 'NOTHING CAUGHT HERE YET — GO EXPLORE!'}</div>`;
+  if (html) {
+    grid.innerHTML = html;
+  } else {
+    grid.innerHTML = '';
+    const empty = document.createElement('div');
+    empty.className = 'pc-empty';
+    empty.textContent = q
+      ? `NO MATCHES FOR "${q.toUpperCase()}"`
+      : 'NOTHING CAUGHT HERE YET — GO EXPLORE!';
+    grid.appendChild(empty);
+  }
   grid.querySelectorAll('.pc-item').forEach(el =>
     el.addEventListener('click', () => handlePCSelect(parseInt(el.dataset.pcId), el)));
 }
