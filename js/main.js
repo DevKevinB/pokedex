@@ -381,4 +381,15 @@ initDevTools();
 wireGestures();
 installFailureNet();
 registerSW();
+// ---- which version am I actually playing? ----
+// Kevin pushes from more than one machine and the service worker can serve a
+// cached shell, so "is the new one live?" was previously unanswerable without
+// a console. It is now on the boot screen for two seconds and permanently in
+// Settings, both read from the single APP_VERSION constant.
+(() => {
+  const stamp = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  stamp('boot-version', `v${APP_VERSION}`);
+  stamp('set-version', `v${APP_VERSION}`);
+})();
+
 console.log(`Pokédex OS v${APP_VERSION} ready.`);

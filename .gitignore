@@ -12,3 +12,4 @@ test/debug*.png
 .DS_Store
 Thumbs.db
 test/shots/
+test/playtest/

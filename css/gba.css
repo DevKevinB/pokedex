@@ -1464,3 +1464,16 @@ body.junior .victory-divider { display: none; }
 body.junior #victory-continue { min-height: 56px; }
 body.junior #victory-continue .vc-word { display: none; }
 body.junior #victory-continue .vc-arrow { font-size: 40px; }
+
+/* ---- the version, where a grown-up can find it ----
+   Kevin pushes from several machines and a service worker can hand back a
+   cached shell, so "which version is on the tablet?" needed an answer that
+   does not involve a console. Small and quiet: the boys never need it. */
+.boot-version {
+  font-family: var(--pixel-font); font-size: var(--t-xs);
+  color: var(--paper-2); opacity: 0.75; letter-spacing: 1px; margin-top: 6px;
+}
+.set-version {
+  font-family: var(--pixel-font); font-size: var(--t-xs);
+  color: var(--ink-2); align-self: center;
+}

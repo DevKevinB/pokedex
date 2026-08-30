@@ -53,6 +53,26 @@ if (!currentMatch) {
 }
 const current = currentMatch[1];
 
+// The four places must ALREADY agree before we touch anything. They drifted
+// once: an edit bumped three of them and package.json was left a version
+// behind, and because this script trusted js/config.js alone it saw "already
+// done" and said nothing. A version triple that disagrees is exactly the
+// failure this script exists to prevent, so it is now checked on the way IN
+// as well as on the way out.
+{
+  const seen = {
+    'sw.js': readFileSync(p('sw.js'), 'utf8').match(/CACHE_VERSION = 'pokedexos-v([^']+)'/)?.[1],
+    'package.json': JSON.parse(readFileSync(p('package.json'), 'utf8')).version,
+  };
+  const htmlV = [...readFileSync(p('index.html'), 'utf8').matchAll(/\?v=([\d.]+)/g)].map(m => m[1]);
+  const bad = Object.entries(seen).filter(([, v]) => v !== current)
+    .concat(htmlV.every(v => v === current) ? [] : [['index.html', htmlV.join(', ')]]);
+  if (bad.length) {
+    die(`The version is not the same everywhere right now: js/config.js says ${current}, but ${bad.map(([f, v]) => `${f} says ${v}`).join(' and ')}.`,
+        `Set them all to ${current} by hand first, then run this again. All four must agree before a release can start.`);
+  }
+}
+
 const rank = v => v.split('.').map(Number);
 const isNewer = (a, b) => {
   const [x, y, z] = rank(a), [i, j, k] = rank(b);

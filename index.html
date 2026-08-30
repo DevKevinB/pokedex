@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.4.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.4.0">
+    <link rel="stylesheet" href="css/main.css?v=19.5.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.5.0">
 </head>
 <body>
 
@@ -21,7 +21,9 @@
 
 <div id="boot-screen">
     <div class="boot-logo">POKÉDEX OS</div>
-    <div style="font-size: 12px;">© 2026 GAME FREAK INC.</div>
+    <!-- Kevin needs to know which version is actually on the tablet without
+         opening a console. Filled in by main.js from the one APP_VERSION. -->
+    <div class="boot-version" id="boot-version">v…</div>
     <div class="tap-start" id="tap-msg">TAP TO START</div>
 </div>
 
@@ -353,6 +355,7 @@
         <div class="card-section">
             <div class="card-label">SOUND</div>
             <div class="set-row"><span>MUSIC &amp; SOUND</span><button class="set-toggle" id="set-sound">ON</button></div>
+            <div class="set-row"><span>ⓘ VERSION</span><span class="set-version" id="set-version">—</span></div>
             <div class="set-row"><span>📳 BUZZ</span><button class="set-toggle" id="set-haptics" title="Vibration when you tap and when you get hit. This device only.">ON</button></div>
         </div>
         <div class="card-section">
@@ -458,6 +461,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.4.0"></script>
+<script type="module" src="js/main.js?v=19.5.0"></script>
 </body>
 </html>
