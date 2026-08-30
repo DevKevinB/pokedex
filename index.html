@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.3.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.3.0">
+    <link rel="stylesheet" href="css/main.css?v=19.4.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.4.0">
 </head>
 <body>
 
@@ -157,23 +157,32 @@
                  spawnMark() and spawnDamagePop() need no JS change at all. -->
             <div class="hp-box hp-box-wild">
                 <h3 class="pkmn-name" id="wild-name">WILD PKMN <span class="lvl">Lv50</span></h3>
-                <div class="hp-bar-container"><div class="hp-fill" id="wild-hp-bar"></div></div>
+                <div class="hp-bar-container"><div class="bar-ghost" id="wild-hp-ghost"></div><div class="hp-fill" id="wild-hp-bar"></div></div>
             </div>
             <div class="fighter-slot slot-far">
                 <div class="opponent-side">
-                    <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;" alt="" draggable="false">
+                    <!-- v19.4: the float loop moves onto this .sprite-bob
+                         WRAPPER so the <img> is free to own one-shot
+                         transforms (.lunge / .recall / .fainted). The
+                         throw-ball stays a direct child of .opponent-side so
+                         its inline left offset still measures the same box. -->
+                    <div class="sprite-bob">
+                        <img id="wild-sprite" class="battle-sprite-wild" src="" style="--sx: 1;" alt="" draggable="false">
+                    </div>
                     <img class="throw-ball" id="battle-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="left: calc(50% - 20px);" alt="" draggable="false">
                 </div>
             </div>
 
             <div class="fighter-slot slot-near">
                 <div class="player-side">
-                    <img id="player-sprite" class="battle-sprite-player" src="" style="--sx: -1;" alt="" draggable="false">
+                    <div class="sprite-bob">
+                        <img id="player-sprite" class="battle-sprite-player" src="" style="--sx: -1;" alt="" draggable="false">
+                    </div>
                 </div>
             </div>
             <div class="hp-box hp-box-player">
                     <h3 class="pkmn-name" id="player-name">PLAYER PKMN <span class="lvl">Lv50</span></h3>
-                    <div class="hp-bar-container"><div class="hp-fill" id="player-hp-bar"></div></div>
+                    <div class="hp-bar-container"><div class="bar-ghost" id="player-hp-ghost"></div><div class="hp-fill" id="player-hp-bar"></div></div>
                     <!-- XP bar: the game had no XP readout anywhere, so "how
                          close am I to levelling up" was invisible. -->
                     <div class="xp-bar-container"><div class="xp-fill" id="player-xp-bar"></div></div>
@@ -299,8 +308,16 @@
 
 <div class="overlay-screen" id="victory-modal">
     <div class="modal-box">
+        <!-- v19.4: the card leads with a PICTURE. #victory-hero (a 96px sprite
+             of what you caught, or the beaten roster) and #victory-xp (the fat
+             gold bar) both land BEFORE the first word. The sentences below the
+             divider are GABE's; body.junior hides that half, because for a
+             pre-reader they are not small text, they are no text at all. -->
+        <div id="victory-hero"></div>
+        <div id="victory-xp"></div>
+        <hr class="victory-divider">
         <div id="victory-lines"></div>
-        <button class="btn-large btn-reg" id="victory-continue">CONTINUE ▶</button>
+        <button class="btn-large btn-reg" id="victory-continue"><span class="vc-word">CONTINUE</span> <span class="vc-arrow">▶</span></button>
     </div>
 </div>
 
@@ -440,6 +457,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.3.0"></script>
+<script type="module" src="js/main.js?v=19.4.0"></script>
 </body>
 </html>

@@ -316,6 +316,11 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .lvl { font-family: var(--pixel-font); font-size: 8px; color: #706848; white-space: nowrap; }
 .hp-bar-container { border: 2px solid var(--ink); background: #d8d0a8; height: 10px; border-radius: 0; }
 .hp-fill { background: var(--green); }
+/* One frame, not a fade: --green above 50%, --gold under it, --red under 20%.
+   Written by updateHP as data-hp, which is how the last two hex literals left
+   js/battle.js. */
+.hp-fill[data-hp="mid"] { background: var(--gold); }
+.hp-fill[data-hp="low"] { background: var(--red); }
 .hp-text { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); text-align: right; margin-top: 3px; }
 
 /* battle text + moves */
@@ -913,6 +918,11 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
   .blink, #evo-sprite.evolving { animation: none !important; filter: none !important; }
   #scanlines { display: none; }
   .hit-anim, .ball-shake, .shake { animation: none !important; }
+  /* v19.4 — the loops stop, the one-shots snap to their end state. The sprite
+     is still there, the bar still reads the right width, the LV mark still
+     appears: only the movement goes. */
+  .sprite-bob { animation: none !important; }
+  .vh-sprite, .vh-mark, .hp-box-player.lvup, #victory-xp.lvup .vx-bar { animation: none !important; }
 }
 
 /* ---------- v18.5: XP bar ----------
@@ -925,7 +935,9 @@ body.junior .btn-explore.half, body.junior .btn-gym { font-size: 11px !important
 }
 .xp-fill {
   height: 100%; width: 0%; background: linear-gradient(90deg, #ffd040, #ffec80);
-  transition: width 0.45s ease-out;
+  /* stepped, not eased — same 0.45s, which updateXpBar's 460ms level-up timer
+     is measured against and must stay in step with */
+  transition: width 0.45s steps(8, end);
 }
 
 /* ============================================================
@@ -1161,6 +1173,9 @@ body.junior .moves-grid > .move-btn.type-tile .tile-ico {
 #spoils-grid.picked .spoils-pick { opacity: 0.45; pointer-events: none; }
 #spoils-grid.picked .spoils-pick.chosen { opacity: 1; border-color: #b8952a; box-shadow: 0 0 8px rgba(255,208,64,0.6); }
 #spoils-hint { color: #b8952a !important; font-weight: bold; }
+/* It used to inherit from `#victory-lines p`; it lives in #victory-hero now
+   (so ART can still see the ceremony), so it states its own font. */
+#victory-hero #spoils-hint { font-family: var(--pixel-font); font-size: var(--t-sm); line-height: 1.6; margin: 6px 0 0; }
 .card-badge { min-width: 0; }
 .card-badge em { font-style: normal; font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
 .card-badge span.badge-prog { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-3); }
@@ -1297,3 +1312,97 @@ body.junior .moves-grid > .move-btn.type-tile .tile-ico {
   cursor: pointer;
   border-color: var(--ink);
 }
+
+/* ============================================================
+   v19.4 — LEVEL UP! Living bars, the wordless win card, sprite life.
+   Every colour here is a v19.1 token. Nothing is under 8px.
+   NOTE: this file deliberately does NOT touch .battle-controls, .battle-log,
+   .moves-grid, .hero-row or `.moves-grid > .move-btn.type-tile`. v19.2's tile
+   height contract — clamp(54px, 8.4dvh, 66px), and 62px/10dvh in junior — is
+   what keeps #ball-btn on a 375x667 screen, and this sprint does not go near
+   it.
+   ============================================================ */
+
+/* ---- one-shot sprite moves ----
+   Each keyframe RE-STATES scaleX(var(--sx)) because the player's back sprite
+   is drawn mirrored and a transform that forgets it flips him mid-animation.
+   translate() comes FIRST so the offset is measured in the un-mirrored frame:
+   +22px is right on screen for both fighters. */
+.lunge { animation: lungeFwd 0.28s steps(3, end) both; }
+@keyframes lungeFwd {
+  0%   { transform: translate(0, 0) scaleX(var(--sx, 1)); }
+  45%  { transform: translate(var(--lx, 22px), var(--ly, -14px)) scaleX(var(--sx, 1)); }
+  100% { transform: translate(0, 0) scaleX(var(--sx, 1)); }
+}
+#player-sprite.lunge { --lx: 22px;  --ly: -14px; }   /* up-right, at the foe */
+#wild-sprite.lunge   { --lx: -22px; --ly: 14px; }    /* down-left, at the player */
+
+.recall { animation: recallIn 0.28s steps(4, end) both; }
+@keyframes recallIn {
+  0%   { transform: translate(0, 0) scale(1) scaleX(var(--sx, 1)); opacity: 1; }
+  100% { transform: translate(0, 0) scale(0.06) scaleX(var(--sx, 1)); opacity: 0; }
+}
+.sendout { animation: sendOut 0.3s steps(4, end) both; }
+@keyframes sendOut {
+  0%   { transform: translate(0, 0) scale(0.06) scaleX(var(--sx, 1)); opacity: 0; }
+  60%  { transform: translate(0, -6px) scale(1.12) scaleX(var(--sx, 1)); opacity: 1; }
+  100% { transform: translate(0, 0) scale(1) scaleX(var(--sx, 1)); opacity: 1; }
+}
+.puff-out { animation: puffOut 0.3s steps(4, end) both; }
+@keyframes puffOut {
+  0%   { transform: translate(0, 0) scaleX(var(--sx, 1)); opacity: 1; filter: none; }
+  100% { transform: translate(0, -12px) scaleX(var(--sx, 1)); opacity: 0; filter: brightness(1.6); }
+}
+.fx-puff { color: var(--paper); font-size: 46px; }
+
+/* the dex reveal: six chunky columns instead of a cross-fade */
+.px-reveal { animation: pxReveal 0.35s steps(6, end); }
+@keyframes pxReveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+/* ---- the LEVEL UP burst ---- */
+.hp-box-player.lvup { animation: lvupFlash 0.6s steps(2, end); }
+@keyframes lvupFlash { 0%, 100% { filter: brightness(1); } 25%, 75% { filter: brightness(3); } }
+/* "LV 13" rides the same .impact-mark rail as ⏫ and ✳ — 20px, well clear of
+   the 8px floor, in the pixel face body already sets. */
+.fx-lvup {
+  color: var(--gold); font-size: 20px; white-space: nowrap;
+  text-shadow: 2px 2px 0 var(--ink), -2px 2px 0 var(--ink), 2px -2px 0 var(--ink), -2px -2px 0 var(--ink);
+}
+
+/* ---- the win card ---- */
+#victory-hero { text-align: center; margin-bottom: var(--s3); }
+#victory-hero:empty, #victory-xp:empty { display: none; margin: 0; }
+.vh-row { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: center; align-items: flex-end; }
+.vh-sprite {
+  width: 96px; height: 96px; object-fit: contain; image-rendering: pixelated;
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,0.35));
+  animation: boxPop 0.3s cubic-bezier(.2, 1.5, .4, 1) backwards;
+}
+/* a beaten roster is six sprites, not one — they shrink rather than wrap into
+   a wall that pushes CONTINUE off a 667px screen */
+.vh-row.multi .vh-sprite { width: 52px; height: 52px; }
+.vh-mark {
+  font-size: 48px; line-height: 1; margin-top: var(--s1);
+  animation: boxPop 0.34s cubic-bezier(.2, 1.5, .4, 1) 0.12s backwards;
+}
+#victory-xp { margin: 0 0 var(--s3); display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
+.vx-bar { width: 100%; height: 14px; border: 3px solid var(--ink); background: var(--night-2); overflow: hidden; }
+.vx-fill { height: 100%; width: 0%; background: linear-gradient(180deg, var(--gold) 0%, var(--gold-2) 100%); transition: width 0.5s steps(8, end); }
+.vx-lv {
+  font-family: var(--pixel-font); font-size: var(--t-sm); color: var(--ink);
+  background: var(--gold); border: 2px solid var(--ink); padding: 3px 6px;
+}
+#victory-xp.lvup .vx-bar { animation: lvupFlash 0.6s steps(2, end); }
+.victory-divider { border: 0; border-top: 3px solid var(--ink); margin: var(--s3) 0; opacity: 0.5; }
+
+/* ART's card is the picture, the mark and the bar. The sentences are not small
+   text for a pre-reader, they are no text at all — and the space is worth more
+   given to the sprite. CONTINUE becomes the arrow on its own. */
+body.junior #victory-lines,
+body.junior .victory-divider { display: none; }
+body.junior #victory-continue { min-height: 56px; }
+body.junior #victory-continue .vc-word { display: none; }
+body.junior #victory-continue .vc-arrow { font-size: 40px; }

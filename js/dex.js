@@ -6,6 +6,7 @@ import { MAX_POKEMON, typeColors, ITEM_SPRITE, PIXEL_SPRITE } from './config.js'
 import { getPokemon, getSpecies, getEvolution } from './api.js';
 import { state, player } from './state.js';
 import { stopAllAudio, setCry, triggerVibration } from './audio.js';
+import { pxReveal } from './fx.js';
 
 let galleryTimer = null;
 let typeTimer = null;
@@ -112,7 +113,9 @@ export async function loadPoke(idOrName) {
   }
   setTimeout(() => {
     setScanning(false);
-    document.getElementById('poke-sprite').style.opacity = 1;
+    const spEl = document.getElementById('poke-sprite');
+    spEl.style.opacity = 1;
+    pxReveal(spEl);   // six chunky columns, not a cross-fade
   }, 600);
 }
 
@@ -146,7 +149,9 @@ function updateUISafe() {
       const rawName = st.stat?.name?.toUpperCase() || 'STAT';
       const statName = SHORT[rawName] || rawName.replace('SPECIAL-', 'SP. ');
       const percent = ((st.base_stat || 0) / maxStat) * 100;
-      const barColor = st.base_stat > 90 ? '#4caf50' : st.base_stat > 50 ? '#ffeb3b' : '#f44336';
+      // Tokens, not hexes (ROADMAP §3.1). The stepped fill comes from the
+      // .stat-bar-fill transition, shared with the battle HP bar.
+      const barColor = st.base_stat > 90 ? 'var(--green)' : st.base_stat > 50 ? 'var(--gold)' : 'var(--red)';
       return `<div class="stat-row"><div class="stat-name">${statName}</div><div class="stat-val">${st.base_stat || 0}</div><div class="stat-bar-bg"><div class="stat-bar-fill" style="width: ${percent}%; background: ${barColor}"></div></div></div>`;
     }).join('');
 
@@ -175,9 +180,13 @@ function setupGallerySafe() {
   clearInterval(galleryTimer);
   const sp = state.curData.sprites;
   // GBA edition: animated pixel sprite leads, official artwork as second frame
+  // v19.4: official artwork is gone from the gallery, so the 4-second blink
+  // never starts — a sprite that changes on its own every four seconds is
+  // motion nobody asked for, on the screen the boys sit on longest. With one
+  // image the interval below is never created at all.
   let imgs = state.isShiny
-    ? [sp.animated_shiny || sp.front_shiny, sp.official_shiny].filter(i => i)
-    : [sp.animated || sp.front_default, sp.official].filter(i => i);
+    ? [sp.animated_shiny || sp.front_shiny].filter(i => i)
+    : [sp.animated || sp.front_default].filter(i => i);
   if (imgs.length === 0) imgs = [ITEM_SPRITE('poke-ball')];
 
   let idx = 0;

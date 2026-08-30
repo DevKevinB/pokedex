@@ -116,7 +116,7 @@ h3:first-child { margin-top: 0; }
 .stat-name { width: 50px; font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; }
 .stat-val { width: 30px; font-size: 12px; font-weight: bold; text-align: right; margin-right: 10px; }
 .stat-bar-bg { flex: 1; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
-.stat-bar-fill { height: 100%; width: 0%; border-radius: 3px; transition: width 1s ease-out; }
+.stat-bar-fill { height: 100%; width: 0%; border-radius: 3px; transition: width 1s steps(10, end); }
 .evo-box { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px;}
 .evo-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s;}
 .evo-item:active { transform: scale(0.9); }
@@ -175,25 +175,48 @@ h3:first-child { margin-top: 0; }
 /* A fighter and the platform it stands on. */
 .fighter-slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; }
 .opponent-side, .player-side { position: relative; display: flex; align-items: flex-end; justify-content: center; }
+/* v19.4: the sprite WRAPPER. It exists so the idle bob loop can live here and
+   leave `transform` on the <img> free for .lunge / .recall / .sendout /
+   .fainted — v18.6's tip-over never rendered because an animation always beats
+   a plain declaration for the same property.
+   It repeats the flex geometry it takes over from the img (shrink-to-fit item,
+   max-width:100%) so the sprite's measured box does not move by a pixel, and
+   position:relative keeps it out of the way of the spawners, which resolve
+   .opponent-side / .player-side by name. */
+.sprite-bob { position: relative; display: flex; align-items: flex-end; justify-content: center; min-width: 0; max-width: 100%; animation: bob 3s ease-in-out infinite; }
+.player-side .sprite-bob { animation-direction: reverse; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .opponent-side { margin-bottom: 6px; }
 .battle-sprite-wild, .battle-sprite-player { max-width: 100%; object-fit: contain; object-position: bottom; }
-.battle-sprite-wild { height: clamp(96px, 17vh, 150px); height: clamp(96px, 17dvh, 150px); filter: drop-shadow(0 4px 0 rgba(0,0,0,0.25)); animation: float 3s ease-in-out infinite;}
+.battle-sprite-wild { height: clamp(96px, 17vh, 150px); height: clamp(96px, 17dvh, 150px); filter: drop-shadow(0 4px 0 rgba(0,0,0,0.25)); transform: scaleX(var(--sx, 1)); }
 /* -14px tucks the player's base behind the top edge of the text panel, the
    way a FireRed battle does. object-position:bottom keeps his feet on the
    floor of his box when a wide sprite is letterboxed by max-width. */
-.battle-sprite-player { height: clamp(110px, 22vh, 200px); height: clamp(110px, 22dvh, 200px); margin-bottom: -14px; filter: drop-shadow(0 4px 0 rgba(0,0,0,0.25)); transform: scaleX(-1); animation: float 3s ease-in-out infinite reverse;}
+.battle-sprite-player { height: clamp(110px, 22vh, 200px); height: clamp(110px, 22dvh, 200px); margin-bottom: -14px; filter: drop-shadow(0 4px 0 rgba(0,0,0,0.25)); transform: scaleX(var(--sx, -1)); }
 
 /* HP boxes are grid cells now: same row as their fighter, the other column. */
 .hp-box { align-self: end; padding: 6px 8px; min-width: 0; }
 
 @keyframes float { 0%, 100% { transform: translateY(0) scaleX(var(--sx, 1)); } 50% { transform: translateY(-10px) scaleX(var(--sx, 1)); } }
-.hit-anim { animation: flashHit 0.3s; }
-@keyframes flashHit { 0% { filter: brightness(1) invert(0); margin-left:0; } 50% { filter: brightness(0) invert(1); margin-left:10px; } 100% { filter: brightness(1) invert(0); margin-left:0;} }
+/* v19.4: transform, not margin-left. Animating a margin re-ran layout on the
+   flex row for every frame of every hit; the flash frame itself is unchanged. */
+.hit-anim { animation: flashHit 0.3s steps(3, end); }
+@keyframes flashHit {
+  0%   { filter: brightness(1) invert(0); transform: translate(0, 0) scaleX(var(--sx, 1)); }
+  50%  { filter: brightness(0) invert(1); transform: translate(var(--hx, 10px), 0) scaleX(var(--sx, 1)); }
+  100% { filter: brightness(1) invert(0); transform: translate(0, 0) scaleX(var(--sx, 1)); }
+}
+#player-sprite.hit-anim { --hx: -10px; }   /* knocked away from the foe */
+#wild-sprite.hit-anim   { --hx: 10px; }
 
 .pkmn-name { color: #000; font-weight: 900; font-size: 14px; text-transform: uppercase; margin: 0; display: flex; justify-content: space-between; align-items: center;}
 .lvl { font-size: 10px; color: #555;}
-.hp-bar-container { width: 100%; height: 8px; background: #333; border-radius: 4px; border: 2px solid #555; margin-top: 5px; overflow: hidden; }
-.hp-fill { height: 100%; width: 100%; background: #4caf50; transition: width 0.5s ease-out, background 0.5s; }
+.hp-bar-container { width: 100%; height: 8px; background: #333; border-radius: 4px; border: 2px solid #555; margin-top: 5px; overflow: hidden; position: relative; }
+/* v19.4 THE GHOST. It holds the OLD width for 300ms and then slides down to
+   meet the fill, so how much a hit took is a SHAPE, not a number to read. It
+   sits first in the DOM and the fill (position:relative) paints over it. */
+.bar-ghost { position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: var(--paper); transition: width 0.6s ease-out 0.3s; }
+.hp-fill { height: 100%; width: 100%; background: var(--green); position: relative; transition: width 0.5s steps(8, end); }
 
 /* No bottom safe-area padding here. .moves-grid (gba.css) already adds it, and
    the two stacked put a phantom home-indicator gap under the move tiles that

@@ -84,9 +84,27 @@ sfx.type = {
   psychic:  () => chord([[700, 'sine', 0.12, 0.11], [1050, 'sine', 0.14, 0.09, 80], [1400, 'sine', 0.16, 0.07, 160]]),
   ice:      () => chord([[1320, 'sine', 0.06, 0.10], [1760, 'sine', 0.08, 0.08, 50], [2200, 'sine', 0.10, 0.06, 100]]),
   dragon:   () => chord([[200, 'sawtooth', 0.14, 0.18], [260, 'sawtooth', 0.16, 0.15, 90]]),
+  // (levelUp / faint are attached below this object — chord() is declared
+  //  between `sfx` and here, so they cannot live in the literal above.)
   dark:     () => chord([[150, 'triangle', 0.16, 0.16], [100, 'triangle', 0.20, 0.14, 90]]),
   fairy:    () => chord([[880, 'sine', 0.07, 0.11], [1320, 'sine', 0.09, 0.09, 60], [1760, 'sine', 0.11, 0.07, 120]])
 };
+
+// ---- v19.4: two events that used to be a sentence ----
+// A level-up said "PIKACHU grew from Lv12 to Lv13!" in a log ART cannot read.
+// A rising four-note square chord says the same thing to both boys at once.
+// The faint gets the mirror of it: three notes going down.
+sfx.levelUp = () => chord([
+  [523, 'square', 0.12, 0.22],
+  [659, 'square', 0.12, 0.22, 90],
+  [784, 'square', 0.12, 0.22, 180],
+  [1047, 'square', 0.34, 0.26, 270]
+]);
+sfx.faint = () => chord([
+  [392, 'square', 0.10, 0.18],
+  [294, 'square', 0.12, 0.16, 90],
+  [196, 'square', 0.30, 0.16, 190]
+]);
 
 export function setCry(url) {
   cryAudio = url ? new Audio(url) : null;

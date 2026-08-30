@@ -2,6 +2,45 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.4.0] - LEVEL UP!
+
+Hits look like they hurt, levelling up is a party, and the box that opens
+after a fight finally shows Art what he won.
+
+### Added
+- **You can see how much a hit took.** The health bar leaves a white "ghost"
+  behind for a moment before it catches up, so the size of the chunk that just
+  came off is a picture, not a number. The number underneath counts down
+  instead of jumping.
+- **Levelling up is an event.** The bar fills to the end, the health box
+  flashes gold, a big **LV 13** pops over your Pokémon and a little four-note
+  tune goes up. It used to be one line of text Art could not read.
+- **The health bar changes colour in one jump** — green, then yellow at half,
+  then red near the end — instead of smearing slowly between them.
+- **Pokémon move when they fight.** The attacker leans in, everything freezes
+  for a split second when the blow lands, and the one that faints actually
+  keels over now (it was supposed to and never did).
+- **They pop in and out of the ball when you switch**, which replaced two
+  sentences and made switching about half a second quicker.
+
+### Changed
+- **The box after a fight leads with a picture.** A big sprite of what you
+  caught (or the trainer's whole team), a ✅ or ⭐ that pops, and a fat gold XP
+  bar — all before the first word. Gabe's sentences are still there, below a
+  line. Art's mode hides them and turns CONTINUE into one big ▶.
+- **"IT GOT AWAY" has no words any more.** The wild Pokémon just fades out on
+  a puff of smoke. Nothing else changed — your team is fine either way.
+- **Fights are quicker.** The long pause before every attack is roughly half
+  what it was, and the "it's super effective" pauses are much shorter. Tapping
+  still hurries anything along.
+- **The Pokédex picture stopped flipping to the drawing every four seconds.**
+  It stays on the pixel sprite and wipes in when you look up a new one.
+
+### Notes for Kevin
+- Nothing was added to the save file. This release cannot touch the boys' data.
+- New file `js/fx.js` (all the sprite movement), added to the offline list in
+  `sw.js` so it updates with everything else.
+
 ## [19.3.0] - PICK THE GOLD ONE
 
 Art can tell his four attacks apart now, and the game stops asking the

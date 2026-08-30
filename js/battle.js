@@ -23,6 +23,13 @@ import { activeHabitat, habitatEncounterLevel } from './explore.js';
 import { askNickname, cancelNickname } from './nickname.js';
 import { dialog } from './dialog.js';
 import { spawnConfetti } from './catch.js';
+// v19.4: sprite life lives in fx.js now. spawnDamagePop / spawnParticles /
+// spawnMark moved there unchanged except for how they find their host — see
+// the note on sideOf() in fx.js.
+import {
+  lunge, hitStop, recall, sendout, puffAway, clearSpriteFx,
+  spawnDamagePop, spawnParticles, spawnMark
+} from './fx.js';
 
 export const battleState = {
   isSparkle: false,
@@ -168,6 +175,14 @@ export function exitBattleMode() {
   // then fired both, renaming the previously caught Pokémon too.
   cancelNickname();
   versus.sides = null; versus.order = []; versus.qi = 0;
+  // Nothing parked. A .recall left on a sprite is an INVISIBLE Pokémon in the
+  // next fight (the keyframes end at opacity 0), and a win card left in the DOM
+  // is the last fight's trophy sitting on top of this fight's result.
+  clearSpriteFx();
+  ['victory-hero', 'victory-xp'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = ''; el.classList.remove('lvup'); }
+  });
   ['sparkle-modal', 'victory-modal', 'switch-modal', 'evo-modal', 'loading-modal',
    'pass-modal', 'ballpick-modal', 'hof-modal', 'nick-modal'].forEach(id => show(id, false));
   document.getElementById('battle-container').classList.remove('active');
@@ -360,34 +375,79 @@ function screenShake(strength = 'normal') {
   setTimeout(() => view.classList.remove(cls), 450);
 }
 
-function spawnDamagePop(defenderRole, dmg, typeMult, crit) {
-  const host = document.getElementById(`${defenderRole}-sprite`)?.parentElement;
-  if (!host) return;
-  const pop = document.createElement('span');
-  pop.className = 'dmg-pop' + (crit || typeMult > 1 ? ' super' : typeMult < 1 ? ' weak' : '');
-  pop.innerText = `-${Math.max(1, Math.floor(dmg))}`;
-  pop.style.left = `${15 + Math.random() * 50}%`;
-  pop.style.top = `${Math.random() * 20}%`;
-  host.appendChild(pop);
-  setTimeout(() => pop.remove(), 950);
+// spawnDamagePop / spawnParticles moved to js/fx.js in v19.4, together with
+// spawnMark. They used sprite.parentElement, which the new .sprite-bob wrapper
+// would have changed out from under them; fx.js names .opponent-side /
+// .player-side directly instead, so they land on exactly the element they
+// always did.
+
+// ---- the win card, picture first (v19.4) ----
+// ART cannot read "GOTCHA!". The victory modal now opens on a picture of what
+// he just got, a mark that pops, and a fat gold XP bar — all three before the
+// first word. Every path that shows #victory-modal paints both halves, so a
+// card can never be left over from the fight before.
+function heroHtml(sprites, mark) {
+  const many = sprites.length > 1;
+  return `<div class="vh-row${many ? ' multi' : ''}">` +
+    sprites.map(s => `<img class="vh-sprite" src="${s}" alt="" draggable="false">`).join('') +
+    `</div>` + (mark ? `<div class="vh-mark" aria-hidden="true">${mark}</div>` : '');
 }
 
-function spawnParticles(defenderRole, color) {
-  const host = document.getElementById(`${defenderRole}-sprite`)?.parentElement;
-  if (!host) return;
-  for (let i = 0; i < 8; i++) {
-    const p = document.createElement('span');
-    p.className = 'fx-particle';
-    p.style.background = color;
-    p.style.left = '50%';
-    p.style.top = '40%';
-    const ang = (i / 8) * Math.PI * 2 + Math.random() * 0.5;
-    const dist = 40 + Math.random() * 40;
-    p.style.setProperty('--fx-x', `${Math.cos(ang) * dist}px`);
-    p.style.setProperty('--fx-y', `${Math.sin(ang) * dist}px`);
-    host.appendChild(p);
-    setTimeout(() => p.remove(), 650);
+function setVictoryHero(html) {
+  const hero = document.getElementById('victory-hero');
+  if (hero) hero.innerHTML = html;
+}
+
+// xp = { pctBefore, pctAfter, from, to, ups } or null for the paths with no XP
+// (defeat, versus). Same forwards-only rule as the in-battle bar: on a level-up
+// it fills to the end, flashes, then snaps with the transition switched off —
+// it must never be seen sliding BACKWARDS at the most rewarding moment in the
+// game.
+function setVictoryXp(xp) {
+  const strip = document.getElementById('victory-xp');
+  if (!strip) return;
+  strip.classList.remove('lvup');
+  if (!xp) { strip.innerHTML = ''; return; }
+  strip.innerHTML =
+    `<div class="vx-bar"><div class="vx-fill" id="victory-xp-fill"></div></div>` +
+    (xp.ups > 0 ? `<span class="vx-lv">LV ${xp.from} ▶ ${xp.to}</span>` : '');
+  const fill = document.getElementById('victory-xp-fill');
+  if (!fill) return;
+  const e0 = battleState.epoch;
+  fill.style.transition = 'none';
+  fill.style.width = `${xp.pctBefore}%`;
+  void fill.offsetWidth;
+  fill.style.transition = '';
+  // REVIEW FIX: every caller runs this BEFORE show('victory-modal'), so the
+  // strip still has display:none and no box — and a CSS transition cannot
+  // start on an element that has no box. A single rAF still lands before the
+  // modal's first paint, so the browser would only ever resolve one width and
+  // the bar would jump. A double rAF puts the target width a frame AFTER the
+  // modal is shown, which is what makes it actually animate.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (stale(e0)) return;
+    fill.style.width = xp.ups > 0 ? '100%' : `${xp.pctAfter}%`;
+  }));
+  if (xp.ups > 0) {
+    setTimeout(() => {
+      if (stale(e0)) return;      // a battle that already ended owns nothing
+      strip.classList.add('lvup');
+      sfx.levelUp();
+      setTimeout(() => strip.classList.remove('lvup'), 640);
+      fill.style.transition = 'none';
+      fill.style.width = '0%';
+      void fill.offsetWidth;
+      fill.style.transition = '';
+      fill.style.width = `${xp.pctAfter}%`;
+    }, 620);
   }
+}
+
+// The XP percentages either side of an award. Must be read BEFORE addXp runs —
+// player().mons[id] is a live object and awardPartyXp mutates it in place.
+function xpPct(id) {
+  const m = player().mons[id];
+  return m ? Math.round(xpProgress({ level: m.level, xp: m.xp }) * 100) : 0;
 }
 
 // ---- UI ----
@@ -504,6 +564,9 @@ function startBattleUI() {
 }
 
 function renderEnemy() {
+  // Fire-and-forget: renderEnemy is synchronous and every caller already waits
+  // longer than the 300ms send-out, so this needs no await and no new async.
+  clearSpriteFx('wild');
   document.getElementById('wild-sprite')?.classList.remove('fainted');
   const w = battleState.wild;
   const t = battleState.trainer;
@@ -512,6 +575,7 @@ function renderEnemy() {
   document.getElementById('wild-name').innerHTML = label;
   document.getElementById('wild-sprite').src = w.spriteFront;
   updateHP('wild');
+  sendout('wild');
   // A new enemy is a new type chart. Re-mark the tiles here or the gold outline
   // keeps pointing at the Pokémon that already fainted.
   refreshMoveEff();
@@ -522,15 +586,71 @@ function updateHP(target) {
   if (!obj) return;
   const pct = Math.max(0, (obj.hp / obj.maxHp) * 100);
   const bar = document.getElementById(`${target}-hp-bar`);
+  const ghost = document.getElementById(`${target}-hp-ghost`);
   bar.style.width = `${pct}%`;
-  // One HP green everywhere (--green). The low/mid colours become --red and
-  // --gold in a later sprint; changing them now would change the picture.
-  bar.style.background = pct < 20 ? '#f44336' : pct < 50 ? '#ffeb3b' : 'var(--green)';
+  // The colour SNAPS at the thresholds instead of fading through it, so "I am
+  // in trouble" is one frame rather than half a second of muddy in-between.
+  // The hexes are gone: green / gold / red are tokens now (ROADMAP §3.1), and
+  // they live in gba.css against these three data-hp values.
+  bar.dataset.hp = pct < 20 ? 'low' : pct < 50 ? 'mid' : 'ok';
   bar.classList.toggle('critical', pct > 0 && pct < 20);
+  // The GHOST is the point of this sprint. It holds the OLD width for 300ms
+  // and then slides down to meet the bar, so the size of the chunk a hit took
+  // is a thing you SEE rather than a number you read. It only ever lags
+  // DOWNWARD — a heal or a fresh send-out snaps it forward with no transition,
+  // or being healed would look exactly like being hurt.
+  // REVIEW FIX: updateHP is ALSO the paint path for a fresh send-out
+  // (renderActive, renderVersusSide), not just for taking a hit. Switching a
+  // damaged team-mate in used to paint the OUTGOING Pokémon's higher bar as
+  // the ghost and drain it — a hit that never happened, which is the one
+  // signal ART reads. So the bar identifies who it is showing and snaps
+  // whenever that changes. Detected here rather than passed in by each caller,
+  // because a call site that forgets the flag is exactly how this bug got in.
+  const who = `${obj.name}|${obj.maxHp}`;
+  const sameFighter = ghost ? ghost.dataset.mon === who : false;
+  if (ghost) ghost.dataset.mon = who;
+  if (ghost) {
+    const was = parseFloat(ghost.style.width);
+    const lag = sameFighter && Number.isFinite(was) && was > pct;
+    if (!lag) ghost.style.transition = 'none';
+    ghost.style.width = `${pct}%`;
+    if (!lag) { void ghost.offsetWidth; ghost.style.transition = ''; }
+  }
   if (target === 'player') {
-    document.getElementById('player-hp-text').innerText = `${Math.max(0, Math.floor(obj.hp))}/${obj.maxHp}`;
+    countHp(document.getElementById('player-hp-text'),
+            Math.max(0, Math.floor(obj.hp)), obj.maxHp, !sameFighter);
     updateXpBar();
   }
+}
+
+// A number that jumps is a fact; a number that runs down is an event, and an
+// event is something a four-year-old reads without reading. ~450ms on rAF.
+// One token, so a second hit CANCELS the first count instead of two loops
+// fighting over the same text node. Reduced Motion gets the answer straight
+// away — the value is information, the counting is only emphasis.
+let hpCountToken = 0;
+const REDUCED_MOTION = () => {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch (e) { return false; }
+};
+function countHp(el, to, max, snap = false) {
+  if (!el) return;
+  const token = ++hpCountToken;
+  const from = parseInt(String(el.innerText).split('/')[0], 10);
+  // `snap` is a new fighter: the number on screen belongs to whoever was out
+  // before, so ticking down from it would count through a stranger's HP.
+  if (snap || !Number.isFinite(from) || from === to || REDUCED_MOTION()) {
+    el.innerText = `${to}/${max}`;
+    return;
+  }
+  const t0 = performance.now();
+  const step = now => {
+    if (token !== hpCountToken) return;   // a newer count owns the element
+    const k = Math.min(1, (now - t0) / 450);
+    el.innerText = `${Math.round(from + (to - from) * k)}/${max}`;
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
 // The XP bar must never tween BACKWARDS. addXp() subtracts the threshold on a
@@ -556,6 +676,21 @@ function updateXpBar() {
   bar.style.width = '100%';
   setTimeout(() => {
     if (stale(e0)) return;         // a battle that already ended owns nothing
+    // ---- the burst (v19.4) ----
+    // Levelling up was one line of text in a log ART cannot read. It is now
+    // three channels at once, none of them a word: the HP box flashes gold at
+    // 3x brightness, a LV 13 mark rises over the player through the same
+    // spawnMark that carries ⏫ and ✳, and a four-note square chord climbs.
+    const box = document.querySelector('.hp-box-player');
+    if (box) {
+      box.classList.remove('lvup');
+      void box.offsetWidth;
+      box.classList.add('lvup');
+      setTimeout(() => box.classList.remove('lvup'), 640);
+    }
+    spawnMark('player', `LV ${mon.level}`, 'fx-lvup');
+    sfx.levelUp();
+    triggerVibration([40, 30, 40, 30, 120]);
     bar.style.transition = 'none';
     bar.style.width = '0%';
     void bar.offsetWidth;          // commit the empty state before easing back
@@ -627,11 +762,16 @@ async function doSwitch(newIdx, forced) {
   // of how the real games work, and it teaches GABE that switching is a trap.
   const punish = (!forced && battleState.wild.hp > 0) ? pickEnemyMove() : null;
   battleState.activeIdx = newIdx;
-  if (!forced) { logMsg(`COME BACK, ${old.name.toUpperCase()}!`); await awaitOrTap(800); }
+  // v19.4: the two 800ms text pauses are gone. One Pokémon shrinks into the
+  // ball and the next pops out of it — the same beat, made of pictures, and
+  // half a second shorter. Both lines stay for GABE; ART never read either.
+  if (!forced) { logMsg(`COME BACK, ${old.name.toUpperCase()}!`); await recall('player'); }
   if (stale(e0)) return;
   renderActive();
   logMsg(`GO, ${active().name.toUpperCase()}!`);
-  await awaitOrTap(800);
+  await sendout('player');
+  if (stale(e0)) return;
+  await awaitOrTap(500);
   if (stale(e0)) return;
 
   if (punish) {
@@ -695,7 +835,7 @@ async function performAttack(attackerRole, defenderRole, move) {
   const defender = defenderRole === 'wild' ? battleState.wild : active();
   if (!attacker || !defender) return;
   logMsg(`${attacker.name.toUpperCase()} used ${move.name.toUpperCase()}!`);
-  await awaitOrTap(900);
+  await awaitOrTap(450);
   // Bail before touching HP if the battle ended during that pause.
   if (stale(e)) return;
 
@@ -708,12 +848,20 @@ async function performAttack(attackerRole, defenderRole, move) {
     sparkle: attackerRole === 'player' && battleState.isSparkle
   });
 
+  // The attacker leans in, the world freezes for 90ms, and THEN the blow
+  // lands. The hit-stop is the whole difference between two sprites sliding
+  // past each other and one of them being HIT.
+  await lunge(attackerRole);
+  if (stale(e)) return;
+
   // Junior mode: player Pokémon can never faint (not in VS — fair fight!)
   if (defenderRole === 'player' && juniorActive()) {
     defender.hp = Math.max(1, defender.hp - damage * 0.5);
   } else {
     defender.hp -= damage;
   }
+  await hitStop(90);
+  if (stale(e)) return;
   updateHP(defenderRole);
   triggerVibration([50]);
   // Each type now SOUNDS like itself — the same information the tile's picture
@@ -725,11 +873,14 @@ async function performAttack(attackerRole, defenderRole, move) {
 
   // The text line stays for GABE, but it is no longer the ONLY channel — the
   // chevron, the shake and the number above already said it.
-  if (crit) { logMsg('A CRITICAL HIT!'); await awaitOrTap(750); }
-  if (typeMult > 1) { logMsg("It's super effective!"); await awaitOrTap(750); }
-  else if (typeMult < 1 && typeMult > 0) { logMsg("It's not very effective..."); await awaitOrTap(750); }
-  else if (typeMult === 0) { logMsg('It had no effect!'); await awaitOrTap(750); }
-  await sleep(350);
+  // The lines stay for GABE. They are just no longer a reading pause for ART,
+  // who has already had the chevron, the shake, the ghost bar and the number.
+  const POST = juniorActive() ? 250 : 300;
+  if (crit) { logMsg('A CRITICAL HIT!'); await awaitOrTap(POST); }
+  if (typeMult > 1) { logMsg("It's super effective!"); await awaitOrTap(POST); }
+  else if (typeMult < 1 && typeMult > 0) { logMsg("It's not very effective..."); await awaitOrTap(POST); }
+  else if (typeMult === 0) { logMsg('It had no effect!'); await awaitOrTap(POST); }
+  await awaitOrTap(300);
 }
 
 // ---- the visual grammar ----
@@ -789,12 +940,19 @@ function impactFx(defenderRole, { damage, typeMult, crit, moveType }) {
 }
 
 // Fainting is shown before it is said: grey out and tip over.
+// Fainting is shown before it is said: grey out, tip over, and now a falling
+// three-note chord. Clear the one-shot classes first — a lunge still on the
+// sprite is another `animation` declaration competing with the tip-over.
 function faintSprite(role) {
+  clearSpriteFx(role);
   document.getElementById(`${role}-sprite`)?.classList.add('fainted');
+  sfx.faint();
 }
 function unfaintSprites() {
   ['player', 'wild'].forEach(r =>
     document.getElementById(`${r}-sprite`)?.classList.remove('fainted'));
+  // ...and nothing parked at opacity 0 from an interrupted recall.
+  clearSpriteFx();
 }
 
 // ---- v19.2: the SWITCH chip and the one way out ----
@@ -864,18 +1022,9 @@ export function wireExitChip() {
   document.addEventListener('battle-exited', () => disarmExit(chip));
 }
 
-// A single glyph that floats over the defender — the wordless half of the
-// effectiveness message.
-function spawnMark(defenderRole, glyph, cls) {
-  const host = document.querySelector(defenderRole === 'wild' ? '.opponent-side' : '.player-side')
-            || document.querySelector('.battle-arena');
-  if (!host) return;
-  const el = document.createElement('div');
-  el.className = `impact-mark ${cls}`;
-  el.textContent = glyph;
-  host.appendChild(el);
-  setTimeout(() => el.remove(), 900);
-}
+// spawnMark moved to js/fx.js in v19.4, unchanged. It already found its host by
+// naming .opponent-side / .player-side, which is why the .sprite-bob wrapper
+// does not affect it at all — and why the other two spawners now do the same.
 
 async function checkFaints() {
   if (!battleState.wild || !active()) return;
@@ -899,14 +1048,27 @@ async function checkFaints() {
         logMsg(`${battleState.trainer.def.name} WINS THIS TIME...`);
         clearGymRun(); // free Poké Center visit after a loss
         await awaitOrTap(1600);
+        // Junior hides #victory-lines, so without a hero this box would be
+        // EMPTY for ART — one button and nothing else. 💫 and his own lead, not
+        // a cross: this never says "you failed", it says "that's enough for now".
+        setVictoryHero(heroHtml([PIXEL_SPRITE(battleState.teamIds[battleState.activeIdx])], '💫'));
+        setVictoryXp(null);
         document.getElementById('victory-lines').innerHTML =
           `<p>💫 DEFEAT...</p><p>${battleState.trainer.def.name} was too strong this time.</p><p>Your team was rushed to the Poké Center and fully healed. Train up and try again!</p>`;
         show('victory-modal');
         battleState.pendingEvolution = null;
       } else {
-        logMsg('YOUR TEAM IS OUT OF FIGHTERS...');
-        await awaitOrTap(1600);
-        await dialog({ icon: '💨', title: 'IT GOT AWAY!', text: 'Your team is healed and ready to go again.' });
+        // "IT GOT AWAY" without a single word. ART could not read the modal,
+        // and GABE never needed three sentences to learn the fight is over: the
+        // wild Pokémon fades out on a puff of smoke and the screen leaves. The
+        // dialog described a heal that exitBattleMode already performs by
+        // dropping battleState.loaded — no state changes here.
+        logMsg('💨');
+        const eAway = battleState.epoch;
+        await awaitOrTap(600);
+        if (stale(eAway)) return;
+        await puffAway('wild');
+        if (stale(eAway)) return;
         exitBattleMode();
       }
     }
@@ -930,8 +1092,14 @@ async function handleEnemyDown() {
   // XP per KO (rematches pay half)
   const gained = t.rematch ? Math.max(1, Math.floor(xpForKO(w) / 2)) : xpForKO(w);
   const before = monLevel(f.id);
+  // Read the bar position BEFORE the award — player().mons[id] is a live
+  // object and awardPartyXp mutates it in place.
+  const pctBefore = xpPct(f.id);
   const levelLines = awardPartyXp(f.id, gained);
   const ups = monLevel(f.id) - before;
+  // The spoils screen shows the LAST KO's progress. On `t`, which is
+  // battleState.trainer — never persisted, so no schema surface.
+  t.xpCard = { pctBefore, pctAfter: xpPct(f.id), from: before, to: monLevel(f.id), ups };
   levelLines.forEach(l => t.xpLines.push(l));
   t.lastXpMon = { id: f.id, name: f.name, level: monLevel(f.id), ups };
   // Queue the evolution. Gym wins are the game's biggest XP source, and until
@@ -1004,11 +1172,18 @@ async function handleEnemyDown() {
     `<button class="spoils-pick" data-id="${m.id}" data-level="${m.level}" title="${nameOf(m.id) || ''}">
        <img src="${PIXEL_SPRITE(m.id)}" alt="${nameOf(m.id) || ''}"><small>Lv${m.level}</small>
      </button>`).join('');
+  // The roster IS the hero: it is already a row of sprites and it is already
+  // tappable, so it leads the card instead of being duplicated above it. It
+  // has to move out of #victory-lines — body.junior hides that half, and
+  // leaving the ceremony there would take it away from ART entirely.
+  setVictoryHero(
+    `<div class="vh-mark" aria-hidden="true">🏆</div>` +
+    `<div id="spoils-grid">${grid}</div>` +
+    `<p id="spoils-hint">⭐ PICK YOUR FAVORITE!</p>`);
+  setVictoryXp(t.xpCard || null);
   document.getElementById('victory-lines').innerHTML =
     `<p>🏆 ${t.def.name} DEFEATED!</p>` +
     `<p>You caught their whole team:</p>` +
-    `<div id="spoils-grid">${grid}</div>` +
-    `<p id="spoils-hint">⭐ PICK YOUR FAVORITE!</p>` +
     t.xpLines.map(l => `<p>${l}</p>`).join('');
   document.getElementById('spoils-grid').addEventListener('click', ev => {
     const btn = ev.target.closest('.spoils-pick');
@@ -1125,9 +1300,11 @@ function concludeCapture(headline) {
 
   const gained = xpForKO(w);
   const before = monLevel(f.id);
+  const pctBefore = xpPct(f.id);   // read before awardPartyXp mutates the mon
   const levelLines = awardPartyXp(f.id, gained);
   const after = monLevel(f.id);
   const ups = after - before;
+  const pctAfter = xpPct(f.id);
 
   const shownName = nickOf(w.id) || w.name.toUpperCase();
   const teamSize = battleState.teamIds.filter(Boolean).length;
@@ -1140,6 +1317,8 @@ function concludeCapture(headline) {
       : `${f.name.toUpperCase()} gained ${gained} XP!`
   ];
   levelLines.forEach(l => lines.push(l));
+  setVictoryHero(heroHtml([PIXEL_SPRITE(w.id)], newShiny ? '✨' : newCatch ? '⭐' : '✅'));
+  setVictoryXp({ pctBefore, pctAfter, from: before, to: after, ups });
   document.getElementById('victory-lines').innerHTML = lines.map(l => `<p>${l}</p>`).join('');
   show('victory-modal');
   battleState.pendingEvolution = ups > 0 ? { id: f.id, level: after, name: f.name } : null;
@@ -1506,6 +1685,8 @@ async function versusMatchOver(winnerSide) {
   state.save.players[winnerSide].stats.versusWins = (state.save.players[winnerSide].stats.versusWins || 0) + 1;
   persist();
   document.dispatchEvent(new CustomEvent('battle-victory'));
+  setVictoryHero(heroHtml([PIXEL_SPRITE(sideActive(winnerSide).id)], '🏆'));
+  setVictoryXp(null);   // VS awards no XP — an empty strip, not a stale one
   document.getElementById('victory-lines').innerHTML = [
     `🏆 ${playerName(winnerSide)} WINS THE BATTLE!`,
     `${playerName(winnerSide === 1 ? 2 : 1)} fought hard — rematch anytime!`,

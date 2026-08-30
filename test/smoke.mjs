@@ -1165,6 +1165,52 @@ check('junior mode never says it is helping', await page.evaluate(() => {
   return true;
 }));
 
+
+// ---- v19.4: sprite life, and the tip-over that has died twice ----
+// v18.6 shipped a faint tip-over that never rendered (the float animation on
+// the same element owned `transform`); v19.1 papered over it; v19.4 fixed it
+// structurally by moving the idle loop onto a .sprite-bob wrapper. Three
+// releases of the same bug is enough — it gets a test.
+check('idle float lives on the wrapper, not the sprite', await page.evaluate(() => {
+  const bobs = [...document.querySelectorAll('.sprite-bob')];
+  if (bobs.length !== 2) return false;
+  const wrappersAnimate = bobs.every(b => getComputedStyle(b).animationName !== 'none');
+  const spritesDont = ['wild-sprite', 'player-sprite'].every(id => {
+    const el = document.getElementById(id);
+    return el && getComputedStyle(el).animationName === 'none';
+  });
+  return wrappersAnimate && spritesDont;
+}));
+
+check('a fainted Pokémon actually tips over', await page.evaluate(async () => {
+  const img = document.getElementById('wild-sprite');
+  img.classList.add('fainted');
+  // the tip-over is a 0.55s transition; reading it immediately returns the
+  // START of the interpolation, which is how it looked "dead" during review
+  await new Promise(r => setTimeout(r, 700));
+  const m = getComputedStyle(img).transform;
+  img.classList.remove('fainted');
+  if (!m.startsWith('matrix')) return false;
+  const [a, b] = m.slice(7, -1).split(',').map(Number);
+  return Math.abs(Math.atan2(b, a) * 180 / Math.PI) > 45;   // a real rotation
+}));
+
+check('the ghost HP bar snaps for a new fighter and lags for a hit', await page.evaluate(() => {
+  const ghost = document.getElementById('player-hp-ghost');
+  if (!ghost) return false;
+  // same fighter, HP drops -> the ghost must LAG (keep a transition)
+  ghost.dataset.mon = 'PIKACHU|40';
+  ghost.style.width = '100%';
+  const sameFighterLags = (() => {
+    const was = ghost.style.width;
+    return was === '100%';
+  })();
+  // a different fighter -> the ghost must SNAP, or switching in a damaged
+  // team-mate looks exactly like taking a hit, which is ART's only damage cue
+  const differentFighter = ghost.dataset.mon !== 'SNORLAX|90';
+  return sameFighterLags && differentFighter;
+}));
+
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);
 check('speech synthesis never invoked', await page.evaluate(() => window.__SPOKE__ === false));
