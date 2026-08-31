@@ -158,6 +158,17 @@ img { image-rendering: pixelated; }
 .search-row input { min-width: 0; }
 .search-row input::placeholder { color: #888060; }
 .search-row input:focus { outline: 3px solid var(--p-primary); }
+/* The first-catch naming box. Form controls do not inherit font-family from
+   body, so #nick-input rendered as a raw Arial UA widget with a grey bevel in
+   the middle of an all-pixel-font modal. Same chrome as the search field.
+   10px is --t-sm and clears the 8px floor. */
+#nick-input {
+  font-family: var(--pixel-font); font-size: var(--t-sm); text-align: center;
+  padding: 10px; border-radius: 2px; width: 100%; box-sizing: border-box;
+  background: var(--px-cream); color: var(--px-ink); border: 3px solid var(--px-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+}
+#nick-input::placeholder { color: var(--ink-2); }
 .nav-btn {
   border-radius: 2px; background: var(--px-cream); color: var(--px-ink);
   border: 3px solid var(--px-ink); box-shadow: 2px 2px 0 rgba(0,0,0,0.4); font-size: 12px;
@@ -446,7 +457,12 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   padding: 10px; cursor: pointer;
 }
 
-.switch-list { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; max-height: 40dvh; overflow-y: auto; overscroll-behavior: contain; margin: 10px 0; }
+/* 40dvh sliced a full team's fifth card in half with no scroll cue — worst in
+   a FORCED switch, where there is no CANCEL and the cream band under the cut
+   reads as "end of list". Five 62px cards + gaps need 342px; 72dvh is 414px at
+   375x667 and 523px at 390x844, and .modal-box (max-height 100dvh - 40px, with
+   its own overflow) still caps the taller #ballpick-list. */
+.switch-list { display: flex; flex-direction: column; gap: 8px; max-height: 72vh; max-height: 72dvh; overflow-y: auto; overscroll-behavior: contain; margin: 10px 0; }
 .switch-item {
   display: flex; align-items: center; gap: 10px; cursor: pointer;
   background: #fffef2; border: 3px solid var(--px-ink); border-radius: 4px; padding: 6px 10px;
@@ -584,6 +600,15 @@ body.junior { --sheet-peek: 54px; }
 body.junior .bottom-sheet.open { transform: translateY(0); }
 /* every ball works in junior mode — never advertise it */
 body.junior .ball-count { display: none; }
+/* ...which also means "1x RATE", "BETTER WHEN WEAKENED" and "Weaker Pokémon
+   are easier to catch!" are all FALSE for ART — his balls never miss at any
+   HP. They were the only thing telling four identical rows apart, and they
+   pushed a reader toward the master ball for no reason. He still picks a ball
+   out of the drawer; the four are told apart by sprite colour, as they should
+   be. Normal mode is untouched. */
+body.junior .ball-opt small,
+body.junior #ballpick-modal .switch-meta small,
+body.junior #ballpick-modal .modal-box p { display: none; }
 body.junior .ball-opt img { width: 56px; height: 56px; }
 body.junior .ball-opt span { font-size: 8px; }
 body.junior .btn-catch { font-size: 12px !important; }

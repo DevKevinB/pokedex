@@ -1229,6 +1229,31 @@ check('the ghost HP bar snaps for a new fighter and lags for a hit', await page.
 check('at most one AudioContext for the whole app',
   await page.evaluate(() => window.__AUDIO_CTXS__ <= 1));
 
+
+// ---- v19.5.2: one celebration at a time ----
+// Every .overlay-screen paints its own 0.9 scrim, so two stacked are 99% black
+// and three are 99.9%. A quest card opening on top of the victory card buried
+// the PICTURE reward — the only half of a win ART can read — while its gold XP
+// bar finished filling where nobody could see it. Shuffling z-indexes cannot
+// fix compounding scrims; taking turns can.
+check('a quest card waits its turn behind the win card', await page.evaluate(async () => {
+  const vis = id => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display !== 'none'; };
+  const S = await import('/js/state.js');
+  const wasMode = S.state.appMode;
+  S.state.appMode = 'battle';
+  document.getElementById('victory-modal').style.display = 'flex';
+  document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'win' } }));
+  await new Promise(r => setTimeout(r, 400));
+  const heldWhileBusy = !vis('badge-modal');
+  S.state.appMode = wasMode;
+  document.getElementById('victory-modal').style.display = 'none';
+  await new Promise(r => setTimeout(r, 700));
+  const playedAfter = vis('badge-modal');
+  document.getElementById('badge-modal').style.display = 'none';
+  // held, and then NOT dropped — a swallowed reward is as bad as a buried one
+  return heldWhileBusy && playedAfter;
+}));
+
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);
 check('speech synthesis never invoked', await page.evaluate(() => window.__SPOKE__ === false));

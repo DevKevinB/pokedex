@@ -2,6 +2,24 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.5.2] - ONE THING AT A TIME
+
+After a win or a catch the game used to throw up to three full-screen boxes at
+once. They take turns now.
+
+### Fixed
+- ONE THING AT A TIME. After a win or a catch the game used to throw up three screens at once and the dark layers piled up until everything went black. Now the boys get one screen at a time: the card with the Pokémon on it first, then the naming box, then the gold star quest card.
+- The win card is on its own now, so you can actually watch the gold XP bar fill up — it used to finish behind the quest card where nobody could see it.
+- Catching on the Pokédex screen: the Pokémon pops back the same moment GOTCHA! and the confetti go off. Before, the confetti went off over an empty box for six seconds and Art never saw what he caught.
+- A Pokémon you win by knocking out no longer comes back out of the ball grey and tipped over. It stands up in full colour.
+- GOTCHA! and DARN! IT BROKE FREE no longer get painted straight across the Pokémon's name — the message hangs at the bottom of the screen now, so you can read both.
+- CANCEL was white letters on a cream button in the SWITCH and BALL menus — effectively invisible. It is dark and readable now.
+- The SWITCH menu shows a full team of six without slicing the last card in half, and it lists your Pokémon by name and nickname instead of by number (SPARKY Lv14, not #025 Lv14).
+- In Junior Mode the ball drawer no longer prints catch rates that are not true for Art — his balls always work, so the ratings just went away. He still picks whichever ball he likes.
+- The mid-fight loading screen was a black box of engineer words. It is now a Poké Ball and GET READY!.
+- Battles wait for the Pokémon pictures to arrive before the screen opens, so the fight never starts on an empty field.
+- The naming box now looks like the rest of the game instead of a plain browser text box, and the VERSION line in Settings finally has an icon instead of a little blank square.
+
 ## [19.5.1] - PLAYTEST FIXES
 
 Six agents played the game properly for the first time — as Art, as Gabe on a

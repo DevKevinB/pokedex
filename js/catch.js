@@ -105,6 +105,14 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
   if (isSuccess) {
     sfx.catch();
     triggerVibration([100, 50, 100]);
+    // ONE THING AT A TIME (v19.5.2): the Pokémon comes BACK on the same frame
+    // as GOTCHA! and the confetti. It used to stay scaled to nothing for two
+    // more seconds, so the whole celebration went off over an EMPTY box — and
+    // an empty box is not "less" information for a pre-reader, it is none. The
+    // ball leaves on the same frame instead of hovering over him for 2s.
+    sprite.classList.remove('sucked-in');
+    ball.style.opacity = 0;
+    ball.style.transform = 'translateY(-150px) scale(2)';
     msg.innerText = 'GOTCHA!';
     msg.style.color = '#00ff00';
     msg.style.opacity = 1;
@@ -112,20 +120,17 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
     const isNewCatch = recordCatch(state.curId);
     ensureMon(state.curId); // fresh catches start at Lv5
     updateCatchUI();
-    if (isNewCatch && !player().settings.junior) {
-      const capturedId = state.curId;
-      const capturedName = (state.curData?.name || 'it').toUpperCase();
-      setTimeout(() => {
-        askNickname(capturedId, capturedName).then(nick => { if (nick) setNick(capturedId, nick); });
-      }, 2100);
-    }
+    // The naming box is a FOLLOW-UP, not a co-star. It now opens in the same
+    // tick the GOTCHA! ceremony ends, so it can never land on the confetti —
+    // and there is no longer a 100ms gap for a quest card to beat it there.
+    const pendingNick = (isNewCatch && !player().settings.junior)
+      ? { id: state.curId, name: (state.curData?.name || 'it').toUpperCase() }
+      : null;
     document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: state.curData?.types || [] } }));
     setTimeout(() => {
-      ball.style.opacity = 0;
-      ball.style.transform = 'translateY(-150px) scale(2)';
       msg.style.opacity = 0;
-      sprite.classList.remove('sucked-in');
       state.isCatching = false;
+      if (pendingNick) askNickname(pendingNick.id, pendingNick.name).then(nick => { if (nick) setNick(pendingNick.id, nick); });
     }, 2000);
   } else {
     sfx.break();

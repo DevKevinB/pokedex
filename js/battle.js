@@ -12,7 +12,7 @@ import {
   pickMove as enginePickMove, seedMoveset, moveSeed, seededRng, shuffle, xpProgress,
   wildLevel as engineWildLevel
 } from './engine.js';
-import { getPokemon, getMove, getSpecies, getEvolution, nameOf, movesReady, moveStats } from './api.js';
+import { getPokemon, getMove, getSpecies, getEvolution, nameOf, getNameIndex, movesReady, moveStats } from './api.js';
 import { state, player, recordCatch, ensureMon, ensureMonAtLeast, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName, recordChampion, championRecord } from './state.js';
 import { sfx, triggerVibration, playBeep, haptic } from './audio.js';
 import { spawnMark as fxMark } from './fx.js';
@@ -50,6 +50,7 @@ export const battleState = {
   wildShiny: false,
   pendingEvolution: null,
   bankedCatch: null,
+  pendingNick: null,   // a first catch waiting to be named AFTER the win card
   // Monotonic battle id, bumped on every exit. Async work captures it and
   // bails if it no longer matches — see stale().
   epoch: 0
@@ -173,6 +174,7 @@ export function exitBattleMode() {
   battleState.versusActive = false;
   battleState.pendingEvolution = null;
   battleState.bankedCatch = null;
+  battleState.pendingNick = null;
   // Release anyone blocked on the pass-and-play handoff, or that promise
   // never settles and the versus flow hangs forever behind a hidden modal.
   if (passResolver) { const r = passResolver; passResolver = null; r(); }
@@ -275,6 +277,7 @@ async function launchBattle(wildId, { sparkle = false, origin = 'arena' } = {}) 
       wild.shiny = true;
       wild.spriteFront = wild.shinyFront || wild.spriteFront;
     }
+    await preloadSprites(wild.spriteFront, lead.spriteBack);
     show('loading-modal', false);
     startBattleUI();
     if (wild.shiny) {
@@ -338,6 +341,7 @@ export async function startTrainerBattle(gymKey, idx) {
     if (endurance && gymRun.hp[leadId] != null) lead.hp = Math.min(lead.maxHp, gymRun.hp[leadId]);
     battleState.loaded[leadId] = lead;
     battleState.wild = enemy;
+    await preloadSprites(enemy.spriteFront, lead.spriteBack);
     show('loading-modal', false);
     startBattleUI();
     logMsg(`${def.name}: "${def.taunt}"`);
@@ -521,6 +525,26 @@ function setFighterSprite(el, url) {
   setTimeout(show, 2500);
 }
 
+// Curtain up only once the actors are on stage. buildFighter awaits the JSON,
+// but the sprite download does not start until renderActive/renderEnemy assign
+// img.src — which happens AFTER the loading modal is gone and AFTER the move
+// tiles go live. On a first sighting a whole turn could be played against an
+// empty platform. Warm the two bitmaps first, capped so a dead CDN can never
+// block a fight (a plain timer, not awaitOrTap: this is a network cap, not a
+// beat the child is watching, and the loading modal is up in front of it).
+function preloadSprites(...urls) {
+  const list = urls.filter(Boolean);
+  if (!list.length) return Promise.resolve();
+  return Promise.race([
+    Promise.all(list.map(src => new Promise(done => {
+      const im = new Image();
+      im.onload = im.onerror = done;
+      im.src = src;
+    }))),
+    new Promise(done => setTimeout(done, 1500))
+  ]);
+}
+
 function renderActive() {
   const f = active();
   unfaintSprites();
@@ -583,6 +607,9 @@ function startBattleUI() {
   battleState.isBattling = true;
   battleState.busy = false;
   setBattleBackdrop();
+  // Warm the names so SWITCH can say SPARKY, not #025. The index is cold on a
+  // straight boot -> EXPLORE -> battle path; gym.js already does exactly this.
+  getNameIndex();
   document.dispatchEvent(new CustomEvent('battle-started', { detail: { origin: battleState.origin } }));
 
   renderActive();
@@ -756,9 +783,13 @@ function openSwitchModal(forced) {
   list.innerHTML = options.map(o => {
     const f = battleState.loaded[o.id];
     const hpTxt = f ? `${Math.max(0, Math.floor(f.hp))}/${f.maxHp} HP` : 'READY';
+    // His nickname, then the loaded fighter's real name, then the name index
+    // (which falls back to #025 on its own). This was the one screen in the
+    // game that called a Pokémon GABE had named a three-digit number.
+    const label = String(nickOf(o.id) || f?.name || nameOf(o.id)).toUpperCase();
     return `<div class="switch-item" data-idx="${o.idx}">
       <img src="${PIXEL_SPRITE(o.id)}">
-      <div class="switch-meta"><span>#${o.id.toString().padStart(3, '0')} Lv${monLevel(o.id)}</span><small>${hpTxt}</small></div>
+      <div class="switch-meta"><span>${label} Lv${monLevel(o.id)}</span><small>${hpTxt}</small></div>
     </div>`;
   }).join('');
   list.querySelectorAll('.switch-item').forEach(el =>
@@ -1332,7 +1363,13 @@ async function playCaptureAnimation(ballName = 'poke-ball') {
   msg.style.opacity = 0;
   ball.style.opacity = 0;
   ball.style.transform = 'translateY(-150px) scale(2)';
-  sprite.classList.remove('sucked-in');
+  // 'fainted' comes off WITH 'sucked-in'. An auto-caught Pokémon used to pop
+  // back out of the ball grey, tipped over at 55% opacity, and sit there as a
+  // little corpse until the win card covered it — the reward for winning was a
+  // picture of a dead animal. The spoils path already clears it by hand.
+  // NEVER delete this line: 'sucked-in' is not in the fx.js ONE_SHOT list, so
+  // leaving it on makes the NEXT wild Pokémon invisible.
+  sprite.classList.remove('sucked-in', 'fainted');
 }
 
 // FENCE: bank a catch the moment it is DECIDED, not five seconds later when the
@@ -1355,11 +1392,12 @@ function concludeCapture(headline) {
   const { wasNew: newCatch, newShiny } = bankCatch(w);
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: w.types || [] } }));
 
-  // Nickname: in-world, non-blocking, and AFTER the celebration rather than
-  // on top of it. Junior mode is never interrupted — ART cannot type.
-  if (newCatch && !player().settings.junior) {
-    askNickname(w.id, w.name).then(nick => { if (nick) setNick(w.id, nick); });
-  }
+  // Nickname: in-world, and now genuinely AFTER the celebration instead of on
+  // top of it. This comment has been aspirational since v18.6 — #nick-modal
+  // (z-2500) actually opened BEFORE the victory card (z-2000) and buried it,
+  // so a boy met NAME ME? on a black screen before he ever saw what he caught.
+  // Stashed here, asked by maybeEvolveThenExit(). Junior is never interrupted.
+  battleState.pendingNick = (newCatch && !player().settings.junior) ? { id: w.id, name: w.name } : null;
 
   const gained = xpForKO(w);
   const before = monLevel(f.id);
@@ -1544,7 +1582,13 @@ export async function maybeEvolveThenExit() {
       }
     } catch (e) { /* evolution is a bonus — never block exit on it */ }
   }
+  // Last in the queue: the win card, then the evolution, then the naming box.
+  // Asked AFTER teardown on purpose — exitBattleMode() settles any open prompt
+  // (it would cancel this one), and awaiting it before teardown would hold the
+  // dead battle screen up behind the box. Read it first: teardown clears it.
+  const pendingNick = battleState.pendingNick;
   exitBattleMode();
+  if (pendingNick) askNickname(pendingNick.id, pendingNick.name).then(nick => { if (nick) setNick(pendingNick.id, nick); });
 }
 
 async function playEvolution(fromMon, toMon) {
@@ -1627,6 +1671,7 @@ export async function startVersusBattle() {
     battleState.loaded = versus.sides[1].loaded;
     battleState.wild = f2;
 
+    await preloadSprites(f2.spriteFront, f1.spriteBack);
     show('loading-modal', false);
     document.getElementById('battle-container').classList.add('active');
     battleState.isBattling = true;

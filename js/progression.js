@@ -113,6 +113,37 @@ function questDef(key) { return QUEST_POOL.find(q => q.key === key); }
 // ---- celebration queue (badge/quest popups never overlap) ----
 const celebrationQueue = [];
 let celebrating = false;
+let celebrationPump = null;
+
+// ONE THING AT A TIME (v19.5.2). #badge-modal is text-only and pinned at
+// z-3500, so it used to open straight on top of the victory card — the PICTURE
+// reward, and the only half of a win ART can read — while the gold XP bar
+// finished filling where nobody could see it. And every .overlay-screen paints
+// its own 0.9 scrim, so two of them stacked are 99% black and three are 99.9%:
+// this can never be fixed by shuffling z-indexes, only by taking turns.
+// The queue holds. Nothing is ever dropped, and nothing is ever silently
+// swallowed — it plays as soon as the screen in front of it is free.
+const CEREMONY_MODALS = ['victory-modal', 'nick-modal', 'evo-modal', 'hof-modal', 'sparkle-modal', 'pass-modal'];
+function ceremonyBusy() {
+  // A fight owns the screen until it is over: the 'win'/'catch' events fire a
+  // beat BEFORE show('victory-modal'), so watching the modals alone is late.
+  if (state.appMode === 'battle') return true;
+  // ...and the dex GOTCHA! ceremony owns it until its naming box is answered.
+  if (state.isCatching) return true;
+  return CEREMONY_MODALS.some(id => {
+    const el = document.getElementById(id);
+    return el && getComputedStyle(el).display !== 'none';
+  });
+}
+
+// Come back for a held queue the moment the screen frees up. One timer at a
+// time, it only exists while something is actually waiting its turn, and it is
+// short on purpose: the card must follow the ceremony it was waiting for
+// closely enough to read as the NEXT thing, not as a surprise later on.
+function pumpCelebrations() {
+  if (celebrationPump) return;
+  celebrationPump = setTimeout(() => { celebrationPump = null; nextCelebration(); }, 150);
+}
 
 function queueCelebration(emoji, title, subtitle) {
   celebrationQueue.push({ emoji, title, subtitle });
@@ -120,8 +151,14 @@ function queueCelebration(emoji, title, subtitle) {
 }
 
 function nextCelebration() {
-  const item = celebrationQueue.shift();
   const modal = document.getElementById('badge-modal');
+  if (celebrationQueue.length && ceremonyBusy()) {
+    if (modal) modal.style.display = 'none';
+    celebrating = true;          // held: nothing may re-enter and stack a timer
+    pumpCelebrations();
+    return;
+  }
+  const item = celebrationQueue.shift();
   if (!item) { celebrating = false; if (modal) modal.style.display = 'none'; return; }
   celebrating = true;
   document.getElementById('badge-emoji').innerText = item.emoji;

@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.5.1">
-    <link rel="stylesheet" href="css/gba.css?v=19.5.1">
+    <link rel="stylesheet" href="css/main.css?v=19.5.2">
+    <link rel="stylesheet" href="css/gba.css?v=19.5.2">
 </head>
 <body>
 
@@ -355,7 +355,7 @@
         <div class="card-section">
             <div class="card-label">SOUND</div>
             <div class="set-row"><span>MUSIC &amp; SOUND</span><button class="set-toggle" id="set-sound">ON</button></div>
-            <div class="set-row"><span>ⓘ VERSION</span><span class="set-version" id="set-version">—</span></div>
+            <div class="set-row"><span>ℹ️ VERSION</span><span class="set-version" id="set-version">—</span></div>
             <div class="set-row"><span>📳 BUZZ</span><button class="set-toggle" id="set-haptics" title="Vibration when you tap and when you get hit. This device only.">ON</button></div>
         </div>
         <div class="card-section">
@@ -456,11 +456,15 @@
 
 <div class="overlay-screen" id="loading-modal">
     <div class="modal-box">
-        <h2 style="margin:0; font-weight:900;">TRAINER PREPARING...</h2>
-        <p style="font-size:12px; color:#aaa;">Fetching Move Data & Stats</p>
+        <!-- The game's only icon-less, text-only overlay, and it lands mid-fight
+             between a trainer's Pokémon. "Fetching Move Data &amp; Stats" is
+             engineer English on a black screen: nothing at all for ART. A ball
+             and two words, like every other modal in the game. -->
+        <div style="font-size:44px; line-height:1.5; margin-bottom:8px;">🔴</div>
+        <h2 style="margin:0; font-weight:900;">GET READY!</h2>
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.5.1"></script>
+<script type="module" src="js/main.js?v=19.5.2"></script>
 </body>
 </html>
