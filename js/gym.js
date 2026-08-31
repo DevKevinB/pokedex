@@ -16,11 +16,12 @@ import { dialog } from './dialog.js';
 let openGymKey = null;
 
 // endurance: in-memory HP carryover for the current gym run
-export const gymRun = { gymKey: null, hp: {} };
+export const gymRun = { gymKey: null, hp: {}, max: {} };
 
 export function clearGymRun() {
   gymRun.gymKey = null;
   gymRun.hp = {};
+  gymRun.max = {};
 }
 
 export function pokeCenterHeal(silent = false) {

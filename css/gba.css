@@ -190,7 +190,11 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
    for the extra line height, so the drawer keeps the height it has and the
    closed drawer stays under the fold. */
 .ball-opt { gap: 3px; }
-.ball-opt span { color: var(--ink); font-family: var(--pixel-font); font-size: var(--t-xs); }
+/* "MASTER BALL" is 11 fixed-advance chars = 88px at the 8px floor, against an
+   85px cell at 375 wide, so it wrapped and knocked the fourth column's rate
+   caption and count out of line with the other three. Half a pixel of negative
+   tracking buys the 5px back without going under 8px. */
+.ball-opt span { color: var(--ink); font-family: var(--pixel-font); font-size: var(--t-xs); letter-spacing: -0.5px; }
 .ball-opt small { color: var(--ink-2); font-family: var(--pixel-font); font-size: var(--t-xs); }
 .ball-count { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-3); }
 
@@ -404,7 +408,7 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
   color: var(--crt-green); font-family: var(--pixel-font); font-size: 14px;
   text-shadow: 0 0 8px rgba(107,255,107,0.8);
 }
-#pc-instruction { color: var(--crt-green) !important; font-family: var(--pixel-font); font-size: 8px !important; }
+#pc-instruction { color: var(--crt-green) !important; font-family: var(--pixel-font); font-size: 8px !important; line-height: 1.6; }
 .pc-item {
   background: rgba(107,255,107,0.06); border: 2px solid rgba(107,255,107,0.4); border-radius: 2px;
 }
@@ -436,6 +440,16 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .btn-large:active { transform: translateY(3px); box-shadow: none; }
 .btn-reg { background: var(--paper-3); color: var(--ink); }
 .btn-danger { background: #e84040; color: #fff; }
+/* v19.5.3: CANCEL was white-on-cream at 1.07:1 - effectively invisible, and it
+   is the only way out of the BALL drawer, the SWITCH menu and the variant
+   picker. main.css's `.modal-box > .btn-large:last-child` has the same (0,3,0)
+   specificity and loads first, so its `background: var(--paper)` was replacing
+   the red fill while the white text stayed. This puts the red back, for the
+   danger buttons only. Deliberately NOT touching that rule's
+   `box-shadow: 0 -10px 0 var(--paper)`: that 10px strip sits in the margin gap
+   ABOVE the button, masking list content that scrolls under it - red there
+   would read as a 10px-taller button. */
+.modal-box > .btn-danger:last-child { background: var(--red); }
 
 /* music toggle */
 #music-btn { min-width: 38px; }
@@ -473,6 +487,9 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .switch-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .switch-meta span { font-family: var(--pixel-font); font-size: 9px; color: var(--px-ink); }
 .switch-meta small { font-family: var(--pixel-font); font-size: var(--t-xs); color: #38845c; }
+/* A gym run carries damage between trainers. GABE skims for green and picks
+   whichever looks healthy, so a hurt bench member has to stop being green. */
+.switch-meta small[data-hp="low"] { color: var(--ink-3); }
 
 /* .aux-btn now belongs only to VERSUS's END MATCH button — 9px, not 7px. */
 .moves-grid .aux-btn { background: var(--px-cream-dark); font-size: 9px; }
@@ -532,7 +549,11 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .habitat-card:active { transform: translate(3px, 3px); box-shadow: inset -3px -3px 0 var(--px-cream-dark); }
 .habitat-emoji { font-size: 34px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.25)); }
 .habitat-name { font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); line-height: 1.6; }
-.habitat-sub { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); }
+/* Press Start 2P's `normal` line-height computes to exactly 1.0em, so any
+   wrapped caption stacks its lines with 0px between them and the glyphs touch.
+   1.6 matches .habitat-name directly above. This one line fixes every locked
+   gym card ("BEAT THE PREVIOUS / GYM") and every habitat subtitle. */
+.habitat-sub { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); line-height: 1.6; }
 #encounter-scene { flex-direction: column; align-items: center; justify-content: center; height: 100%; display: flex; gap: 30px; }
 #rustle-art { font-size: 80px; }
 #rustle-art.rustling { animation: rustle 0.5s steps(2) infinite; }
@@ -589,6 +610,16 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 
 /* bigger everything, no reading required — sized to fit small screens */
 body.junior .search-row input { display: none; }
+/* The dex hides its type-to-search box for a pre-reader. #pc-search is not
+   inside .search-row, so the identical keyboard-only text filter survived in
+   the PC box, where ART cannot use it. Same rule, same reason - and it gives
+   the grid back about 56px of height. */
+body.junior #pc-search { display: none; }
+/* The trainer card's badge tiles are an emoji plus three lines of 8px prose.
+   ART reads the emoji and the gold/grey earned state; the sub-caption and the
+   progress fraction are words, and they push the card to 1243px of scrolling
+   inside a 566px box. The picture and the colour stay. */
+
 body.junior .nav-btn { flex: 1; font-size: 20px; padding: 13px 0; }
 body.junior button.tool-btn { font-size: 10px; padding: 13px 0; }
 body.junior .btn-icon { font-size: 26px; }
@@ -770,7 +801,12 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 #team-strip {
   display: none; align-items: center; gap: 6px; margin-bottom: 10px;
   background: rgba(107,255,107,0.06); border: 2px solid rgba(107,255,107,0.35);
-  border-radius: 2px; padding: 6px; overflow-x: auto; overscroll-behavior-x: contain;
+  /* v19.5.3: WRAP, don't scroll. Six 48px slots plus the ~101px TEAM label need
+     403px of row against a 331-346px box, so the 6th team member sat entirely
+     off the right edge with no arrow, fade or peeking tile - and tapping a slot
+     is the ONLY way to set your lead. Wrapping puts all six on screen and
+     tappable at 375 and 390; on an iPad they still fit on one row. */
+  border-radius: 2px; padding: 6px; flex-wrap: wrap; overflow-x: visible; overscroll-behavior-x: contain;
 }
 .team-strip-label { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--crt-green); display: flex; flex-direction: column; gap: 3px; flex: 0 0 auto; padding: 0 var(--s1); }
 .team-strip-label small { font-size: var(--t-xs); opacity: 0.6; }
@@ -1025,9 +1061,16 @@ body.junior .tile-eff { font-size: 18px; }
    without a word. On in junior too — it points at a better choice, it never
    disables anything and it never says no. */
 .move-btn.type-tile[data-eff="super"] { box-shadow: inset 0 0 0 3px #ffd040, 3px 3px 0 rgba(0,0,0,0.45); }
-.move-btn.type-tile[data-eff="weak"] { filter: saturate(0.5) brightness(0.94); }
-.move-btn.type-tile[data-eff="weak"] .tile-eff { opacity: 0.7; }
-.move-btn.type-tile[data-eff="immune"] { filter: grayscale(1) brightness(0.9); }
+/* v19.5.3: weak/immune no longer SUBTRACT colour. `filter` repainted the whole
+   button - the type colour and the type emoji, the only two things ART reads
+   off a tile - so three of four tiles looked switched off, and an immune tile
+   went fully grey, which is exactly what "broken" looks like to a four-year-old.
+   The corner badge carries the matchup on its own, at full opacity, and every
+   tile keeps its true type colour in every fight. */
+.move-btn.type-tile[data-eff="weak"],
+.move-btn.type-tile[data-eff="immune"] {
+  box-shadow: inset 0 0 0 3px rgba(0,0,0,0.42), 3px 3px 0 rgba(0,0,0,0.45);
+}
 
 .move-btn.type-tile[disabled] { opacity: 0.45; }
 /* the tile you just tapped stays lit while the turn plays out */

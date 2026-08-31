@@ -267,7 +267,7 @@ export function openTrainerCard() {
   document.getElementById('card-quests').innerHTML = quests.list.map(q => {
     const def = questDef(q.key);
     return `<div class="card-quest ${q.done ? 'done' : ''}">
-      <span>${q.done ? '✅' : '▫️'} ${def.label}</span>
+      <span>${q.done ? '✅' : '🔲'} ${def.label}</span>
       <small>${Math.min(q.progress, def.target)}/${def.target}</small>
     </div>`;
   }).join('');

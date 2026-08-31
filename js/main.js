@@ -390,6 +390,12 @@ registerSW();
   const stamp = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
   stamp('boot-version', `v${APP_VERSION}`);
   stamp('set-version', `v${APP_VERSION}`);
+  // Two more version strings were hand-typed literals in index.html and were
+  // eight releases stale, so the app disagreed with itself about what it was.
+  // They read from APP_VERSION now, and the release ritual stays a three-place
+  // bump.
+  stamp('sheet-version', `VERSION ${APP_VERSION}`);
+  document.title = `Pokédex OS v${APP_VERSION}`;
 })();
 
 console.log(`Pokédex OS v${APP_VERSION} ready.`);

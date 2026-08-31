@@ -2,6 +2,23 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.5.3] - READ IT, TAP IT
+
+Things you could not read, and things you could not tap.
+
+### Fixed
+- Art can play VERSUS now — Gabe-vs-Art was the last mode still using word-only move buttons, so he was guessing every turn. It uses the same big picture buttons as every other fight.
+- CANCEL is a red button again. In the ball drawer, the switch menu and the sparkle picker it had been white writing on a cream background — invisible, and the only way out of each one.
+- Move buttons keep their colour. A move that isn't great against the other Pokémon used to go grey, which to Art means 'broken'. The colour stays; the little arrow in the corner does the telling.
+- The SWITCH menu stops lying. Mid-gym it said READY next to Pokémon that were nearly out of HP, so Gabe kept sending out something that fell over instantly. Real HP now, red when it's nearly out, and listed by name instead of by number.
+- All six of your team show in the PC box. The sixth was off the edge of the screen with nothing to show it was there — and tapping a slot is how you pick your lead, so one of the six could never be made lead.
+- Two-line captions no longer run into each other — the locked gym cards, the habitat subtitles, the team-picker line.
+- MASTER BALL fits on one line on the small phone, so the ball drawer is four tidy columns again.
+- The 'not done yet' mark on the trainer card's quests is a proper empty checkbox instead of a faint speck.
+- The little info icon next to VERSION in Settings was drawing as a black box. Fixed.
+- Junior Mode finally covers the PC box and the trainer card: no text-search box Art can't use, and badges are pictures instead of small print.
+- The browser tab and the bottom of the Pokédex data sheet were both still saying v18. They read the real version now, so it's still one bump per release.
+
 ## [19.5.2] - ONE THING AT A TIME
 
 After a win or a catch the game used to throw up to three full-screen boxes at

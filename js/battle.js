@@ -330,7 +330,7 @@ export async function startTrainerBattle(gymKey, idx) {
 
   // endurance: same-gym runs carry HP (junior always fresh)
   const endurance = !player().settings.junior && gymRun.gymKey === gymKey;
-  if (!endurance) { gymRun.gymKey = gymKey; gymRun.hp = {}; }
+  if (!endurance) { gymRun.gymKey = gymKey; gymRun.hp = {}; gymRun.max = {}; }
 
   try {
     const leadId = battleState.teamIds[0];
@@ -485,11 +485,48 @@ function xpPct(id) {
 // a better one. ART can still tap whatever he likes and it still works.
 const EFF_GLYPH = { super: '⏫', weak: '⏬', immune: '✖', even: '' };
 
-function effOf(moveType) {
-  const types = battleState.wild?.types;
+function effOf(moveType, defTypes) {
+  // defTypes lets versus mode ask "what does this do to the OTHER side?".
+  // Every existing caller passes nothing and still reads the wild slot.
+  const types = defTypes || battleState.wild?.types;
   if (!Array.isArray(types) || !types.length) return 'even';
   const mult = getTypeMultiplier(moveType, types);
   return mult === 0 ? 'immune' : mult > 1 ? 'super' : mult < 1 ? 'weak' : 'even';
+}
+
+// ---- the move tile, v2 — ONE renderer, every battle mode ----
+// This markup used to live inline inside renderActive(), so versus mode still
+// emitted the pre-v2 text-only buttons and ART could not play his brother at
+// all. Wild, gym and versus all come out of here now; there is no second copy.
+// Three FIXED rows, in this order. v1 put a colour emoji and the move name in
+// one flex line, so the emoji drew straight over the words and neither read;
+// and two normal-type moves came out as two identical grey stars, which is a
+// board a pre-reader cannot play at all.
+//   1. picture — the type, in a box of its own so nothing can overdraw it
+//   2. caption — 8px UPPERCASE for GABE, hidden for ART
+//   3. dots    — how big the hit is: ceil(power / 40), out of three
+// Plus a corner mark for what it will do to THIS enemy, and a stripe on the
+// second tile of a repeated type so no two tiles are ever twins.
+// `attr` is the data-* the click wiring looks for: 'move' or 'vmove'.
+function moveTilesHtml(moves, attr, defTypes) {
+  return moves.map((m, i) => {
+    const bg = typeColors[m.type] || '#777';
+    const dots = Math.max(1, Math.min(3, Math.ceil((m.power || 40) / 40)));
+    const dup = moves.some((o, j) => j < i && o.type === m.type);
+    const eff = effOf(m.type, defTypes);
+    const caption = String(m.name || '').replace(/-/g, ' ').toUpperCase();
+    const pips = [1, 2, 3].map(n => `<i${n > dots ? ' class="off"' : ''}></i>`).join('');
+    // background-COLOR, not the background shorthand: the shorthand would
+    // wipe the stripe that tells two same-type moves apart.
+    return `<button class="move-btn type-tile" data-${attr}="${i}" data-type="${m.type}"
+      data-eff="${eff}"${dup ? ' data-dup="1"' : ''}
+      style="background-color:${bg}; color:${inkFor(bg)}">
+      <span class="tile-ico" aria-hidden="true">${typeEmoji[m.type] || typeEmoji.normal}</span>
+      <span class="tile-name">${caption}</span>
+      <span class="tile-dots" aria-hidden="true">${pips}</span>
+      <span class="tile-eff" aria-hidden="true">${EFF_GLYPH[eff]}</span>
+    </button>`;
+  }).join('');
 }
 
 // A trainer's NEXT Pokémon changes every answer on the board, and only
@@ -555,35 +592,9 @@ function renderActive() {
   // Move tiles lead with the TYPE, not the name. A pre-reader picks a move by
   // recognising fire vs water vs lightning; the name is a caption for GABE.
   // This is the difference between ART choosing and ART mashing.
-  // ---- the move tile, v2 ----
-  // Three FIXED rows, in this order. v1 put a colour emoji and the move name in
-  // one flex line, so the emoji drew straight over the words and neither read;
-  // and two normal-type moves came out as two identical grey stars, which is a
-  // board a pre-reader cannot play at all.
-  //   1. picture — the type, in a box of its own so nothing can overdraw it
-  //   2. caption — 8px UPPERCASE for GABE, hidden for ART
-  //   3. dots    — how big the hit is: ceil(power / 40), out of three
-  // Plus a corner mark for what it will do to THIS enemy, and a stripe on the
-  // second tile of a repeated type so no two tiles are ever twins.
+  // The markup itself is moveTilesHtml(), shared with versus mode.
   document.getElementById('battle-moves').innerHTML =
-    f.moves.map((m, i) => {
-      const bg = typeColors[m.type] || '#777';
-      const dots = Math.max(1, Math.min(3, Math.ceil((m.power || 40) / 40)));
-      const dup = f.moves.some((o, j) => j < i && o.type === m.type);
-      const eff = effOf(m.type);
-      const caption = String(m.name || '').replace(/-/g, ' ').toUpperCase();
-      const pips = [1, 2, 3].map(n => `<i${n > dots ? ' class="off"' : ''}></i>`).join('');
-      // background-COLOR, not the background shorthand: the shorthand would
-      // wipe the stripe that tells two same-type moves apart.
-      return `<button class="move-btn type-tile" data-move="${i}" data-type="${m.type}"
-        data-eff="${eff}"${dup ? ' data-dup="1"' : ''}
-        style="background-color:${bg}; color:${inkFor(bg)}">
-        <span class="tile-ico" aria-hidden="true">${typeEmoji[m.type] || typeEmoji.normal}</span>
-        <span class="tile-name">${caption}</span>
-        <span class="tile-dots" aria-hidden="true">${pips}</span>
-        <span class="tile-eff" aria-hidden="true">${EFF_GLYPH[eff]}</span>
-      </button>`;
-    }).join('') +
+    moveTilesHtml(f.moves, 'move') +
     // ONE hero row, no RUN. BALL is the biggest thing on the screen because
     // catching is ART's whole game; SWITCH is a chip wearing the next
     // teammate's face. RUN is gone: it duplicated the exit chip, it was the
@@ -782,14 +793,25 @@ function openSwitchModal(forced) {
 
   list.innerHTML = options.map(o => {
     const f = battleState.loaded[o.id];
-    const hpTxt = f ? `${Math.max(0, Math.floor(f.hp))}/${f.maxHp} HP` : 'READY';
-    // His nickname, then the loaded fighter's real name, then the name index
-    // (which falls back to #025 on its own). This was the one screen in the
-    // game that called a Pokémon GABE had named a three-digit number.
-    const label = String(nickOf(o.id) || f?.name || nameOf(o.id)).toUpperCase();
+    // A gym run carries damage between trainers, but only the LEAD is `loaded`
+    // at the start of a fight, so every bench member fell through to a green
+    // "READY" — including ones the run is holding at a handful of HP. This is
+    // the same condition doSwitch() already uses to re-apply carried HP.
+    const carried = (battleState.origin === 'gym' && !player().settings.junior
+      && gymRun.gymKey === battleState.trainer?.gymKey) ? gymRun.hp[o.id] : null;
+    const cur = f ? Math.max(0, Math.floor(f.hp)) : (carried != null ? carried : null);
+    const max = f ? f.maxHp : (gymRun.max?.[o.id] ?? null);
+    const hpTxt = cur == null ? 'READY' : (max ? `${cur}/${max} HP` : `${cur} HP`);
+    // At or under a third, it is one hit from fainting: it stops being green.
+    const low = cur != null && max ? cur / max <= 1 / 3 : false;
+    // The NAME, not the dex number. "#095" is a lookup a 7-year-old has to do
+    // in his head mid-fight; ONIX is the thing he actually knows. nameOf()
+    // falls back to "#095" when the name index has not loaded, which is
+    // exactly what this row used to show, so it can never get worse.
+    const label = `${String(nickOf(o.id) || f?.name || nameOf(o.id)).toUpperCase()} Lv${monLevel(o.id)}`;
     return `<div class="switch-item" data-idx="${o.idx}">
       <img src="${PIXEL_SPRITE(o.id)}">
-      <div class="switch-meta"><span>${label} Lv${monLevel(o.id)}</span><small>${hpTxt}</small></div>
+      <div class="switch-meta"><span>${label}</span><small${low ? ' data-hp="low"' : ''}>${hpTxt}</small></div>
     </div>`;
   }).join('');
   list.querySelectorAll('.switch-item').forEach(el =>
@@ -1237,8 +1259,10 @@ async function handleEnemyDown() {
     // READY. Endurance still bites (survivors keep their damage); a child is
     // just never handed a Pokémon that is already one hit from fainting.
     Object.values(battleState.loaded).forEach(pf => {
-      if (pf.hp > 0) gymRun.hp[pf.id] = Math.floor(pf.hp);
-      else delete gymRun.hp[pf.id];
+      // maxHp travels with the damage so the SWITCH menu can say "12/45 HP"
+      // and colour a hurt bench member. In memory only; no save shape changes.
+      if (pf.hp > 0) { gymRun.hp[pf.id] = Math.floor(pf.hp); gymRun.max[pf.id] = pf.maxHp; }
+      else { delete gymRun.hp[pf.id]; delete gymRun.max[pf.id]; }
     });
   }
 
@@ -1714,9 +1738,18 @@ function renderVersusSide(n) {
 function renderVersusMoves(n) {
   const f = sideActive(n);
   const grid = document.getElementById('battle-moves');
-  grid.innerHTML = f.moves.map((m, i) =>
-    `<button class="move-btn" data-vmove="${i}">${m.name}<span class="type-badge" style="background:${typeColors[m.type] || '#777'}">${m.type}</span></button>`
-  ).join('') + `<button class="move-btn aux-btn run-wide" id="vs-quit-btn">🏳️ END MATCH</button>`;
+  // The SAME board GABE and ART get in a wild or gym fight — picture, power
+  // dots and the effectiveness mark — read against whoever is on the OTHER
+  // side of the device. Versus was the one mode still on the pre-v19.3
+  // text-only buttons, which locked ART out of playing his brother.
+  // The panel arithmetic is unchanged: four tiles plus one 56px full-width
+  // button is the same stack as four tiles plus the 56px hero row, i.e.
+  // 4 + 51 + 10 + 56 + 8 + 56 + 8 + 56 + 10 = 259px normal, and
+  // 4 + 51 + 10 + 67 + 8 + 67 + 8 + 62 + 10 = 287px junior at 375x667,
+  // both inside .battle-controls' 52dvh (347px) cap.
+  grid.innerHTML =
+    moveTilesHtml(f.moves, 'vmove', sideActive(n === 1 ? 2 : 1)?.types) +
+    `<button class="move-btn aux-btn run-wide" id="vs-quit-btn">🏳️ END MATCH</button>`;
   grid.querySelectorAll('[data-vmove]').forEach(btn =>
     btn.addEventListener('click', () => executeVersusMove(n, parseInt(btn.dataset.vmove)), { once: true }));
   document.getElementById('vs-quit-btn').addEventListener('click', () => {
