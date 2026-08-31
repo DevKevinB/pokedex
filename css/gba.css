@@ -291,14 +291,18 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
    colour is byte-identical to before; --plat / --plat-lo carry that habitat's
    ground colour down to the two platforms. */
 .battle-arena { background: linear-gradient(to bottom, #8ee0f8 0%, #8ee0f8 45%, #58b048 46%, #78c860 70%, #98d878 100%); --plat: #58b048; --plat-lo: #3d8a34; }
-.battle-arena.bg-grass    { background: linear-gradient(to bottom, #8ee0f8 0%, #8ee0f8 45%, #58b048 46%, #78c860 70%, #98d878 100%); --plat: #58b048; --plat-lo: #3d8a34; }
-.battle-arena.bg-water    { background: linear-gradient(to bottom, #8ee0f8 0%, #b0ecff 44%, #2878c8 46%, #4090d8 70%, #58a8e8 100%); --plat: #2878c8; --plat-lo: #1b5490; }
-.battle-arena.bg-fire     { background: linear-gradient(to bottom, #f8b060 0%, #f8d080 45%, #b05828 46%, #c87038 70%, #d88848 100%); --plat: #b05828; --plat-lo: #7c3c18; }
-.battle-arena.bg-electric { background: linear-gradient(to bottom, #fff0a0 0%, #f8e070 45%, #a09030 46%, #b8a840 70%, #d0c050 100%); --plat: #a09030; --plat-lo: #706320; }
-.battle-arena.bg-rock     { background: linear-gradient(to bottom, #c8b8a0 0%, #b0a088 45%, #706050 46%, #887860 70%, #a09070 100%); --plat: #706050; --plat-lo: #4c4136; }
-.battle-arena.bg-ghost    { background: linear-gradient(to bottom, #483868 0%, #605080 45%, #282040 46%, #383058 70%, #484068 100%); --plat: #282040; --plat-lo: #171227; }
-.battle-arena.bg-psychic  { background: linear-gradient(to bottom, #e8a0d8 0%, #f0c0e8 45%, #885890 46%, #a070a8 70%, #b888c0 100%); --plat: #885890; --plat-lo: #5e3c64; }
-.battle-arena.bg-ice      { background: linear-gradient(to bottom, #d8f0ff 0%, #f0faff 45%, #88b8d8 46%, #a0d0e8 70%, #c0e0f0 100%); --plat: #88b8d8; --plat-lo: #5d8aa8; }
+/* v19.7: the SAME eight gradients now paint the scene card on the map as well
+   as the arena floor. One selector list, one set of values — the habitat's own
+   `bg` field (explore.js) still decides which one, so there is exactly one
+   habitat->backdrop mapping in the app and this rule is its only stylesheet. */
+.battle-arena.bg-grass,    .scene-bg.bg-grass    { background: linear-gradient(to bottom, #8ee0f8 0%, #8ee0f8 45%, #58b048 46%, #78c860 70%, #98d878 100%); --plat: #58b048; --plat-lo: #3d8a34; }
+.battle-arena.bg-water,    .scene-bg.bg-water    { background: linear-gradient(to bottom, #8ee0f8 0%, #b0ecff 44%, #2878c8 46%, #4090d8 70%, #58a8e8 100%); --plat: #2878c8; --plat-lo: #1b5490; }
+.battle-arena.bg-fire,     .scene-bg.bg-fire     { background: linear-gradient(to bottom, #f8b060 0%, #f8d080 45%, #b05828 46%, #c87038 70%, #d88848 100%); --plat: #b05828; --plat-lo: #7c3c18; }
+.battle-arena.bg-electric, .scene-bg.bg-electric { background: linear-gradient(to bottom, #fff0a0 0%, #f8e070 45%, #a09030 46%, #b8a840 70%, #d0c050 100%); --plat: #a09030; --plat-lo: #706320; }
+.battle-arena.bg-rock,     .scene-bg.bg-rock     { background: linear-gradient(to bottom, #c8b8a0 0%, #b0a088 45%, #706050 46%, #887860 70%, #a09070 100%); --plat: #706050; --plat-lo: #4c4136; }
+.battle-arena.bg-ghost,    .scene-bg.bg-ghost    { background: linear-gradient(to bottom, #483868 0%, #605080 45%, #282040 46%, #383058 70%, #484068 100%); --plat: #282040; --plat-lo: #171227; }
+.battle-arena.bg-psychic,  .scene-bg.bg-psychic  { background: linear-gradient(to bottom, #e8a0d8 0%, #f0c0e8 45%, #885890 46%, #a070a8 70%, #b888c0 100%); --plat: #885890; --plat-lo: #5e3c64; }
+.battle-arena.bg-ice,      .scene-bg.bg-ice      { background: linear-gradient(to bottom, #d8f0ff 0%, #f0faff 45%, #88b8d8 46%, #a0d0e8 70%, #c0e0f0 100%); --plat: #88b8d8; --plat-lo: #5d8aa8; }
 
 /* ---- fighter platforms ----
    These used to be a transparent radial blur keyed off an inline style
@@ -1825,3 +1829,204 @@ body.junior #victory-continue .vc-arrow { font-size: 40px; }
   display: inline-block; margin-right: 2px;
 }
 body.junior .btn-glyph { font-size: 20px; vertical-align: -3px; }
+
+/* ============================================================
+   v19.7 "THE MAP" — ONE CARD GRAMMAR
+   ============================================================
+   EXPLORE, the GYM hub and the trainer list each used to invent their own
+   card. They now share ONE component with named slots, so a thing ART has
+   learned to read on the map reads the same way in the gym hall:
+     .card-art    a picture (emoji or sprite) — always first
+     .card-title  <=6 words, uppercase, >= the 8px floor
+     .card-meta   a ROW OF PICTOGRAMS, never a sentence
+     .card-band   a 6px stripe: green / amber / red, or a type colour
+     .card-dots   progress as filled/outline squares
+     .card-ribbon a small corner mark for DONE
+     .card-lock   an ink-outline square with a padlock. The art underneath
+                  stays RECOGNISABLE at grayscale(1) brightness(.6) and is
+                  never replaced by a flat grey slab — a locked thing you can
+                  still see is "later", a grey box is "no".
+   No new hex literals: every colour here is a v19.1 token. */
+.card {
+  position: relative; overflow: hidden;
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 4px;
+  box-shadow: inset -3px -3px 0 var(--paper-2), 4px 4px 0 rgba(0,0,0,0.35);
+  cursor: pointer; transition: transform 0.1s;
+}
+.card:active { transform: translate(3px, 3px); box-shadow: inset -3px -3px 0 var(--paper-2); }
+/* A locked card never depresses: a control that moves under a finger and then
+   does nothing reads as broken. It still ACCEPTS the tap — FARAWAY LAND
+   explains itself in a dialog, which is the opposite of a dead button. */
+.card.locked, .card.locked:active { transform: none; cursor: default; }
+
+.card-band { position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--band, var(--green)); z-index: 3; }
+.card-title { font-family: var(--pixel-font); font-size: var(--t-xs); line-height: 1.6; color: var(--ink); }
+.card-meta { display: flex; align-items: center; justify-content: center; gap: var(--s1); }
+.card-meta .ico { display: inline-grid; place-items: center; height: 1.25em; line-height: 1.25em; font-size: 14px; }
+.card-dots { display: flex; gap: 3px; align-items: center; }
+.card-dots i { width: 8px; height: 8px; flex: 0 0 8px; font-style: normal; background: var(--paper-2); box-shadow: 0 0 0 2px var(--ink); }
+.card-dots i.on { background: var(--green); }
+.card-ribbon { position: absolute; top: 3px; right: 5px; z-index: 4; font-size: 14px; line-height: 1; text-shadow: 1px 1px 0 rgba(0,0,0,0.4); }
+.card-lock {
+  position: absolute; right: 6px; bottom: 6px; z-index: 4; pointer-events: none;
+  display: grid; place-items: center; width: 34px; height: 34px; font-size: 20px;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 3px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+}
+
+/* ---------- EXPLORE: the picture world map ---------- */
+/* One wrapper holds every layer. .hab-inner is deliberately NOT positioned, so
+   the band, the sky and the peekers resolve against .habitat-card and bleed to
+   its border; it is also the card's ONLY element child, which keeps the
+   playtest overlap probe (which walks direct children of .habitat-card) from
+   reporting nine absolutely-positioned false positives per screen. */
+.hab-inner { display: flex; flex-direction: column; align-items: center; gap: var(--s2); width: 100%; }
+.scene-bg { position: absolute; inset: 0; z-index: 0; }
+.habitat-card .card-art { position: relative; z-index: 2; }
+.habitat-card .card-plate { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.habitat-card .peekers { position: absolute; left: 0; right: 0; bottom: 3px; height: 44px; z-index: 1; pointer-events: none; }
+.habitat-card .peeker {
+  position: absolute; bottom: 0; width: 40px; height: 40px;
+  object-fit: contain; image-rendering: pixelated;
+  filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.35));
+  animation: peekBob 1.6s steps(2) infinite alternate;
+}
+.habitat-card .peeker:nth-child(1) { right: 5%;  animation-delay: 0s; }
+.habitat-card .peeker:nth-child(2) { right: 24%; animation-delay: .35s; }
+.habitat-card .peeker:nth-child(3) { right: 43%; animation-delay: .7s; }
+@keyframes peekBob { from { transform: translateY(4px); } to { transform: translateY(-4px); } }
+
+/* JUNIOR: one full-width scene per row. The name rides its own paper plate so
+   it stays readable over any sky. */
+body.junior #habitat-grid { grid-template-columns: 1fr; gap: var(--s3); }
+body.junior .habitat-card { min-height: 104px; padding: 10px 12px; justify-content: center; }
+body.junior .hab-inner { flex-direction: row; align-items: center; justify-content: flex-start; gap: var(--s3); }
+body.junior .habitat-card .card-art { font-size: 48px; }
+body.junior .habitat-card .card-plate {
+  align-items: flex-start; text-align: left;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 3px;
+  padding: 5px 7px; box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+}
+/* the type sentence is reading-only work; the picture and the band say it */
+body.junior .habitat-sub { display: none; }
+
+/* A locked place is a place you can SEE. This overrides the v18.10 blanket
+   grayscale+0.55 on the whole card (that rule is left in place for anything
+   outside #habitat-grid) and greys only the art. */
+#habitat-grid .habitat-card.locked { filter: none; opacity: 1; }
+#habitat-grid .habitat-card.locked .scene-bg,
+#habitat-grid .habitat-card.locked .card-plate,
+#habitat-grid .habitat-card.locked .card-art,
+#habitat-grid .habitat-card.locked .peeker { filter: grayscale(1) brightness(0.6); }
+
+/* THE SPARKLE SPOT. A chip and a gold edge. Never a number, never a clock. */
+.sparkle-chip { position: absolute; top: 9px; right: 7px; z-index: 4; font-size: 18px; animation: sparklePulse 1.1s steps(3) infinite alternate; }
+@keyframes sparklePulse { from { transform: scale(0.85) rotate(-8deg); opacity: .8; } to { transform: scale(1.2) rotate(8deg); opacity: 1; } }
+.habitat-card.sparkle-spot { border-color: var(--gold-2); box-shadow: inset -3px -3px 0 var(--paper-2), 4px 4px 0 rgba(0,0,0,0.35), 0 0 12px rgba(255,208,64,0.6); }
+/* where the dex habitat chip lands */
+.habitat-card.card-focus { animation: cardFocus 0.55s steps(2) 3 alternate; }
+@keyframes cardFocus {
+  from { box-shadow: inset -3px -3px 0 var(--paper-2), 4px 4px 0 rgba(0,0,0,0.35); }
+  to   { box-shadow: inset -3px -3px 0 var(--paper-2), 0 0 0 4px var(--gold); }
+}
+
+/* ---------- GYM HUB: one active card, then the whole journey ---------- */
+.gym-hero { display: flex; align-items: center; gap: var(--s3); padding: 12px 12px 12px 10px; margin-bottom: var(--s3); }
+.gym-hero-lead { width: 56px; height: 56px; flex: 0 0 56px; object-fit: contain; image-rendering: pixelated; }
+.gym-hero-txt { display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-width: 0; }
+.gym-hero .card-title { font-size: var(--t-sm); }
+.gym-hero-go { font-size: 26px; flex: 0 0 auto; line-height: 1.25em; }
+
+/* THE PATH — all twelve stops on screen at 375px.
+   Victory Road and the Elite Four used to be ten grey cards below the fold,
+   which is the same as not existing. ARITHMETIC at 375x667: .explore-body
+   leaves 375 - 32 = 343px; six columns minus five 6px gaps = 313 / 6 = 52px
+   per node, at 48px tall — both axes clear the 44px tap target. A single
+   horizontal strip of twelve 44px nodes would need 594px and would put the
+   Elite straight back off-screen, so the path wraps to two rows of six
+   instead of scrolling. Reading order is still left-to-right along the
+   journey. */
+#gym-grid { grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: var(--s3); }
+.gym-card { min-height: 48px; display: grid; place-items: center; padding: 2px; }
+.gym-node-art { font-size: 24px; line-height: 1; }
+.gym-card .card-lock { width: 22px; height: 22px; font-size: 12px; border-width: 2px; right: 2px; bottom: 2px; box-shadow: none; }
+.gym-card .card-ribbon { font-size: 11px; top: 1px; right: 3px; }
+#gym-grid .gym-card.locked { filter: none; opacity: 1; }
+#gym-grid .gym-card.locked .gym-node-art { filter: grayscale(1) brightness(0.6); }
+.gym-card.current { border-color: var(--gold-2); animation: nodePulse 1.4s steps(2) infinite alternate; }
+@keyframes nodePulse {
+  from { box-shadow: inset -3px -3px 0 var(--paper-2), 0 0 0 rgba(255,208,64,0); }
+  to   { box-shadow: inset -3px -3px 0 var(--paper-2), 0 0 10px rgba(255,208,64,0.85); }
+}
+
+/* ---------- TRAINER ROWS ---------- */
+.trainer-row { display: flex; align-items: center; gap: var(--s2); margin-bottom: 6px; }
+.trainer-lead { width: 48px; height: 48px; flex: 0 0 48px; object-fit: contain; image-rendering: pixelated; background: rgba(0,0,0,0.06); border-radius: 2px; }
+.trainer-col { flex: 1 1 auto; min-width: 0; }
+.trainer-status { flex: 0 0 auto; font-size: 20px; line-height: 1.25em; }
+.trainer-card .card-band { z-index: 1; }
+/* The blinking sentence becomes a real button. It KEEPS the words "TAP TO
+   BATTLE" — three words, and the thing GABE has read on this screen for two
+   releases — and adds a chevron that nudges, which is the half ART reads. */
+.btn-battle {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; min-height: 44px; margin-top: var(--s2); cursor: pointer;
+  font-family: var(--pixel-font); font-size: var(--t-xs); text-transform: uppercase;
+  background: var(--red); color: #fff; border: 3px solid var(--ink); border-radius: 3px;
+  box-shadow: var(--sh-btn); text-shadow: 1px 1px 0 rgba(0,0,0,0.45);
+}
+.btn-battle:active { transform: translateY(3px); box-shadow: none; }
+.btn-battle.rematch { background: var(--green-2); }
+.btn-battle .chev { display: inline-block; font-size: 12px; animation: chevNudge 0.9s steps(2) infinite alternate; }
+@keyframes chevNudge { from { transform: translateX(0); } to { transform: translateX(5px); } }
+body.junior .trainer-taunt { display: none; }
+
+/* ---------- DEX: the living entry ---------- */
+/* The ribbon is pinned inside .img-container (already position:relative) and
+   costs ZERO height, because .identity's 81px is load-bearing in the junior
+   375x667 height contract documented above. */
+#dex-ribbon {
+  position: absolute; top: 2px; left: 4px; z-index: 5; pointer-events: none; white-space: nowrap;
+  font-family: var(--pixel-font); font-size: var(--t-xs); line-height: 1.6; color: var(--ink);
+  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-2) 100%);
+  border: 2px solid var(--ink); border-radius: 2px; padding: 3px 8px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.45);
+}
+.tag.habitat-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; min-height: 26px; padding: 3px 6px; font-size: 15px; line-height: 1;
+  background: var(--paper); color: var(--ink); cursor: pointer;
+}
+#desc-dots { display: flex; gap: 4px; margin: 6px 0 0 15px; }
+#desc-dots i { width: 8px; height: 8px; font-style: normal; background: transparent; box-shadow: 0 0 0 2px var(--paper-2); }
+#desc-dots i.on { background: var(--gold); box-shadow: 0 0 0 2px var(--gold-2); }
+
+/* ---------- THE FIRST SHINY ---------- */
+.badge-box { position: relative; }
+#badge-sprite {
+  width: 112px; height: 112px; object-fit: contain; image-rendering: pixelated;
+  display: block; margin: 0 auto 6px;
+  filter: drop-shadow(0 0 10px rgba(255,208,64,0.9));
+  animation: badgeBounce 0.8s steps(4) infinite alternate;
+}
+.badge-box.shiny-ceremony { border-color: var(--gold-2); box-shadow: 0 0 22px rgba(255,208,64,0.6); }
+.shiny-spark {
+  position: absolute; left: 50%; top: 12%; z-index: 30; font-size: 34px; pointer-events: none;
+  transform: translateX(-50%); animation: shinySpark 1.2s ease-out both;
+}
+@keyframes shinySpark {
+  0%   { opacity: 0; transform: translateX(calc(-50% + var(--dx, 0px))) translateY(16px) scale(0.4) rotate(-20deg); }
+  30%  { opacity: 1; transform: translateX(calc(-50% + var(--dx, 0px))) translateY(-6px) scale(1.25) rotate(10deg); }
+  100% { opacity: 0; transform: translateX(calc(-50% + var(--dx, 0px))) translateY(-64px) scale(0.9) rotate(-6deg); }
+}
+
+/* ---- reduced motion for everything added above ----
+   Nothing here hides information: the peekers are still there, the sparkle
+   chip is still on the card, the shiny still fills the screen. Only movement
+   stops. .shiny-spark states opacity because its keyframe starts at 0. */
+@media (prefers-reduced-motion: reduce) {
+  .habitat-card .peeker, .sparkle-chip, .habitat-card.card-focus,
+  .gym-card.current, .btn-battle .chev, #badge-sprite, .shiny-spark { animation: none !important; }
+  .shiny-spark { opacity: 1; }
+}

@@ -3,6 +3,7 @@
 // Rarity roll: 1% legendary · 9% rare · 30% uncommon · 60% common
 // ============================================================
 
+import { PIXEL_SPRITE, todayNumber } from './config.js';
 import { state, player, persist, monLevel } from './state.js';
 import { wildLevel } from './engine.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
@@ -120,6 +121,64 @@ export const activeHabitat = () => currentHabitat;
 // said DEEP FOREST. The place you walked into decides how the place looks.
 export const habitatBackdrop = () => HABITATS.find(h => h.key === currentHabitat)?.bg || null;
 
+// ---- v19.7: THE SPARKLE SPOT ----
+// One habitat glitters each day and shinies are five times likelier in it.
+// That is ALL it is. It is not a gate (every habitat stays open), not a
+// countdown (nothing on screen runs down), and nothing ever runs out — the
+// card that glitters today simply stops glittering tomorrow while another one
+// starts. Junior Mode gets exactly the same odds: a bonus is not an
+// accommodation, so there is nothing here to hide and nothing to advertise.
+// Same seeded LCG as progression.pickDailyQuests(), on the same LOCAL day, and
+// keyed to the player so the brothers can have different lucky places.
+export function sparkleSpot() {
+  let seed = (todayNumber() * 3 + state.currentPlayer * 13) & 0x7fffffff;
+  seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+  // Only places this player can actually walk into. Drawn from all nine, the
+  // spot could land on FARAWAY LAND before the crown and nothing would glitter
+  // all day — an invisible bonus is the same as no bonus.
+  const pool = HABITATS.filter(h => !h.championOnly || player().champion);
+  const i = Math.floor((seed / 0x80000000) * pool.length);
+  return pool[i]?.key || pool[0].key;
+}
+
+/** Every habitat whose pools contain this species. Read-only — the dex chip
+    uses it to say "it lives here", and it never gates or hides anything. */
+export function habitatsOf(id) {
+  const n = Number(id);
+  return HABITATS.filter(h => ['c', 'u', 'r', 'L'].some(k => (h[k] || []).includes(n)));
+}
+
+// Three little residents peeking out of the scene. Deterministic per habitat —
+// a place whose animals reshuffle on every render is a different place every
+// time you look at it — and drawn from the COMMON pool, so what peeks out is
+// genuinely what he is most likely to meet in there.
+function peekersFor(h) {
+  const pool = h.c || [];
+  const want = Math.min(3, pool.length);
+  let seed = 7;
+  for (let i = 0; i < h.key.length; i++) seed = (seed * 31 + h.key.charCodeAt(i)) & 0x7fffffff;
+  const out = [];
+  for (let tries = 0; tries < 24 && out.length < want; tries++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    const id = pool[Math.floor((seed / 0x80000000) * pool.length)];
+    if (!out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+// The dex habitat chip routes here. It OPENS the map with that place lit up
+// and scrolled into view; it does not walk in for you. A chip tap on the dex
+// must never drop a seven-year-old into a fight he did not ask for.
+export function openExploreAt(key) {
+  openExplore();
+  if (state.appMode !== 'explore') return;   // catching, or already in a fight
+  const card = document.querySelector(`#habitat-grid .habitat-card[data-habitat="${key}"]`);
+  if (!card) return;
+  card.classList.add('card-focus');
+  try { card.scrollIntoView({ block: 'center' }); } catch (e) { /* older engines */ }
+  setTimeout(() => card.classList.remove('card-focus'), 2400);
+}
+
 export function openExplore() {
   if (state.isCatching || state.appMode === 'battle') return;
   state.appMode = 'explore';
@@ -137,6 +196,8 @@ export function closeExplore() {
 function renderHabitats() {
   const grid = document.getElementById('habitat-grid');
   const lead = leadLevel();
+  const junior = !!player().settings.junior;
+  const glitterKey = sparkleSpot();
   grid.innerHTML = HABITATS.map(h => {
     // Three pips relative to YOUR lead. Information, never a lock — every
     // habitat stays open, because telling a 4-year-old "not yet" is worse
@@ -156,14 +217,38 @@ function renderHabitats() {
     // and it advertises nothing, because a green board is not an accommodation,
     // it is a map. The band is NOT deleted: the Lv~N caption Kevin reads over
     // Art's shoulder lives in the same <small>, and the card height must match.
-    const pips = player().settings.junior ? 1
+    const pips = junior ? 1
       : expected > lead + 4 ? 3 : expected > lead - 2 ? 2 : 1;
+    // v19.7: the same three bands now ALSO paint the .card-band stripe, which
+    // is the one difficulty signal that survives across the whole card grammar.
+    const band = pips === 3 ? 'var(--red)' : pips === 2 ? 'var(--gold)' : 'var(--green)';
+    const glitters = !locked && h.key === glitterKey;
+    // ART gets the place itself: the habitat's own sky (its `bg`, the same one
+    // the arena paints when he walks in) with three residents bobbing in it.
+    // GABE keeps two columns, the type line and the 8px Lv~N caption.
+    const scene = junior
+      ? `<div class="scene-bg bg-${h.bg || 'grass'}"></div>
+         <div class="peekers">${peekersFor(h).map(id =>
+            `<img class="peeker" src="${PIXEL_SPRITE(id)}" alt="" draggable="false">`).join('')}</div>`
+      : '';
+    // A LOCKED place is a greyscale scene with a padlock and a crown — no
+    // sentence. The card still takes the tap and still explains itself in a
+    // dialog, so nothing was taken away; the words just stopped being the only
+    // way to know what this card is.
     return `
-    <div class="habitat-card ${locked ? 'locked' : ''}" data-habitat="${h.key}">
-      <span class="habitat-emoji">${locked ? '🔒' : h.emoji}</span>
-      <span class="habitat-name">${h.name}</span>
-      <small class="habitat-sub">${locked ? '👑 BECOME CHAMPION!' : h.sub}</small>
-      ${locked ? '' : `<small class="habitat-diff" data-pips="${pips}"><i></i><i></i><i></i>Lv~${expected}</small>`}
+    <div class="card habitat-card ${locked ? 'locked' : ''} ${glitters ? 'sparkle-spot' : ''}" data-habitat="${h.key}" title="${h.name}">
+      <div class="hab-inner">
+        <span class="card-band" style="--band:${band}"></span>
+        ${scene}
+        <span class="card-art habitat-emoji">${h.emoji}</span>
+        <div class="card-plate">
+          <span class="card-title habitat-name">${h.name}</span>
+          ${locked ? '' : `<small class="habitat-sub">${h.sub}</small>`}
+          ${locked ? '' : `<small class="habitat-diff" data-pips="${pips}"><i></i><i></i><i></i>Lv~${expected}</small>`}
+        </div>
+        ${glitters ? '<span class="sparkle-chip" aria-hidden="true">✨</span>' : ''}
+        ${locked ? '<span class="card-ribbon">👑</span><span class="card-lock">🔒</span>' : ''}
+      </div>
     </div>`;
   }).join('');
   grid.querySelectorAll('.habitat-card').forEach(el =>

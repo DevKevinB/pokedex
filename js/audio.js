@@ -42,6 +42,15 @@ export function getBus(name = 'sfx') {
 // phone call in 'interrupted' — a state that never clears on its own. This app
 // had ZERO visibilitychange listeners, which is why one call silenced the game
 // until it was force-quit and relaunched.
+/** True only once the AudioContext EXISTS and is actually running — i.e. the
+    app has had a real user gesture. Anything that makes a sound nobody asked
+    for (the v19.7 dex auto-cry) checks this first, so a page that has never
+    been touched stays silent. It deliberately does not call getCtx(): asking
+    the question must never be what creates the context. */
+export function audioUnlocked() {
+  return !!audioCtx && audioCtx.state === 'running';
+}
+
 export function resumeIfNeeded() {
   const ctx = getCtx();
   if (!ctx) return;

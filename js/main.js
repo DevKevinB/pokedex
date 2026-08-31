@@ -9,7 +9,7 @@ initPace();
 import { state, loadSave, player, playerName, monLevel } from './state.js';
 import { initAudio, stopAllAudio, playCryAudio, toggleMute, resumeIfNeeded, haptic, sfx } from './audio.js';
 import { pet } from './fx.js';
-import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
+import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI, cycleFlavor } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
 import { initBattleMode, exitBattleMode, wireExitChip, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState, petTargetId } from './battle.js';
 import { openPC, closePC, cancelTeamPick, onPCSearchInput, closeSticker, toggleStickerFav } from './pc.js';
@@ -199,7 +199,7 @@ function wireUI() {
   //
   // It is also the unlock: iOS will only start an AudioContext inside a real
   // gesture, and pointerdown is the earliest one we get.
-  const TAPPABLE = 'button, .habitat-card, .pc-item, .ball-opt, .team-slot, ' +
+  const TAPPABLE = 'button, .card, .habitat-card, .pc-item, .ball-opt, .team-slot, ' +
                    '.spoils-pick, .switch-item, .whoplaying-choice';
   document.addEventListener('pointerdown', e => {
     resumeIfNeeded();
@@ -229,6 +229,8 @@ function wireUI() {
   on('catch-btn', openBag);
   on('data-btn', toggleSheet);
   on('sheet-handle', toggleSheet);
+  // v19.7: the Pokédex entry cycles through the six cached texts on tap.
+  on('desc', cycleFlavor);
   // v19.2: the exit is not a plain click any more — two taps for GABE, a
   // 900ms hold for ART — so battle.js owns its wiring.
   wireExitChip();

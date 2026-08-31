@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.6.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.6.0">
+    <link rel="stylesheet" href="css/main.css?v=19.7.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.7.0">
 </head>
 <body>
 
@@ -57,6 +57,10 @@
         <div class="img-container" id="scanner-container">
             <div id="bg-glow"></div>
             <div class="scanner-line"></div>
+            <!-- v19.7: LEGENDARY / MYTHICAL. It lives in .img-container (already
+                 position:relative) and not in .identity, because .identity's
+                 81px is load-bearing in the junior 375x667 height contract. -->
+            <div id="dex-ribbon" style="display:none;"></div>
             <img id="poke-sprite" src="" draggable="false">
             <img class="throw-ball" id="dex-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
         </div>
@@ -108,7 +112,8 @@
             </div>
         </div>
         <div class="sheet-content">
-            <h3>Pokedex Entry</h3><p class="desc-text" id="desc">Connecting...</p>
+            <h3>Pokedex Entry</h3><p class="desc-text" id="desc" title="TAP FOR THE NEXT ENTRY">Connecting...</p>
+            <div id="desc-dots"></div>
             <div class="info-grid"><div class="info-box">Abilities<br><strong id="abilities">--</strong></div><div class="info-box">Base Exp<br><strong id="base-exp">--</strong></div></div>
             <h3>Base Stats</h3><div id="stats-area"></div>
             <h3>Evolution Chain</h3><div class="evo-box" id="evo-chain"></div>
@@ -442,6 +447,9 @@
 
 <div class="overlay-screen" id="badge-modal" style="z-index: 3500;">
     <div class="modal-box badge-box">
+        <!-- v19.7: a ceremony with a Pokémon in it shows the Pokémon. Hidden for
+             every badge and quest card, which keep the glyph above. -->
+        <img id="badge-sprite" alt="" draggable="false" style="display:none;">
         <div id="badge-emoji">🪨</div>
         <h2 id="badge-title">BADGE EARNED!</h2>
         <p id="badge-sub"></p>
@@ -494,6 +502,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.6.0"></script>
+<script type="module" src="js/main.js?v=19.7.0"></script>
 </body>
 </html>

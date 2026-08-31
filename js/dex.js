@@ -5,11 +5,53 @@
 import { MAX_POKEMON, typeColors, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
 import { getPokemon, getSpecies, getEvolution } from './api.js';
 import { state, player } from './state.js';
-import { stopAllAudio, setCry, haptic } from './audio.js';
+import { stopAllAudio, setCry, haptic, isMuted, audioUnlocked, playCryAudio } from './audio.js';
 import { pxReveal } from './fx.js';
+import { habitatsOf, openExploreAt } from './explore.js';
 
 let galleryTimer = null;
 let typeTimer = null;
+
+// ---- v19.7: the entry CYCLES ----
+// api.js has been caching SIX flavor texts per species since it shipped and
+// only the first was ever shown. Tap the entry for the next one; a row of dots
+// says how many there are and which one you are on. It wraps forever — nothing
+// is ever used up. (The data sheet is hidden in Junior Mode, so this is GABE's
+// feature and costs ART nothing.)
+let flavorTexts = [];
+let flavorIdx = 0;
+
+function renderFlavor() {
+  typeText(document.getElementById('desc'), flavorTexts[flavorIdx] || 'No data.');
+  const dots = document.getElementById('desc-dots');
+  if (!dots) return;
+  dots.innerHTML = flavorTexts.length > 1
+    ? flavorTexts.map((_, i) => `<i class="${i === flavorIdx ? 'on' : ''}"></i>`).join('')
+    : '';
+}
+
+/** Tap the Pokédex entry for the next cached text. */
+export function cycleFlavor() {
+  if (state.isCatching || state.appMode === 'battle') return;
+  if (flavorTexts.length < 2) return;
+  flavorIdx = (flavorIdx + 1) % flavorTexts.length;
+  renderFlavor();
+  haptic('select');
+}
+
+// v19.7: the dex ANSWERS. When a scan finishes, the Pokémon says its name in
+// its own voice — the real cry where the browser can decode one, the
+// synthesised chiptune cry on Safari, both already built in audio.js. This is
+// a SOUND EFFECT and never speech. Gated three ways so it can never surprise
+// anyone: only on the dex screen, only when sound is on, and only once the
+// AudioContext is actually running (i.e. after a real tap). emitCry()'s own
+// 400ms floor is what stops a mashed ◀▶ from stacking cries.
+function maybeAutoCry(forId) {
+  if (state.curId !== forId) return;
+  if (state.appMode !== 'dex' || state.isCatching) return;
+  if (isMuted() || !audioUnlocked()) return;
+  playCryAudio();
+}
 
 // GBA-style typewriter text
 export function typeText(el, text, speed = 16) {
@@ -139,14 +181,25 @@ export async function loadPoke(idOrName) {
     setScanning(false);
     spEl.style.opacity = 1;
     pxReveal(spEl);   // six chunky columns, not a cross-fade
+    maybeAutoCry(forId);
   });
 }
 
 function updateUISafe() {
   const d = state.curData, s = state.curSpeciesData;
   try {
+    // v19.7: is_legendary / is_mythical have been sitting in the species cache
+    // since api.js:70 with ZERO consumers. A gold ribbon and a gold glow are the
+    // two ways to say "this one is special" without a sentence. The ribbon is
+    // pinned inside .img-container and adds no height, because .identity's 81px
+    // is load-bearing in the junior 375x667 height contract.
+    const legend = s?.is_mythical ? '★ MYTHICAL' : s?.is_legendary ? '★ LEGENDARY' : '';
+    const ribbon = document.getElementById('dex-ribbon');
+    if (ribbon) { ribbon.textContent = legend; ribbon.style.display = legend ? 'block' : 'none'; }
+
     const typeColor = typeColors[d.types?.[0]?.type?.name] || '#777';
-    document.getElementById('bg-glow').style.background = `radial-gradient(circle, ${typeColor}66 0%, transparent 70%)`;
+    const glowColor = legend ? '#ffd040' : typeColor;
+    document.getElementById('bg-glow').style.background = `radial-gradient(circle, ${glowColor}66 0%, transparent 70%)`;
     document.getElementById('app-body').style.setProperty('--type-glow', `${typeColor}42`);
     document.getElementById('id-text').innerText = `NO. ${d.id.toString().padStart(4, '0')}`;
     document.getElementById('poke-name').innerText = d.name;
@@ -155,10 +208,29 @@ function updateUISafe() {
     document.getElementById('wt').innerText = `${(d.weight || 0) / 10}kg`;
     document.getElementById('base-exp').innerText = d.base_experience || '--';
     document.getElementById('genus').innerText = s?.genus || 'Unknown';
-    typeText(document.getElementById('desc'), s?.flavor_texts?.[0] || 'No data.');
 
-    document.getElementById('types').innerHTML = (d.types || [])
+    flavorTexts = (s?.flavor_texts || []).filter(t => t && t.trim());
+    if (!flavorTexts.length) flavorTexts = ['No data.'];
+    flavorIdx = 0;
+    renderFlavor();
+
+    const typeTags = (d.types || [])
       .map(t => `<span class="tag" style="background:${typeColors[t.type?.name] || '#777'};">${t.type?.name}</span>`).join('');
+    // WHERE DOES IT LIVE? A picture of the place, beside the pictures of its
+    // types, that opens the map ON that place. It ADDS a route and takes
+    // nothing away: the EXPLORE tile is untouched and nothing on the dex is
+    // gated behind having tapped this.
+    const home = (habitatsOf(d.id).find(h => !h.championOnly || player().champion) || habitatsOf(d.id)[0]);
+    const homeChip = home
+      ? `<button type="button" class="tag habitat-chip" data-habitat="${home.key}" title="${home.name}" aria-label="${home.name}">${home.emoji}</button>`
+      : '';
+    const typesEl = document.getElementById('types');
+    typesEl.innerHTML = typeTags + homeChip;
+    typesEl.querySelector('.habitat-chip')?.addEventListener('click', e => {
+      e.stopPropagation();
+      haptic('select');
+      openExploreAt(home.key);
+    });
     document.getElementById('abilities').innerHTML = (d.abilities || [])
       .map(a => a.ability?.name?.replace('-', ' ')).join('<br>');
 

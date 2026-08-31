@@ -20,7 +20,7 @@ import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
 import { GYMS, trainerKey } from './gymdata.js';
 import { gymRun, clearGymRun, recordGymWin } from './gym.js';
-import { activeHabitat, habitatEncounterLevel, habitatBackdrop } from './explore.js';
+import { activeHabitat, habitatEncounterLevel, habitatBackdrop, sparkleSpot } from './explore.js';
 import { askNickname, cancelNickname } from './nickname.js';
 import { dialog } from './dialog.js';
 import { spawnConfetti } from './catch.js';
@@ -279,7 +279,6 @@ async function launchBattle(wildId, { sparkle = false, origin = 'arena' } = {}) 
   show('loading-modal');
   battleState.isSparkle = sparkle;
   battleState.origin = origin;
-  battleState.wildShiny = Math.random() < 1 / 50; // ✨ shiny hunting
   battleState.teamIds = player().team.length ? [...player().team] : player().caught.slice(0, 6);
   battleState.activeIdx = 0;
   battleState.loaded = {};
@@ -289,6 +288,14 @@ async function launchBattle(wildId, { sparkle = false, origin = 'arena' } = {}) 
   // the lead — that's the one place "scaled to you" is the right answer.
   const leadLv = monLevel(battleState.teamIds[0]);
   const habitat = origin === 'explore' ? activeHabitat() : null;
+  // v19.7 THE SPARKLE SPOT: one habitat glitters each day and shinies are five
+  // times likelier inside it — 1 in 10 instead of 1 in 50. It reads the habitat
+  // THIS fight came from rather than the module's last-visited one, so an arena
+  // fight taken straight after an explore never inherits the bonus. Junior gets
+  // exactly the same odds: a bonus is not an accommodation, and there is nothing
+  // here to advertise.
+  const glitters = !!habitat && habitat.key === sparkleSpot();
+  battleState.wildShiny = Math.random() < (glitters ? 1 / 10 : 1 / 50);
   const wildLv = habitat
     ? habitatEncounterLevel(habitat)
     : engineWildLevel({ base: Math.max(2, leadLv - 2), spread: 4, badges: 0, leadLevel: leadLv, junior: juniorActive() });
@@ -1456,6 +1463,16 @@ function concludeCapture(headline) {
   const w = battleState.wild;
   const f = active();
   const { wasNew: newCatch, newShiny } = bankCatch(w);
+  // v19.7: the FIRST shiny either boy ever catches gets its own ceremony. It is
+  // announced BEFORE the 'catch' event on purpose, so it takes its turn in
+  // progression.js's celebration queue AHEAD of the SPARKLE badge this same
+  // catch is about to earn — the picture first, then the badge. The queue is
+  // what stops either of them landing on top of the victory card.
+  if (newShiny && player().shinies.length === 1) {
+    document.dispatchEvent(new CustomEvent('first-shiny', {
+      detail: { id: w.id, sprite: w.spriteFront || w.shinyFront || null }
+    }));
+  }
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: w.types || [] } }));
 
   // Nickname: in-world, and now genuinely AFTER the celebration instead of on

@@ -4,9 +4,11 @@
 // awards one more. Professor Oak reacts to dex completion.
 // ============================================================
 
-import { MAX_POKEMON } from './config.js';
+import { MAX_POKEMON, todayNumber } from './config.js';
 import { state, player, persist, addXp, playerName } from './state.js';
-import { sfx, triggerVibration } from './audio.js';
+import { sfx, triggerVibration, playBeep } from './audio.js';
+import { spawnConfetti } from './catch.js';
+import { spawnMark } from './fx.js';
 import { GYMS, trainerKey } from './gymdata.js';
 
 // ---- Badges (rebased in v18.9 onto the Gym Circuit) ----
@@ -79,12 +81,10 @@ const QUEST_POOL = [
   { key: 'bug1', label: 'Catch a BUG type', target: 1, kind: 'catch_type', type: 'bug' }
 ];
 
-function todayNumber() {
-  // LOCAL days, not UTC. floor(Date.now()/86400000) rolled the quest board
-  // at 8pm in Ohio — a dinnertime progress wipe, every single day.
-  const now = new Date();
-  return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
-}
+// todayNumber() moved to config.js in v19.7 (see the note there): the Sparkle
+// Spot seeds on the same local day this board does, and config.js is the only
+// place both modules can read it from without closing an import cycle. Same
+// function, same local-midnight roll, imported at the top of this file.
 
 function pickDailyQuests() {
   // deterministic per day & player, no repeats
@@ -145,9 +145,19 @@ function pumpCelebrations() {
   celebrationPump = setTimeout(() => { celebrationPump = null; nextCelebration(); }, 150);
 }
 
-function queueCelebration(emoji, title, subtitle) {
-  celebrationQueue.push({ emoji, title, subtitle });
+function queueCelebration(emoji, title, subtitle, extra = {}) {
+  celebrationQueue.push({ emoji, title, subtitle, ...extra });
   if (!celebrating) nextCelebration();
+}
+
+// v19.7 — THE FIRST SHINY.
+// It rides the EXISTING queue instead of opening a modal of its own. Two
+// .overlay-screens stacked are 99% black (see the note above this section),
+// and a fight still owns the screen for seconds after the catch is banked —
+// so this waits its turn exactly like a badge does, and the SPARKLE badge the
+// same catch earns falls in behind it rather than on top of it.
+export function queueShinyCeremony({ id = null, sprite = null } = {}) {
+  queueCelebration('✨', '✨ SHINY! ✨', '', { sprite, shiny: true, id });
 }
 
 function nextCelebration() {
@@ -161,12 +171,37 @@ function nextCelebration() {
   const item = celebrationQueue.shift();
   if (!item) { celebrating = false; if (modal) modal.style.display = 'none'; return; }
   celebrating = true;
-  document.getElementById('badge-emoji').innerText = item.emoji;
+  const box = modal.querySelector('.badge-box');
+  const spriteEl = document.getElementById('badge-sprite');
+  const emojiEl = document.getElementById('badge-emoji');
+  // A ceremony with a SPRITE shows the Pokémon instead of a glyph. Every badge
+  // and quest card keeps the glyph, so nothing that shipped before changes.
+  if (spriteEl) {
+    if (item.sprite) { spriteEl.src = item.sprite; spriteEl.style.display = 'block'; }
+    else { spriteEl.style.display = 'none'; spriteEl.removeAttribute('src'); }
+  }
+  if (emojiEl) {
+    emojiEl.style.display = item.sprite ? 'none' : '';
+    emojiEl.innerText = item.emoji;
+  }
   document.getElementById('badge-title').innerText = item.title;
   document.getElementById('badge-sub').innerText = item.subtitle;
   modal.style.display = 'flex';
-  sfx.catch();
-  triggerVibration([80, 40, 80, 40, 160]);
+  if (box) box.classList.toggle('shiny-ceremony', !!item.shiny);
+  if (item.shiny) {
+    sfx.catch();
+    spawnConfetti(box, 48);
+    [-64, 0, 64].forEach((dx, i) =>
+      spawnMark(box, '✨', 'shiny-spark', { dx, delay: i * 130, life: 1300 }));
+    // the four-note rising chord — the same shape as the Poké Center jingle,
+    // built from playBeep because there is no sfx.levelUp entry in audio.js
+    [523, 659, 784, 1047].forEach((f, i) =>
+      setTimeout(() => playBeep(f, 'square', 0.18, 0.11), i * 130));
+    triggerVibration([100, 50, 100, 50, 200]);
+  } else {
+    sfx.catch();
+    triggerVibration([80, 40, 80, 40, 160]);
+  }
 }
 
 export function dismissCelebration() { nextCelebration(); }
@@ -292,4 +327,7 @@ export function closeTrainerCard() {
 export function initProgression() {
   ensureDailyQuests();
   document.addEventListener('game-progress', e => onProgress(e.detail.kind, e.detail));
+  // battle.js announces the first shiny as an EVENT rather than importing this
+  // module, which keeps battle -> progression out of the import graph entirely.
+  document.addEventListener('first-shiny', e => queueShinyCeremony(e.detail || {}));
 }

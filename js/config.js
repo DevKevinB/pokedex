@@ -3,7 +3,7 @@
 // ============================================================
 
 export const MAX_POKEMON = 649; // Gens 1–5 — the animated pixel sprite era
-export const APP_VERSION = '19.6.0';
+export const APP_VERSION = '19.7.0';
 
 // generation ranges for PC Box tabs
 export const GENERATIONS = [
@@ -80,6 +80,21 @@ export function getTypeMultiplier(attackType, defenderTypes) {
 }
 
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ---- the day, as the boys live it ----
+// Moved here from progression.js in v19.7. The Sparkle Spot has to seed itself
+// on the same LOCAL day the quest board rolls on, and putting the helper in
+// this leaf module (config.js imports nothing) is what lets explore.js use it
+// without importing progression.js — which would have closed a
+// progression -> catch -> dex -> explore -> progression loop, and a cycle in
+// the module graph is exactly the class of bug that ends in a black screen.
+// Same function, same reason it exists:
+// LOCAL days, not UTC. floor(Date.now()/86400000) rolled the quest board at
+// 8pm in Ohio — a dinnertime progress wipe, every single day.
+export function todayNumber() {
+  const now = new Date();
+  return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
+}
 
 // ---- the pacing seam ----
 // Every wait in a battle goes through awaitOrTap() instead of sleep(), for two

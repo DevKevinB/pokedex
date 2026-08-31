@@ -2,6 +2,22 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.7.0] - THE MAP
+
+Every place in the world now looks like a place, and shows you who lives there.
+
+### Added
+- EXPLORE is a proper map now. Art gets a big picture card for every place — the forest looks like a forest, the ocean looks like the ocean — with three little Pokémon bobbing about in it, so he can pick where to go without reading a word.
+- Every card in the game finally matches. Places, gyms and trainers all use the same look: a picture, a short name, a green / orange / red stripe for how tough it is, and a padlock on anything not open yet. Locked things stay recognisable instead of turning into grey blanks.
+- The Gym Circuit shows the whole journey. One big card for the gym you're on, then all twelve stops as a row of badges — Victory Road and the Elite Four are on screen from day one instead of buried below ten grey boxes.
+- Trainers you can fight now have a proper red BATTLE button with a little arrow that nudges, and each row starts with a picture of that trainer's first Pokémon and a tick, swords or padlock so you can see at a glance who's done, who's next and who's locked.
+- Mewtwo, Mew, Zekrom and friends get a gold LEGENDARY (or MYTHICAL) ribbon on their page and a gold glow behind them. The game already knew which ones were special — it just never said so.
+- Tap the Pokédex entry and it flips to the next one. There are six write-ups saved for most Pokémon and Gabe has only ever been shown the first; the little dots underneath say how many there are.
+- There's a picture of where each Pokémon lives next to its types. Tap it and the map opens on that place with it lit up.
+- When a scan finishes, the Pokémon makes its noise by itself. Turn the sound off with the speaker button if it gets much at bedtime.
+- ONE PLACE A DAY GLITTERS. A ✨ appears on one habitat and shiny Pokémon are five times more likely there — the same for both boys, and it moves to somewhere new tomorrow. It's a bonus, never a lock, and nothing counts down.
+- The very first shiny either boy ever catches gets its own celebration: the sparkly Pokémon big on screen, sparkles, confetti and a little four-note fanfare. It politely waits until the win screen is finished rather than landing on top of it.
+
 ## [19.6.0] - ART'S BOOK
 
 Art gets his own game instead of Gabe's game with the words left in.
