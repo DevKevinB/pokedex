@@ -190,9 +190,39 @@ async function uploadSaveFile() {
   input.click();
 }
 
+// v19.6 — the gear is HOLD-TO-OPEN in junior.
+// It is the one control on ART's screen that can turn his own mode off, wipe
+// a save or rename his brother, and it sits 44px from the Pokemon he taps all
+// day. GABE keeps the plain tap; the hold gate exists only while the active
+// profile is junior, and it is checked live so switching player switches the
+// gate with it. Same 1200ms and same .holding affordance as PARENT TOOLS.
+function wireSettingsButton() {
+  const btn = document.getElementById('settings-btn');
+  if (!btn) return;
+  const HOLD_MS = 1200;
+  let timer = null;
+  const junior = () => player().settings.junior;
+
+  const start = () => {
+    if (!junior()) return;
+    clearTimeout(timer);              // a second finger must not orphan the first timer
+    btn.classList.add('holding');
+    timer = setTimeout(() => { btn.classList.remove('holding'); openSettings(); }, HOLD_MS);
+  };
+  const cancel = () => { clearTimeout(timer); btn.classList.remove('holding'); };
+
+  btn.addEventListener('pointerdown', start);
+  btn.addEventListener('pointerup', cancel);
+  btn.addEventListener('pointerleave', cancel);
+  btn.addEventListener('pointercancel', cancel);
+  // The click that follows a completed hold must not re-open anything, so in
+  // junior the click path does nothing at all.
+  btn.addEventListener('click', () => { if (!junior()) openSettings(); });
+}
+
 export function initSettings() {
   const on = (id, fn) => document.getElementById(id)?.addEventListener('click', fn);
-  on('settings-btn', openSettings);
+  wireSettingsButton();
   on('settings-close', closeSettings);
   on('set-p1-junior', () => toggleJuniorFor(1));
   on('set-p2-junior', () => toggleJuniorFor(2));

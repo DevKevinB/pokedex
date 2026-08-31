@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.5.4">
-    <link rel="stylesheet" href="css/gba.css?v=19.5.4">
+    <link rel="stylesheet" href="css/main.css?v=19.6.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.6.0">
 </head>
 <body>
 
@@ -83,6 +83,12 @@
         <button class="tool-btn" id="card-btn" title="Trainer Card: badges, quests and progress"><span class="btn-icon">🎖️</span> CARD</button>
         <button class="tool-btn btn-explore half" id="explore-btn" title="Walk through habitats and find wild Pokémon"><span class="btn-icon">🌲</span> EXPLORE</button>
         <button class="tool-btn btn-gym" id="gyms-btn" title="Challenge 58 trainers — win their whole team!"><span class="btn-icon">🏟️</span> GYMS</button>
+        <!-- v19.6: two tiles that exist for ART only. They are hidden for
+             GABE, who reaches the same two places from the header (⚔️ BTL and
+             💻 PC) — buttons he can read and Art cannot. They go LAST in the
+             toolbar because the junior grid fills in DOM order. -->
+        <button class="tool-btn junior-tile" id="jr-play-btn" title="Battle with your team"><span class="btn-icon">⚔️</span> PLAY</button>
+        <button class="tool-btn junior-tile" id="jr-stickers-btn" title="Your sticker book"><span class="btn-icon">📖</span> STICKERS</button>
     </div>
 
     <div id="ball-drawer">
@@ -202,12 +208,29 @@
 <div id="pc-modal">
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
     <div style="text-align:center; color:#ffcc00; font-weight:bold; margin-bottom:10px; font-size:12px;" id="pc-instruction"></div>
+    <!-- v19.6: the favourites shelf, six slots, top of the sticker book. -->
+    <div id="fav-shelf"></div>
     <div id="team-strip"></div>
     <input id="pc-search" class="pc-search" type="text" placeholder="🔍 SEARCH NAME OR NUMBER" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done">
     <div id="gen-tabs"></div>
     <div class="pc-grid" id="pc-grid"></div>
+    <!-- ART's route to the trainer card, which leaves his toolbar this
+         release. Floats top-right of the book; hidden everywhere else. -->
+    <button class="pc-card-chip" id="pc-card-chip" title="Trainer card" aria-label="TRAINER CARD">🎖️</button>
     <button class="close-pc-btn" id="close-pc-btn">CANCEL / CLOSE PC</button>
     <button class="pc-cancel-btn" id="pc-cancel-btn" style="display:none;">✖ CANCEL</button>
+</div>
+
+<!-- v19.6 THE STICKER CLOSE-UP. z-index 1100 sits above #pc-modal (1000) and
+     below every dialog (2000+), so a save-failure banner or the failure net
+     still wins. Wordless by design: sprite, type pictures, a star, and ▶. -->
+<div class="overlay-screen" id="sticker-modal" style="z-index: 1100; background: rgba(4,4,16,0.92);">
+    <div class="modal-box sticker-box">
+        <button class="sticker-fav" id="sticker-fav" aria-label="PUT IT ON THE SHELF">☆</button>
+        <img id="sticker-sprite" alt="">
+        <div id="sticker-types"></div>
+        <button class="btn-large btn-reg" id="sticker-close">▶</button>
+    </div>
 </div>
 
 <div class="overlay-screen" id="switch-modal">
@@ -471,6 +494,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.5.4"></script>
+<script type="module" src="js/main.js?v=19.6.0"></script>
 </body>
 </html>

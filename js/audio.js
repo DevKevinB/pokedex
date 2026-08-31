@@ -207,6 +207,19 @@ sfx.levelUp = () => chord([
   [784, 'square', 0.12, 0.22, 180],
   [1047, 'square', 0.34, 0.26, 270]
 ]);
+// v19.6, the sticker book. A new sticker gets a bright two-note pop — it is
+// the ONLY thing in the book that says "this one is new, you did that", since
+// ART cannot read the name under it. The star is a softer single chime so
+// putting one on the shelf feels like a choice rather than an achievement.
+sfx.newSticker = () => chord([
+  [784, 'square', 0.07, 0.11],
+  [1175, 'square', 0.10, 0.11, 80]
+]);
+sfx.star = () => chord([
+  [988, 'triangle', 0.09, 0.10],
+  [1319, 'triangle', 0.12, 0.09, 70]
+]);
+
 sfx.faint = () => chord([
   [392, 'square', 0.10, 0.18],
   [294, 'square', 0.12, 0.16, 90],

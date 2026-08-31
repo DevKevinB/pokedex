@@ -251,5 +251,9 @@ export function nav(amt) {
 
 export function toggleSheet() {
   if (state.isCatching || state.appMode === 'battle') return;
+  // v19.6: hidden entirely in JUNIOR. #data-btn and the handle are both
+  // unreachable there, but the rule lives here so it cannot be reintroduced
+  // by a future caller.
+  if (player().settings.junior) return;
   document.getElementById('data-sheet').classList.toggle('open');
 }

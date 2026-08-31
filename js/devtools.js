@@ -116,6 +116,10 @@ async function removeMon(id) {
   if (!go) return;
   P().caught = P().caught.filter(c => c !== id);
   P().team = P().team.filter(t => t !== id);
+  // The star is a bookmark on something you own. Remove the Pokémon and the
+  // bookmark has to go too, or a dead id silently occupies one of ART's six
+  // shelf slots until a relaunch rebuilds the save.
+  P().favorites = (P().favorites || []).filter(f => f !== id);
   delete P().mons[id];
   persist();
   triggerVibration(40);

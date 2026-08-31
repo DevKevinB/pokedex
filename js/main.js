@@ -12,7 +12,7 @@ import { pet } from './fx.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
 import { initBattleMode, exitBattleMode, wireExitChip, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState, petTargetId } from './battle.js';
-import { openPC, closePC, cancelTeamPick, onPCSearchInput } from './pc.js';
+import { openPC, closePC, cancelTeamPick, onPCSearchInput, closeSticker, toggleStickerFav } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { openGyms, backFromGym, reopenGyms } from './gym.js';
 import { clearGymRun } from './gym.js';
@@ -47,7 +47,10 @@ function startApp() {
 function playCry() {
   if (state.isCatching || state.appMode === 'battle') return;
   stopAllAudio();
-  playCryAudio();
+  // v19.6: CRY is one of ART's five home-screen chips, and on Safari it has
+  // been playing nothing at all — PokeAPI's cries are Ogg only. Falls back to
+  // a two-note chiptune so the button always answers.
+  playCryAudio(state.curId);
 }
 
 // ---- Player toggle ----
@@ -170,6 +173,11 @@ function wireGestures() {
     if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
       if (diffX < 0) nav(1); else nav(-1);
     } else if (Math.abs(diffY) > 80 && Math.abs(diffY) > Math.abs(diffX)) {
+      // v19.6: the data sheet does not exist in JUNIOR (it held an English
+      // Pokedex entry). Without this guard a vertical drag still adds .open to
+      // a display:none panel, and a stray class on a hidden panel is exactly
+      // the kind of thing that comes back as a layout bug three sprints later.
+      if (player().settings.junior) return;
       document.getElementById('data-sheet').classList.toggle('open', diffY < 0);
     }
   }, { passive: true });
@@ -226,6 +234,17 @@ function wireUI() {
   wireExitChip();
   on('close-pc-btn', closePC);
   on('pc-cancel-btn', cancelTeamPick);
+  // v19.6 — ART's book
+  on('jr-play-btn', initBattleMode);
+  on('jr-stickers-btn', () => openPC('dex'));
+  on('sticker-close', closeSticker);
+  on('sticker-fav', toggleStickerFav);
+  // ART loses the CARD tile from his toolbar (there is no room for it in a
+  // 2-across grid), so the route comes back as the 🎖️ chip in the book.
+  on('pc-card-chip', () => { closePC(); openTrainerCard(); });
+  document.getElementById('sticker-modal')?.addEventListener('click', e => {
+    if (e.target.id === 'sticker-modal') closeSticker();   // tap the backdrop
+  });
   on('variant-regular', () => finalizeBattleSetup(false));
   on('variant-sparkle', () => finalizeBattleSetup(true));
   on('variant-cancel', () => { document.getElementById('sparkle-modal').style.display = 'none'; exitBattleMode(); });

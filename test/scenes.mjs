@@ -131,7 +131,28 @@ const SEED = junior => ({
 // invariants. `skipJunior` is for controls Junior Mode deliberately hides.
 const SCENES = [
   { name: 'dex', boxes: ['#poke-sprite', '#poke-name', '.toolbar', '#catch-btn'],
-    async go(p) { /* the landing screen */ } },
+    async go(p) { /* the landing screen */ },
+    // v19.6: ART's Pokemon used to be 103px at 375x667 — SMALLER than GABE's,
+    // which is backwards. The floor is 140 and the harness owns it now.
+    async assert(p, { junior }) {
+      if (!junior) return [];
+      return p.evaluate(() => {
+        const out = [];
+        const sp = document.getElementById('poke-sprite');
+        const h = sp ? Math.round(sp.getBoundingClientRect().height) : 0;
+        if (h < 140) out.push('JUNIOR SPRITE TOO SMALL: ' + h + 'px (floor 140)');
+        const sheet = document.getElementById('data-sheet');
+        if (sheet && getComputedStyle(sheet).display !== 'none')
+          out.push('JUNIOR DATA SHEET IS NOT HIDDEN');
+        for (const id of ['jr-play-btn', 'jr-stickers-btn']) {
+          const el = document.getElementById(id);
+          if (!el || getComputedStyle(el).display === 'none') { out.push('JUNIOR TILE MISSING: #' + id); continue; }
+          const r = el.getBoundingClientRect();
+          if (r.height < 72) out.push('JUNIOR TILE TOO SHORT: #' + id + ' ' + Math.round(r.height) + 'px');
+        }
+        return out;
+      });
+    } },
 
   { name: 'dex-drawer', boxes: ['#ball-drawer', '#catch-btn'],
     async go(p) { await p.click('#catch-btn'); await p.waitForTimeout(500); } },
@@ -143,7 +164,19 @@ const SCENES = [
     async go(p) { await p.click('#pc-btn'); await p.waitForTimeout(1200); } },
 
   { name: 'card', boxes: ['#card-modal .modal-box', '#card-close'],
-    async go(p) { await p.click('#card-btn'); await p.waitForTimeout(900); } },
+    // v19.6: ART's toolbar has no CARD tile (no room in a 2-across grid), so
+    // his route is the 🎖️ chip in the sticker book. The harness walks the
+    // route each boy actually walks.
+    async go(p, { junior }) {
+      if (junior) {
+        await p.click('#pc-btn');
+        await p.waitForTimeout(1200);
+        await p.click('#pc-card-chip');
+      } else {
+        await p.click('#card-btn');
+      }
+      await p.waitForTimeout(900);
+    } },
 
   { name: 'explore', boxes: ['#habitat-grid', '#explore-back-btn'],
     async go(p) { await p.click('#explore-btn'); await p.waitForTimeout(1200); } },
@@ -161,7 +194,16 @@ const SCENES = [
     } },
 
   { name: 'settings', boxes: ['#settings-modal .modal-box', '#settings-close'],
-    async go(p) { await p.click('#settings-btn'); await p.waitForTimeout(700); } },
+    // v19.6: the gear is hold-to-open in junior. A hold works in both modes —
+    // in normal mode pointerdown is a no-op and the trailing click opens it.
+    async go(p) {
+      const b = await p.locator('#settings-btn').boundingBox();
+      await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+      await p.mouse.down();
+      await p.waitForTimeout(1500);
+      await p.mouse.up();
+      await p.waitForTimeout(700);
+    } },
 
   { name: 'battle-wild', battle: true, boxes: ['.battle-controls', '#ball-btn', '.moves-grid'],
     async go(p) {
@@ -175,6 +217,37 @@ const SCENES = [
       await p.waitForFunction(() => document.getElementById('battle-container')?.classList.contains('active'),
         null, { timeout: 25000 });
       await p.waitForTimeout(1800);
+    } },
+
+  // v19.6 — ART's book. skipNormal because GABE never sees either screen.
+  { name: 'sticker-book', skipNormal: true, boxes: ['#pc-modal', '#fav-shelf', '#close-pc-btn'],
+    async go(p) { await p.click('#pc-btn'); await p.waitForTimeout(1400); },
+    async assert(p) {
+      return p.evaluate(() => {
+        const out = [];
+        if (document.querySelector('#pc-modal .pc-search:not([style*="none"])')) {
+          const s = getComputedStyle(document.getElementById('pc-search'));
+          if (s.display !== 'none') out.push('STICKER BOOK STILL SHOWS THE SEARCH BOX');
+        }
+        if (document.querySelector('#pc-grid .pc-name')) out.push('STICKER BOOK STILL RENDERS NAMES');
+        const tiles = [...document.querySelectorAll('#pc-grid .pc-item.sticker')];
+        if (!tiles.length) out.push('STICKER BOOK RENDERED NO STICKERS');
+        const small = tiles.find(t => t.getBoundingClientRect().height < 88);
+        if (small) out.push('STICKER SMALLER THAN 88px: ' + Math.round(small.getBoundingClientRect().height));
+        if (document.querySelectorAll('#fav-shelf .fav-slot').length !== 6)
+          out.push('THE SHELF DOES NOT HAVE SIX SLOTS');
+        return out;
+      });
+    } },
+
+  { name: 'sticker-close-up', skipNormal: true, boxes: ['#sticker-modal .modal-box', '#sticker-fav', '#sticker-close'],
+    async go(p) {
+      await p.click('#pc-btn');
+      await p.waitForFunction(() => document.querySelectorAll('#pc-grid .pc-item.sticker').length > 0,
+        null, { timeout: 15000 });
+      await p.waitForTimeout(500);
+      await p.locator('#pc-grid .pc-item.sticker:not(.uncaught)').first().click({ timeout: 15000 });
+      await p.waitForTimeout(900);
     } },
 ];
 
@@ -354,6 +427,7 @@ for (const scene of SCENES) {
       const mode = junior ? 'junior' : 'normal';
       const id = `${scene.name}-${vp.name}-${mode}`;
       if (scene.skipJunior && junior) continue;
+      if (scene.skipNormal && !junior) continue;
 
       const ctx = await browser.newContext({
         viewport: { width: vp.width, height: vp.height },
@@ -363,7 +437,7 @@ for (const scene of SCENES) {
       let page;
       try {
         page = await openApp(ctx, junior);
-        await scene.go(page);
+        await scene.go(page, { junior, vp });
         await page.waitForTimeout(400);
       } catch (e) {
         results.fail++;
@@ -380,6 +454,10 @@ for (const scene of SCENES) {
         { isBattle: !!scene.battle, floorPx: FLOOR_PX });
 
       // baselines
+      // Per-scene invariants that only make sense on one screen (v19.6: the
+      // junior sprite floor, the sticker geometry). Returns extra fail lines.
+      const extra = scene.assert ? await scene.assert(page, { junior, vp }) : [];
+
       const boxes = await page.evaluate(new Function('return ' + measure)(), scene.boxes || []);
       const bfile = join(BASELINE, `${id}.json`);
       const driftLines = [];
@@ -399,7 +477,7 @@ for (const scene of SCENES) {
       }
 
       const errs = page.__errors.filter(e => !/favicon/i.test(e));
-      const lines = [...fails, ...errs.map(e => `PAGE ERROR: ${e}`)];
+      const lines = [...fails, ...extra, ...errs.map(e => `PAGE ERROR: ${e}`)];
       if (driftLines.length) { results.drift++; lines.push(...driftLines.map(d => `MOVED: ${d}`)); }
 
       knownSeen[id] = lines;

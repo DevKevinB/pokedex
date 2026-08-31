@@ -61,6 +61,7 @@ function freshPlayer() {
     badges: [],          // badge ids earned (Phase 4)
     shinies: [],         // ids whose shiny form was caught (v18.2)
     nicks: {},           // id → nickname (v18.2)
+    favorites: [],       // v19.6: up to 6 starred ids, every one of them in `caught`
     items: { masterBalls: 1 },   // scarce: earn more via badges (Phase 4)
     quests: {},          // quest progress (Phase 4)
     gyms: { beaten: {} },// gym circuit progress (v18.1)
@@ -148,6 +149,15 @@ function hydratePlayer(raw) {
     shinies: cleanIds(raw.shinies),
     nicks,
     caught,
+    // v19.6 FAVOURITES — ADDITIVE, and the schema deliberately stays version 2:
+    // an older build loads this save, ignores the extra key, and loses nothing.
+    // Validated exactly the way `team` is: cleanIds for the element check
+    // (kills strings, nulls and id 99999 from a pasted import code), then
+    // intersected with `caught` so a star on something you do not own can
+    // never reach a render, then capped at six. Dropping an id here is NOT
+    // data loss — the Pokemon itself lives in `caught`; the star is a
+    // bookmark, not a possession.
+    favorites: cleanIds(raw.favorites).filter(id => caught.includes(id)).slice(0, 6),
     // A team member you don't own is a guaranteed crash on battle start.
     // Order preserved — team[0] is the lead.
     team: cleanOrderedIds(raw.team).filter(id => caught.includes(id)).slice(0, 6),
@@ -369,6 +379,43 @@ export function recordShiny(id) {
 }
 
 export function hasShiny(id) { return player().shinies.includes(id); }
+
+// ---- v19.6 Favourites ----
+// SAVES ARE SACRED. toggleFavorite is the ONLY function in the whole app that
+// writes p.favorites, and it can do exactly two things: push one id, or splice
+// one id. It never touches caught, team, mons, nicks or anything else, so the
+// worst bug possible in here costs a bookmark and never a Pokemon.
+export const MAX_FAVORITES = 6;
+
+export function isFavorite(id) { return (player().favorites || []).includes(Number(id)); }
+
+/**
+ * Star / unstar one OWNED species.
+ * Returns 'added' | 'removed' | 'full' | 'unowned'. Never throws, and never
+ * persists unless something actually changed.
+ * 'full' is not an error a child is ever told about — the shelf wobbles and
+ * that is the whole message (rule 3: never take something away, and never
+ * refuse him in words he cannot read).
+ */
+export function toggleFavorite(id) {
+  const p = player();
+  const n = Number(id);
+  if (!isDexId(n)) return 'unowned';
+  // A star on something you do not own would be dropped by hydratePlayer on
+  // the next load anyway. Refuse it here so the in-memory save and the written
+  // save can never disagree about what is on the shelf.
+  if (!p.caught.includes(n)) return 'unowned';
+  // freshPlayer() gives every player this array and hydratePlayer() rebuilds
+  // it, but a save object handed straight to state (Parent Tools, an import
+  // undo) could predate the field. Repair in place rather than throw.
+  if (!Array.isArray(p.favorites)) p.favorites = [];
+  const at = p.favorites.indexOf(n);
+  if (at >= 0) { p.favorites.splice(at, 1); persist(); return 'removed'; }
+  if (p.favorites.length >= MAX_FAVORITES) return 'full';   // no write, no message
+  p.favorites.push(n);
+  persist();
+  return 'added';
+}
 
 export function setNick(id, nick) {
   // Nicknames land in innerHTML (PC tiles, the battle log, the victory card)

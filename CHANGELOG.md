@@ -2,6 +2,20 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.6.0] - ART'S BOOK
+
+Art gets his own game instead of Gabe's game with the words left in.
+
+### Added
+- Art's home screen is six big picture tiles two across — a wide CATCH, then EXPLORE and GYMS, then PLAY and STICKERS.
+- Pikachu is much bigger on Art's screen: he was actually smaller than on Gabe's screen, which was backwards. The blank cream bar at the bottom is gone.
+- Art's PC is now a sticker book: colour stickers for what he's caught, grey shadows for what he hasn't, and no words anywhere. The generation tabs are starter Pokémon instead of numbers.
+- A Pokémon he has just caught springs onto the page with a chime the first time he opens the book — once each.
+- Tap a sticker for a big picture, its type symbols and its cry. On the iPad, where Safari can't play the real cry files, it now plays a little chiptune voice instead of nothing — which also fixes the CRY button, silent on the iPad for a long time.
+- Up to six favourites get a gold star and sit on a shelf. When the shelf is full it just wobbles — it never says no and never bumps one off.
+- The gear icon needs a press-and-hold in Art's mode now, and swiping up on his screen no longer opens anything.
+- Nothing changed for Gabe: same toolbar, same green PC, same battles.
+
 ## [19.5.4] - SMALL MERCIES
 
 The last of the play-test list: timing, save handling, and the bits a grown-up

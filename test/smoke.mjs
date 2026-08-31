@@ -522,8 +522,14 @@ check('earned legacy badge keeps its place and its count',
   legacyCount.ok && legacyCount.tilesOk && legacyCount.legacyOk);
 
 // SETTINGS: names, junior mode, sound toggle, save tools
-await page.click('#settings-btn');
-await page.waitForTimeout(400);
+// The gear is a 1200ms hold in Junior Mode (so ART cannot flip his own
+// settings); a hold is a superset of a tap, so the suite holds in both modes.
+await (async () => {
+  const b = await page.locator('#settings-btn').boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down(); await page.waitForTimeout(1500); await page.mouse.up();
+  await page.waitForTimeout(400);
+})();
 check('settings modal opens', await page.locator('#settings-modal').isVisible());
 await page.fill('#set-p1-name', 'GABE');
 await page.locator('#set-p1-junior').evaluate(el => el.click());
@@ -539,12 +545,24 @@ await page.waitForTimeout(300);
 check('player button shows custom name', (await page.locator('#player-btn').innerText()) === 'GABE');
 check('junior body class applied', await page.evaluate(() => document.body.classList.contains('junior')));
 check('search input hidden in junior', !(await page.locator('#search').isVisible()));
+// v19.6: the old check measured EXPLORE against the top of the collapsed data
+// sheet. In junior the sheet is display:none now, so its rect.top is 0 and the
+// old assertion could only ever fail. Replaced with the three facts that
+// actually matter on ART's home screen.
 const fits = await page.evaluate(() => {
   const btn = document.getElementById('explore-btn').getBoundingClientRect();
-  const sheetTop = document.getElementById('data-sheet').getBoundingClientRect().top;
-  return { bottom: Math.round(btn.bottom), sheetTop: Math.round(sheetTop), vh: window.innerHeight };
+  const last = document.getElementById('jr-stickers-btn').getBoundingClientRect();
+  const sprite = document.getElementById('poke-sprite').getBoundingClientRect();
+  return {
+    bottom: Math.round(btn.bottom), last: Math.round(last.bottom),
+    sheet: getComputedStyle(document.getElementById('data-sheet')).display,
+    sprite: Math.round(sprite.height), vh: window.innerHeight
+  };
 });
-check(`junior EXPLORE fits on screen (${fits.bottom} <= ${fits.sheetTop})`, fits.bottom <= fits.sheetTop + 1 && fits.bottom <= fits.vh);
+check('junior data sheet is hidden, not peeking', fits.sheet === 'none');
+check(`junior EXPLORE fits on screen (${fits.bottom} <= ${fits.vh})`, fits.bottom <= fits.vh);
+check(`junior STICKERS is the last row and fits (${fits.last} <= ${fits.vh})`, fits.last > 0 && fits.last <= fits.vh);
+check(`junior sprite is at least 140px (${fits.sprite}px)`, fits.sprite >= 140);
 
 // navigate to an uncaught mon and tap the sprite to catch — no drawer, guaranteed
 await page.click('#nav-next'); // 27
@@ -579,8 +597,19 @@ const tapPin = async digits => {
   }
   await page.waitForTimeout(450); // 4th digit resolves after a beat
 };
-await page.click('#settings-btn');
-await page.waitForTimeout(400);
+// v19.6: the gear is hold-to-open while the active profile is junior, and P1
+// is junior for this whole stretch of the suite. A hold is a superset of a tap
+// (in normal mode pointerdown is a no-op and the trailing click opens it), so
+// the suite holds in both modes.
+const openSettingsPanel = async () => {
+  const b = await page.locator('#settings-btn').boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(1500);
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+};
+await openSettingsPanel(page);
 const devBtn = await page.locator('#dev-open-btn').boundingBox();
 await page.mouse.move(devBtn.x + devBtn.width / 2, devBtn.y + devBtn.height / 2);
 await page.mouse.down();
@@ -701,6 +730,40 @@ const code = await page.evaluate(async () => {
   return exportCode();
 });
 check('export code generated', typeof code === 'string' && code.length > 20);
+
+// v19.6 FAVOURITES — the save-touching half of the sprint, exercised through
+// the real module and then re-read from the real key.
+const favs = await page.evaluate(async () => {
+  const S = await import('./js/state.js');
+  const owned = S.player().caught.slice(0, 2);
+  const a = S.toggleFavorite(owned[0]);
+  const b = S.toggleFavorite(owned[1]);
+  const bad = S.toggleFavorite(648);                 // never caught in this run
+  const written = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+  const caughtBefore = written.players[1].caught.length;
+  // forge a code that stars something the trainer does not own: it must be
+  // dropped on load, and the collection must not be touched doing it.
+  const blob = JSON.parse(decodeURIComponent(escape(atob(S.exportCode()))));
+  blob.save.players[1].favorites = [...owned, 648];
+  S.importCode(btoa(unescape(encodeURIComponent(JSON.stringify(blob)))));
+  const after = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
+  const eq = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  return {
+    added: a === 'added' && b === 'added',
+    refusedUnowned: bad === 'unowned',
+    persisted: eq(written.players[1].favorites, owned),
+    schemaStill2: after.version === 2,
+    roundTrip: eq(after.players[1].favorites, owned),
+    droppedUnowned: !after.players[1].favorites.includes(648),
+    caughtIntact: after.players[1].caught.length === caughtBefore
+  };
+});
+check('favorites: starring an owned mon writes the save', favs.added && favs.persisted);
+check('favorites: an unowned id is refused, not stored', favs.refusedUnowned);
+check('favorites: schema stays version 2 (additive)', favs.schemaStill2);
+check('favorites: round-trips through export/import', favs.roundTrip);
+check('favorites: an uncaught id is dropped on load', favs.droppedUnowned);
+check('favorites: the collection itself is never touched', favs.caughtIntact);
 
 // LEVEL → POWER: a parent-set high level must produce real battle stats
 await page.evaluate(() => {
