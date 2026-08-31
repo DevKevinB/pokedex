@@ -12,15 +12,15 @@ import {
   pickMove as enginePickMove, seedMoveset, moveSeed, seededRng, shuffle, xpProgress,
   wildLevel as engineWildLevel
 } from './engine.js';
-import { getPokemon, getMove, getSpecies, getEvolution, nameOf, getNameIndex, movesReady, moveStats } from './api.js';
+import { getPokemon, getMove, getSpecies, getEvolution, evolutionOptions, nameOf, getNameIndex, movesReady, moveStats } from './api.js';
 import { state, player, recordCatch, ensureMon, ensureMonAtLeast, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName, recordChampion, championRecord } from './state.js';
 import { sfx, triggerVibration, playBeep, haptic } from './audio.js';
 import { spawnMark as fxMark } from './fx.js';
 import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
-import { GYMS, trainerKey } from './gymdata.js';
+import { GYMS, trainerKey, roundTrainers } from './gymdata.js';
 import { gymRun, clearGymRun, recordGymWin } from './gym.js';
-import { activeHabitat, habitatEncounterLevel, habitatBackdrop, sparkleSpot } from './explore.js';
+import { activeHabitat, activeTier, habitatEncounterLevel, habitatBackdrop, sparkleSpot } from './explore.js';
 import { askNickname, cancelNickname } from './nickname.js';
 import { dialog } from './dialog.js';
 import { spawnConfetti } from './catch.js';
@@ -223,7 +223,12 @@ export function exitBattleMode() {
     const el = document.getElementById(id);
     if (el) { el.innerHTML = ''; el.classList.remove('lvup'); }
   });
-  ['sparkle-modal', 'victory-modal', 'switch-modal', 'evo-modal', 'loading-modal',
+  // v19.8: WHO WILL IT BECOME? blocks on a tap with no timeout, the same hazard
+  // as passResolver and hofResolver above. Settling it as NOT YET (never as a
+  // choice the child did not make) also takes its listeners back off, so the
+  // next picker cannot fire two of them.
+  if (evoPickResolver) { const r = evoPickResolver; evoPickResolver = null; r(); }
+  ['sparkle-modal', 'victory-modal', 'switch-modal', 'evo-modal', 'evo-pick-modal', 'loading-modal',
    'pass-modal', 'ballpick-modal', 'hof-modal', 'nick-modal'].forEach(id => show(id, false));
   document.getElementById('battle-container').classList.remove('active');
   const from = battleState.origin;
@@ -342,9 +347,12 @@ export async function startWildEncounter(wildId) {
 }
 
 // ---- GYM trainer battles ----
-export async function startTrainerBattle(gymKey, idx) {
+export async function startTrainerBattle(gymKey, idx, round = 1) {
   const gym = GYMS.find(g => g.key === gymKey);
-  const def = gym?.trainers[idx];
+  // v19.8: ROUND 2 is the same trainer, +15 levels. roundTrainers() hands back
+  // copies for round 2 and the ORIGINAL array for round 1, so gymdata.js is
+  // never mutated and round 1 is bit-for-bit the fight it has always been.
+  const def = roundTrainers(gym, round)[idx];
   if (!def) return;
   state.appMode = 'battle';
   show('loading-modal');
@@ -354,10 +362,12 @@ export async function startTrainerBattle(gymKey, idx) {
   battleState.origin = 'gym';
   battleState.canCatch = false;
   // Rematches (unlocked in v18.9) pay half XP — the circuit stays a training
-  // ground without out-earning new challenges.
+  // ground without out-earning new challenges. The flag reads the ROUND'S OWN
+  // key, so the first win against a ROUND 2 trainer is a brand-new challenge
+  // and pays FULL XP even though round 1 was beaten months ago.
   battleState.trainer = {
-    gymKey, idx, def, enemyNum: 0, kos: [], xpLines: [],
-    rematch: !!player().gyms.beaten[trainerKey(gymKey, idx)]
+    gymKey, idx, round, def, enemyNum: 0, kos: [], xpLines: [],
+    rematch: !!player().gyms.beaten[trainerKey(gymKey, idx, round)]
   };
   battleState.teamIds = player().team.length ? [...player().team] : player().caught.slice(0, 6);
   battleState.activeIdx = 0;
@@ -1292,6 +1302,10 @@ async function handleEnemyDown() {
   battleState.isBattling = false;
   player().stats.battlesWon++; persist();
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'win' } }));
+  // v19.8 quest kinds. Both ride the win that just happened rather than adding
+  // a new place a win can be recorded.
+  if (t.rematch) document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'rematch' } }));
+  if ((t.round || 1) > 1) document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'round2win' } }));
   document.dispatchEvent(new CustomEvent('battle-victory'));
   logMsg(`YOU DEFEATED ${t.def.name}!`);
 
@@ -1320,7 +1334,7 @@ async function handleEnemyDown() {
     document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'gymCatch', types: [] } }));
   });
 
-  const circuitDone = recordGymWin(t.gymKey, t.idx);
+  const circuitDone = recordGymWin(t.gymKey, t.idx, t.round || 1);
   // Fire AFTER recordGymWin: circuit badges read gyms.beaten, and the earlier
   // 'win'/'gymCatch' dispatches run while it is still stale — without this the
   // leader badge and its Master Ball only arrived on the NEXT unrelated event.
@@ -1473,7 +1487,17 @@ function concludeCapture(headline) {
       detail: { id: w.id, sprite: w.spriteFront || w.shinyFront || null }
     }));
   }
-  document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: w.types || [] } }));
+  // v19.8: the quest board can now ask for a habitat, a rarity, a level or a
+  // shiny, so the catch event carries them. habitatKey and tier are reported
+  // ONLY for an explore encounter: explore.js holds the last habitat it walked
+  // into for as long as the app is open, and an arena or dex catch did not
+  // happen there.
+  const fromExplore = battleState.origin === 'explore';
+  document.dispatchEvent(new CustomEvent('game-progress', { detail: {
+    kind: 'catch', types: w.types || [], level: w.level, shiny: !!w.shiny,
+    habitatKey: fromExplore ? (activeHabitat()?.key || null) : null,
+    tier: fromExplore ? activeTier() : null
+  } }));
 
   // Nickname: in-world, and now genuinely AFTER the celebration instead of on
   // top of it. This comment has been aspirational since v18.6 — #nick-modal
@@ -1652,16 +1676,19 @@ export async function maybeEvolveThenExit() {
   battleState.pendingEvolution = null;
   if (pending) {
     try {
-      const data = await getPokemon(pending.id);
-      const species = data.species_url ? await getSpecies(data.species_url) : null;
-      if (species?.evolution_chain_url) {
-        const { chain } = await getEvolution(species.evolution_chain_url);
-        const i = chain.findIndex(c => c.id === pending.id);
-        const next = i >= 0 ? chain[i + 1] : null;
-        const threshold = next ? (next.min_level ?? 30) : null; // stone/trade evolutions simplified to Lv30
-        if (next && next.id <= MAX_POKEMON && pending.level >= threshold) {
-          await playEvolution(pending, next);
-        }
+      // v19.8 THE EVOLUTION FAN. api.evolutionOptions() returns EVERY branch
+      // this species can take at this level (Eevee has eight), already filtered
+      // to #1-649 and already applying the Lv30 default for the stone and trade
+      // lines. One candidate evolves straight away, exactly as before; more
+      // than one asks the child.
+      const options = await evolutionOptions(pending.id, pending.level);
+      if (options.length === 1) await playEvolution(pending, options[0]);
+      else if (options.length > 1) {
+        const pick = await askEvolutionChoice(pending, options);
+        // NOT YET is a real answer and it costs nothing: the question comes
+        // back on the next level-up, for ever. Rule 3 — the choice is his, and
+        // it is never taken away.
+        if (pick) await playEvolution(pending, pick);
       }
     } catch (e) { /* evolution is a bonus — never block exit on it */ }
   }
@@ -1689,9 +1716,86 @@ async function playEvolution(fromMon, toMon) {
   sfx.catch();
   triggerVibration([100, 60, 100, 60, 200]);
   evolveMon(fromMon.id, toMon.id);
-  text.innerText = `${fromMon.name.toUpperCase()} evolved into ${toMon.name.toUpperCase()}!`;
+  text.innerText = `${String(fromMon.name).toUpperCase()} evolved into ${toMon.name.toUpperCase()}!`;
+  // v19.8: the 'evolve' quest kind. Dispatched while #evo-modal is still up, so
+  // progression.js's celebration queue HOLDS the quest card until the ceremony
+  // finishes instead of stacking a second scrim on top of it.
+  document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'evolve', from: fromMon.id, to: toMon.id } }));
   await awaitOrTap(2600);
   show('evo-modal', false);
+}
+
+// ---- WHO WILL IT BECOME? (v19.8) ----
+// Sprite tiles, one per branch, and NOT YET. ART taps a picture: the question
+// and the captions are for GABE and CSS hides them in Junior Mode, because a
+// modal whose only content is words does not exist for a pre-reader.
+// Resolves with the chosen option, or null for NOT YET.
+let evoPickResolver = null;
+function askEvolutionChoice(fromMon, options) {
+  const modal = document.getElementById('evo-pick-modal');
+  const grid = document.getElementById('evo-pick-grid');
+  const later = document.getElementById('evo-pick-later');
+  // If the markup is somehow missing, evolve rather than swallow the level-up.
+  if (!modal || !grid || !later) return Promise.resolve(options[0] || null);
+  const fromImg = document.getElementById('evo-pick-from');
+  if (fromImg) fromImg.src = PIXEL_SPRITE(fromMon.id);
+  const title = document.getElementById('evo-pick-title');
+  if (title) title.innerText = `WHO WILL ${String(fromMon.name).toUpperCase()} BECOME?`;
+  grid.innerHTML = options.map(o =>
+    `<button class="evo-pick" data-evo-id="${o.id}" title="${o.name}">
+       <img src="${PIXEL_SPRITE(o.id)}" alt=""><small>${o.name.toUpperCase().replace(/-/g, ' ')}</small>
+     </button>`).join('');
+  show('evo-pick-modal');
+  sfx.levelUp();
+  triggerVibration([40, 30, 40]);
+  return new Promise(resolve => {
+    let done = false;
+    const finish = pick => {
+      if (done) return;
+      done = true;
+      evoPickResolver = null;
+      grid.removeEventListener('click', onPick);
+      later.removeEventListener('click', onLater);
+      show('evo-pick-modal', false);
+      resolve(pick);
+    };
+    function onPick(ev) {
+      const btn = ev.target.closest('.evo-pick');
+      if (!btn) return;
+      triggerVibration(40);
+      finish(options.find(o => o.id === parseInt(btn.dataset.evoId, 10)) || null);
+    }
+    function onLater() { triggerVibration(20); finish(null); }
+    grid.addEventListener('click', onPick);
+    later.addEventListener('click', onLater);
+    // exitBattleMode() calls this to settle a picker left open by a teardown.
+    evoPickResolver = () => finish(null);
+  });
+}
+
+// ---- EVOLVE from the PC (v19.8) ----
+// awardPartyXp has levelled the WHOLE team since teams shipped, but only the
+// KO'er's evolution was ever queued — so five team members could sit twenty
+// levels past their evolution for ever with nothing in the game mentioning it.
+// main.js bridges the PC's 'evolve-request' to here: pc.js must not import
+// battle.js, because battle.js already imports pc.js and that is a cycle.
+// #evo-modal is a global overlay, not part of the battle screen, so this runs
+// happily with no fight in progress and touches no battleState.
+export async function runEvolutionFor(id) {
+  if (state.appMode === 'battle' || state.isCatching) return;
+  try {
+    const level = monLevel(id);
+    const options = await evolutionOptions(id, level);
+  // Both awaits below are unbounded (a network call, then a child's tap), so
+  // ownership is re-checked after each: a picker that resolves into a fight
+  // that has already started would evolve a Pokemon mid-battle.
+  if (state.appMode === 'battle' || state.isCatching) return;
+    if (!options.length) return;
+    const data = await getPokemon(id);
+    const from = { id, level, name: nickOf(id) || data.name || nameOf(id) };
+    const pick = options.length === 1 ? options[0] : await askEvolutionChoice(from, options);
+    if (pick) (state.appMode === 'battle' || state.isCatching) ? null : await playEvolution(from, pick);
+  } catch (e) { /* a bonus, never a failure a child has to be shown */ }
 }
 
 // ============================================================
@@ -1888,6 +1992,12 @@ async function versusMatchOver(winnerSide) {
   battleState.versusActive = false;
   state.save.players[winnerSide].stats.versusWins = (state.save.players[winnerSide].stats.versusWins || 0) + 1;
   persist();
+  // v19.8: the 'versus' quest kind. progression.js writes to player(), which is
+  // state.currentPlayer, and versus does NOT swap it — so without this guard
+  // P1's "win a brother battle" would complete when P2 won.
+  if (winnerSide === state.currentPlayer) {
+    document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'versus' } }));
+  }
   document.dispatchEvent(new CustomEvent('battle-victory'));
   setVictoryHero(heroHtml([PIXEL_SPRITE(sideActive(winnerSide).id)], '🏆'));
   setVictoryXp(null);   // VS awards no XP — an empty strip, not a stale one

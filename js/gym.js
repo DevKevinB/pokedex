@@ -7,13 +7,16 @@
 // ============================================================
 
 import { PIXEL_SPRITE } from './config.js';
-import { GYMS, trainerKey, TOTAL_TRAINERS } from './gymdata.js';
-import { state, player, persist, playerName } from './state.js';
+import { GYMS, trainerKey, TOTAL_TRAINERS, roundTrainers } from './gymdata.js';
+import { state, player, persist, playerName, isChampion } from './state.js';
 import { nameOf, getNameIndex } from './api.js';
 import { sfx, triggerVibration, playBeep, haptic } from './audio.js';
 import { dialog } from './dialog.js';
 
 let openGymKey = null;
+// v19.8: which ROUND the hub is showing. Never persisted — the only thing the
+// save ever learns about round 2 is the extra keys in gyms.beaten.
+let currentRound = 1;
 
 // endurance: in-memory HP carryover for the current gym run
 export const gymRun = { gymKey: null, hp: {}, max: {} };
@@ -48,23 +51,26 @@ export function pokeCenterHeal(silent = false) {
   }
 }
 
-function beatenCount(gym) {
-  return gym.trainers.filter((_, i) => player().gyms.beaten[trainerKey(gym.key, i)]).length;
+// v19.8: every one of these now asks "in WHICH round?". The default is 1, so
+// any caller that does not care sees exactly the behaviour it saw before, and
+// round 1's ladder is unchanged down to the key.
+function beatenCount(gym, round = 1) {
+  return gym.trainers.filter((_, i) => player().gyms.beaten[trainerKey(gym.key, i, round)]).length;
 }
 
-function gymUnlocked(gymIdx) {
+function gymUnlocked(gymIdx, round = 1) {
   if (gymIdx === 0) return true;
   const prev = GYMS[gymIdx - 1];
-  return beatenCount(prev) === prev.trainers.length;
+  return beatenCount(prev, round) === prev.trainers.length;
 }
 
-function trainerUnlocked(gym, idx) {
+function trainerUnlocked(gym, idx, round = 1) {
   if (idx === 0) return true;
-  return !!player().gyms.beaten[trainerKey(gym.key, idx - 1)];
+  return !!player().gyms.beaten[trainerKey(gym.key, idx - 1, round)];
 }
 
-export function totalBeaten() {
-  return GYMS.reduce((a, g) => a + beatenCount(g), 0);
+export function totalBeaten(round = 1) {
+  return GYMS.reduce((a, g) => a + beatenCount(g, round), 0);
 }
 
 // ---- screens ----
@@ -72,6 +78,11 @@ export function openGyms() {
   if (state.isCatching || state.appMode === 'battle') return;
   state.appMode = 'gym';
   openGymKey = null;
+  // The round is module state and the two boys share this module. If the
+  // player who just opened the hub is not a champion there is no ROUND 2 for
+  // him, so the board goes back to 1 rather than showing him a tab row he
+  // cannot see and a ladder he cannot have.
+  if (!isChampion()) currentRound = 1;
   renderGymList();
   document.getElementById('gym-container').classList.add('active');
 }
@@ -87,17 +98,30 @@ export function backFromGym() {
 }
 
 function renderGymList() {
-  document.getElementById('gym-title').innerText = 'GYM CIRCUIT';
+  // The round is derived at the READ, never trusted from module state: a
+  // player switch while the hub is open would otherwise leave the other
+  // brother looking at a ROUND 2 board he has not earned.
+  const round = isChampion() ? currentRound : 1;
+  const r2 = round === 2;
+  document.getElementById('gym-title').innerText = r2 ? 'CHAMPION CIRCUIT' : 'GYM CIRCUIT';
   const body = document.getElementById('gym-body');
-  const done = totalBeaten();
+  const done = totalBeaten(round);
+  // The ROUND tabs exist ONLY for a champion. A locked tab before the crown is
+  // a wall with a label on it, and the label is the half ART cannot read.
+  // After the crown it is the reward: gold, and it says 👑.
+  const tabs = isChampion() ? `
+    <div class="round-tabs">
+      <button class="round-tab ${r2 ? '' : 'active'}" data-round="1"><span class="btn-glyph">⚔️</span>ROUND 1</button>
+      <button class="round-tab r2 ${r2 ? 'active' : ''}" data-round="2"><span class="btn-glyph">👑</span>ROUND 2</button>
+    </div>` : '';
   // THE ACTIVE STOP: the first gym that is open and not yet finished. Once the
   // whole circuit is done it parks on the last stop rather than disappearing —
   // nothing a child has earned ever leaves the screen.
-  let activeIdx = GYMS.findIndex((g, i) => gymUnlocked(i) && beatenCount(g) < g.trainers.length);
+  let activeIdx = GYMS.findIndex((g, i) => gymUnlocked(i, round) && beatenCount(g, round) < g.trainers.length);
   if (activeIdx < 0) activeIdx = GYMS.length - 1;
   const hero = GYMS[activeIdx];
   const heroLeader = hero.trainers[hero.trainers.length - 1];
-  const heroBeaten = beatenCount(hero);
+  const heroBeaten = beatenCount(hero, round);
   const heroDots = hero.trainers.map((_, i) => `<i class="${i < heroBeaten ? 'on' : ''}"></i>`).join('');
 
   // The hub used to be ONE active card and ten identical grey lock cards each
@@ -105,9 +129,9 @@ function renderGymList() {
   // pushed off the bottom of the screen. It is now the card you are on, then
   // the whole journey as twelve badge nodes — all twelve on screen at 375px,
   // so the end of the road is a thing GABE can see from the beginning of it.
-  body.innerHTML = `
+  body.innerHTML = tabs + `
     <div class="gym-progress">TRAINERS DEFEATED: ${done}/${TOTAL_TRAINERS}</div>
-    <div class="card gym-hero" data-gym="${hero.key}">
+    <div class="card gym-hero ${r2 ? 'round2' : ''}" data-gym="${hero.key}">
       <span class="card-band" style="--band: var(--gold)"></span>
       <img class="gym-hero-lead" src="${PIXEL_SPRITE(heroLeader.team[0].id)}" alt="" draggable="false">
       <div class="gym-hero-txt">
@@ -118,10 +142,10 @@ function renderGymList() {
     </div>
     <div id="gym-grid">` +
     GYMS.map((g, gi) => {
-      const unlocked = gymUnlocked(gi);
-      const beaten = beatenCount(g);
+      const unlocked = gymUnlocked(gi, round);
+      const beaten = beatenCount(g, round);
       const complete = beaten === g.trainers.length;
-      return `<div class="card gym-card ${unlocked ? '' : 'locked'} ${complete ? 'complete' : ''} ${gi === activeIdx ? 'current' : ''}" data-gym="${g.key}" title="${g.name}">
+      return `<div class="card gym-card ${r2 ? 'round2' : ''} ${unlocked ? '' : 'locked'} ${complete ? 'complete' : ''} ${gi === activeIdx ? 'current' : ''}" data-gym="${g.key}" title="${g.name}">
         <span class="gym-node-art" aria-hidden="true">${g.emoji}</span>
         ${complete ? '<span class="card-ribbon">✅</span>' : ''}
         ${unlocked ? '' : '<span class="card-lock">🔒</span>'}
@@ -139,19 +163,33 @@ function renderGymList() {
   });
   body.querySelectorAll('.gym-card:not(.locked)').forEach(el =>
     el.addEventListener('click', () => { openGymKey = el.dataset.gym; renderTrainerList(); }));
+  // The ROUND tabs. Only a champion ever sees them, and the gate is re-checked
+  // on the way in as well as on the way out, because currentRound is module
+  // state both brothers share.
+  body.querySelectorAll('.round-tab').forEach(el =>
+    el.addEventListener('click', () => {
+      if (!isChampion()) return;
+      currentRound = parseInt(el.dataset.round, 10) === 2 ? 2 : 1;
+      renderGymList();
+    }));
 }
 
 function renderTrainerList() {
+  const round = isChampion() ? currentRound : 1;   // fail closed, as above
+  const r2 = round === 2;
   const gym = GYMS.find(g => g.key === openGymKey);
   if (!gym) return;
-  document.getElementById('gym-title').innerText = gym.name;
+  // The SAME 58 trainers, +15 levels. roundTrainers() copies for round 2 and
+  // hands back the original array for round 1, so GYMS itself never moves.
+  const list = roundTrainers(gym, round);
+  document.getElementById('gym-title').innerText = r2 ? `👑 ${gym.name}` : gym.name;
   getNameIndex(); // warm names for rosters
   const body = document.getElementById('gym-body');
 
-  body.innerHTML = `<div class="gym-progress">${gym.emoji} ${beatenCount(gym)}/${gym.trainers.length} DEFEATED — WIN TO CATCH THEIR TEAM!</div>` +
-    gym.trainers.map((t, i) => {
-      const beaten = !!player().gyms.beaten[trainerKey(gym.key, i)];
-      const unlocked = trainerUnlocked(gym, i);
+  body.innerHTML = `<div class="gym-progress">${gym.emoji} ${beatenCount(gym, round)}/${gym.trainers.length} DEFEATED — WIN TO CATCH THEIR TEAM!</div>` +
+    list.map((t, i) => {
+      const beaten = !!player().gyms.beaten[trainerKey(gym.key, i, round)];
+      const unlocked = trainerUnlocked(gym, i, round);
       const lvl = t.team[0].level;
       const roster = t.team.map(m => `<img src="${PIXEL_SPRITE(m.id)}" title="${nameOf(m.id)} Lv${m.level}">`).join('');
       // ONE PICTURE says which of the three states a row is in — a check for
@@ -167,7 +205,7 @@ function renderTrainerList() {
         : beaten
           ? '<button type="button" class="btn-battle rematch">🔁 REMATCH — HALF XP <span class="chev">›</span></button>'
           : '<button type="button" class="btn-battle">⚔️ TAP TO BATTLE <span class="chev">›</span></button>';
-      return `<div class="card trainer-card ${beaten ? 'beaten' : ''} ${unlocked ? '' : 'locked'}" data-idx="${i}">
+      return `<div class="card trainer-card ${r2 ? 'round2' : ''} ${beaten ? 'beaten' : ''} ${unlocked ? '' : 'locked'}" data-idx="${i}">
         <span class="card-band" style="--band:${band}"></span>
         <div class="trainer-row">
           <img class="trainer-lead" src="${PIXEL_SPRITE(t.team[0].id)}" alt="" draggable="false">
@@ -196,7 +234,7 @@ function renderTrainerList() {
       sfx.superHit();
       triggerVibration(60);
       document.getElementById('gym-container').classList.remove('active');
-      document.dispatchEvent(new CustomEvent('gym-challenge', { detail: { gymKey: gym.key, idx } }));
+      document.dispatchEvent(new CustomEvent('gym-challenge', { detail: { gymKey: gym.key, idx, round } }));
     }));
 }
 
@@ -208,9 +246,9 @@ export function reopenGyms() {
   else renderGymList();
 }
 
-// record a win; returns true if this completed the whole circuit
-export function recordGymWin(gymKey, idx) {
-  player().gyms.beaten[trainerKey(gymKey, idx)] = true;
+// record a win; returns true if this completed the whole circuit FOR THAT ROUND
+export function recordGymWin(gymKey, idx, round = 1) {
+  player().gyms.beaten[trainerKey(gymKey, idx, round)] = true;
   persist();
-  return totalBeaten() === TOTAL_TRAINERS;
+  return totalBeaten(round) === TOTAL_TRAINERS;
 }

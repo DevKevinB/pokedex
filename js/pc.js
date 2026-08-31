@@ -4,7 +4,7 @@
 // ============================================================
 
 import { GENERATIONS, MAX_POKEMON, PIXEL_SPRITE, typeColors, typeEmoji } from './config.js';
-import { getNameIndex, nameOf, getPokemon } from './api.js';
+import { getNameIndex, nameOf, getPokemon, evolutionOptions } from './api.js';
 import { state, player, playerName, monLevel, setTeam, setLead, nickOf,
          isFavorite, toggleFavorite, MAX_FAVORITES } from './state.js';
 import { loadPoke } from './dex.js';
@@ -92,8 +92,69 @@ export function openPC(context = 'dex') {
   renderTeamStrip();
   renderGenTabs();
   renderGrid();
+  renderEvolveRow();
   wireTileHold();
   modal.style.display = 'flex';
+}
+
+// ============================================================
+// v19.8 — READY TO EVOLVE
+// awardPartyXp has levelled the WHOLE team since teams shipped, but only the
+// KO'er's evolution was ever queued: five team members could sit twenty levels
+// past their evolution for ever with nothing in the game ever mentioning it.
+// The row is one picture button per ready Pokémon — sprite ▶ sprite — so it
+// needs no reading, and it does not exist at all when nothing is ready.
+// Six lookups, all served from the api cache for anything the boys have
+// actually played with; offline it silently renders nothing.
+// ============================================================
+let evoToken = 0;
+async function renderEvolveRow() {
+  const row = document.getElementById('pc-evolve');
+  if (!row) return;
+  // Clear FIRST: a stale row from the previous player is worse than no row.
+  row.innerHTML = '';
+  const token = ++evoToken;
+  if (pcContext !== 'dex') return;
+  const p = player();
+  const team = p.team.filter(id => p.caught.includes(id));
+  const ready = [];
+  for (const id of team) {
+    try {
+      const opts = await evolutionOptions(id, monLevel(id));
+      if (token !== evoToken) return;          // he switched player or closed it
+      // Only offer what he does not already own. Evolving into something
+      // already in the box is not a discovery, and the row would never clear.
+      const next = opts.filter(o => !p.caught.includes(o.id));
+      if (next.length) ready.push({ id, next });
+    } catch (e) { /* offline or uncached: no row, and never an error on screen */ }
+  }
+  if (token !== evoToken || !ready.length) return;
+  row.innerHTML = '<span class="evo-ready-label">⬆️ READY TO EVOLVE</span>' + ready.map(r =>
+    `<button class="evo-ready" data-evo-from="${r.id}" title="${nameOf(r.id)} can evolve" aria-label="EVOLVE">
+       <img src="${PIXEL_SPRITE(r.id)}" alt="">
+       <span class="evo-ready-arrow" aria-hidden="true">▶</span>
+       ${r.next.length > 1
+          ? '<span class="evo-ready-many" aria-hidden="true">❓</span>'
+          : `<img src="${PIXEL_SPRITE(r.next[0].id)}" alt="">`}
+     </button>`).join('');
+  row.querySelectorAll('.evo-ready').forEach(el =>
+    el.addEventListener('click', () => {
+      triggerVibration(30);
+      // battle.js owns the ceremony and battle.js already imports this module,
+      // so the request travels as an event rather than a circular import.
+      document.dispatchEvent(new CustomEvent('evolve-request', { detail: { id: parseInt(el.dataset.evoFrom, 10) } }));
+    }));
+}
+
+/** Repaint the open box. A no-op when the PC is not on screen. */
+export function refreshPC() {
+  const modal = document.getElementById('pc-modal');
+  if (!modal || modal.style.display !== 'flex') return;
+  renderFavShelf();
+  renderTeamStrip();
+  renderGenTabs();
+  renderGrid();
+  renderEvolveRow();
 }
 
 // ---- TEAM strip: current party in order; tap a member to make it lead ----

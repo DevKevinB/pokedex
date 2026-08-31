@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.7.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.7.0">
+    <link rel="stylesheet" href="css/main.css?v=19.8.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.8.0">
 </head>
 <body>
 
@@ -216,6 +216,9 @@
     <!-- v19.6: the favourites shelf, six slots, top of the sticker book. -->
     <div id="fav-shelf"></div>
     <div id="team-strip"></div>
+    <!-- v19.8: READY TO EVOLVE. Sprite ▶ sprite, so it needs no reading, and
+         it stays display:none until a team member is genuinely ready. -->
+    <div id="pc-evolve"></div>
     <input id="pc-search" class="pc-search" type="text" placeholder="🔍 SEARCH NAME OR NUMBER" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done">
     <div id="gen-tabs"></div>
     <div class="pc-grid" id="pc-grid"></div>
@@ -370,6 +373,19 @@
     <div id="evo-text">What? PIKACHU is evolving!</div>
 </div>
 
+<!-- v19.8 THE EVOLUTION FAN. Eevee has eight futures and the game used to pick
+     one for you. The sprites ARE the question: the title and the captions are
+     for GABE and CSS hides them in Junior Mode. NOT YET is always there, and
+     asks again on the next level-up — the choice is never taken away. -->
+<div class="overlay-screen" id="evo-pick-modal" style="z-index: 3000;">
+    <div class="modal-box">
+        <img id="evo-pick-from" src="" alt="">
+        <h2 id="evo-pick-title">WHO WILL IT BECOME?</h2>
+        <div id="evo-pick-grid"></div>
+        <button class="btn-large btn-reg" id="evo-pick-later"><span class="btn-glyph" aria-hidden="true">⏳</span><b>NOT YET</b></button>
+    </div>
+</div>
+
 <div class="overlay-screen" id="settings-modal" style="z-index: 2600;">
     <div class="modal-box card-box">
         <h2>⚙️ SETTINGS</h2>
@@ -502,6 +518,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.7.0"></script>
+<script type="module" src="js/main.js?v=19.8.0"></script>
 </body>
 </html>

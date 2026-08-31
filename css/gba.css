@@ -1831,6 +1831,112 @@ body.junior #victory-continue .vc-arrow { font-size: 40px; }
 body.junior .btn-glyph { font-size: 20px; vertical-align: -3px; }
 
 /* ============================================================
+   v19.8 "ROUND 2"
+   The Champion Circuit, the evolution fan, and the PC's EVOLVE row.
+   Design tokens only (ROADMAP 3.1-3.3), 8px floor, 44px tap targets,
+   and no new keyframes — so the reduced-motion block needs no change.
+   ============================================================ */
+
+/* ---- ROUND tabs: gym hub, champions only ---- */
+.round-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin-bottom: var(--s3); }
+.round-tab {
+  font-family: var(--pixel-font); font-size: var(--t-xs); text-transform: uppercase;
+  min-height: 44px; padding: var(--s2) var(--s1); cursor: pointer;
+  background: var(--paper-2); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 3px; box-shadow: var(--sh-btn);
+}
+.round-tab:active { transform: translateY(3px); box-shadow: none; }
+.round-tab.active { background: var(--paper); }
+/* GOLD is the whole message. ART cannot read ROUND 2, but he can see which
+   half of the row is the shiny one — and gold already means "the hard, good
+   thing" everywhere else in this app (badge coins, the XP bar, complete gyms). */
+.round-tab.r2.active { background: var(--gold); }
+
+.gym-card.round2, .trainer-card.round2:not(.beaten) { border-color: var(--gold-2); }
+.gym-card.round2 {
+  box-shadow: inset -3px -3px 0 var(--px-cream-dark), 0 0 12px rgba(255,208,64,0.5);
+}
+.trainer-card.round2:not(.beaten) {
+  box-shadow: inset -3px -3px 0 var(--px-cream-dark), 4px 4px 0 rgba(0,0,0,0.35),
+              0 0 10px rgba(255,208,64,0.4);
+}
+
+/* ---- the evolution FAN (dex data sheet) ----
+   The box was one horizontal line, which is why only one branch ever fitted.
+   It is now a column of STAGES; a stage with eight children wraps inside its
+   own row. main.css sets .evo-box to a centred row and 60px sprites; these
+   rules turn it into a column and size the tiles for a fan. */
+.evo-box { flex-direction: column; align-items: stretch; gap: var(--s1); }
+.evo-row { display: flex; justify-content: center; align-items: flex-start; gap: var(--s2); flex-wrap: wrap; }
+.evo-row .evo-item { width: 72px; }
+.evo-row .evo-item img { width: 48px; height: 48px; }
+.evo-row .evo-item span {
+  font-size: var(--t-xs); line-height: 1.5; text-align: center;
+  overflow-wrap: anywhere; color: var(--ink);
+}
+/* Which one you are looking at, in a fan of eight. */
+.evo-item.current { outline: 2px solid var(--gold-2); outline-offset: 2px; }
+.evo-arrow { font-size: 12px; line-height: 1; text-align: center; }
+/* Was three inline style="color:#777; font-size:10px" spans on paper. */
+.evo-msg {
+  font-family: var(--pixel-font); font-size: var(--t-sm);
+  color: var(--ink-2); text-align: center;
+}
+
+/* ---- WHO WILL IT BECOME? ---- */
+#evo-pick-modal .modal-box { text-align: center; }
+#evo-pick-from { width: 64px; height: 64px; image-rendering: pixelated; }
+#evo-pick-title {
+  font-size: var(--t-sm) !important; line-height: 1.6;
+  margin: var(--s2) 0 var(--s3); color: var(--ink) !important;
+}
+#evo-pick-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s2); }
+.evo-pick {
+  display: flex; flex-direction: column; align-items: center; gap: var(--s1);
+  width: 84px; min-height: 84px; padding: var(--s2) var(--s1); cursor: pointer;
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 3px; box-shadow: var(--sh-btn);
+}
+.evo-pick:active { transform: translateY(3px); box-shadow: none; }
+.evo-pick img { width: 56px; height: 56px; image-rendering: pixelated; }
+.evo-pick small {
+  font-family: var(--pixel-font); font-size: var(--t-xs);
+  line-height: 1.4; overflow-wrap: anywhere;
+}
+#evo-pick-later { margin-top: var(--s4); }
+/* ART cannot read the question or the names, and he does not need to: the
+   sprites ARE the question. The hourglass stays, so the way out of the box is
+   still a picture, and the tiles get bigger with the captions gone. */
+body.junior #evo-pick-title,
+body.junior .evo-pick small,
+body.junior #evo-pick-later b { display: none; }
+body.junior .evo-pick { width: 104px; min-height: 104px; }
+body.junior .evo-pick img { width: 76px; height: 76px; }
+
+/* ---- the PC's READY TO EVOLVE row ---- */
+#pc-evolve { display: none; }
+#pc-evolve:not(:empty) {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: var(--s2); margin: 0 0 var(--s3);
+}
+.evo-ready {
+  display: flex; align-items: center; gap: var(--s1);
+  min-height: 44px; padding: var(--s1) var(--s2); cursor: pointer;
+  background: var(--gold); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 3px; box-shadow: var(--sh-btn);
+}
+.evo-ready:active { transform: translateY(3px); box-shadow: none; }
+.evo-ready img { width: 36px; height: 36px; image-rendering: pixelated; }
+.evo-ready-arrow, .evo-ready-many { font-size: 14px; line-height: 1; }
+.evo-ready-label {
+  font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--gold);
+  width: 100%; text-align: center; margin-bottom: var(--s1);
+}
+/* In the sticker book the row is two sprites and an arrow, which is the whole
+   sentence. The caption would be the only unreadable thing on the page. */
+body.junior .evo-ready-label { display: none; }
+
+/* ============================================================
    v19.7 "THE MAP" — ONE CARD GRAMMAR
    ============================================================
    EXPLORE, the GYM hub and the trainer list each used to invent their own

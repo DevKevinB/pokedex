@@ -11,8 +11,8 @@ import { initAudio, stopAllAudio, playCryAudio, toggleMute, resumeIfNeeded, hapt
 import { pet } from './fx.js';
 import { loadPoke, nav, randomPoke, toggleShiny, toggleSheet, updateCatchUI, cycleFlavor } from './dex.js';
 import { openBag, executeCatch } from './catch.js';
-import { initBattleMode, exitBattleMode, wireExitChip, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState, petTargetId } from './battle.js';
-import { openPC, closePC, cancelTeamPick, onPCSearchInput, closeSticker, toggleStickerFav } from './pc.js';
+import { initBattleMode, exitBattleMode, wireExitChip, finalizeBattleSetup, onTeamConfirmed, maybeEvolveThenExit, startWildEncounter, startTrainerBattle, startVersusBattle, onPassReady, battleState, petTargetId, runEvolutionFor } from './battle.js';
+import { openPC, closePC, cancelTeamPick, onPCSearchInput, closeSticker, toggleStickerFav, refreshPC } from './pc.js';
 import { openExplore, closeExplore, reopenExplore } from './explore.js';
 import { openGyms, backFromGym, reopenGyms } from './gym.js';
 import { clearGymRun } from './gym.js';
@@ -260,7 +260,12 @@ function wireUI() {
   on('gym-back-btn', backFromGym);
 
   // gym → battle bridges
-  document.addEventListener('gym-challenge', e => startTrainerBattle(e.detail.gymKey, e.detail.idx));
+  document.addEventListener('gym-challenge', e => startTrainerBattle(e.detail.gymKey, e.detail.idx, e.detail.round || 1));
+  // pc → battle bridge for the PC's EVOLVE row (v19.8). Same pattern as
+  // 'team-confirmed' below: pc.js must not import battle.js, because battle.js
+  // already imports pc.js and that is a cycle. Repaint after, because the
+  // Pokémon's id has changed underneath the open box.
+  document.addEventListener('evolve-request', e => { runEvolutionFor(e.detail.id).then(refreshPC); });
   document.addEventListener('return-to-gym', reopenGyms);
   document.addEventListener('versus-start', startVersusBattle);
   on('pass-ready', onPassReady);

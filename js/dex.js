@@ -258,18 +258,35 @@ function updateUISafe() {
 
 async function loadEvolutionsSafe(url) {
   const evoBox = document.getElementById('evo-chain');
-  evoBox.innerHTML = '<span style="color:#777; font-size:10px;">ANALYZING DNA...</span>';
-  if (!url) { evoBox.innerHTML = '<span style="color:#777; font-size:10px;">NO DATA</span>'; return; }
+  evoBox.innerHTML = '<span class="evo-msg">ANALYZING DNA...</span>';
+  if (!url) { evoBox.innerHTML = '<span class="evo-msg">NO DATA</span>'; return; }
   try {
     const { chain } = await getEvolution(url);
-    const gen1 = chain.filter(p => p.id <= MAX_POKEMON);
-    evoBox.innerHTML = gen1.map((poke, index) =>
-      `${index > 0 ? '<div class="evo-arrow">▶</div>' : ''}<div class="evo-item" data-evo-id="${poke.id}"><img src="${PIXEL_SPRITE(poke.id)}"><span>${poke.name}</span></div>`
-    ).join('');
+    const ok = (chain || []).filter(p => p.id <= MAX_POKEMON);
+    // v19.8: a chain is a FAN, not a line. Each STAGE is one row, and a stage
+    // with eight children (Eevee) wraps inside its own row instead of losing
+    // seven of them. A root is anything with no parent, or whose parent got
+    // filtered out for being outside #1-649.
+    const rows = [];
+    const placed = new Set();
+    let stage = ok.filter(p => p.from == null || !ok.some(q => q.id === p.from));
+    // The bound is a guard, not a limit: no real line is six stages deep, and
+    // it means a cyclic chain can never hang the dex screen.
+    while (stage.length && rows.length < 6) {
+      stage.forEach(p => placed.add(p.id));
+      rows.push(stage);
+      const ids = new Set(stage.map(p => p.id));
+      stage = ok.filter(p => ids.has(p.from) && !placed.has(p.id));
+    }
+    evoBox.innerHTML = rows.map((row, i) =>
+      `${i > 0 ? '<div class="evo-arrow">▼</div>' : ''}<div class="evo-row">` +
+      row.map(poke =>
+        `<div class="evo-item${poke.id === state.curId ? ' current' : ''}" data-evo-id="${poke.id}"><img src="${PIXEL_SPRITE(poke.id)}"><span>${poke.name}</span></div>`
+      ).join('') + '</div>').join('');
     evoBox.querySelectorAll('.evo-item').forEach(el =>
       el.addEventListener('click', () => loadPoke(parseInt(el.dataset.evoId))));
   } catch (e) {
-    evoBox.innerHTML = '<span style="color:#777; font-size:10px;">DNA ERROR</span>';
+    evoBox.innerHTML = '<span class="evo-msg">DNA ERROR</span>';
   }
 }
 

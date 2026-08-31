@@ -132,4 +132,49 @@ export const GYMS = [
 
 export const TOTAL_TRAINERS = GYMS.reduce((a, g) => a + g.trainers.length, 0);
 
-export function trainerKey(gymKey, idx) { return `${gymKey}:${idx}`; }
+// ============================================================
+// v19.8 — ROUND 2, THE CHAMPION CIRCUIT
+// The same 58 hand-authored trainers, +15 levels, once the crown is won.
+// Nothing here is new content and nothing here is new SAVE: gyms.beaten is a
+// free-form map (state.js hydrates it with
+//   gyms: (raw.gyms && raw.gyms.beaten) ? raw.gyms : { beaten: {} }
+// and validates no keys at all), so a second set of keys costs zero schema.
+// ============================================================
+export const MAX_ROUND = 2;
+const ROUND_STEP = 15;
+
+/** Levels only ever go UP, and never past 100. Rex is Lv80, so Rex r2 is 95. */
+export const roundLevel = (lv, round = 1) =>
+  Math.min(100, lv + ROUND_STEP * (Math.max(1, round) - 1));
+
+/**
+ * The roster for one gym at one round. Round 1 hands back the ORIGINAL array
+ * — same objects, no copying — so the ordinary circuit is byte-identical to
+ * what it has always been. Round 2 hands back COPIES: GYMS is module data and
+ * must never be mutated, or switching back to ROUND 1 would show an inflated
+ * ladder and the levels would climb again on every render.
+ */
+export function roundTrainers(gym, round = 1) {
+  if (!gym) return [];
+  if (round <= 1) return gym.trainers;
+  return gym.trainers.map(t => ({
+    ...t,
+    team: t.team.map(m => ({ ...m, level: roundLevel(m.level, round) }))
+  }));
+}
+
+/**
+ * Round 1 returns EXACTLY the key shape this game has always written —
+ * `rock:0`, `elite:4` — so every badge, every unlock and every beaten tick a
+ * boy has already earned keeps working with no migration.
+ * Round 2 suffixes: `rock:0:r2`.
+ *
+ * LOAD-BEARING: explore.js derives the world's difficulty from
+ *   Object.keys(gyms.beaten).filter(k => k.endsWith(':4'))
+ * i.e. LEADER wins only, a 0-11 scale. `elite:4:r2` ends with ':r2', not
+ * ':4', so round-2 wins are invisible to that filter and CANNOT spike wild
+ * levels. Any future suffix must keep that property.
+ */
+export function trainerKey(gymKey, idx, round = 1) {
+  return round > 1 ? `${gymKey}:${idx}:r${round}` : `${gymKey}:${idx}`;
+}

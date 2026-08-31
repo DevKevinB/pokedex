@@ -35,6 +35,13 @@ const GAUNTLET = [
 ];
 const gauntletDone = p => GAUNTLET.filter(k => p.gyms?.beaten?.[k]).length;
 
+// v19.8 THE CHAMPION CIRCUIT. All 58 again, +15 levels, under round-2 keys
+// (`gym:idx:r2`). Round 1's keys are untouched by design, so nothing already
+// earned can move — and gyms.beaten is a free-form map that state.js hydrates
+// without validating a single key, so this adds NO save-schema surface.
+const ROUND2_KEYS = GYMS.flatMap(g => g.trainers.map((_, i) => trainerKey(g.key, i, 2)));
+const round2Done = p => ROUND2_KEYS.filter(k => p.gyms?.beaten?.[k]).length;
+
 export const BADGES = [
   ...GYM_BADGES,
   { id: 'gauntlet', emoji: '🏔️', name: 'VICTORY BADGE', desc: 'Beat Victory Road & the Elite 4',
@@ -51,7 +58,13 @@ export const BADGES = [
     check: p => Object.values(p.mons).some(m => m.level >= 60),
     progress: p => [Math.min(Object.values(p.mons).reduce((a, m) => Math.max(a, m.level), 0), 60), 60] },
   { id: 'champion', emoji: '👑', name: 'CHAMPION BADGE', desc: 'Become the Champion',
-    check: p => !!p.champion, progress: p => [p.champion ? 1 : 0, 1] }
+    check: p => !!p.champion, progress: p => [p.champion ? 1 : 0, 1] },
+  // The last thing in the game. Deliberately NOT another 👑 — the champion
+  // coin is already a crown, and two identical coins side by side is one
+  // picture saying two different things to a boy who reads by picture.
+  { id: 'round2', emoji: '🏅', name: 'MASTER BADGE', desc: 'Beat all 58 in ROUND 2',
+    check: p => round2Done(p) === ROUND2_KEYS.length,
+    progress: p => [round2Done(p), ROUND2_KEYS.length] }
 ];
 
 // The retired activity badges. Never awarded any more, but NEVER taken away:
@@ -68,18 +81,74 @@ const LEGACY_BADGES = [
 ];
 
 // ---- Daily quests ----
+// v19.8: the pool went from TEN to thirty-one. Three of the same ten came
+// round again and again, and "Catch 2 Pokémon" had stopped being a quest.
+//
+// A def is { key, label, target, kind } plus an OPTIONAL match(detail).
+// That is the whole rule. 'catch_type' is gone as a kind — those five quests
+// are ordinary 'catch' quests with a match(), and they keep their original
+// KEYS so a board already sitting in a save still resolves this afternoon.
+// `easy` marks the ones any child can finish on any day.
+const hasType = (d, t) => (d.types || []).some(x => (x.type?.name || x) === t);
+const catchType = (key, label, type) =>
+  ({ key, label, target: 1, kind: 'catch', match: d => hasType(d, type) });
+// habitatKey rides the catch event, and battle.js sets it ONLY for an explore
+// encounter — so these are "go to that place and catch something there".
+const catchIn = (key, label, habitatKey) =>
+  ({ key, label, target: 1, kind: 'catch', match: d => d.habitatKey === habitatKey });
+
 const QUEST_POOL = [
-  { key: 'catch2', label: 'Catch 2 Pokémon', target: 2, kind: 'catch' },
-  { key: 'catch4', label: 'Catch 4 Pokémon', target: 4, kind: 'catch' },
-  { key: 'win1', label: 'Win a battle', target: 1, kind: 'win' },
-  { key: 'win2', label: 'Win 2 battles', target: 2, kind: 'win' },
-  { key: 'explore3', label: 'Go exploring 3 times', target: 3, kind: 'explore' },
-  { key: 'water1', label: 'Catch a WATER type', target: 1, kind: 'catch_type', type: 'water' },
-  { key: 'fire1', label: 'Catch a FIRE type', target: 1, kind: 'catch_type', type: 'fire' },
-  { key: 'grass1', label: 'Catch a GRASS type', target: 1, kind: 'catch_type', type: 'grass' },
-  { key: 'electric1', label: 'Catch an ELECTRIC type', target: 1, kind: 'catch_type', type: 'electric' },
-  { key: 'bug1', label: 'Catch a BUG type', target: 1, kind: 'catch_type', type: 'bug' }
+  { key: 'catch2', label: 'Catch 2 Pokémon', target: 2, kind: 'catch', easy: true },
+  { key: 'catch4', label: 'Catch 4 Pokémon', target: 4, kind: 'catch', easy: true },
+  { key: 'win1', label: 'Win a battle', target: 1, kind: 'win', easy: true },
+  { key: 'win2', label: 'Win 2 battles', target: 2, kind: 'win', easy: true },
+  { key: 'explore3', label: 'Go exploring 3 times', target: 3, kind: 'explore', easy: true },
+  // --- type hunts (the five originals keep their keys) ---
+  catchType('water1', 'Catch a WATER type', 'water'),
+  catchType('fire1', 'Catch a FIRE type', 'fire'),
+  catchType('grass1', 'Catch a GRASS type', 'grass'),
+  catchType('electric1', 'Catch an ELECTRIC type', 'electric'),
+  catchType('bug1', 'Catch a BUG type', 'bug'),
+  catchType('rock1', 'Catch a ROCK type', 'rock'),
+  catchType('ground1', 'Catch a GROUND type', 'ground'),
+  catchType('psychic1', 'Catch a PSYCHIC type', 'psychic'),
+  catchType('ghost1', 'Catch a GHOST type', 'ghost'),
+  catchType('ice1', 'Catch an ICE type', 'ice'),
+  catchType('dragon1', 'Catch a DRAGON type', 'dragon'),
+  catchType('flying1', 'Catch a FLYING type', 'flying'),
+  catchType('poison1', 'Catch a POISON type', 'poison'),
+  // --- habitat hunts (FARAWAY LAND is champion-only and stays out of the
+  //     pool: a slot nobody can reach is a dead slot on the board) ---
+  catchIn('hforest', 'Catch one in DEEP FOREST', 'forest'),
+  catchIn('hmeadow', 'Catch one in TALL GRASS', 'meadow'),
+  catchIn('hocean', 'Catch one in the OCEAN', 'ocean'),
+  catchIn('hvolcano', 'Catch one on VOLCANO PATH', 'volcano'),
+  catchIn('hpower', 'Catch one at the POWER PLANT', 'powerplant'),
+  catchIn('hcave', 'Catch one in the DEEP CAVE', 'cave'),
+  catchIn('htower', 'Catch one in GHOST TOWER', 'tower'),
+  catchIn('hdragon', "Catch one in DRAGON'S DEN", 'dragon'),
+  // --- the rest ---
+  { key: 'evolve1', label: 'Evolve a Pokémon', target: 1, kind: 'evolve' },
+  { key: 'vs1', label: 'Win a brother battle', target: 1, kind: 'versus' },
+  { key: 'rematch1', label: 'Rematch a gym trainer', target: 1, kind: 'rematch' },
+  { key: 'rare1', label: 'Catch something RARE', target: 1, kind: 'catch',
+    match: d => d.tier === 'rare' || d.tier === 'legendary' },
+  { key: 'lv40catch', label: 'Catch one at Lv40+', target: 1, kind: 'catch',
+    match: d => (d.level || 0) >= 40 }
 ];
+
+// v19.8 THE CHAMPION TIER. A FOURTH slot, only once the crown is won, paying a
+// MASTER BALL instead of XP. It is ADDED to the board, never swapped in: the
+// three ordinary quests stay exactly as they were, so becoming Champion can
+// only ever give a boy more to do, never less.
+const HARD_POOL = [
+  { key: 'hshiny', label: 'Catch a SHINY Pokémon', target: 1, kind: 'catch',
+    match: d => !!d.shiny, reward: 'ball' },
+  { key: 'hround2', label: 'Win a ROUND 2 battle', target: 1, kind: 'round2win', reward: 'ball' },
+  { key: 'hevolve2', label: 'Evolve 2 Pokémon', target: 2, kind: 'evolve', reward: 'ball' }
+];
+
+const ALL_QUESTS = [...QUEST_POOL, ...HARD_POOL];
 
 // todayNumber() moved to config.js in v19.7 (see the note there): the Sparkle
 // Spot seeds on the same local day this board does, and config.js is the only
@@ -90,10 +159,27 @@ function pickDailyQuests() {
   // deterministic per day & player, no repeats
   let seed = todayNumber() * 7 + state.currentPlayer * 13;
   const rand = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
-  const pool = [...QUEST_POOL];
+  const easy = QUEST_POOL.filter(q => q.easy);
+  const rest = QUEST_POOL.filter(q => !q.easy);
   const picks = [];
-  while (picks.length < 3 && pool.length) {
-    picks.push(pool.splice(Math.floor(rand() * pool.length), 1)[0]);
+  // Thirty-one quests drawn blind could ask a four-year-old for a DRAGON, a
+  // RARE and a brother battle on the same morning. A board he cannot finish is
+  // not a challenge, it is a wall — and there is no way for him to read why.
+  // So the board always opens with something anyone can do, and ART's opens
+  // with two. This is a weighting, not an accommodation: nothing on screen
+  // says it, and the quests themselves are the same quests.
+  const easyCount = player().settings?.junior ? 2 : 1;
+  while (picks.length < easyCount && easy.length) {
+    picks.push(easy.splice(Math.floor(rand() * easy.length), 1)[0]);
+  }
+  while (picks.length < 3 && rest.length) {
+    picks.push(rest.splice(Math.floor(rand() * rest.length), 1)[0]);
+  }
+  // The CHAMPION TIER — a fourth slot that pays a Master Ball. Day-keyed like
+  // everything else here, so a boy who wins the crown at teatime meets it
+  // tomorrow morning rather than having the board change under his hands.
+  if (player().champion && HARD_POOL.length) {
+    picks.push(HARD_POOL[Math.floor(rand() * HARD_POOL.length)]);
   }
   return picks.map(q => ({ key: q.key, progress: 0, done: false }));
 }
@@ -108,7 +194,7 @@ export function ensureDailyQuests() {
   return p.quests;
 }
 
-function questDef(key) { return QUEST_POOL.find(q => q.key === key); }
+function questDef(key) { return ALL_QUESTS.find(q => q.key === key); }
 
 // ---- celebration queue (badge/quest popups never overlap) ----
 const celebrationQueue = [];
@@ -123,7 +209,7 @@ let celebrationPump = null;
 // this can never be fixed by shuffling z-indexes, only by taking turns.
 // The queue holds. Nothing is ever dropped, and nothing is ever silently
 // swallowed — it plays as soon as the screen in front of it is free.
-const CEREMONY_MODALS = ['victory-modal', 'nick-modal', 'evo-modal', 'hof-modal', 'sparkle-modal', 'pass-modal'];
+const CEREMONY_MODALS = ['victory-modal', 'nick-modal', 'evo-modal', 'evo-pick-modal', 'hof-modal', 'sparkle-modal', 'pass-modal'];
 function ceremonyBusy() {
   // A fight owns the screen until it is over: the 'win'/'catch' events fire a
   // beat BEFORE show('victory-modal'), so watching the modals alone is late.
@@ -219,28 +305,35 @@ function checkBadges() {
   }
 }
 
-function bumpQuests(kind, types = []) {
+function bumpQuests(kind, detail = {}) {
   const quests = ensureDailyQuests();
   let changed = false;
   for (const q of quests.list) {
     if (q.done) continue;
     const def = questDef(q.key);
-    if (!def) continue;
-    const hit =
-      (def.kind === kind) &&
-      (def.kind !== 'catch_type' || types.some(t => (t.type?.name || t) === def.type));
-    if (def.kind === 'catch_type' && kind === 'catch' && types.some(t => (t.type?.name || t) === def.type)) {
-      q.progress++;
-      changed = true;
-    } else if (hit) {
-      q.progress++;
-      changed = true;
-    }
-    if (q.progress >= def.target && !q.done) {
+    if (!def || def.kind !== kind) continue;
+    // ONE rule: the kind matches and an optional match(detail) agrees.
+    // What was here before had a `hit` expression whose catch_type clause
+    // could never be true — def.kind === kind cannot hold when def.kind is
+    // 'catch_type' and kind is 'catch' — so a dead branch sat beside the live
+    // one and every future reader had to work out which was which.
+    // A def's match() sees untrusted-shaped event detail; a throw in here must
+    // never take checkBadges down with it.
+    let ok = true;
+    try { ok = !def.match || !!def.match(detail); } catch (e) { ok = false; }
+    if (!ok) continue;
+    q.progress++;
+    changed = true;
+    if (q.progress >= def.target) {
       q.done = true;
-      const lead = player().team[0] || player().caught[0];
-      if (lead) addXp(lead, 30);
-      queueCelebration('⭐', 'QUEST COMPLETE!', `${def.label} — done!\n+30 XP to your lead Pokémon!`);
+      if (def.reward === 'ball') {
+        player().items.masterBalls++;
+        queueCelebration('👑', 'CHAMPION QUEST!', `${def.label} — done!\n+1 MASTER BALL!`);
+      } else {
+        const lead = player().team[0] || player().caught[0];
+        if (lead) addXp(lead, 30);
+        queueCelebration('⭐', 'QUEST COMPLETE!', `${def.label} — done!\n+30 XP to your lead Pokémon!`);
+      }
     }
   }
   if (!quests.allDone && quests.list.every(q => q.done)) {
@@ -252,7 +345,7 @@ function bumpQuests(kind, types = []) {
 }
 
 export function onProgress(kind, detail = {}) {
-  bumpQuests(kind, detail.types || []);
+  bumpQuests(kind, detail);
   checkBadges();
   persist();
 }

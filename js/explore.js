@@ -83,6 +83,10 @@ HABITATS.forEach(h => {
 HABITATS.push({ bg: 'psychic', ...FARAWAY });
 
 let currentHabitat = null;
+// v19.8: the RARITY of the encounter the player walked into. Set with the
+// habitat, read once by the catch event, so a "catch something RARE" quest has
+// something to read. In memory only — no save surface.
+let currentTier = null;
 
 const leadLevel = () => {
   const p = player();
@@ -95,6 +99,9 @@ const leadLevel = () => {
 // +116 levels of "badge" inflation, pinning every habitat at the leash cap —
 // which flattened the per-habitat difficulty design back into uniform
 // lead-scaling and made the difficulty pips identical everywhere.
+// v19.8: ROUND 2 writes `gym:idx:r2` keys. `elite:4:r2` ends with ':r2', not
+// ':4', so the second circuit is invisible to this filter and CANNOT push the
+// world's difficulty past 11 badges. Do not relax this suffix test.
 const badgeCount = () => Object.keys(player().gyms?.beaten || {}).filter(k => k.endsWith(':4')).length;
 
 /** Mid-band level for a habitat, for display on the cards. */
@@ -119,7 +126,18 @@ export const activeHabitat = () => currentHabitat;
 // The arena used to pick its scene from the WILD POKEMON'S TYPE, so meeting a
 // water-type in DEEP FOREST painted an ocean while the chip overhead still
 // said DEEP FOREST. The place you walked into decides how the place looks.
-export const habitatBackdrop = () => HABITATS.find(h => h.key === currentHabitat)?.bg || null;
+//
+// v19.8 FIX: this read `HABITATS.find(h => h.key === currentHabitat)`, but
+// currentHabitat holds the habitat OBJECT, not its key — so the comparison was
+// 'forest' === {…}, the find never matched, and habitatBackdrop() returned
+// null on every single encounter. The fallback then painted the wild's type
+// and the feature has been dead since the day it shipped. The habitat is
+// already the thing we are holding; just read its `bg`.
+export const habitatBackdrop = () => currentHabitat?.bg || null;
+
+/** The rarity tier of the encounter in progress ('common' | 'uncommon' |
+    'rare' | 'legendary'), or null outside an explore encounter. */
+export const activeTier = () => currentTier;
 
 // ---- v19.7: THE SPARKLE SPOT ----
 // One habitat glitters each day and shinies are five times likelier in it.
@@ -277,11 +295,13 @@ async function enterHabitat(key) {
     return;
   }
   currentHabitat = habitat;
+  currentTier = null;
   player().stats.explores = (player().stats.explores || 0) + 1;
   persist();
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'explore' } }));
 
   const { id, tier } = rollEncounter(habitat);
+  currentTier = tier;
 
   // rustle scene
   document.getElementById('habitat-grid').style.display = 'none';

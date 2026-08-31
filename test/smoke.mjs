@@ -485,9 +485,9 @@ await page.waitForTimeout(300);
 await page.click('#card-btn');
 await page.waitForTimeout(500);
 check('trainer card opens', await page.locator('#card-modal').isVisible());
-check('17 badge slots (11 circuit + 6 late tier)', await page.locator('.card-badge').count() === 17);
+check('18 badge slots (11 circuit + 7 late tier)', await page.locator('.card-badge').count() === 18);
 check('badges show live progress, not hover text', await page.locator('.badge-prog').count() >= 1);
-check('badges show their goal as visible text', await page.locator('.card-badge em').count() === 17);
+check('badges show their goal as visible text', await page.locator('.card-badge em').count() === 18);
 check('3 daily quests', await page.locator('.card-quest').count() === 3);
 check('oak speaks', (await page.locator('#card-oak').innerText()).includes('OAK'));
 const mbOk = await page.evaluate(() => {
@@ -1320,6 +1320,42 @@ check('a quest card waits its turn behind the win card', await page.evaluate(asy
   document.getElementById('badge-modal').style.display = 'none';
   // held, and then NOT dropped — a swallowed reward is as bad as a buried one
   return heldWhileBusy && playedAfter;
+}));
+
+
+// ---- v19.8: ROUND 2 exists only after the crown ----
+// The round is module state both brothers share, so the gate is checked at the
+// READ as well as at the entry point: a player switch with the hub already
+// open must not leave the other boy on a board he has not earned.
+check('the ROUND tabs are hidden until you are champion', await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const G = await import('/js/gym.js');
+  const p = S.player();
+  const wasChampion = p.champion;
+  p.champion = null;
+  G.openGyms();
+  const hiddenBefore = document.querySelectorAll('.round-tab').length === 0;
+  p.champion = { date: '2026-08-30', team: [], levels: {} };
+  G.openGyms();
+  const shownAfter = document.querySelectorAll('.round-tab').length === 2;
+  p.champion = wasChampion;
+  G.openGyms();
+  G.closeGyms();
+  return hiddenBefore && shownAfter;
+}));
+
+check('round 2 raises every trainer by 15 and keeps round 1 untouched', await page.evaluate(async () => {
+  const D = await import('/js/gymdata.js');
+  const gym = D.GYMS[0];
+  const r1 = D.roundTrainers(gym, 1);
+  const r2 = D.roundTrainers(gym, 2);
+  // round 1 must hand back the ORIGINAL array: GYMS itself never moves
+  if (r1 !== gym.trainers) return false;
+  const raised = r2.every((t, i) =>
+    t.team.every((m, j) => m.level === Math.min(100, gym.trainers[i].team[j].level + 15)));
+  // and the keys must not collide, or a round-2 win would mark round 1 beaten
+  const k1 = D.trainerKey(gym.key, 0, 1), k2 = D.trainerKey(gym.key, 0, 2);
+  return raised && k1 !== k2 && k1 === D.trainerKey(gym.key, 0);
 }));
 
 // ---- the game never talks ----

@@ -2,6 +2,24 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.8.0] - ROUND 2
+
+Something to do after the crown.
+
+### Added
+- **ROUND 2.** Once you're Champion, a gold ROUND 2 button appears at the top of the Gym Circuit. Tap it and all 58 trainers are back — same names, same taunts, fifteen levels stronger. Hiker Carl is Lv23 now. Champion Rex is Lv95.
+- Beating a ROUND 2 trainer for the first time pays FULL experience, not the half a rematch pays — it's a new fight, not a repeat. Their team joins your box at the higher level too.
+- Beat ROUND 2 Rex and the Hall of Fame plays again. Beat all 58 of them and you get the **MASTER BADGE** — the last thing in the game, and one more Master Ball.
+- Nothing you already won moves. ROUND 1 is still there on the other tab, still ticked off exactly as you left it, and the Pokémon you're finding out in the world don't get any harder because of ROUND 2.
+- **Eevee's page finally shows all of them.** The Pokédex used to draw one line of evolutions, so a Pokémon that can become several different things only ever showed you one. Now the whole fan is on the page, with the one you're looking at ringed in gold.
+- **Gabe picks.** When a Pokémon levels up and could become more than one thing, a box appears — WHO WILL EEVEE BECOME? — with a picture of each one. Tap the one you want. Art taps a picture too; there's nothing to read.
+- **NOT YET is always there**, and it costs nothing. Say not yet and the question comes back next time it levels up. Forever. You never lose the choice.
+- **The PC learned to spell EVOLVE.** Your whole team earns experience in every fight, but only the Pokémon that landed the knockout was ever offered an evolution — the other five could be twenty levels overdue and nothing ever said so. Now the PC shows a gold READY TO EVOLVE button (one sprite, an arrow, and either the new one or a ❓ if it's a choice). Tap it and the ceremony plays right there.
+- **The daily quests stopped repeating themselves.** Ten quests became thirty-one: catch something in a particular place (DEEP FOREST, the OCEAN, GHOST TOWER…), catch something RARE, catch one at Lv40 or above, evolve a Pokémon, win a brother battle, rematch a gym trainer, and eight more types to hunt.
+- There's always at least one quest on the board anybody can finish — two of them on Art's board — so a morning's quests are never three things a four-year-old can't do.
+- **Champions get a fourth quest.** Once you've won the crown the board grows one extra, harder line — catch a shiny, win a ROUND 2 battle, evolve two — and that one pays a **Master Ball**. The other three are unchanged; it's added, never swapped.
+- Fixed: battle backgrounds now actually match where you are. Walking into DEEP FOREST and meeting a water Pokémon used to paint an ocean underneath a sign that still said DEEP FOREST — the code meant to fix that had a typo in it and has never once worked.
+
 ## [19.7.0] - THE MAP
 
 Every place in the world now looks like a place, and shows you who lives there.

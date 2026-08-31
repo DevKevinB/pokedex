@@ -5,6 +5,8 @@
 // 151 Pokémon ≈ 450KB — comfortably inside localStorage limits.
 // ============================================================
 
+import { MAX_POKEMON } from './config.js';
+
 const CACHE_KEY = 'pokedexos_apicache_v2';
 let cache = {};
 try { cache = JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; } catch (e) { cache = {}; }
@@ -76,19 +78,30 @@ function slimMove(d) {
 }
 
 function slimEvo(d) {
-  // flatten first path of the chain into [{name,id,min_level}...]
+  // v19.8 THE FAN. This used to follow evolves_to[0] and nothing else, so a
+  // chain that BRANCHES kept exactly one branch: Eevee had eight evolutions
+  // and the app knew about Vaporeon. Now every branch is walked into one FLAT
+  // list of { name, id, min_level, from } — flat because every consumer asks
+  // the same question ("what can THIS id become?") and a flat list answers it
+  // with a filter instead of a tree walk. `from` is the parent's id, null at
+  // the root. Depth-first, so a parent always precedes its children.
   const chain = [];
-  let curr = d.chain;
-  while (curr) {
-    const sUrl = curr.species?.url;
-    if (!sUrl) break;
+  const seen = new Set();
+  const walk = (node, fromId) => {
+    const sUrl = node?.species?.url;
+    if (!sUrl) return;
+    const id = parseInt(sUrl.split('/').filter(Boolean).pop());
+    // A malformed chain that pointed back at itself would spin for ever here,
+    // and this runs on the dex screen the boys sit on longest.
+    if (!Number.isInteger(id) || seen.has(id)) return;
+    seen.add(id);
     chain.push({
-      name: curr.species.name,
-      id: parseInt(sUrl.split('/').filter(Boolean).pop()),
-      min_level: curr.evolution_details?.[0]?.min_level ?? null
+      name: node.species.name, id, from: fromId,
+      min_level: node.evolution_details?.[0]?.min_level ?? null
     });
-    curr = curr.evolves_to?.[0];
-  }
+    (node.evolves_to || []).forEach(next => walk(next, id));
+  };
+  walk(d.chain, null);
   return { chain };
 }
 
@@ -180,4 +193,30 @@ export function getMove(url, name) {
   return moveStats(name || url) || cached(`move:${url}`, url, slimMove);
 }
 
-export const getEvolution = url => cached(`evo:${url}`, url, slimEvo);
+// NOTE the `evo2:` prefix. The v19.7-and-earlier `evo:` entries hold a
+// single-branch list with no `from` field; reading one as a fan would quietly
+// hide every branch on a device that had already cached the chain.
+export const getEvolution = url => cached(`evo2:${url}`, url, slimEvo);
+
+/** The default level for a line the API gates on a STONE or a TRADE.
+    There are no stones in this game and there is no trading, and a child must
+    never need an item he cannot find — so those lines have always simply
+    happened at Lv30, and they still do. */
+export const EVO_DEFAULT_LEVEL = 30;
+
+/**
+ * Every evolution this species can become RIGHT NOW, at `level`.
+ * Returns [] for anything that cannot evolve, is already final, is out of
+ * range (#1-649) or is not high enough yet. Never throws for a missing chain;
+ * a network failure still rejects and every caller treats that as "not today".
+ */
+export async function evolutionOptions(id, level) {
+  const me = Number(id);
+  const data = await getPokemon(me);
+  const species = data.species_url ? await getSpecies(data.species_url) : null;
+  if (!species?.evolution_chain_url) return [];
+  const { chain } = await getEvolution(species.evolution_chain_url);
+  return (chain || []).filter(c =>
+    c.from === me && c.id <= MAX_POKEMON &&
+    Number(level) >= (c.min_level ?? EVO_DEFAULT_LEVEL));
+}
