@@ -23,12 +23,34 @@ const cleanOrderedIds = arr => Array.isArray(arr)
   : [];
 // Save data is rendered straight into innerHTML in several places (PC tiles,
 // victory lines, the trainer card). A name or nickname arriving from a pasted
-// import code is untrusted input, so it gets escaped and length-capped here,
+// import code is untrusted input, so it is sanitised and length-capped here,
 // once, at the boundary — not at every render site.
-const escapeHtml = s => String(s == null ? '' : s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-const cleanName = s => escapeHtml(String(s == null ? '' : s)).trim().slice(0, 12);
+//
+// v19.5.4: this used to ENTITY-ENCODE, and because it runs at LOAD time the
+// thing stored in the save became the entity rather than the typed text. GABE'S
+// came back as GABE&#39;S in the header, in the Settings field and in the PC
+// title — while the trainer card, which renders through innerHTML, still read
+// GABE'S: one name, two readings, on one screen. Worse, the escaped value is
+// what the Settings input is refilled with, so the next SAVE & CLOSE persisted
+// it and the name ate a character on every reload.
+//
+// STRIPPING < > & " is the fix. Nothing left in a name can open a tag, an
+// entity, or break a double-quoted attribute, and no render site in this repo
+// interpolates a name into single quotes — so every innerHTML fence stands
+// while the apostrophe in GABE'S / DAD'S / ART'S survives. The decode pass runs
+// first so a name an older build already mangled repairs itself on next load;
+// it is bounded, so even a ratcheted name cannot loop. Cost, stated plainly:
+// "MUM & ME" becomes "MUM ME".
+const decodeEntities = s => {
+  let out = String(s == null ? '' : s);
+  for (let i = 0; i < 4 && /&(amp|lt|gt|quot|#39);/.test(out); i++) {
+    out = out.replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+             .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  }
+  return out;
+};
+const cleanName = s => decodeEntities(s)
+  .replace(/[<>&"]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
 
 function freshPlayer() {
   return {
@@ -150,7 +172,10 @@ export function playerName(n = state.currentPlayer) {
 }
 
 export function setPlayerName(n, name) {
-  state.save.players[n].name = (name || '').trim().slice(0, 12).toUpperCase();
+  // The SAME rule as load. When these two disagree, the load-time value is what
+  // the Settings field is refilled with and the next save writes it back — that
+  // is the ratchet that ate a character out of GABE'S on every reload.
+  state.save.players[n].name = cleanName(name).toUpperCase();
   persist();
 }
 
@@ -346,7 +371,10 @@ export function recordShiny(id) {
 export function hasShiny(id) { return player().shinies.includes(id); }
 
 export function setNick(id, nick) {
-  const clean = (nick || '').trim().slice(0, 12).toUpperCase();
+  // Nicknames land in innerHTML (PC tiles, the battle log, the victory card)
+  // and this path never sanitised at all — a typed nickname was raw in the save
+  // until the next reload cleaned it. Same boundary rule as every other name.
+  const clean = cleanName(nick).toUpperCase();
   if (clean) { player().nicks[id] = clean; persist(); }
 }
 
@@ -402,8 +430,21 @@ export function importCode(code) {
     state.save = { version: 2, players: { 1: hydratePlayer(obj.save.players[1]), 2: hydratePlayer(obj.save.players[2]) } };
   } else if (obj.v === 1 || obj.p1 || obj.p2) {
     // legacy v1 code from the old game
-    if (Array.isArray(obj.p1)) state.save.players[1].caught = [...new Set(obj.p1)].sort((a, b) => a - b);
-    if (Array.isArray(obj.p2)) state.save.players[2].caught = [...new Set(obj.p2)].sort((a, b) => a - b);
+    // Re-hydrate whichever player we touched. hydratePlayer is the ONLY place
+    // the "every team member must be owned" invariant is enforced, and this
+    // branch skipped it — so a legacy import left Pokemon on the team that were
+    // no longer in the box, persist() wrote that shape to localStorage, and the
+    // Junior BTL shortcut and explore encounters then ran on them. This applies
+    // immediately exactly what the next page load would have applied anyway.
+    // snapshotBeforeRisk() has already run, so UNDO IMPORT still works.
+    if (Array.isArray(obj.p1)) {
+      state.save.players[1].caught = [...new Set(obj.p1)].sort((a, b) => a - b);
+      state.save.players[1] = hydratePlayer(state.save.players[1]);
+    }
+    if (Array.isArray(obj.p2)) {
+      state.save.players[2].caught = [...new Set(obj.p2)].sort((a, b) => a - b);
+      state.save.players[2] = hydratePlayer(state.save.players[2]);
+    }
   } else {
     throw new Error('UNRECOGNIZED_SAVE');
   }

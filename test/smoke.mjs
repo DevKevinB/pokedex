@@ -635,11 +635,16 @@ check('remove works after confirming', removed);
 check('PIN set-date shown to the grown-up', (await page.locator('#dev-pin-date').innerText()).includes('PIN SET'));
 await page.click('#dev-close');
 await page.waitForTimeout(300);
+// v19.5.4: DONE lands you back on SETTINGS, where you came from. Parent Tools
+// used to hide Settings on the way in and never put it back, so DONE dropped
+// you on the Pokedex — and the hide bypassed closeSettings(), which is the only
+// thing that persists the two name fields, so a name typed just before holding
+// PARENT TOOLS was thrown away. This suite used to re-open Settings here,
+// which is why the bug survived: it encoded the broken behaviour.
+check('DONE returns to Settings, not the dex', await page.locator('#settings-modal').isVisible());
 
 // THE PARENT GATE: importing a save can wipe both boys, so PASTE CODE sits
 // behind the PIN — and a wrong PIN keeps the gate SHUT (it used to fail open).
-await page.click('#settings-btn');
-await page.waitForTimeout(400);
 await page.locator('#set-import-paste').evaluate(el => el.click());
 await page.waitForTimeout(300);
 check('paste code asks for the PIN', await page.locator('#pin-modal').isVisible());

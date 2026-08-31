@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.5.3">
-    <link rel="stylesheet" href="css/gba.css?v=19.5.3">
+    <link rel="stylesheet" href="css/main.css?v=19.5.4">
+    <link rel="stylesheet" href="css/gba.css?v=19.5.4">
 </head>
 <body>
 
@@ -397,15 +397,21 @@
             <div id="dev-suggest"></div>
             <div class="dev-status" id="dev-status"></div>
         </div>
-        <div class="card-section">
-            <div class="card-label">OWNED — TAP A LEVEL TO EDIT</div>
-            <input id="dev-filter" class="set-input dev-wide" type="text" inputmode="numeric" placeholder="FILTER BY NUMBER" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
-            <div class="dev-list" id="dev-list"></div>
-        </div>
+        <!-- SECURITY sits ABOVE the OWNED list. It used to be the last section,
+             and the sticky DONE button (css/main.css, .modal-box > .btn-large:
+             last-child) always covers the tail of the last section — so CHANGE
+             PIN and the PIN date were genuinely under DONE at 375x667 and at
+             390x844, unreachable at any normal scroll position. The section now
+             half-covered is the OWNED list, which scrolls on its own. -->
         <div class="card-section">
             <div class="card-label">SECURITY</div>
             <button class="set-action" id="dev-change-pin" title="Change the Parent Tools PIN">🔑 CHANGE PIN</button>
             <div class="dev-pin-date" id="dev-pin-date"></div>
+        </div>
+        <div class="card-section">
+            <div class="card-label">OWNED — TAP A LEVEL TO EDIT</div>
+            <input id="dev-filter" class="set-input dev-wide" type="text" inputmode="numeric" placeholder="FILTER BY NUMBER" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+            <div class="dev-list" id="dev-list"></div>
         </div>
         <button class="btn-large btn-reg" id="dev-close">DONE</button>
     </div>
@@ -465,6 +471,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.5.3"></script>
+<script type="module" src="js/main.js?v=19.5.4"></script>
 </body>
 </html>

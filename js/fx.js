@@ -40,16 +40,18 @@ export function clearSpriteFx(role) {
 }
 
 // Play one class, wait exactly as long as its keyframes run, take it off.
-// Every duration here is <= 300ms on purpose: awaitOrTap() treats anything at
-// or under floor+50 as a beat of animation timing and sleeps it plainly, so
-// none of these ever flashes the skip arrow at a child.
+// These are beats of ANIMATION timing, not reading pauses, so they are marked
+// `beat` and awaitOrTap sleeps them plainly: none of them ever flashes the skip
+// arrow at a child mid-lunge, and a tap can never cut a keyframe short. This
+// used to be inferred from the duration being under floor+50, which also
+// swallowed the battle's 300ms result lines; it is said out loud now.
 async function oneShot(role, cls, ms) {
   const el = spriteOf(role);
   if (!el) return;
   el.classList.remove(...ONE_SHOT);
   void el.offsetWidth;
   el.classList.add(cls);
-  await awaitOrTap(ms);
+  await awaitOrTap(ms, { beat: true });
   el.classList.remove(cls);
 }
 
@@ -72,7 +74,7 @@ export async function puffAway(role = 'wild') {
 export async function hitStop(ms = 90) {
   const bobs = [...document.querySelectorAll('.sprite-bob')];
   bobs.forEach(b => { b.style.animationPlayState = 'paused'; });
-  await awaitOrTap(ms);
+  await awaitOrTap(ms, { beat: true });   // animation timing, never a pause to skip
   bobs.forEach(b => { b.style.animationPlayState = ''; });
 }
 

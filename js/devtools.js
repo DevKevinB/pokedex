@@ -171,7 +171,14 @@ function wireHoldToOpen() {
       held = true;
       btn.classList.remove('holding');
       if (!(await requirePin())) return;
-      document.getElementById('settings-modal').style.display = 'none';
+      // Settings stays OPEN behind Trainer Tools. Hiding it here was never
+      // needed for stacking — #dev-modal is z-index 2700 over #settings-modal's
+      // 2600, so it is completely covered — and it did two bad things: nothing
+      // ever put Settings back, so DONE dropped you on the Pokedex; and it
+      // bypassed closeSettings(), which is the only thing that persists the two
+      // name fields, so typing a name and then holding PARENT TOOLS silently
+      // threw the name away. DONE only hides #dev-modal, which now reveals
+      // Settings exactly as it was left, typed name and all.
       openDevTools();
     }, HOLD_MS);
   };

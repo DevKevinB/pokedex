@@ -26,6 +26,15 @@ export function clearGymRun() {
 
 export function pokeCenterHeal(silent = false) {
   clearGymRun();
+  // Nothing to heal is not a success. Both neighbours on this screen already
+  // refuse honestly (NEED TWO TEAMS! / CATCH ONE FIRST!); this was the odd
+  // unguarded button. The guard lives inside !silent on purpose —
+  // pokeCenterHeal(true) is the post-battle/reset call and stays a no-op.
+  if (!silent && !player().caught.length) {
+    haptic('denied');
+    dialog({ icon: '🔴', title: 'CATCH ONE FIRST!', text: 'You have no team to heal yet.' });
+    return;
+  }
   if (!silent) {
     // little healing jingle
     [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playBeep(f, 'sine', 0.18, 0.12), i * 140));

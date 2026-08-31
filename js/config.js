@@ -3,7 +3,7 @@
 // ============================================================
 
 export const MAX_POKEMON = 649; // Gens 1–5 — the animated pixel sprite era
-export const APP_VERSION = '19.5.3';
+export const APP_VERSION = '19.5.4';
 
 // generation ranges for PC Box tabs
 export const GENERATIONS = [
@@ -106,8 +106,11 @@ export function initPace() {
   return PACE.fast;
 }
 
-function skipArrow() {
-  const log = document.getElementById('battle-log');
+function skipArrow(host = null) {
+  // The arrow has to live where the wait is. Off the battle screen (the dex
+  // ball throw) #battle-log does not exist, and an unadvertised skip does not
+  // exist for a pre-reader — so a caller may name its own host.
+  const log = host || document.getElementById('battle-log');
   if (!log) return null;
   const a = document.createElement('span');
   a.className = 'skip-arrow';
@@ -118,13 +121,29 @@ function skipArrow() {
 }
 
 // Resolves after ms, OR early on a tap once the floor has elapsed.
-export function awaitOrTap(ms, { floor = PACE.floor, target = null } = {}) {
+export function awaitOrTap(ms, { floor = PACE.floor, target = null, beat = false } = {}) {
   const total = PACE.fast ? Math.min(ms, floor) : ms;
-  // Short waits are beats of animation timing, not reading pauses — leave them.
-  if (total <= floor + 50) return sleep(total);
+  // A beat of ANIMATION timing is not a reading pause: it gets no arrow and can
+  // never be tapped through. fx.js marks its one-shots with `beat` explicitly.
+  //
+  // v19.5.4: that used to be INFERRED from the duration — `total <= floor + 50`
+  // — which also swallowed every 300ms RESULT beat ("A CRITICAL HIT!", "IT'S
+  // SUPER EFFECTIVE!", "IT'S NOT VERY EFFECTIVE...", "IT HAD NO EFFECT!") into
+  // a plain sleep with no arrow and no way to tap through at all, on exactly
+  // the lines a seven-year-old most wants to move past. The flag now says what
+  // the duration was only guessing at. ?fast=1 still clamps every wait to the
+  // floor, so the suite keeps taking the cheap path.
+  if (beat || total <= floor + 50) return sleep(total);
   return new Promise(resolve => {
     const el = target || document.getElementById('battle-container') || document.body;
-    let done = false, armed = false, arrow = null;
+    // The arrow is created UP FRONT, not when the tap arms at `floor`. It used
+    // to be on screen for 450 - 250 = 200ms of a 450ms beat while the message
+    // stayed up another 350ms, which reads as a glitch rather than as an
+    // invitation to tap. Tap ACCEPTANCE still waits for `armed`, so nothing
+    // resolves faster than PACE.floor and ART cannot flash past a ceremony —
+    // only the advertisement moved earlier.
+    let done = false, armed = false;
+    const arrow = skipArrow(target);
     const finish = () => {
       if (done) return;
       done = true;
@@ -138,7 +157,6 @@ export function awaitOrTap(ms, { floor = PACE.floor, target = null } = {}) {
     const armTimer = setTimeout(() => {
       if (done) return;
       armed = true;
-      arrow = skipArrow();
       el.addEventListener('pointerdown', onTap);
     }, floor);
   });

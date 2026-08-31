@@ -50,7 +50,10 @@ function showDialog({ icon, sprite, title = '', text = '', input = false, value 
     cancelBtn.style.display = cancel ? 'block' : 'none';
     cancelBtn.innerText = cancel || 'CANCEL';
     modal.style.display = 'flex';
-    if (input) setTimeout(() => { try { inputEl.focus(); inputEl.select(); } catch (e) {} }, 60);
+    // select() scrolls a one-line field to its END, so COPY THIS CODE showed a
+    // parent the last ~25 characters of a 1300-character save code. Keep the
+    // select-all — that is what makes the copy possible — but show the head.
+    if (input) setTimeout(() => { try { inputEl.focus(); inputEl.select(); inputEl.scrollLeft = 0; } catch (e) {} }, 60);
 
     const done = val => {
       modal.style.display = 'none';

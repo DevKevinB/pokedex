@@ -18,7 +18,14 @@ import { BACKFILL, FARAWAY } from './habitatfill.js';
 // engine.wildLevel() leashes the result to the lead so a habitat can still
 // never become an unwinnable wall for ART.
 export const HABITATS = [
-  { key: 'forest', bg: 'grass', base: 4, spread: 3, emoji: '🌲', name: 'DEEP FOREST', sub: 'BUG · GRASS · BIRD',
+  // The starter route sits just UNDER the Pokemon a new player actually has.
+  // base 4 / spread 3 rolled Lv4-7 (mean 5.5) against the Lv5 that every fresh
+  // catch is, on the first card of the map, and with engine.MAX_HIT_FRACTION
+  // capping a Lv5 fight at a 2-3 turn race there is no room to recover from a
+  // one-level deficit. base 3 / spread 1 is Lv3-4. Nothing else moves: badges
+  // still add +2 each and the lead leash still scales the route for a returning
+  // player, and habitatLevel() reads the same two numbers so "Lv~4" is honest.
+  { key: 'forest', bg: 'grass', base: 3, spread: 1, emoji: '🌲', name: 'DEEP FOREST', sub: 'BUG · GRASS · BIRD',
     c: [10, 13, 16, 19, 43, 69, 48, 161, 163, 165, 265, 401, 504, 519],
     u: [11, 14, 17, 20, 44, 70, 25, 102, 46, 1, 152, 252, 387, 495, 511, 540],
     r: [12, 15, 18, 45, 71, 47, 103, 123, 127, 2, 212, 214, 469, 541, 3],
@@ -138,7 +145,19 @@ function renderHabitats() {
     // it opens the day this player becomes Champion.
     const locked = h.championOnly && !player().champion;
     const expected = habitatLevel(h);
-    const pips = expected > lead + 4 ? 3 : expected > lead - 2 ? 2 : 1;
+    // What can a difficulty pip MEAN for ART? In Junior Mode his Pokemon cannot
+    // faint (battle.js clamps his HP above zero; engine.js caps incoming damage
+    // at JUNIOR_MAX_TAKE) and there is no other loss condition in a wild fight —
+    // so "tough" is not a thing that can happen to him. A red square is the one
+    // signal a four-year-old reads perfectly, and it says DO NOT GO HERE: on a
+    // brand-new junior save six of eight cards were red and none were green, a
+    // forbidden world built out of a danger that does not exist. Uniform green
+    // says only "all of these are fine", which in Junior Mode is simply true —
+    // and it advertises nothing, because a green board is not an accommodation,
+    // it is a map. The band is NOT deleted: the Lv~N caption Kevin reads over
+    // Art's shoulder lives in the same <small>, and the card height must match.
+    const pips = player().settings.junior ? 1
+      : expected > lead + 4 ? 3 : expected > lead - 2 ? 2 : 1;
     return `
     <div class="habitat-card ${locked ? 'locked' : ''}" data-habitat="${h.key}">
       <span class="habitat-emoji">${locked ? '🔒' : h.emoji}</span>

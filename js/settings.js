@@ -118,7 +118,9 @@ function applyImportedCode(code) {
       dialog({ icon: '💾', title: 'SAVE LOADED!', text: `${after} Pokémon across both trainers.` });
     }
   } catch (e) {
-    const why = e && e.message === 'EMPTY_SAVE'
+    const why = !String(code || '').trim()
+      ? 'The box was empty — nothing was pasted.\n\nNothing was changed.'
+      : e && e.message === 'EMPTY_SAVE'
       ? 'That code is empty — it has no Pokémon in it.\n\nNothing was changed.'
       : 'That save code was not recognized.\n\nNothing was changed.';
     dialog({ icon: '❌', title: 'NOT LOADED', text: why });
@@ -155,7 +157,12 @@ async function undoImport() {
 async function pasteSaveCode() {
   if (!(await requirePin())) return;
   const code = await dialog({ icon: '📋', title: 'PASTE SAVE CODE', text: 'This replaces the save for BOTH trainers.', input: true, placeholder: 'PASTE HERE', ok: 'LOAD', cancel: 'CANCEL' });
-  if (code) applyImportedCode(code);
+  // Only CANCEL resolves null. An empty or all-spaces box resolves '' — falsy —
+  // so LOAD on an empty box used to take the same do-nothing path as CANCEL and
+  // close in silence, which is exactly the moment (a paste that failed on iOS) a
+  // parent needs to be told. importCode('') throws before snapshotBeforeRisk(),
+  // so the save is untouched and applyImportedCode says so.
+  if (code !== null) applyImportedCode(code);
 }
 
 async function uploadSaveFile() {

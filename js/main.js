@@ -2,7 +2,7 @@
 // Pokédex OS — bootstrap & event wiring
 // ============================================================
 
-import { APP_VERSION, PIXEL_SPRITE, initPace, typeColors } from './config.js';
+import { APP_VERSION, PIXEL_SPRITE, ITEM_SPRITE, initPace, typeColors } from './config.js';
 
 // ?fast=1 clamps every battle wait to its floor (used by the test suite).
 initPace();
@@ -73,7 +73,12 @@ export function refreshLeadChip() {
   if (!img || !label) return;
   const p = player();
   const id = p.team[0] || p.caught[0];
-  if (!id) { img.removeAttribute('src'); img.style.visibility = 'hidden'; label.innerText = 'LEAD'; return; }
+  // Before the first catch this was the ONLY button on the dex with no picture
+  // — a blank box for a child who cannot read the one word on it, with the word
+  // sitting low and left because the hidden <img> still held its flex slot. An
+  // empty Poke Ball says "your lead goes here" without a word, and keeps LEAD in
+  // the same visual rhythm as CRY / SHINY / RNDM.
+  if (!id) { img.style.visibility = 'visible'; img.src = ITEM_SPRITE('poke-ball'); label.innerText = 'LEAD'; return; }
   img.style.visibility = 'visible';
   img.src = PIXEL_SPRITE(id);
   label.innerText = `Lv${monLevel(id)}`;

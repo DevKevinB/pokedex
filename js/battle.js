@@ -108,6 +108,17 @@ const show = (id, on = true) => { document.getElementById(id).style.display = on
 
 // computeStats now comes from engine.js (and includes spatk/spdef).
 
+// Resolves when the bitmap is decoded and in cache — or after `ms`, whichever
+// is first. Never rejects: a missing sprite is a cosmetic problem, a hung
+// battle opener is not.
+const spriteReady = (url, ms = 2500) => new Promise(res => {
+  if (!url) { res(); return; }
+  const im = new Image();
+  im.onload = im.onerror = res;
+  im.src = url;
+  setTimeout(res, ms);
+});
+
 async function buildFighter(id, level, side, owner = null) {
   const data = await getPokemon(id);
   const stats = computeStats(data, level);
@@ -147,13 +158,26 @@ async function buildFighter(id, level, side, owner = null) {
   if (moves.length === 0) moves.push({ name: 'tackle', power: 40, type: 'normal', damage_class: 'physical' });
 
   const sparkle = side === 'player' && battleState.isSparkle;
+  const spriteBack = sparkle ? (sp.animated_back_shiny ?? sp.back_shiny ?? sp.back_default) : (sp.animated_back ?? sp.back_default ?? sp.front_default);
+  const spriteFront = sp.animated ?? sp.front_default ?? '';
+  const shinyFront = sp.animated_shiny ?? sp.front_shiny ?? null;
+  // v19.5.4: warm THIS fighter's bitmap before handing it out. setFighterSprite
+  // already hides a sprite until it decodes, which turned "the wrong Pokemon"
+  // into "an empty platform" — but on a slow CDN that platform stayed empty for
+  // two seconds with all four move tiles live, and ART, who plays entirely by
+  // picture, will tap a move at a blank field. buildFighter is the single funnel
+  // every opener, trainer send-out, switch-in and versus side already awaits,
+  // and it runs while the loading screen is still up, so the wait is free.
+  // Only the side that is actually painted is warmed — one image, no extra
+  // requests — and the cap means a dead CDN costs 2.5s, never a stuck screen.
+  await spriteReady(side === 'player'
+    ? spriteBack
+    : (battleState.wildShiny && shinyFront) ? shinyFront : spriteFront);
   return {
     id, level, moves, captureRate,
     name: data.name, types: data.types, base_experience: data.base_experience || 60,
     ...stats, hp: stats.maxHp,
-    spriteBack: sparkle ? (sp.animated_back_shiny ?? sp.back_shiny ?? sp.back_default) : (sp.animated_back ?? sp.back_default ?? sp.front_default),
-    spriteFront: sp.animated ?? sp.front_default ?? '',
-    shinyFront: sp.animated_shiny ?? sp.front_shiny ?? null
+    spriteBack, spriteFront, shinyFront
   };
 }
 
@@ -190,7 +214,11 @@ export function exitBattleMode() {
   // Nothing parked. A .recall left on a sprite is an INVISIBLE Pokémon in the
   // next fight (the keyframes end at opacity 0), and a win card left in the DOM
   // is the last fight's trophy sitting on top of this fight's result.
-  clearSpriteFx();
+  // ...and nothing grey. .fainted is NOT in clearSpriteFx's one-shot list, so
+  // teardown used to leave the last fight's corpse styling on the sprite and
+  // rely on each renderer to remember to clear it. unfaintSprites() drops
+  // .fainted from both sprites AND calls clearSpriteFx(), so this loses nothing.
+  unfaintSprites();
   ['victory-hero', 'victory-xp'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.innerHTML = ''; el.classList.remove('lvup'); }
@@ -659,7 +687,18 @@ function updateHP(target) {
   const pct = Math.max(0, (obj.hp / obj.maxHp) * 100);
   const bar = document.getElementById(`${target}-hp-bar`);
   const ghost = document.getElementById(`${target}-hp-ghost`);
+  // WHO is standing here has to be known BEFORE the fill is written. .hp-fill
+  // carries `transition: width 0.5s steps(8, end)` unconditionally, so a fresh
+  // send-out animated up from whatever the previous occupant of this slot left
+  // behind — 0% after a faint. The ghost snapped to full instantly while the
+  // green bar climbed 0 -> 100% in eight visible steps inside it: exactly the
+  // game's HEALING vocabulary, played on a Pokemon that has taken no damage.
+  // A new fighter is not a heal, so the fill SNAPS, just as the ghost does.
+  const who = `${obj.name}|${obj.maxHp}`;
+  const sameFighter = ghost ? ghost.dataset.mon === who : false;
+  if (!sameFighter) bar.style.transition = 'none';
   bar.style.width = `${pct}%`;
+  if (!sameFighter) { void bar.offsetWidth; bar.style.transition = ''; }
   // The colour SNAPS at the thresholds instead of fading through it, so "I am
   // in trouble" is one frame rather than half a second of muddy in-between.
   // The hexes are gone: green / gold / red are tokens now (ROADMAP §3.1), and
@@ -678,8 +717,7 @@ function updateHP(target) {
   // signal ART reads. So the bar identifies who it is showing and snaps
   // whenever that changes. Detected here rather than passed in by each caller,
   // because a call site that forgets the flag is exactly how this bug got in.
-  const who = `${obj.name}|${obj.maxHp}`;
-  const sameFighter = ghost ? ghost.dataset.mon === who : false;
+  // (who / sameFighter are computed above, with the fill write.)
   if (ghost) ghost.dataset.mon = who;
   if (ghost) {
     const was = parseFloat(ghost.style.width);
@@ -1297,7 +1335,11 @@ async function handleEnemyDown() {
   setVictoryHero(
     `<div class="vh-mark" aria-hidden="true">🏆</div>` +
     `<div id="spoils-grid">${grid}</div>` +
-    `<p id="spoils-hint">⭐ PICK YOUR FAVORITE!</p>`);
+    // HIKER CARL is the ONLY one-Pokemon trainer of the 58 — and the first
+    // fight every child has, so "PICK YOUR FAVORITE!" over a single Geodude
+    // was the first victory card in the game. The node itself must stay:
+    // pickSpoilsFavorite() looks it up by id and rewrites it after a pick.
+    `<p id="spoils-hint">⭐ ${t.def.team.length > 1 ? 'PICK YOUR FAVORITE!' : 'TAP TO SEE IT!'}</p>`);
   setVictoryXp(t.xpCard || null);
   document.getElementById('victory-lines').innerHTML =
     `<p>🏆 ${t.def.name} DEFEATED!</p>` +

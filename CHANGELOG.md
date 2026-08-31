@@ -2,6 +2,29 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.5.4] - SMALL MERCIES
+
+The last of the play-test list: timing, save handling, and the bits a grown-up
+touches.
+
+### Fixed
+- The Pokédex used to show one Pokémon while naming another — SANDSHREW on screen under the words SANDSLASH, with CATCH live on it. The picture now waits for itself, so what you see and what it says are always the same Pokémon.
+- Battles stopped starting on two empty patches of grass. On a slow connection the whole fight appeared with nobody in it for about two seconds.
+- A new opponent's health bar no longer fills up like a heal. Every enemy after the first came out with an empty green bar that climbed to full — which is exactly what healing looks like in this game, on a Pokémon that hadn't been touched.
+- GABE'S stays GABE'S. It used to come back as GABE&#39;S after a reload, and it got a bit worse every single time.
+- DONE in Parent Tools puts you back in Settings instead of dumping you on the Pokédex — and it stops throwing away a name you'd just typed.
+- 🔑 CHANGE PIN is reachable. It was sitting underneath the DONE button on both phone sizes.
+- The save code shows as it really is — not in capitals, not centred, and starting at the beginning, so you can actually check you've got the right one.
+- PASTE CODE tells you when the box was empty instead of just closing.
+- Loading an old save code from the previous game no longer leaves Pokémon on your team that aren't in your box.
+- The POKé CENTER stops congratulating you on healing a team you don't have.
+- DEEP FOREST is actually the gentle one now — a brand-new player's first fight was a coin flip on the card that looks easiest.
+- The dex ball throw can be hurried along with a tap. It was a seven-second ceremony nothing could interrupt.
+- The blinking ▼ 'tap to hurry' arrow stays up for the whole wait now instead of flashing for a moment in the middle, and the short battle lines can be tapped through too.
+- Art's explore map is all green. The red squares were warning him about a danger that cannot happen to him — his Pokémon can't faint. The Lv~ number on each card is unchanged so you can still see what he's walking into.
+- The LEAD button has a picture before your first catch — it was the only button on the dex that was just a word.
+- The ✨ and the number on the SHINIES tile of the trainer card aren't touching any more.
+
 ## [19.5.3] - READ IT, TAP IT
 
 Things you could not read, and things you could not tap.

@@ -2,7 +2,7 @@
 // Pokédex OS — catch mechanic (ball drawer, RNG, animations)
 // ============================================================
 
-import { ITEM_SPRITE } from './config.js';
+import { ITEM_SPRITE, awaitOrTap } from './config.js';
 import { catchProbability } from './engine.js';
 import { askNickname } from './nickname.js';
 import { state, player, recordCatch, ensureMon, spendMasterBall, setNick } from './state.js';
@@ -39,7 +39,7 @@ export function spawnConfetti(host, count = 24) {
   }
 }
 
-export function executeCatch(ballModifier, ballName, forceSuccess = false) {
+export async function executeCatch(ballModifier, ballName, forceSuccess = false) {
   if (state.isCatching) return;
   // Junior mode: every ball is a guaranteed catch, and Master Balls are
   // never consumed — but the drawer looks completely normal, so the
@@ -68,39 +68,45 @@ export function executeCatch(ballModifier, ballName, forceSuccess = false) {
   ball.style.opacity = 1;
   ball.style.transform = 'translateY(0px) scale(1)';
 
-  setTimeout(() => {
-    sprite.classList.add('sucked-in');
-    sfx.suck();
+  // v19.5.4: the dex throw predates the awaitOrTap convention, so it was the
+  // one ceremony in the game a tap could not hurry — 6.4s of an invisible
+  // Pokemon with the whole screen inert behind state.isCatching, and ?fast=1
+  // had no effect on it, which is why the suite never felt it. Same beats, same
+  // order, same durations; they just go through the pacing seam now, floored at
+  // PACE.floor so a stray finger can still never skip the ceremony outright.
+  const stage = document.querySelector('.visual-display');
+  await awaitOrTap(500, { target: stage });
+  sprite.classList.add('sucked-in');
+  sfx.suck();
 
-    // Same formula as the battle screen (engine.catchProbability). These used
-    // to be two different equations: the dex screen ignored HP and skipped the
-    // clamps, so the same ball on the same species had different odds
-    // depending on which screen you happened to throw it from.
-    const isSuccess = forceSuccess || Math.random() < catchProbability({
-      captureRate: state.curSpeciesData?.capture_rate ?? 45,
-      ballMod: ballModifier,
-      junior,
-      master: ballName === 'master-ball'
-    });
+  // Same formula as the battle screen (engine.catchProbability). These used
+  // to be two different equations: the dex screen ignored HP and skipped the
+  // clamps, so the same ball on the same species had different odds
+  // depending on which screen you happened to throw it from.
+  const isSuccess = forceSuccess || Math.random() < catchProbability({
+    captureRate: state.curSpeciesData?.capture_rate ?? 45,
+    ballMod: ballModifier,
+    junior,
+    master: ballName === 'master-ball'
+  });
 
-    const shakes = isSuccess ? 3 : Math.floor(Math.random() * 3) + 1;
-    let shakeCount = 0;
-    const shakeInterval = setInterval(() => {
-      shakeCount++;
-      ball.classList.remove('ball-shake');
-      void ball.offsetWidth;
-      ball.classList.add('ball-shake');
-      sfx.shake();
-      triggerVibration([50]);
-      if (shakeCount >= shakes) {
-        clearInterval(shakeInterval);
-        setTimeout(() => finalizeDexCatch(isSuccess, ball, sprite, msg), 800);
-      }
-    }, 1000);
-  }, 500);
+  const shakes = isSuccess ? 3 : Math.floor(Math.random() * 3) + 1;
+  for (let i = 0; i < shakes; i++) {
+    // The wait comes FIRST, exactly as the old setInterval did: the ball has
+    // to fly and land before it rocks.
+    await awaitOrTap(1000, { target: stage });
+    ball.classList.remove('ball-shake');
+    void ball.offsetWidth;
+    ball.classList.add('ball-shake');
+    sfx.shake();
+    triggerVibration([50]);
+  }
+  await awaitOrTap(800, { target: stage });
+  finalizeDexCatch(isSuccess, ball, sprite, msg);
 }
 
-function finalizeDexCatch(isSuccess, ball, sprite, msg) {
+async function finalizeDexCatch(isSuccess, ball, sprite, msg) {
+  const stage = document.querySelector('.visual-display');
   ball.classList.remove('ball-shake');
   if (isSuccess) {
     sfx.catch();
@@ -127,11 +133,16 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
       ? { id: state.curId, name: (state.curData?.name || 'it').toUpperCase() }
       : null;
     document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'catch', types: state.curData?.types || [] } }));
-    setTimeout(() => {
+    // The GOTCHA! hold is a wait like any other now, so a tap hurries it and
+    // ?fast=1 shortens it - the dex throw used to be 6.4s of ceremony that
+    // nothing could move. NAME ME is CHAINED to the end of the hold rather
+    // than racing it on its own timer, so a tapped-short verdict can never
+    // pop the naming box over a dex the child has already moved on from.
+    awaitOrTap(2000).then(() => {
       msg.style.opacity = 0;
       state.isCatching = false;
       if (pendingNick) askNickname(pendingNick.id, pendingNick.name).then(nick => { if (nick) setNick(pendingNick.id, nick); });
-    }, 2000);
+    });
   } else {
     sfx.break();
     triggerVibration([200]);
@@ -141,6 +152,8 @@ function finalizeDexCatch(isSuccess, ball, sprite, msg) {
     msg.innerText = 'DARN! IT BROKE FREE!';
     msg.style.color = '#ff0000';
     msg.style.opacity = 1;
-    setTimeout(() => { msg.style.opacity = 0; state.isCatching = false; }, 2000);
+    await awaitOrTap(2000, { target: stage });
+    msg.style.opacity = 0;
+    state.isCatching = false;
   }
 }

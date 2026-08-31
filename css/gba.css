@@ -688,6 +688,14 @@ body.junior .quick-stats { display: none; }
   padding: 8px; width: 130px; text-transform: uppercase; text-align: center;
 }
 .set-input:focus { outline: 2px solid var(--p-primary); }
+/* A save code is base64 and CASE-SENSITIVE — it is not kid-facing text, and
+   .set-input's uppercase/centre treatment destroyed every letter's case on
+   screen. The value underneath was always correct, so copy/paste worked; there
+   was just no way to check by eye that you had the right code. #dlg-input is
+   the only element dialog.js writes into, and its only input:true callers are
+   COPY THIS CODE and PASTE SAVE CODE, so scoping by id leaves the PLAYER NAME
+   fields exactly as they were. */
+#dlg-input { text-transform: none; text-align: left; }
 .set-toggle {
   font-family: var(--pixel-font); font-size: 8px; cursor: pointer; min-width: 64px;
   background: #d8d0a8; color: #706848; border: 2px solid var(--px-ink); border-radius: 2px;
@@ -1276,6 +1284,12 @@ body.junior .moves-grid > .move-btn.type-tile .tile-ico {
 }
 @keyframes skipBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
 @media (prefers-reduced-motion: reduce) { .skip-arrow { animation: none; } }
+/* The dex stage is the night shell, not paper: the ink-coloured arrow above
+   would be invisible on it. The ball throw advertises its skip here now. */
+.visual-display > .skip-arrow {
+  color: var(--paper); text-shadow: 0 2px 0 rgba(0,0,0,0.6);
+  right: 14px; bottom: 4px; z-index: 6;
+}
 
 /* ============================================================
    v19.1: MOTION FOUNDATION

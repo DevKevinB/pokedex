@@ -262,7 +262,7 @@ export function openTrainerCard() {
     <div>MASTER BALLS <strong>x${p.items.masterBalls}</strong></div>
     <div>BADGES <strong>${BADGES.filter(b => p.badges.includes(b.id)).length + legacyEarned.length}/${BADGES.length + legacyEarned.length}</strong></div>
     <div>VS WINS <strong>${p.stats.versusWins || 0}</strong></div>
-    <div>SHINIES <strong>✨${(p.shinies || []).length}</strong></div>`;
+    <div>SHINIES <strong>✨ ${(p.shinies || []).length}</strong></div>`;
 
   document.getElementById('card-quests').innerHTML = quests.list.map(q => {
     const def = questDef(q.key);

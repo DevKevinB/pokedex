@@ -111,12 +111,35 @@ export async function loadPoke(idOrName) {
     document.getElementById('poke-sprite').src = ITEM_SPRITE('poke-ball');
     document.getElementById('bg-glow').style.background = 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)';
   }
-  setTimeout(() => {
+  // v19.5.4: this used to be a bare 600ms wall clock. The caption is painted
+  // the instant the JSON resolves (0ms on a species already in the cache — the
+  // boys' normal case), and an <img> keeps showing its LAST decoded frame while
+  // a new src is in flight, so the timer uncovered SANDSHREW under the words
+  // NO. 0028 SANDSLASH, with CATCH live on it. For ART the picture IS the name.
+  // 600ms is now a MINIMUM: the reveal also waits for the bitmap to decode, and
+  // a later tap's navigation cancels this one's reveal instead of racing it.
+  const spEl = document.getElementById('poke-sprite');
+  const forId = state.curId;
+  const decoded = (spEl.complete && spEl.naturalWidth > 0)
+    ? Promise.resolve()
+    : new Promise(res => {
+        // One controller, so whichever of load/error fires tears down BOTH
+        // listeners and the timer. #poke-sprite is a single long-lived
+        // element and the dex is navigated hundreds of times a session, so a
+        // listener left behind per navigation is a real leak.
+        const ac = new AbortController();
+        let t;
+        const fin = () => { ac.abort(); clearTimeout(t); res(); };
+        spEl.addEventListener('load', fin, { signal: ac.signal });
+        spEl.addEventListener('error', fin, { signal: ac.signal });
+        t = setTimeout(fin, 2500);   // a dead sprite URL must never hide the dex
+      });
+  Promise.all([decoded, new Promise(res => setTimeout(res, 600))]).then(() => {
+    if (state.curId !== forId) return;   // a later tap owns the screen now
     setScanning(false);
-    const spEl = document.getElementById('poke-sprite');
     spEl.style.opacity = 1;
     pxReveal(spEl);   // six chunky columns, not a cross-fade
-  }, 600);
+  });
 }
 
 function updateUISafe() {
