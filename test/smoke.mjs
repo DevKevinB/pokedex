@@ -1394,6 +1394,68 @@ check('every app module is in the offline file list', await page.evaluate(async 
   return [...seen].every(p => listed.has(p));
 }));
 
+// ---- v19.8.2: the API cache lives inside a budget ----
+// The cache and the boys' save share ONE ~5MB localStorage box, and only the
+// save is irreplaceable. Browsing the whole 649-Pokemon dex used to grow the
+// cache with no ceiling at all — no cap, no eviction — until a quota error
+// landed on the SAVE's own write. Seed a fresh device with a 400-entry cache
+// written by that older build, boot, and it must come back inside the cap
+// with the oldest rows gone and the save untouched.
+{
+  const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  await mockRoutes(ctx2);
+  await ctx2.addInitScript(() => {
+    // Ids well above MAX_POKEMON, so nothing in the app ever reads them and
+    // this measures the cap and nothing else. ~3.9KB each ≈ 1.55MB in total.
+    const filler = 'x'.repeat(3800);
+    const blob = {};
+    for (let i = 0; i < 400; i++) blob[`pkmn:${1000 + i}`] = { id: 1000 + i, name: `mon-${1000 + i}`, filler };
+    localStorage.setItem('pokedexos_apicache_v2', JSON.stringify(blob));
+    localStorage.setItem('pokedexos_save_v2', JSON.stringify({
+      version: 2,
+      players: { 1: { name: 'GABE', caught: [1, 4, 7, 25, 150] }, 2: { name: 'ART', caught: [25, 133] } }
+    }));
+    localStorage.setItem('pokedexos_lastplayer', '1');
+  });
+  const p2 = await ctx2.newPage();
+  await p2.goto(BASE, { waitUntil: 'networkidle' });
+  const r = await p2.evaluate(async () => {
+    const A = await import('/js/api.js');
+    const read = () => localStorage.getItem('pokedexos_apicache_v2') || '{}';
+    const seeded = obj => Object.keys(obj).map(k => /^pkmn:(1\d\d\d)$/.exec(k))
+      .filter(Boolean).map(m => Number(m[1])).sort((a, b) => a - b);
+    const bootText = read(), boot = JSON.parse(bootText);
+    const saveBefore = localStorage.getItem('pokedexos_save_v2');
+    // Now write through the REAL path, at the cap, so eviction runs on a
+    // normal fetch and not only on the one-off boot tidy-up.
+    for (let i = 1; i <= 20; i++) { try { await A.getPokemon(i); } catch (e) { /* ignore */ } }
+    const afterText = read(), after = JSON.parse(afterText);
+    return {
+      limits: A.CACHE_LIMITS,
+      bootKeys: Object.keys(boot).length, bootLen: bootText.length, bootSeeded: seeded(boot),
+      afterKeys: Object.keys(after).length, afterLen: afterText.length, afterSeeded: seeded(after),
+      saveBefore, saveAfter: localStorage.getItem('pokedexos_save_v2')
+    };
+  });
+  // No published budget at all is itself a failure, not a crash.
+  const limits = r.limits || { entries: Infinity, bytes: Infinity };
+  const inBudget = (keys, len) => !!r.limits && keys <= limits.entries && len <= limits.bytes && len < 1500000;
+  check('a 400-entry cache is capped at boot and stays under 1.5MB',
+    r.bootSeeded.length > 0 && inBudget(r.bootKeys, r.bootLen));
+  check('a cache write at the cap evicts instead of growing',
+    r.afterKeys > 0 && inBudget(r.afterKeys, r.afterLen) && r.afterSeeded.length < r.bootSeeded.length);
+  // Oldest-first: the survivors must be the tail of the seeded run (1000 is
+  // the oldest row, 1399 the newest), never an arbitrary slice.
+  const tail = list => list.length > 0 && list[0] > 1000 && list[list.length - 1] === 1399 &&
+    list.every((n, i) => n === list[0] + i);
+  check('the cache evicts the oldest entries first', tail(r.bootSeeded) && tail(r.afterSeeded));
+  check('cache eviction never touches the save',
+    r.saveAfter === r.saveBefore &&
+    JSON.parse(r.saveAfter).players['1'].caught.join() === '1,4,7,25,150' &&
+    JSON.parse(r.saveAfter).players['2'].caught.join() === '25,133');
+  await ctx2.close();
+}
+
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);
 check('speech synthesis never invoked', await page.evaluate(() => window.__SPOKE__ === false));

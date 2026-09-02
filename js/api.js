@@ -1,26 +1,82 @@
 // ============================================================
 // Pokédex OS — PokeAPI client with slim persistent cache
 // Full API responses are big (100KB+ each) so we cache a slim
-// projection of just the fields the game uses (~2-3KB each).
-// 151 Pokémon ≈ 450KB — comfortably inside localStorage limits.
+// projection of just the fields the game uses. A species still
+// costs ~8-9KB (the moves list is most of it) and is stored twice,
+// under its name AND its id — so all 649 uncapped would be many
+// megabytes. localStorage is ONE ~5MB box shared with the boys'
+// save, so the cache is kept inside a hard budget below.
 // ============================================================
 
 import { MAX_POKEMON } from './config.js';
 
 const CACHE_KEY = 'pokedexos_apicache_v2';
+
+// THE BUDGET. A cache miss costs one request; a lost save costs a
+// collection. So the cache is never allowed to grow into the save's room:
+// it is capped on BOTH rows and bytes, and the oldest rows go first.
+// ~320 rows is roughly 160 species (name key + id key each).
+export const CACHE_LIMITS = { entries: 320, bytes: 1200000 };
+// The 649-name index powers search everywhere and costs a whole request to
+// rebuild, so it is never the row we throw away.
+const CACHE_PINNED = new Set(['nameindex']);
+
 let cache = {};
 try { cache = JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; } catch (e) { cache = {}; }
 
-function saveCache() {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); }
-  catch (e) {
-    // Storage full — drop move entries first, then everything.
-    try {
-      for (const k of Object.keys(cache)) if (k.startsWith('move:')) delete cache[k];
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-    } catch (e2) { cache = {}; }
+/** Drop oldest-first until the cache fits inside BOTH budgets.
+    Insertion order IS eviction order: these are all string keys, so the
+    object keeps the order they were added, and JSON.parse preserves that
+    order across a reload. Returns true if anything was dropped. */
+function trimCache() {
+  const keys = Object.keys(cache);
+  const size = {};
+  let bytes = 2;                       // the enclosing {}
+  for (const k of keys) {
+    let n = k.length + 4;              // "key": and the comma
+    try { n += JSON.stringify(cache[k]).length; } catch (e) { /* unmeasurable */ }
+    size[k] = n;
+    bytes += n;
   }
+  let count = keys.length, dropped = false;
+  for (const k of keys) {
+    if (count <= CACHE_LIMITS.entries && bytes <= CACHE_LIMITS.bytes) break;
+    if (CACHE_PINNED.has(k)) continue;
+    delete cache[k];
+    bytes -= size[k];
+    count--;
+    dropped = true;
+  }
+  return dropped;
 }
+
+function saveCache() {
+  // One stringify on the happy path. Once the cache is warm it sits just under
+  // the limit, so most writes do pay the extra measuring pass and a second
+  // stringify — measured at ~22ms per fetch at the cap, against ~47ms and
+  // climbing for the old uncapped path, so it is still the cheaper half.
+  let json = JSON.stringify(cache);
+  if (json.length > CACHE_LIMITS.bytes || Object.keys(cache).length > CACHE_LIMITS.entries) {
+    trimCache();
+    json = JSON.stringify(cache);
+  }
+  try { localStorage.setItem(CACHE_KEY, json); return; }
+  catch (e) { /* storage full anyway — fall through */ }
+  // Drop the move entries first: they are the cheapest to refetch.
+  try {
+    for (const k of Object.keys(cache)) if (k.startsWith('move:')) delete cache[k];
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    return;
+  } catch (e2) { /* still full — fall through */ }
+  // Last resort. This used to empty the MEMORY copy only, leaving the fat
+  // blob sitting on the tablet for ever with nothing left that could shrink
+  // it — squeezing the one thing that cannot be refetched. Clear both.
+  cache = {};
+  try { localStorage.removeItem(CACHE_KEY); } catch (e3) { /* nothing else to try */ }
+}
+
+// A blob written by an older, uncapped build is cut down to size at boot.
+if (trimCache()) saveCache();
 
 export const apiFetch = async (url, timeoutMs = 8000) => {
   const controller = new AbortController();
@@ -106,7 +162,18 @@ function slimEvo(d) {
 }
 
 async function cached(key, url, slim) {
-  if (cache[key]) return cache[key];
+  // A hit moves the row to the back of the queue, in memory only. Eviction is
+  // insertion-ordered, so without this the OLDEST rows go first — and the
+  // oldest rows are the boys' own team, fetched at boot and re-read at every
+  // battle. A long dex browse would evict exactly the six Pokémon they are
+  // about to fight with, and a tablet that had gone offline could then no
+  // longer load its own team. No extra write: the next real save persists it.
+  if (cache[key]) {
+    const v = cache[key];
+    delete cache[key];
+    cache[key] = v;
+    return v;
+  }
   const data = slim(await apiFetch(url));
   cache[key] = data;
   saveCache();

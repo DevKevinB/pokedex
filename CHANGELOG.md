@@ -2,6 +2,31 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.8.2] - ROOM FOR THE COLLECTIONS
+
+Browsing lots of Pokémon can no longer eat the room the boys' saves live in.
+
+### Fixed
+- **The Pokédex cache has a ceiling now.** Everything the app downloads about a
+  Pokémon was kept forever, in the same small storage box the boys'
+  collections live in. Flicking through the dex for a few minutes filled it
+  until the app panicked and threw the *entire* cache away at once. It now
+  keeps a fixed amount and quietly drops the least-recently-looked-at when it
+  needs room. Measured over 400 dex taps against the real Pokémon database:
+  it settles at about 1.1 MB and stays there, instead of climbing past 3.6 MB.
+- **Your team is not what gets thrown away.** The six Pokémon the boys battle
+  with are loaded first, which would have made them the first evicted. Looking
+  something up now moves it to the back of the queue, so the team they are
+  about to fight with stays put.
+- **A full tablet no longer leaves a fat file behind.** The old emergency
+  clean-up emptied the app's memory but left the big file sitting on the
+  tablet, so nothing could ever shrink it again. It now clears both.
+
+### Testing
+- Four new checks: a 400-entry cache is capped at boot, a write at the cap
+  evicts instead of growing, the oldest go first, and **an eviction never
+  touches the save**. 189 browser checks, 18 engine tests, 42 layout checks.
+
 ## [19.8.1] - THE OFFLINE COPY
 
 One line, and it turns out the game has had no offline mode since June.
