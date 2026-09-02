@@ -18,3 +18,5 @@ test/chase/
 test/emoji/
 test/kevin*/
 test/_*
+forum/evidence.json
+forum/threads/

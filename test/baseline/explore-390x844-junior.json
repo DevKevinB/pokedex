@@ -3,12 +3,55 @@
   "x": 16,
   "y": 87,
   "w": 358,
-  "h": 1032
+  "h": 1032,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "grid",
+  "pos": "static"
  },
  "#explore-back-btn": {
   "x": 20,
   "y": 10,
   "w": 92,
-  "h": 42
+  "h": 42,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "8px",
+  "display": "block",
+  "pos": "static"
+ },
+ ".habitat-diff": {
+  "x": 112,
+  "y": 143,
+  "w": 66,
+  "h": 13,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "8px",
+  "display": "flex",
+  "pos": "static"
+ },
+ ".habitat-card": {
+  "x": 16,
+  "y": 87,
+  "w": 358,
+  "h": 104,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "16px",
+  "display": "flex",
+  "pos": "relative"
+ },
+ ".card-band": {
+  "x": 19,
+  "y": 90,
+  "w": 352,
+  "h": 6,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(56, 192, 96)",
+  "fs": "16px",
+  "display": "block",
+  "pos": "absolute"
  }
 }

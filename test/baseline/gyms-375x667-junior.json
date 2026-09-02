@@ -3,12 +3,45 @@
   "x": 0,
   "y": 71,
   "w": 375,
-  "h": 596
+  "h": 596,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "block",
+  "pos": "static"
  },
  "#gym-back-btn": {
   "x": 20,
   "y": 10,
   "w": 92,
-  "h": 42
- }
+  "h": 42,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "8px",
+  "display": "block",
+  "pos": "static"
+ },
+ ".gym-card": {
+  "x": 16,
+  "y": 209,
+  "w": 52,
+  "h": 48,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "16px",
+  "display": "grid",
+  "pos": "relative"
+ },
+ ".card-dots": {
+  "x": 97,
+  "y": 161,
+  "w": 203,
+  "h": 8,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "flex",
+  "pos": "static"
+ },
+ ".round-tab": null
 }

@@ -3,18 +3,77 @@
   "x": 0,
   "y": 568,
   "w": 390,
-  "h": 276
+  "h": 276,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "16px",
+  "display": "flex",
+  "pos": "static"
  },
  "#ball-btn": {
   "x": 12,
   "y": 778,
   "w": 302,
-  "h": 56
+  "h": 56,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "8px",
+  "display": "flex",
+  "pos": "static"
  },
  ".moves-grid": {
   "x": 0,
   "y": 620,
   "w": 390,
-  "h": 224
+  "h": 224,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "grid",
+  "pos": "static"
+ },
+ ".move-btn.type-tile": {
+  "x": 12,
+  "y": 630,
+  "w": 179,
+  "h": 66,
+  "color": "rgb(26, 26, 42)",
+  "bg": "rgb(238, 213, 53)",
+  "fs": "8px",
+  "display": "grid",
+  "pos": "relative"
+ },
+ ".tile-name": {
+  "x": 19,
+  "y": 671,
+  "w": 165,
+  "h": 10,
+  "color": "rgb(26, 26, 42)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "8px",
+  "display": "block",
+  "pos": "static"
+ },
+ ".tile-dots": {
+  "x": 90,
+  "y": 683,
+  "w": 24,
+  "h": 6,
+  "color": "rgb(26, 26, 42)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "8px",
+  "display": "flex",
+  "pos": "static"
+ },
+ ".hp-fill": {
+  "x": 25,
+  "y": 272,
+  "w": 153,
+  "h": 6,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgb(56, 192, 96)",
+  "fs": "16px",
+  "display": "block",
+  "pos": "relative"
  }
 }

@@ -29,8 +29,12 @@ const MODE = process.env.MODE === 'junior' ? 'junior' : 'normal';
 const ONLY = process.env.SCRIPT || '';
 const SLOW = process.env.SLOW === '1';
 const REAL = process.env.REAL === '1';   // use the live sprite CDN
+const PROFILE = process.env.SEED || 'early';   // fresh | early | mid | champion | hoarder
 const VW = +(process.env.VW || 390), VH = +(process.env.VH || 844);
-const OUT = join(HERE, 'playtest', MODE + (REAL ? '-real' : '') + (VW !== 390 ? `-${VW}x${VH}` : ''));
+// One directory per distinct run shape. The profile is part of the identity:
+// without it a champion run would overwrite the early run's evidence.
+const OUT = join(HERE, 'playtest', MODE + (REAL ? '-real' : '')
+  + (VW !== 390 ? `-${VW}x${VH}` : '') + (PROFILE !== 'early' ? `-${PROFILE}` : ''));
 mkdirSync(OUT, { recursive: true });
 
 const SPRITE = readFileSync(join(HERE, 'fake-sprite.png'));
@@ -105,21 +109,103 @@ async function mock(ctx) {
   await ctx.route('https://fonts.googleapis.com/**', r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
 }
 
-const SEED = junior => ({
-  version: 2,
-  players: {
-    1: { name: junior ? 'ART' : 'GABE',
-      caught: [1, 4, 6, 25, 74, 95, 133], team: [6, 25, 1, 4, 74, 95],
-      mons: Object.fromEntries([1, 4, 6, 25, 74, 95, 133].map(id => [id, { level: 14, xp: 30 }])),
-      badges: [], shinies: [], nicks: {}, items: { masterBalls: 3 },
-      quests: {}, gyms: { beaten: {} }, settings: { junior }, champion: null,
-      stats: { catches: 7, battlesWon: 3, battlesLost: 0, versusWins: 0 } },
-    2: { name: 'P2', caught: [1], team: [1], mons: { 1: { level: 5, xp: 0 } },
-      badges: [], shinies: [], nicks: {}, items: { masterBalls: 1 },
-      quests: {}, gyms: { beaten: {} }, settings: { junior: false }, champion: null,
-      stats: { catches: 1, battlesWon: 0, battlesLost: 0, versusWins: 0 } },
+// ---- save profiles ----
+// Until v20 there was exactly ONE seed here — 7 caught at Lv14 — so every run
+// ever taken showed the same mid-early game. Whole regions of the product were
+// therefore never seen by any harness: the first sixty seconds, the grind band,
+// and everything v19.8 added behind the crown (Round 2, the evolution picker,
+// the Hall of Fame). SEED= picks the save the run starts from.
+const GYM_KEYS = [['boulder', 5], ['cascade', 5], ['thunder', 5], ['meadow', 5],
+                  ['mindbend', 5], ['knuckle', 5], ['phantom', 5], ['glacier', 5],
+                  ['inferno', 5], ['dragon', 5], ['victory', 7]];
+
+const beatenThrough = n => {
+  const out = {};
+  for (const [k, count] of GYM_KEYS.slice(0, n)) {
+    for (let i = 0; i < count; i++) out[`${k}:${i}`] = true;
+  }
+  return out;
+};
+
+const monsAt = (ids, level) =>
+  Object.fromEntries(ids.map(id => [id, { level, xp: 30 }]));
+
+const range = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+
+const PROFILES = {
+  // The first sixty seconds. Nothing caught, nothing unlocked, every empty
+  // state on show — the screens a brand-new player meets and nobody tests.
+  fresh: () => ({
+    caught: [], team: [], mons: {}, badges: [], items: { masterBalls: 1 },
+    gyms: { beaten: {} }, champion: null,
+    stats: { catches: 0, battlesWon: 0, battlesLost: 0, versusWins: 0 },
+  }),
+  // The historical seed. Kept byte-identical so older runs stay comparable.
+  early: () => ({
+    caught: [1, 4, 6, 25, 74, 95, 133], team: [6, 25, 1, 4, 74, 95],
+    mons: monsAt([1, 4, 6, 25, 74, 95, 133], 14),
+    badges: [], items: { masterBalls: 3 }, gyms: { beaten: {} }, champion: null,
+    stats: { catches: 7, battlesWon: 3, battlesLost: 0, versusWins: 0 },
+  }),
+  // The grind band: four stops in, a real team, the middle of the circuit.
+  mid: () => {
+    const caught = range(1, 60).concat(range(120, 180));
+    return {
+      caught, team: [6, 25, 9, 143, 130, 65],
+      mons: monsAt(caught, 30),
+      badges: [], items: { masterBalls: 2 }, gyms: { beaten: beatenThrough(4) },
+      champion: null,
+      stats: { catches: caught.length, battlesWon: 22, battlesLost: 3, versusWins: 1 },
+    };
   },
-});
+  // After the crown. The ONLY profile that reaches Round 2, the evolution
+  // picker and the Hall of Fame — all of v19.8, none of it ever playtested.
+  champion: () => {
+    const caught = range(1, 151).concat(range(250, 300));
+    return {
+      caught, team: [6, 25, 9, 143, 130, 149],
+      mons: monsAt(caught, 62),
+      badges: [], items: { masterBalls: 5 }, gyms: { beaten: beatenThrough(11) },
+      champion: { date: '2026-08-30', team: [6, 25, 9, 143, 130, 149],
+                  levels: { 6: 70, 25: 65, 9: 64, 143: 66, 130: 63, 149: 68 } },
+      stats: { catches: caught.length, battlesWon: 58, battlesLost: 4, versusWins: 3 },
+    };
+  },
+  // Scale, and the quota path. 600+ caught, a full box, long nicknames — the
+  // shape that makes the API cache overflow and the PC box work for a living.
+  hoarder: () => {
+    const caught = range(1, 620);
+    const nicks = {};
+    for (const id of caught.slice(0, 40)) nicks[id] = 'LONGNAME' + (id % 10);
+    return {
+      caught, team: [6, 25, 9, 143, 130, 149],
+      mons: monsAt(caught, 55), nicks,
+      badges: [], items: { masterBalls: 9 }, gyms: { beaten: beatenThrough(8) },
+      champion: null,
+      shinies: caught.slice(0, 12),
+      stats: { catches: caught.length, battlesWon: 140, battlesLost: 11, versusWins: 6 },
+    };
+  },
+};
+
+const SEED = (junior, profile = 'early') => {
+  const p = (PROFILES[profile] || PROFILES.early)();
+  return {
+    version: 2,
+    players: {
+      1: {
+        name: junior ? 'ART' : 'GABE',
+        shinies: [], nicks: {}, quests: {},
+        ...p,
+        settings: { junior },
+      },
+      2: { name: 'P2', caught: [1], team: [1], mons: { 1: { level: 5, xp: 0 } },
+        badges: [], shinies: [], nicks: {}, items: { masterBalls: 1 },
+        quests: {}, gyms: { beaten: {} }, settings: { junior: false }, champion: null,
+        stats: { catches: 1, battlesWon: 0, battlesLost: 0, versusWins: 0 } },
+    },
+  };
+};
 
 // ---- what a person would notice, measured ----
 // Everything here answers "would this look wrong to Kevin?", which is the
@@ -661,7 +747,7 @@ for (const [name, fn] of Object.entries(SCRIPTS)) {
       localStorage.setItem('pokedexos_lastplayer', '1');
       localStorage.setItem('pokedexos_muted', '1');
     } catch (e) {}
-  }, SEED(MODE === 'junior'));
+  }, SEED(MODE === 'junior', PROFILE));
 
   await page.goto(`${BASE}/${SLOW ? '' : '?fast=1'}`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1000);

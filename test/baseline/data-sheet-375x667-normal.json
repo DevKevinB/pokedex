@@ -3,12 +3,22 @@
   "x": 0,
   "y": 167,
   "w": 375,
-  "h": 500
+  "h": 500,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "16px",
+  "display": "flex",
+  "pos": "absolute"
  },
  "#sheet-handle": {
   "x": 4,
   "y": 171,
   "w": 367,
-  "h": 63
+  "h": 63,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "flex",
+  "pos": "static"
  }
 }

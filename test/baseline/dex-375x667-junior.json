@@ -3,24 +3,56 @@
   "x": 90,
   "y": 160,
   "w": 195,
-  "h": 195
+  "h": 195,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "block",
+  "pos": "static"
  },
  "#poke-name": {
   "x": 20,
   "y": 99,
   "w": 335,
-  "h": 29
+  "h": 29,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "22px",
+  "display": "block",
+  "pos": "static"
  },
  ".toolbar": {
   "x": 0,
   "y": 363,
   "w": 375,
-  "h": 296
+  "h": 296,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "grid",
+  "pos": "static"
  },
  "#catch-btn": {
   "x": 20,
   "y": 427,
   "w": 335,
-  "h": 72
+  "h": 72,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "12px",
+  "display": "flex",
+  "pos": "static"
+ },
+ ".type-tag": null,
+ "#lead-btn": {
+  "x": 134,
+  "y": 363,
+  "w": 49,
+  "h": 56,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "10px",
+  "display": "flex",
+  "pos": "static"
  }
 }

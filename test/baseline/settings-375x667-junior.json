@@ -3,12 +3,44 @@
   "x": 37,
   "y": 47,
   "w": 302,
-  "h": 574
+  "h": 574,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "16px",
+  "display": "block",
+  "pos": "static"
  },
  "#settings-close": {
   "x": 61,
   "y": 549,
   "w": 254,
-  "h": 47
+  "h": 47,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "10px",
+  "display": "block",
+  "pos": "sticky"
+ },
+ ".set-row span": {
+  "x": 61,
+  "y": 144,
+  "w": 78,
+  "h": 9,
+  "color": "rgb(112, 104, 72)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "8px",
+  "display": "block",
+  "pos": "static"
+ },
+ ".set-toggle": {
+  "x": 250,
+  "y": 171,
+  "w": 64,
+  "h": 29,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgb(56, 192, 96)",
+  "fs": "8px",
+  "display": "block",
+  "pos": "static"
  }
 }

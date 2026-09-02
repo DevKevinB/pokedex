@@ -130,7 +130,7 @@ const SEED = junior => ({
 // Each scene walks the REAL UI. `battle: true` turns on the fight-specific
 // invariants. `skipJunior` is for controls Junior Mode deliberately hides.
 const SCENES = [
-  { name: 'dex', boxes: ['#poke-sprite', '#poke-name', '.toolbar', '#catch-btn'],
+  { name: 'dex', boxes: ['#poke-sprite', '#poke-name', '.toolbar', '#catch-btn', '.type-tag', '#lead-btn'],
     async go(p) { /* the landing screen */ },
     // v19.6: ART's Pokemon used to be 103px at 375x667 — SMALLER than GABE's,
     // which is backwards. The floor is 140 and the harness owns it now.
@@ -154,7 +154,7 @@ const SCENES = [
       });
     } },
 
-  { name: 'dex-drawer', boxes: ['#ball-drawer', '#catch-btn'],
+  { name: 'dex-drawer', boxes: ['#ball-drawer', '#catch-btn', '.ball-opt', '.ball-opt span'],
     async go(p) { await p.click('#catch-btn'); await p.waitForTimeout(500); } },
 
   { name: 'data-sheet', skipJunior: true, boxes: ['#data-sheet', '#sheet-handle'],
@@ -178,13 +178,13 @@ const SCENES = [
       await p.waitForTimeout(900);
     } },
 
-  { name: 'explore', boxes: ['#habitat-grid', '#explore-back-btn'],
+  { name: 'explore', boxes: ['#habitat-grid', '#explore-back-btn', '.habitat-diff', '.habitat-card', '.card-band'],
     async go(p) { await p.click('#explore-btn'); await p.waitForTimeout(1200); } },
 
-  { name: 'gyms', boxes: ['#gym-body', '#gym-back-btn'],
+  { name: 'gyms', boxes: ['#gym-body', '#gym-back-btn', '.gym-card', '.card-dots', '.round-tab'],
     async go(p) { await p.click('#gyms-btn'); await p.waitForTimeout(1200); } },
 
-  { name: 'gym-trainers', boxes: ['#gym-back-btn'],
+  { name: 'gym-trainers', boxes: ['#gym-back-btn', '.trainer-card', '.card-band', '.btn-battle'],
     async go(p) {
       await p.click('#gyms-btn'); await p.waitForTimeout(1000);
       await p.waitForFunction(() => document.querySelectorAll('#gym-body .gym-card').length > 0,
@@ -193,7 +193,7 @@ const SCENES = [
       await p.waitForTimeout(1200);
     } },
 
-  { name: 'settings', boxes: ['#settings-modal .modal-box', '#settings-close'],
+  { name: 'settings', boxes: ['#settings-modal .modal-box', '#settings-close', '.set-row span', '.set-toggle'],
     // v19.6: the gear is hold-to-open in junior. A hold works in both modes —
     // in normal mode pointerdown is a no-op and the trailing click opens it.
     async go(p) {
@@ -205,7 +205,7 @@ const SCENES = [
       await p.waitForTimeout(700);
     } },
 
-  { name: 'battle-wild', battle: true, boxes: ['.battle-controls', '#ball-btn', '.moves-grid'],
+  { name: 'battle-wild', battle: true, boxes: ['.battle-controls', '#ball-btn', '.moves-grid', '.move-btn.type-tile', '.tile-name', '.tile-dots', '.hp-fill'],
     async go(p) {
       // The habitat route: the way most fights actually start for both boys.
       await p.click('#explore-btn');
@@ -220,7 +220,7 @@ const SCENES = [
     } },
 
   // v19.6 — ART's book. skipNormal because GABE never sees either screen.
-  { name: 'sticker-book', skipNormal: true, boxes: ['#pc-modal', '#fav-shelf', '#close-pc-btn'],
+  { name: 'sticker-book', skipNormal: true, boxes: ['#pc-modal', '#fav-shelf', '#close-pc-btn', '.sticker', '.pc-item'],
     async go(p) { await p.click('#pc-btn'); await p.waitForTimeout(1400); },
     async assert(p) {
       return p.evaluate(() => {
@@ -372,13 +372,23 @@ const INVARIANTS = `(opts) => {
   return fails.map(f => f + '   [screen: ' + (root.id ? '#' + root.id : root.tagName.toLowerCase()) + ']');
 }`;
 
+// Geometry AND paint. Position alone cannot see a rule being dropped: this
+// project has already shipped a feature whose CSS rule did not exist at all
+// (the habitat difficulty pips rendered white-on-cream for a whole release,
+// perfectly positioned and completely invisible), and has twice nearly lost a
+// load-bearing declaration to a block rewrite. Five paint properties per
+// measured element close that hole for about twenty lines.
 const measure = `(sels) => {
   const out = {};
   for (const s of sels) {
     const el = document.querySelector(s);
     if (!el) { out[s] = null; continue; }
     const r = el.getBoundingClientRect();
-    out[s] = { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
+    const c = getComputedStyle(el);
+    out[s] = {
+      x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height),
+      color: c.color, bg: c.backgroundColor, fs: c.fontSize, display: c.display, pos: c.position,
+    };
   }
   return out;
 }`;
@@ -472,6 +482,14 @@ for (const scene of SCENES) {
           for (const k of ['x', 'y', 'w', 'h']) {
             if (Math.abs(was[k] - now[k]) > DRIFT)
               driftLines.push(`${sel}.${k} moved ${was[k]} → ${now[k]}`);
+          }
+          // Paint has no tolerance: a colour either changed or it did not, and
+          // an unintended change is exactly the signal we are missing today.
+          // Older baselines have no paint keys, so absent means "not recorded
+          // yet" rather than "changed" — this upgrades in place, no reset.
+          for (const k of ['color', 'bg', 'fs', 'display', 'pos']) {
+            if (was[k] === undefined) continue;
+            if (was[k] !== now[k]) driftLines.push(`${sel}.${k} changed ${was[k]} → ${now[k]}`);
           }
         }
       }

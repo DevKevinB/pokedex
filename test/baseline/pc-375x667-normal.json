@@ -3,12 +3,22 @@
   "x": 0,
   "y": 0,
   "w": 375,
-  "h": 667
+  "h": 667,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "flex",
+  "pos": "fixed"
  },
  "#close-pc-btn": {
   "x": 20,
   "y": 595,
   "w": 335,
-  "h": 52
+  "h": 52,
+  "color": "rgb(15, 40, 16)",
+  "bg": "rgb(107, 255, 107)",
+  "fs": "9px",
+  "display": "block",
+  "pos": "static"
  }
 }

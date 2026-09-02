@@ -3,12 +3,44 @@
   "x": 0,
   "y": 844,
   "w": 390,
-  "h": 115
+  "h": 115,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "16px",
+  "display": "grid",
+  "pos": "absolute"
  },
  "#catch-btn": {
   "x": 110,
   "y": 608,
   "w": 170,
-  "h": 64
+  "h": 64,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "8px",
+  "display": "flex",
+  "pos": "static"
+ },
+ ".ball-opt": {
+  "x": 10,
+  "y": 863,
+  "w": 89,
+  "h": 81,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "16px",
+  "display": "flex",
+  "pos": "static"
+ },
+ ".ball-opt span": {
+  "x": 37,
+  "y": 911,
+  "w": 35,
+  "h": 9,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgba(0, 0, 0, 0)",
+  "fs": "8px",
+  "display": "block",
+  "pos": "static"
  }
 }

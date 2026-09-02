@@ -3,6 +3,44 @@
   "x": 20,
   "y": 10,
   "w": 86,
-  "h": 37
+  "h": 37,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "8px",
+  "display": "block",
+  "pos": "static"
+ },
+ ".trainer-card": {
+  "x": 16,
+  "y": 106,
+  "w": 358,
+  "h": 152,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(248, 248, 232)",
+  "fs": "16px",
+  "display": "block",
+  "pos": "relative"
+ },
+ ".card-band": {
+  "x": 19,
+  "y": 109,
+  "w": 352,
+  "h": 6,
+  "color": "rgb(36, 36, 58)",
+  "bg": "rgb(232, 64, 64)",
+  "fs": "16px",
+  "display": "block",
+  "pos": "absolute"
+ },
+ ".btn-battle": {
+  "x": 31,
+  "y": 200,
+  "w": 328,
+  "h": 44,
+  "color": "rgb(255, 255, 255)",
+  "bg": "rgb(232, 64, 64)",
+  "fs": "8px",
+  "display": "flex",
+  "pos": "static"
  }
 }
