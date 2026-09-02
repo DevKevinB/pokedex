@@ -20,7 +20,7 @@
 // ============================================================
 
 import { chromium } from 'playwright';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BASE = 'http://127.0.0.1:8321';
@@ -115,15 +115,30 @@ async function mock(ctx) {
 // therefore never seen by any harness: the first sixty seconds, the grind band,
 // and everything v19.8 added behind the crown (Round 2, the evolution picker,
 // the Hall of Fame). SEED= picks the save the run starts from.
-const GYM_KEYS = [['boulder', 5], ['cascade', 5], ['thunder', 5], ['meadow', 5],
-                  ['mindbend', 5], ['knuckle', 5], ['phantom', 5], ['glacier', 5],
-                  ['inferno', 5], ['dragon', 5], ['victory', 7]];
+// The REAL gym keys and trainer counts, read out of js/gymdata.js. Guessing
+// these once already produced champion and mid saves whose gyms were not
+// actually beaten — the game ignored the made-up keys entirely and the whole
+// corpus would have been a fiction. 58 trainers across 12 stops.
+const GYM_KEYS = [['rock', 5], ['water', 5], ['electric', 5], ['grass', 5],
+                  ['psychic', 5], ['fighting', 5], ['ghost', 5], ['ice', 5],
+                  ['fire', 5], ['dragon', 5], ['victory', 3], ['elite', 5]];
 
 const beatenThrough = n => {
   const out = {};
   for (const [k, count] of GYM_KEYS.slice(0, n)) {
     for (let i = 0; i < count; i++) out[`${k}:${i}`] = true;
   }
+  return out;
+};
+
+// A save whose gyms are beaten but whose badge list is empty is not a save the
+// game can ever produce — seeded that way, the app correctly awards every badge
+// at once on boot and stacks the celebration cards over whatever the player is
+// doing. The profiles carry the badges their progress implies, so the corpus
+// shows the real game rather than an artefact of how it was seeded.
+const badgesFor = gymsBeaten => {
+  const out = GYM_KEYS.slice(0, Math.min(gymsBeaten, 10)).map(([k]) => `gym-${k}`);
+  if (gymsBeaten >= 12) out.push('gauntlet', 'champion');
   return out;
 };
 
@@ -153,7 +168,7 @@ const PROFILES = {
     return {
       caught, team: [6, 25, 9, 143, 130, 65],
       mons: monsAt(caught, 30),
-      badges: [], items: { masterBalls: 2 }, gyms: { beaten: beatenThrough(4) },
+      badges: badgesFor(4), items: { masterBalls: 2 }, gyms: { beaten: beatenThrough(4) },
       champion: null,
       stats: { catches: caught.length, battlesWon: 22, battlesLost: 3, versusWins: 1 },
     };
@@ -165,7 +180,7 @@ const PROFILES = {
     return {
       caught, team: [6, 25, 9, 143, 130, 149],
       mons: monsAt(caught, 62),
-      badges: [], items: { masterBalls: 5 }, gyms: { beaten: beatenThrough(11) },
+      badges: badgesFor(12), items: { masterBalls: 5 }, gyms: { beaten: beatenThrough(12) },
       champion: { date: '2026-08-30', team: [6, 25, 9, 143, 130, 149],
                   levels: { 6: 70, 25: 65, 9: 64, 143: 66, 130: 63, 149: 68 } },
       stats: { catches: caught.length, battlesWon: 58, battlesLost: 4, versusWins: 3 },
@@ -180,7 +195,7 @@ const PROFILES = {
     return {
       caught, team: [6, 25, 9, 143, 130, 149],
       mons: monsAt(caught, 55), nicks,
-      badges: [], items: { masterBalls: 9 }, gyms: { beaten: beatenThrough(8) },
+      badges: badgesFor(8), items: { masterBalls: 9 }, gyms: { beaten: beatenThrough(8) },
       champion: null,
       shinies: caught.slice(0, 12),
       stats: { catches: caught.length, battlesWon: 140, battlesLost: 11, versusWins: 6 },
@@ -313,9 +328,10 @@ const SCRIPTS = {
     await p.waitForTimeout(1500);
     await step('a wild Pokemon appeared');           // <-- greyscale reported here
     for (let turn = 0; turn < 4; turn++) {
+      if (await p.locator('#victory-modal').isVisible().catch(() => false)) { await step('the fight ended'); break; }
       const tiles = p.locator('.move-btn.type-tile:not([disabled])');
       if (!(await tiles.count())) break;
-      await tiles.first().click();
+      await tiles.first().click({ timeout: 8000 }).catch(() => {});
       await p.waitForTimeout(SLOW ? 3200 : 1400);
       await step(`attacked (turn ${turn + 1})`);
       if (await p.locator('#victory-modal').isVisible().catch(() => false)) { await step('the fight ended'); break; }
@@ -355,7 +371,16 @@ const SCRIPTS = {
     await p.locator('.pc-item').nth(3).click().catch(() => {}); await p.waitForTimeout(800);
     await step('tapped a Pokemon in the box');
     await p.click('#close-pc-btn').catch(() => {}); await p.waitForTimeout(600);
-    await p.click('#card-btn'); await p.waitForTimeout(1200);
+    // v19.6 re-homed CARD for ART: his route is a chip inside the sticker book,
+    // and #card-btn is hidden in Junior. Take whichever door this mode has.
+    const cardBtn = p.locator('#card-btn');
+    if (await cardBtn.isVisible().catch(() => false)) {
+      await cardBtn.click();
+    } else {
+      await p.click('#pc-btn'); await p.waitForTimeout(1200);
+      await p.locator('#pc-card-chip').click({ timeout: 15000 }).catch(() => {});
+    }
+    await p.waitForTimeout(1200);
     await step('opened the trainer card');
   },
 
@@ -769,7 +794,24 @@ for (const [name, fn] of Object.entries(SCRIPTS)) {
   };
 
   try { await fn(page, step); }
-  catch (e) { steps.push({ label: 'SCENARIO ABORTED', error: e.message.split('\n')[0] }); console.log(`  [${MODE}/${name}] ABORTED: ${e.message.split('\n')[0]}`); }
+  catch (e) {
+    // Photograph the abort. A scenario that stops with only a timeout message
+    // is undiagnosable later — and this harness is read by people who were not
+    // in the room. The shot plus the visible-modal list almost always says why.
+    const slug = `${name}-ABORT`;
+    await page.screenshot({ path: join(OUT, `${slug}.png`) }).catch(() => {});
+    const ctx = await page.evaluate(() => ({
+      open: [...document.querySelectorAll('.overlay-screen, #pc-modal')]
+        .filter(o => getComputedStyle(o).display !== 'none').map(o => o.id || o.className),
+      screen: document.getElementById('battle-container')?.classList.contains('active') ? 'battle' : 'other',
+    })).catch(() => ({}));
+    steps.push({
+      label: 'SCENARIO ABORTED', error: e.message.split('\n')[0],
+      shot: `${slug}.png`, openModals: ctx.open ?? [], screen: ctx.screen ?? null,
+    });
+    console.log(`  [${MODE}/${name}] ABORTED: ${e.message.split('\n')[0]}`
+      + (ctx.open?.length ? `  (open: ${ctx.open.join(', ')})` : ''));
+  }
 
   report.scenarios[name] = steps;
   report.consoleErrors.push(...errs);
@@ -778,7 +820,25 @@ for (const [name, fn] of Object.entries(SCRIPTS)) {
 await browser.close();
 
 writeFileSync(join(OUT, 'sat.json'), JSON.stringify(SAT, null, 1));
-writeFileSync(join(OUT, 'report.json'), JSON.stringify(report, null, 1));
+// MERGE, never overwrite. Runs are launched one SCRIPT at a time so a failure
+// in one scenario cannot take the others down with it — but they share an
+// output directory per (mode, size, profile), so a plain write would leave only
+// the last scenario's evidence and silently discard the rest.
+{
+  const rp = join(OUT, 'report.json');
+  let merged = report;
+  if (existsSync(rp)) {
+    try {
+      const prev = JSON.parse(readFileSync(rp, 'utf8'));
+      merged = {
+        ...prev, ...report,
+        scenarios: { ...(prev.scenarios || {}), ...(report.scenarios || {}) },
+        consoleErrors: [...new Set([...(prev.consoleErrors || []), ...(report.consoleErrors || [])])],
+      };
+    } catch (e) { /* unreadable previous report — this run replaces it */ }
+  }
+  writeFileSync(rp, JSON.stringify(merged, null, 1));
+}
 const noteCount = Object.values(report.scenarios).flat().reduce((a, s) => a + (s.notes?.length || 0), 0);
 console.log(`\n${MODE}: ${Object.keys(report.scenarios).length} scenarios, ${noteCount} observations, ${report.consoleErrors.length} console/page errors`);
 console.log(`screens: test/playtest/${MODE}/   report: test/playtest/${MODE}/report.json`);
