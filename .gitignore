@@ -20,3 +20,4 @@ test/kevin*/
 test/_*
 forum/evidence.json
 forum/threads/
+docs/forum-artifact.html
