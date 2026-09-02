@@ -2,6 +2,27 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.8.1] - THE OFFLINE COPY
+
+One line, and it turns out the game has had no offline mode since June.
+
+### Fixed
+- **The game works without wifi again.** The list of files the app saves to the
+  tablet for offline play had one file written on it twice. That is enough for
+  the browser to throw the whole list away — silently. It creates the storage,
+  puts nothing in it, and everything looks completely normal until the moment
+  the iPad has no signal. Then there is no game. This has been true since
+  v19.4.0, and nothing anywhere would have told you: measured before the fix,
+  0 files saved; after, all 27. In the car, on a plane, or on a bad afternoon
+  of wifi, the boys now have the game.
+
+### Testing
+- Two new checks so it cannot come back: the offline list may never contain the
+  same file twice, and every module the app actually loads must be on it — a
+  file missing from that list boots the offline copy into a black screen rather
+  than a graceful fallback.
+- 185 browser checks, 18 engine tests, 42 layout checks.
+
 ## [19.8.0] - ROUND 2
 
 Something to do after the crown.

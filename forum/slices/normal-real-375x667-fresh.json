@@ -1,0 +1,122 @@
+[
+ {
+  "id": "E-0055",
+  "scenario": "collection",
+  "step": 0,
+  "label": "opened the PC box",
+  "shot": "test/playtest/normal-real-375x667-fresh/collection-01-opened-the-PC-box.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0056",
+  "scenario": "collection",
+  "step": 1,
+  "label": "tapped a Pokemon in the box",
+  "shot": "test/playtest/normal-real-375x667-fresh/collection-02-tapped-a-Pokemon-in-the-box.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0057",
+  "scenario": "collection",
+  "step": 2,
+  "label": "opened the trainer card",
+  "shot": "test/playtest/normal-real-375x667-fresh/collection-03-opened-the-trainer-card.png",
+  "screen": "card-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0058",
+  "scenario": "dex",
+  "step": 0,
+  "label": "opened the dex",
+  "shot": "test/playtest/normal-real-375x667-fresh/dex-01-opened-the-dex.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0059",
+  "scenario": "dex",
+  "step": 1,
+  "label": "flicked forward three Pokemon",
+  "shot": "test/playtest/normal-real-375x667-fresh/dex-02-flicked-forward-three-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0060",
+  "scenario": "dex",
+  "step": 2,
+  "label": "poked the Pokemon",
+  "shot": "test/playtest/normal-real-375x667-fresh/dex-03-poked-the-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0061",
+  "scenario": "dex",
+  "step": 3,
+  "label": "toggled shiny",
+  "shot": "test/playtest/normal-real-375x667-fresh/dex-04-toggled-shiny.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0062",
+  "scenario": "dex",
+  "step": 4,
+  "label": "pressed CRY",
+  "shot": "test/playtest/normal-real-375x667-fresh/dex-05-pressed-CRY.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0063",
+  "scenario": "dex",
+  "step": 5,
+  "label": "pressed random",
+  "shot": "test/playtest/normal-real-375x667-fresh/dex-06-pressed-random.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0064",
+  "scenario": "catching",
+  "step": 0,
+  "label": "found an uncaught Pokemon",
+  "shot": "test/playtest/normal-real-375x667-fresh/catching-01-found-an-uncaught-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0065",
+  "scenario": "catching",
+  "step": 1,
+  "label": "opened the ball drawer",
+  "shot": "test/playtest/normal-real-375x667-fresh/catching-02-opened-the-ball-drawer.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0066",
+  "scenario": "catching",
+  "step": 2,
+  "label": "threw a ball",
+  "shot": "test/playtest/normal-real-375x667-fresh/catching-03-threw-a-ball.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ }
+]

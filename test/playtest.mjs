@@ -136,9 +136,15 @@ const beatenThrough = n => {
 // at once on boot and stacks the celebration cards over whatever the player is
 // doing. The profiles carry the badges their progress implies, so the corpus
 // shows the real game rather than an artefact of how it was seeded.
-const badgesFor = gymsBeaten => {
-  const out = GYM_KEYS.slice(0, Math.min(gymsBeaten, 10)).map(([k]) => `gym-${k}`);
-  if (gymsBeaten >= 12) out.push('gauntlet', 'champion');
+const badgesFor = ({ gyms = 0, caught = 0, topLevel = 0, shinies = 0, champion = false }) => {
+  const out = GYM_KEYS.slice(0, Math.min(gyms, 10)).map(([k]) => `gym-${k}`);
+  if (gyms >= 12) out.push('gauntlet');
+  if (champion) out.push('champion');
+  if (caught >= 100) out.push('dex100');
+  if (caught >= 300) out.push('dex300');
+  if (caught >= 649) out.push('dex649');
+  if (topLevel >= 60) out.push('lv60');
+  if (shinies >= 1) out.push('shiny1');
   return out;
 };
 
@@ -168,7 +174,8 @@ const PROFILES = {
     return {
       caught, team: [6, 25, 9, 143, 130, 65],
       mons: monsAt(caught, 30),
-      badges: badgesFor(4), items: { masterBalls: 2 }, gyms: { beaten: beatenThrough(4) },
+      badges: badgesFor({ gyms: 4, caught: caught.length, topLevel: 30 }),
+      items: { masterBalls: 2 }, gyms: { beaten: beatenThrough(4) },
       champion: null,
       stats: { catches: caught.length, battlesWon: 22, battlesLost: 3, versusWins: 1 },
     };
@@ -180,7 +187,8 @@ const PROFILES = {
     return {
       caught, team: [6, 25, 9, 143, 130, 149],
       mons: monsAt(caught, 62),
-      badges: badgesFor(12), items: { masterBalls: 5 }, gyms: { beaten: beatenThrough(12) },
+      badges: badgesFor({ gyms: 12, caught: caught.length, topLevel: 62, champion: true }),
+      items: { masterBalls: 5 }, gyms: { beaten: beatenThrough(12) },
       champion: { date: '2026-08-30', team: [6, 25, 9, 143, 130, 149],
                   levels: { 6: 70, 25: 65, 9: 64, 143: 66, 130: 63, 149: 68 } },
       stats: { catches: caught.length, battlesWon: 58, battlesLost: 4, versusWins: 3 },
@@ -195,7 +203,8 @@ const PROFILES = {
     return {
       caught, team: [6, 25, 9, 143, 130, 149],
       mons: monsAt(caught, 55), nicks,
-      badges: badgesFor(8), items: { masterBalls: 9 }, gyms: { beaten: beatenThrough(8) },
+      badges: badgesFor({ gyms: 8, caught: caught.length, topLevel: 55, shinies: 12 }),
+      items: { masterBalls: 9 }, gyms: { beaten: beatenThrough(8) },
       champion: null,
       shinies: caught.slice(0, 12),
       stats: { catches: caught.length, battlesWon: 140, battlesLost: 11, versusWins: 6 },
@@ -295,6 +304,33 @@ const OBSERVE = `() => {
   };
 }`;
 
+// Return to the home screen from wherever we are, the way a player would: dismiss
+// whatever is on top, then leave the battle/explore/gym screen. A phase that
+// ends inside a fight leaves the toolbar behind the arena, and the next phase's
+// tap then waits thirty seconds on a button it can never reach.
+async function toHome(p) {
+  for (let i = 0; i < 4; i++) {
+    const closed = await p.evaluate(() => {
+      const vis = el => el && getComputedStyle(el).display !== 'none';
+      for (const id of ['sticker-modal', 'card-modal', 'pc-modal', 'badge-modal',
+                        'victory-modal', 'switch-modal', 'ballpick-modal', 'settings-modal']) {
+        const el = document.getElementById(id);
+        if (vis(el)) { el.style.display = 'none'; return true; }
+      }
+      return false;
+    });
+    if (!closed) break;
+    await p.waitForTimeout(200);
+  }
+  await p.evaluate(() => {
+    document.getElementById('battle-container')?.classList.remove('active');
+    for (const id of ['explore-container', 'gym-container']) {
+      document.getElementById(id)?.classList.remove('active');
+    }
+  });
+  await p.waitForTimeout(400);
+}
+
 // ---- the scenarios: things the boys actually do ----
 const SAT = [];
 const SCRIPTS = {
@@ -320,6 +356,7 @@ const SCRIPTS = {
     await step('threw a ball');
   },
   async battle(p, step) {
+    await toHome(p);
     await p.click('#explore-btn');
     await p.waitForFunction(() => document.querySelectorAll('#habitat-grid .habitat-card').length > 0, null, { timeout: 15000 });
     await step('opened the map');
@@ -342,6 +379,7 @@ const SCRIPTS = {
     }
   },
   async gym(p, step) {
+    await toHome(p);
     await p.click('#gyms-btn');
     await p.waitForFunction(() => document.querySelectorAll('#gym-body .gym-card').length > 0, null, { timeout: 15000 });
     await step('opened the gym circuit');
@@ -370,6 +408,10 @@ const SCRIPTS = {
     await step('opened the PC box');
     await p.locator('.pc-item').nth(3).click().catch(() => {}); await p.waitForTimeout(800);
     await step('tapped a Pokemon in the box');
+    // In Junior the tap opens the sticker close-up OVER the book, so the book's
+    // own close button is unreachable until this one is dismissed.
+    await p.locator('#sticker-close').click({ timeout: 4000 }).catch(() => {});
+    await p.waitForTimeout(400);
     await p.click('#close-pc-btn').catch(() => {}); await p.waitForTimeout(600);
     // v19.6 re-homed CARD for ART: his route is a chip inside the sticker book,
     // and #card-btn is hidden in Junior. Take whichever door this mode has.
@@ -517,6 +559,7 @@ const SCRIPTS = {
     await step('after three catches');
 
     // ---- 2. one wild fight from the map ----
+    await toHome(p);
     await p.click('#explore-btn');
     await p.waitForTimeout(1200);
     await step('tapped EXPLORE');
@@ -535,6 +578,7 @@ const SCRIPTS = {
     if (await p.locator('#explore-container.active').count()) { await p.click('#explore-back-btn').catch(() => {}); await p.waitForTimeout(700); }
 
     // ---- 3. a whole gym stop, trainer after trainer ----
+    await toHome(p);
     await p.click('#gyms-btn');
     await p.waitForFunction(() => document.querySelectorAll('#gym-body .gym-card').length > 0, null, { timeout: 20000 });
     await p.locator('#gym-body .gym-card:not(.locked)').first().click();
@@ -573,6 +617,7 @@ const SCRIPTS = {
 
     // ---- 5. PC: rearrange the team ----
     await p.click('#gym-back-btn').catch(() => {}); await p.waitForTimeout(800);
+    await toHome(p);
     await p.click('#pc-btn'); await p.waitForTimeout(2000);
     await dump('pc-open');
     await step('PC box open');
@@ -590,6 +635,7 @@ const SCRIPTS = {
     await step('closed the PC');
 
     // ---- 6. fight again after all of that ----
+    await toHome(p);
     await p.click('#gyms-btn'); await p.waitForTimeout(1400);
     await p.locator('#gym-body .gym-card:not(.locked)').first().click().catch(() => {});
     await p.waitForTimeout(1400);
@@ -710,6 +756,7 @@ const SCRIPTS = {
     await p.click('#close-pc-btn').catch(() => {}); await p.waitForTimeout(800);
 
     // a wild fight: the BALL drawer and the SWITCH menu, one at a time
+    await toHome(p);
     await p.click('#explore-btn');
     await p.waitForFunction(() => document.querySelectorAll('#habitat-grid .habitat-card').length > 0, null, { timeout: 20000 });
     await p.locator('#habitat-grid .habitat-card:not(.locked)').first().click();

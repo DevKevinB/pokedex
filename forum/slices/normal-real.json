@@ -1,0 +1,34 @@
+[
+ {
+  "id": "E-0048",
+  "scenario": "gym",
+  "step": 0,
+  "label": "opened the gym circuit",
+  "shot": "test/playtest/normal-real/gym-01-opened-the-gym-circuit.png",
+  "screen": "gym-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0049",
+  "scenario": "gym",
+  "step": 1,
+  "label": "opened a gym",
+  "shot": "test/playtest/normal-real/gym-02-opened-a-gym.png",
+  "screen": "gym-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0050",
+  "scenario": "gym",
+  "step": 2,
+  "label": "started a trainer fight",
+  "shot": "test/playtest/normal-real/gym-03-started-a-trainer-fight.png",
+  "screen": "battle",
+  "log": "HIKER CARL: \"THESE ROCKS DON'T ROLL \u2014 THEY CRUSH!\"",
+  "notes": []
+ }
+]

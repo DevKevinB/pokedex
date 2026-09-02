@@ -1,0 +1,152 @@
+[
+ {
+  "id": "E-0009",
+  "scenario": "gym",
+  "step": 0,
+  "label": "opened the gym circuit",
+  "shot": "test/playtest/junior-real-375x667-champion/gym-01-opened-the-gym-circuit.png",
+  "screen": "gym-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0010",
+  "scenario": "gym",
+  "step": 1,
+  "label": "opened a gym",
+  "shot": "test/playtest/junior-real-375x667-champion/gym-02-opened-a-gym.png",
+  "screen": "gym-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0011",
+  "scenario": "gym",
+  "step": 2,
+  "label": "started a trainer fight",
+  "shot": "test/playtest/junior-real-375x667-champion/gym-03-started-a-trainer-fight.png",
+  "screen": "battle",
+  "log": "HIKER CARL: \"THESE ROCKS DON'T ROLL \u2014 THEY CRUSH!\"",
+  "notes": []
+ },
+ {
+  "id": "E-0012",
+  "scenario": "battle",
+  "step": 0,
+  "label": "opened the map",
+  "shot": "test/playtest/junior-real-375x667-champion/battle-01-opened-the-map.png",
+  "screen": "explore-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0013",
+  "scenario": "battle",
+  "step": 1,
+  "label": "a wild Pokemon appeared",
+  "shot": "test/playtest/junior-real-375x667-champion/battle-02-a-wild-Pokemon-appeared.png",
+  "screen": "battle",
+  "log": "WILD TOGEKISS APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0014",
+  "scenario": "battle",
+  "step": 2,
+  "label": "attacked (turn 1)",
+  "shot": "test/playtest/junior-real-375x667-champion/battle-03-attacked-turn-1-.png",
+  "screen": "battle",
+  "log": "TOGEKISS USED ROUND!",
+  "notes": []
+ },
+ {
+  "id": "E-0015",
+  "scenario": "battle",
+  "step": 3,
+  "label": "pressed BALL",
+  "shot": "test/playtest/junior-real-375x667-champion/battle-04-pressed-BALL.png",
+  "screen": "battle",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "notes": []
+ },
+ {
+  "id": "E-0016",
+  "scenario": "collection",
+  "step": 0,
+  "label": "opened the PC box",
+  "shot": "test/playtest/junior-real-375x667-champion/collection-01-opened-the-PC-box.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0017",
+  "scenario": "collection",
+  "step": 1,
+  "label": "tapped a Pokemon in the box",
+  "shot": "test/playtest/junior-real-375x667-champion/collection-02-tapped-a-Pokemon-in-the-box.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0018",
+  "scenario": "collection",
+  "step": 2,
+  "label": "opened the trainer card",
+  "shot": "test/playtest/junior-real-375x667-champion/collection-03-opened-the-trainer-card.png",
+  "screen": "card-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0019",
+  "scenario": "mash",
+  "step": 0,
+  "label": "mashing (13 taps)",
+  "shot": "test/playtest/junior-real-375x667-champion/mash-01-mashing-13-taps-.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0020",
+  "scenario": "mash",
+  "step": 1,
+  "label": "mashing (26 taps)",
+  "shot": "test/playtest/junior-real-375x667-champion/mash-02-mashing-26-taps-.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0021",
+  "scenario": "mash",
+  "step": 2,
+  "label": "mashing (39 taps)",
+  "shot": "test/playtest/junior-real-375x667-champion/mash-03-mashing-39-taps-.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0022",
+  "scenario": "mash",
+  "step": 3,
+  "label": "after the mashing stopped",
+  "shot": "test/playtest/junior-real-375x667-champion/mash-04-after-the-mashing-stopped.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ }
+]

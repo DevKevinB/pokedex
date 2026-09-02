@@ -1,0 +1,42 @@
+[
+ {
+  "id": "E-0051",
+  "scenario": "spotcheck",
+  "step": 0,
+  "label": "trainer card, scrolled to the stats",
+  "shot": "test/playtest/normal-real-375x667/spotcheck-01-trainer-card-scrolled-to-the-stats.png",
+  "screen": "card-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0052",
+  "scenario": "spotcheck",
+  "step": 1,
+  "label": "PC box: the TEAM strip",
+  "shot": "test/playtest/normal-real-375x667/spotcheck-02-PC-box-the-TEAM-strip.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0053",
+  "scenario": "spotcheck",
+  "step": 2,
+  "label": "the BALL drawer",
+  "shot": "test/playtest/normal-real-375x667/spotcheck-03-the-BALL-drawer.png",
+  "screen": "battle",
+  "log": "\u2728 WOW! A SHINY TAILLOW APPEARED!! \u2728",
+  "notes": []
+ },
+ {
+  "id": "E-0054",
+  "scenario": "spotcheck",
+  "step": 3,
+  "label": "the SWITCH menu",
+  "shot": "test/playtest/normal-real-375x667/spotcheck-04-the-SWITCH-menu.png",
+  "screen": "battle",
+  "log": "\u2728 WOW! A SHINY TAILLOW APPEARED!! \u2728",
+  "notes": []
+ }
+]

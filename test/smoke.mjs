@@ -1358,6 +1358,42 @@ check('round 2 raises every trainer by 15 and keeps round 1 untouched', await pa
   return raised && k1 !== k2 && k1 === D.trainerKey(gym.key, 0);
 }));
 
+
+// ---- v19.8.1: the offline copy actually exists ----
+// cache.addAll() rejects the ENTIRE list if it contains one duplicate URL, and
+// it fails silently: the named cache is created, nothing is stored, and the app
+// looks perfectly healthy until the tablet loses signal. './js/fx.js' was listed
+// twice from v19.4 to v19.8 — five releases with no offline mode and no symptom
+// anyone could see. Two cheap assertions make that unrepeatable.
+check('the offline file list has no duplicates', await page.evaluate(async () => {
+  const src = await (await fetch('/sw.js')).text();
+  const block = /const SHELL_FILES = \[([\s\S]*?)\]/.exec(src)?.[1] || '';
+  const files = [...block.matchAll(/'([^']+)'/g)].map(m => m[1]);
+  return files.length > 0 && files.length === new Set(files).size;
+}));
+
+check('every app module is in the offline file list', await page.evaluate(async () => {
+  const src = await (await fetch('/sw.js')).text();
+  const block = /const SHELL_FILES = \[([\s\S]*?)\]/.exec(src)?.[1] || '';
+  const listed = new Set([...block.matchAll(/'([^']+)'/g)].map(m => m[1].replace(/^\.\//, '')));
+  // Every module index.html's graph can reach must be cached, or the offline
+  // copy boots into a missing import — which is a black screen, not a fallback.
+  const mods = [...document.querySelectorAll('script[type=module]')].map(s => s.src);
+  const seen = new Set(), queue = [...mods];
+  while (queue.length) {
+    const url = queue.pop();
+    const path = new URL(url, location.href).pathname.replace(/^\//, '').split('?')[0];
+    if (seen.has(path)) continue;
+    seen.add(path);
+    let text = '';
+    try { text = await (await fetch('/' + path)).text(); } catch (e) { continue; }
+    for (const m of text.matchAll(/from\s*['"](\.[^'"]+)['"]/g)) {
+      queue.push(new URL(m[1], location.origin + '/' + path).href);
+    }
+  }
+  return [...seen].every(p => listed.has(p));
+}));
+
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);
 check('speech synthesis never invoked', await page.evaluate(() => window.__SPOKE__ === false));

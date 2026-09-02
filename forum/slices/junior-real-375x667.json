@@ -1,0 +1,42 @@
+[
+ {
+  "id": "E-0005",
+  "scenario": "mash",
+  "step": 0,
+  "label": "mashing (13 taps)",
+  "shot": "test/playtest/junior-real-375x667/mash-01-mashing-13-taps-.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0006",
+  "scenario": "mash",
+  "step": 1,
+  "label": "mashing (26 taps)",
+  "shot": "test/playtest/junior-real-375x667/mash-02-mashing-26-taps-.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0007",
+  "scenario": "mash",
+  "step": 2,
+  "label": "mashing (39 taps)",
+  "shot": "test/playtest/junior-real-375x667/mash-03-mashing-39-taps-.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0008",
+  "scenario": "mash",
+  "step": 3,
+  "label": "after the mashing stopped",
+  "shot": "test/playtest/junior-real-375x667/mash-04-after-the-mashing-stopped.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ }
+]

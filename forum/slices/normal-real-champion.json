@@ -1,0 +1,450 @@
+[
+ {
+  "id": "E-0067",
+  "scenario": "gym",
+  "step": 0,
+  "label": "opened the gym circuit",
+  "shot": "test/playtest/normal-real-champion/gym-01-opened-the-gym-circuit.png",
+  "screen": "gym-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0068",
+  "scenario": "gym",
+  "step": 1,
+  "label": "opened a gym",
+  "shot": "test/playtest/normal-real-champion/gym-02-opened-a-gym.png",
+  "screen": "gym-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0069",
+  "scenario": "gym",
+  "step": 2,
+  "label": "started a trainer fight",
+  "shot": "test/playtest/normal-real-champion/gym-03-started-a-trainer-fight.png",
+  "screen": "battle",
+  "log": "HIKER CARL: \"THESE ROCKS DON'T ROLL \u2014 THEY CRUSH!\"",
+  "notes": []
+ },
+ {
+  "id": "E-0070",
+  "scenario": "collection",
+  "step": 0,
+  "label": "opened the PC box",
+  "shot": "test/playtest/normal-real-champion/collection-01-opened-the-PC-box.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0071",
+  "scenario": "collection",
+  "step": 1,
+  "label": "tapped a Pokemon in the box",
+  "shot": "test/playtest/normal-real-champion/collection-02-tapped-a-Pokemon-in-the-box.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0072",
+  "scenario": "collection",
+  "step": 2,
+  "label": "opened the trainer card",
+  "shot": "test/playtest/normal-real-champion/collection-03-opened-the-trainer-card.png",
+  "screen": "card-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0073",
+  "scenario": "saturday",
+  "step": 0,
+  "label": "catch 1: before NEXT",
+  "shot": "test/playtest/normal-real-champion/saturday-01-catch-1-before-NEXT.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0074",
+  "scenario": "saturday",
+  "step": 1,
+  "label": "catch 1: on a new Pokemon",
+  "shot": "test/playtest/normal-real-champion/saturday-02-catch-1-on-a-new-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0075",
+  "scenario": "saturday",
+  "step": 2,
+  "label": "catch 1: ball drawer",
+  "shot": "test/playtest/normal-real-champion/saturday-03-catch-1-ball-drawer.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0076",
+  "scenario": "saturday",
+  "step": 3,
+  "label": "catch 1: after the throw",
+  "shot": "test/playtest/normal-real-champion/saturday-04-catch-1-after-the-throw.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0077",
+  "scenario": "saturday",
+  "step": 4,
+  "label": "catch 1: modals cleared",
+  "shot": "test/playtest/normal-real-champion/saturday-05-catch-1-modals-cleared.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0078",
+  "scenario": "saturday",
+  "step": 5,
+  "label": "catch 2: before NEXT",
+  "shot": "test/playtest/normal-real-champion/saturday-06-catch-2-before-NEXT.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0079",
+  "scenario": "saturday",
+  "step": 6,
+  "label": "catch 2: on a new Pokemon",
+  "shot": "test/playtest/normal-real-champion/saturday-07-catch-2-on-a-new-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0080",
+  "scenario": "saturday",
+  "step": 7,
+  "label": "catch 2: ball drawer",
+  "shot": "test/playtest/normal-real-champion/saturday-08-catch-2-ball-drawer.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0081",
+  "scenario": "saturday",
+  "step": 8,
+  "label": "catch 2: after the throw",
+  "shot": "test/playtest/normal-real-champion/saturday-09-catch-2-after-the-throw.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0082",
+  "scenario": "saturday",
+  "step": 9,
+  "label": "catch 2: modals cleared",
+  "shot": "test/playtest/normal-real-champion/saturday-10-catch-2-modals-cleared.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0083",
+  "scenario": "saturday",
+  "step": 10,
+  "label": "catch 3: before NEXT",
+  "shot": "test/playtest/normal-real-champion/saturday-11-catch-3-before-NEXT.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0084",
+  "scenario": "saturday",
+  "step": 11,
+  "label": "catch 3: on a new Pokemon",
+  "shot": "test/playtest/normal-real-champion/saturday-12-catch-3-on-a-new-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0085",
+  "scenario": "saturday",
+  "step": 12,
+  "label": "catch 3: ball drawer",
+  "shot": "test/playtest/normal-real-champion/saturday-13-catch-3-ball-drawer.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0086",
+  "scenario": "saturday",
+  "step": 13,
+  "label": "catch 3: after the throw",
+  "shot": "test/playtest/normal-real-champion/saturday-14-catch-3-after-the-throw.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0087",
+  "scenario": "saturday",
+  "step": 14,
+  "label": "catch 3: modals cleared",
+  "shot": "test/playtest/normal-real-champion/saturday-15-catch-3-modals-cleared.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0088",
+  "scenario": "saturday",
+  "step": 15,
+  "label": "after three catches",
+  "shot": "test/playtest/normal-real-champion/saturday-16-after-three-catches.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0089",
+  "scenario": "saturday",
+  "step": 16,
+  "label": "tapped EXPLORE",
+  "shot": "test/playtest/normal-real-champion/saturday-17-tapped-EXPLORE.png",
+  "screen": "explore-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0090",
+  "scenario": "saturday",
+  "step": 17,
+  "label": "wild fight begins",
+  "shot": "test/playtest/normal-real-champion/saturday-18-wild-fight-begins.png",
+  "screen": "battle",
+  "log": "WILD KOFFING APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0091",
+  "scenario": "saturday",
+  "step": 18,
+  "label": "wild turn 3",
+  "shot": "test/playtest/normal-real-champion/saturday-19-wild-turn-3.png",
+  "screen": "battle",
+  "log": "CATCHING KOFFING...",
+  "notes": []
+ },
+ {
+  "id": "E-0092",
+  "scenario": "saturday",
+  "step": 19,
+  "label": "wild ended",
+  "shot": "test/playtest/normal-real-champion/saturday-20-wild-ended.png",
+  "screen": "battle",
+  "log": "CATCHING KOFFING...",
+  "notes": []
+ },
+ {
+  "id": "E-0093",
+  "scenario": "saturday",
+  "step": 20,
+  "label": "back on the dex after the wild fight",
+  "shot": "test/playtest/normal-real-champion/saturday-21-back-on-the-dex-after-the-wild-fig.png",
+  "screen": "explore-container",
+  "log": "CATCHING KOFFING...",
+  "notes": []
+ },
+ {
+  "id": "E-0094",
+  "scenario": "saturday",
+  "step": 21,
+  "label": "the first gym stop",
+  "shot": "test/playtest/normal-real-champion/saturday-22-the-first-gym-stop.png",
+  "screen": "gym-container",
+  "log": "CATCHING KOFFING...",
+  "notes": []
+ },
+ {
+  "id": "E-0095",
+  "scenario": "saturday",
+  "step": 22,
+  "label": "no unlocked trainer left at #0",
+  "shot": "test/playtest/normal-real-champion/saturday-23-no-unlocked-trainer-left-at-0.png",
+  "screen": "gym-container",
+  "log": "CATCHING KOFFING...",
+  "notes": []
+ },
+ {
+  "id": "E-0096",
+  "scenario": "saturday",
+  "step": 23,
+  "label": "gym list before healing",
+  "shot": "test/playtest/normal-real-champion/saturday-24-gym-list-before-healing.png",
+  "screen": "gym-container",
+  "log": "CATCHING KOFFING...",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0097",
+  "scenario": "saturday",
+  "step": 24,
+  "label": "after the Poke Center",
+  "shot": "test/playtest/normal-real-champion/saturday-25-after-the-Poke-Center.png",
+  "screen": "gym-container",
+  "log": "CATCHING KOFFING...",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0098",
+  "scenario": "saturday",
+  "step": 25,
+  "label": "PC box open",
+  "shot": "test/playtest/normal-real-champion/saturday-26-PC-box-open.png",
+  "screen": "pc-modal",
+  "log": "CATCHING KOFFING...",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0099",
+  "scenario": "saturday",
+  "step": 26,
+  "label": "tapped team slot 1",
+  "shot": "test/playtest/normal-real-champion/saturday-27-tapped-team-slot-1.png",
+  "screen": "pc-modal",
+  "log": "CATCHING KOFFING...",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0100",
+  "scenario": "saturday",
+  "step": 27,
+  "label": "tapped a box Pokemon",
+  "shot": "test/playtest/normal-real-champion/saturday-28-tapped-a-box-Pokemon.png",
+  "screen": "dex",
+  "log": "CATCHING KOFFING...",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0101",
+  "scenario": "saturday",
+  "step": 28,
+  "label": "tapped another box Pokemon",
+  "shot": "test/playtest/normal-real-champion/saturday-29-tapped-another-box-Pokemon.png",
+  "screen": "dex",
+  "log": "CATCHING KOFFING...",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0102",
+  "scenario": "saturday",
+  "step": 29,
+  "label": "closed the PC",
+  "shot": "test/playtest/normal-real-champion/saturday-30-closed-the-PC.png",
+  "screen": "dex",
+  "log": "CATCHING KOFFING...",
+  "notes": [
+   "NO SPACE AFTER EMOJI: round-tab r2  \"\ud83d\udc51ROUND 2\""
+  ]
+ },
+ {
+  "id": "E-0103",
+  "scenario": "saturday",
+  "step": 30,
+  "label": "the last fight of the session",
+  "shot": "test/playtest/normal-real-champion/saturday-31-the-last-fight-of-the-session.png",
+  "screen": "battle",
+  "log": "HIKER CARL: \"THESE ROCKS DON'T ROLL \u2014 THEY CRUSH!\"",
+  "notes": []
+ },
+ {
+  "id": "E-0104",
+  "scenario": "saturday",
+  "step": 31,
+  "label": "final ended",
+  "shot": "test/playtest/normal-real-champion/saturday-32-final-ended.png",
+  "screen": "battle",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "notes": [
+   "note: #wild-sprite is fainted (expected grey)"
+  ]
+ },
+ {
+  "id": "E-0105",
+  "scenario": "saturday",
+  "step": 32,
+  "label": "end of the session",
+  "shot": "test/playtest/normal-real-champion/saturday-33-end-of-the-session.png",
+  "screen": "gym-container",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "notes": []
+ },
+ {
+  "id": "E-0106",
+  "scenario": "battle",
+  "step": 0,
+  "label": "opened the map",
+  "shot": "test/playtest/normal-real-champion/battle-01-opened-the-map.png",
+  "screen": "explore-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0107",
+  "scenario": "battle",
+  "step": 1,
+  "label": "a wild Pokemon appeared",
+  "shot": "test/playtest/normal-real-champion/battle-02-a-wild-Pokemon-appeared.png",
+  "screen": "battle",
+  "log": "WILD PARAS APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0108",
+  "scenario": "battle",
+  "step": 2,
+  "label": "attacked (turn 1)",
+  "shot": "test/playtest/normal-real-champion/battle-03-attacked-turn-1-.png",
+  "screen": "battle",
+  "log": "PARAS USED SECRET POWER!",
+  "notes": []
+ },
+ {
+  "id": "E-0109",
+  "scenario": "battle",
+  "step": 3,
+  "label": "pressed BALL",
+  "shot": "test/playtest/normal-real-champion/battle-04-pressed-BALL.png",
+  "screen": "battle",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "notes": []
+ }
+]

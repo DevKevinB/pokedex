@@ -1,0 +1,152 @@
+{
+ "merges": [
+  {
+   "canonical": "F-001",
+   "duplicates": [
+    "F-012",
+    "F-021",
+    "F-042"
+   ],
+   "why": "Four reviewers, four seats, one bug: fast tapping leaves the Junior dex as a name and two type chips on a wall of navy \u2014 no sprite, no buttons, no top bar, no way back. I opened junior-real-375x667-fresh/mash-01 and it is exactly as Art describes it. It reproduces on the early, fresh, mid AND champion saves at 13, 26 and 39 taps, so it is not one unlucky frame. F-001 is canonical because it is Art's own account of being stranded. F-042 joins as the important variant: its E-0153 is a torn half-drawn Charmander after ONE deliberate tap in normal mode at 390, so the reveal animation is fragile without any mashing at all \u2014 fix the blank first, then re-check E-0153 separately. (F-042's other two exhibits, E-0044 and E-0046, are mash frames and belong here, not to a separate slow-reveal thread.)"
+  },
+  {
+   "canonical": "F-013",
+   "duplicates": [
+    "F-002"
+   ],
+   "why": "Art taps a Pokemon in his PC box and nothing happens. I ran md5sum on the two files: collection-01 and collection-02 in junior-real-375x667-fresh are byte-identical, 399cc3ac8fd9b3735f06be2d2be6af46. Not 'subtly different' \u2014 the same file. F-013 is canonical for carrying that proof; F-002 is Art's voice on the same dead tap and is the reason it matters (a pre-reader's whole vocabulary for 'tell me about this' is poking the picture). Note this is the exact opposite defect to F-081, where Gabe's tap on the same control throws him out of the box entirely. Same control, two boys, two different failures \u2014 fix them together."
+  },
+  {
+   "canonical": "F-011",
+   "duplicates": [
+    "F-003"
+   ],
+   "why": "The trainer card is the only screen in the game that answers 'how am I doing', and it is words-only. I opened junior-real-375x667-fresh/collection-03: TRAINER CARD - ART, POKEDEX 0/649 (0%), the word BADGES, twelve grey tiles captioned 'Beat LEADER ROCKO' and '0/1', and an exit that says CLOSE \u2014 where every other Junior screen gives him a green BACK arrow. Two reviewers, one from Art's chair, one watching him open it cold. One correction to the record: F-011 says it is 'pixel-for-pixel' Gabe's card; it is not (different widths, different data) but the layout and the word-count are identical, which is the real point. I am NOT upholding F-003's rule_risk that the grey tiles 'punish' Art \u2014 showing a goal is not punishment. The violation here is simpler: for a pre-reader this screen does not exist."
+  },
+  {
+   "canonical": "F-007",
+   "duplicates": [
+    "F-011 (second half)"
+   ],
+   "why": "The CLOSE button floats on top of the badge grid instead of below it, so the bottom row is always sliced in half no matter how far you scroll. Confirmed in normal-real-champion/collection-03 (rocket, crown and hourglass cut through) and again in junior-real-375x667-fresh (DRACO, VICTORY, COLLECTOR cut through). Two saves, two modes, two widths, two reviewers \u2014 so it is structural, not a one-off. Kept separate from the words-only merge above because they are two different repairs to the same card: this one is a stacking-order fix. F-032 (only two text sizes on the card, 13px title then everything at the 8px floor) stays its own thread \u2014 it proposes shortening the captions, which would also relieve this, but it is a real hierarchy problem on its own."
+  },
+  {
+   "canonical": "F-026",
+   "duplicates": [
+    "F-008",
+    "F-063"
+   ],
+   "why": "Three reviewers on the gym victory modal. I opened normal-real-champion/saturday-32: trophy, a framed Geodude card, TAP TO SEE IT!, the gold XP bar, then in red HIKER CARL DEFEATED!, then 'You caught their whole team:' \u2014 and then blank paper and CONTINUE. A colon with nothing under it. F-026 is canonical for diagnosing it (the child already owns Carl's team, so the grid has nothing to add) and for pointing at the wild-catch screen ten steps earlier that handles the identical situation warmly: 'EKANS was caught (already in your Box).' F-063 supplies the fix and saves whoever takes this an hour: the list is not missing, it is printed roughly a hundred pixels ABOVE the sentence that promises it. F-008 adds the second half \u2014 the rematch pays an unnumbered gold bar where the wild screen names the XP out loud."
+  },
+  {
+   "canonical": "F-027",
+   "duplicates": [
+    "F-005",
+    "F-030"
+   ],
+   "why": "Six empty grey dashed rectangles sit at the very top of Art's PC box and never fill. I confirmed it in junior-real-375x667/mash-04: his team strip directly underneath is full \u2014 Charizard, Pikachu, Bulbasaur, Charmander, Geodude, Rhyhorn, all in colour \u2014 and the six dashed holes above are still empty. Three reviewers reached it independently and all three landed on the same fix: put something inside the empty shape so it explains itself (a faint star, the last six catches, a ghost sprite), or do not draw the shelf until he has starred one. I am not upholding the 'Junior Mode never punishes' framing \u2014 an empty shelf is not a punishment. But it is the first thing a pre-reader sees on his favourite screen, and it currently means nothing."
+  },
+  {
+   "canonical": "F-066",
+   "duplicates": [
+    "F-076"
+   ],
+   "why": "The endgame's counter is wrong. I opened normal-real-champion/gym-01 myself: the ROUND 2 chip is the one filled gold, and underneath it TRAINERS DEFEATED reads 58/58 with all twelve badges ticked and the Elite Four's five boxes solid green. Walk into Boulder Gym from there and every trainer has a green check \u2014 and a Lv 8 Geodude. Meanwhile the trainer card, buried behind a scrolling modal, says MASTER: 'Beat all 58 in ROUND 2 - 0/58'. Two reviewers, from a progression seat and a tournament seat, both stopped on the same thing. This is the whole of Gabe's remaining game telling him it is finished. Round 2 needs its own counter and its own empty checkboxes."
+  },
+  {
+   "canonical": "F-067",
+   "duplicates": [
+    "F-043",
+    "F-078"
+   ],
+   "why": "Three reviewers on the same offer: a Lv 62 Charizard against a one-Pokemon Lv 8 Geodude with 1 HP, behind four screens of ceremony, on a button whose largest words are 'HALF XP' \u2014 repeated five times down one page. F-067 is canonical for naming the economics (the post-champion content is the game's weakest opponents, explicitly advertised at half rate, and the last badge wants 58 of them). F-078 adds the cheapest half of the fix: label the button with the prize, not the deduction \u2014 REMATCH, CATCH THEIR TEAM. F-043 adds the pacing note: the slow part is the part with no stakes. Related to the Round 2 merge above but distinct \u2014 that one is a broken counter, this one is a broken offer."
+  },
+  {
+   "canonical": "F-041",
+   "duplicates": [
+    "F-062"
+   ],
+   "why": "Two reviewers, one on game feel and one on combat systems, independently caught the battle's words running ahead of its pictures. I verified it in junior-real-375x667-champion/battle-03: the log reads TOGEKISS USED ROUND!, a '-41' is drifting over Charizard, and Charizard's own bar says 167/168. The number, the sentence and the bar are all describing different moments. Same thing in normal at 390 and on two saves. The child's strongest feedback for pressing a button is currently watching his own Pokemon take damage. One rule fixes it: hold the enemy's line on screen until their damage has actually animated onto the bar it drained."
+  },
+  {
+   "canonical": "F-052",
+   "duplicates": [
+    "F-033"
+   ],
+   "why": "The Master Ball is the only ball with a count, its label needs two lines, and so the 'x1' orphans onto a third line at the very bottom-right corner of a 375-wide screen \u2014 the band where Safari's own toolbar and the home-screen swipe bar live. A layout specialist and a type designer found it separately, from opposite directions (one measured the viewport, one measured the gutter). Both propose the same repair: put the count inline on the name row or as a badge on the ball sprite, and give the drawer side padding so no column runs to the bezel."
+  },
+  {
+   "canonical": "F-068",
+   "duplicates": [
+    "F-035"
+   ],
+   "why": "Three of the four balls carry the identical caption \u2014 BETTER WHEN WEAKENED, BETTER WHEN WEAKENED, BETTER WHEN WEAKENED \u2014 so the one thing a child is choosing between is the one thing the words refuse to tell him. Caught by a type designer and a progression economist. F-068 is canonical because it adds the consequence: across 620 catches nothing was ever hard enough to be worth the good ball, so Gabe is sitting on nine Master Balls he will never spend. Both reviewers point at the same existing solution two taps away \u2014 the dex ball drawer already ranks them 1x / 1.5x / 2x / 100%. F-035 adds the Junior half: carry the same ranking as one, two, three pips so the ladder is a shape, not a sentence."
+  },
+  {
+   "canonical": "F-022",
+   "duplicates": [
+    "F-053"
+   ],
+   "why": "One button, two children stuck on it, two reviewers. It is the biggest, reddest, bottom-most, most mash-attractive target in the catch modal; the word on it is CANCEL; and it is the control that throws the Pokemon away. Art cannot read it (F-022). Gabe can read it but cannot see it \u2014 in the battle's ball and switch panels the same label is near-white on cream while every other word on the panel is dark navy (F-053). One repair covers both: the green left-arrow sprite the PC box already uses, on a dark-text button. Filed apart in the original because one reviewer was in Junior and one in normal; they are the same 40 pixels."
+  },
+  {
+   "canonical": "F-047",
+   "duplicates": [
+    "F-057"
+   ],
+   "why": "An audio director and an icon researcher arrived at the same unlabelled chip in the top bar from opposite ends. It is one global key, so it is not Gabe's setting or Art's \u2014 it is the house's, and it survives restarts and player switches. It is silent, unconfirmed and one thumb-width from the gear. And the off state is a red prohibition circle with a tiny speaker under it, which to a four-year-old reads as 'you are not allowed', while the on state is the same speaker glyph as the CRY button in his own toolbar. So one curious tap removes the entire non-verbal channel from the boy who depends on it most, and the button that gives it back looks like the thing that took it. Rule risk upheld: this is taking something away from a child."
+  },
+  {
+   "canonical": "F-046",
+   "duplicates": [
+    "F-050"
+   ],
+   "why": "The cries are lovely and they only ever play on the Pokedex screen. Across four wild encounters the cry bus fired for one of them, and across a full catch \u2014 wobble, wobble, wobble, jingle \u2014 it never fired at all. Two threads from the same seat, kept as one because they are one missing call in two places: the moment a creature appears, and the moment the ball clicks shut. This is the highest-value cheap fix in the forum for Art specifically. The picture and the noise arriving together is exactly how a small child learns which creature is which, and right now he gets the picture and a sentence he cannot read. It is also the one cluster in this whole review that a screenshot cannot protect \u2014 it will need a test that counts sounds."
+  },
+  {
+   "canonical": "F-051",
+   "duplicates": [
+    "F-082"
+   ],
+   "why": "Both horizontal strips in the PC box overflow with nothing saying they scroll. The team strip at 375 shows four and a half of six, and it is the only way to set a lead ('TAP = LEAD'), so two of Gabe's Pokemon cannot be made lead without discovering an invisible swipe. The generation tab strip at 390 does the same: I opened normal-real-champion/collection-01 and confirmed it \u2014 the G1 tab is sliced on the left and the ALL tab, the one holding all 649, is reduced to a lone 'A' falling off the right edge. Both sit inside neat bordered boxes, which is the universal signal for 'this is all of it'. One repair for both: a visible chevron or a peeking half-card at each end, or wrap to two rows."
+  },
+  {
+   "canonical": "F-056",
+   "duplicates": [
+    "F-037"
+   ],
+   "why": "Two reviewers on the same tile on the screen Art lives on. The type is a word (POISON, ELECTRIC) sitting next to an identical-sized tile where the habitat is a picture \u2014 so the row reads word, picture, and he can decode the second one only. And the word is close to unreadable anyway: white text on the yellow ELECTRIC chip measures 1.34:1, against a 4.5:1 floor. The kicker is that the picture already exists \u2014 the game draws a whole type alphabet on the battle buttons and the PC card and then abandons it here. BOTH halves must ship: the glyph in the tile for Art, and darker text for Gabe, who reads that word on every dex entry."
+  },
+  {
+   "canonical": "F-014",
+   "duplicates": [
+    "F-004"
+   ],
+   "why": "Two reviewers protecting the same screen, one of them Art. I opened it: dashed slots that obviously want something in them, region tabs drawn as starter sprites instead of 'G1 G2 G3', pure black silhouettes for what he has not caught and full colour for what he has, and one fat green BACK arrow. A four-year-old can look at that for two seconds and know the job. Merged as a double vote to keep it, and the regression test writes itself: silhouettes stay black (not greyed sprites), tabs stay sprites (not text), colour still means mine. If someone later 'tidies' this, Art loses the only screen that briefs him."
+  },
+  {
+   "canonical": "F-091",
+   "duplicates": [
+    "F-092"
+   ],
+   "why": "Cause and effect, filed as two threads by the same seat, and they only make sense together. The cache of Pokemon data grows about 8.7 KB per species with no ceiling and projects past the browser's quota before the dex is finished \u2014 so the boy who looks at everything is the one who fills the tablet. When the wall is hit, one catch writes the save several times and only some of the writes land: the dex ticks Bisharp off but Bisharp comes back Lv5 alone in a box of Lv55s, or the catch vanishes and the Master Ball is still spent. I opened dur-51 and the torn state is exactly as described. Gabe's 620 Pokemon are 21 KB \u2014 four-tenths of one percent of the budget. It is not his collection filling the disk and it must not be his collection that pays. Cap the cache; make the save write once, atomically."
+  }
+ ],
+ "rejected": [
+  {
+   "id": "F-048",
+   "why": "Out of seat. 'Every screenshot in this review was taken with sound off' is a finding about the test harness, not about the game \u2014 it reviews the evidence corpus the panel was handed. Its three cited exhibits are real and its observation is correct (the harness sets mute before every run, so all five saves, both modes and both phone sizes played in silence), but no child ever meets this defect. Recorded, not deleted, and its one instruction survives here because it is worth acting on: Kevin, run the existing playtest scenarios once with sound ON and count how many times a cry actually fires per encounter and per catch. That single pass turns audio \u2014 which for Art carries roughly half the meaning in this game \u2014 from an untested surface into a tested one, and it is the reason the two real audio bugs (F-046, F-047) went nine versions unnoticed."
+  }
+ ],
+ "tag_rulings": [
+  "No new tag admitted, because none was proposed. Every feature_tag on all 98 threads came from the closed list and tag_proposals was empty throughout \u2014 unusual, and it means the word cloud is clean. Nothing to fold.",
+  "junior-mode appears on roughly half the forum. It is not a feature area, it is the axis the whole review turned on. When triaging, ignore it and sort by the second tag on each thread, or you will get one giant bucket.",
+  "layout-375 is the second-heaviest tag and it is misleading. Only four threads are genuinely about the small phone (F-051, F-052, F-053, F-082). The rest use it to mean 'a bar pinned over the content it is supposed to sit below' \u2014 F-007, F-011, F-055. That is one repair to a stacking rule, not a screen-size problem. Splitting them is the difference between an afternoon and a fortnight.",
+  "accessibility on this forum means one specific thing and it is not WCAG: information that exists only as words. Read every accessibility thread as 'Art cannot see this'. Left as filed because the reviewers used it consistently.",
+  "round-2 and champion co-occur on every thread that carries either (F-066, F-067, F-076, F-078, F-080). That is one workstream \u2014 the endgame \u2014 not five items on a list. Do the broken 58/58 counter first; the rest of that cluster is design, not breakage.",
+  "nickname drew zero threads out of 98. Do not read anything into the LONGNAME 1 through LONGNAME 12 strings visible in the hoarder PC box (E-0110) \u2014 those are the test fixture's own nicknames, not a bug.",
+  "cries and audio (F-046, F-047, F-049, and F-057 merged into F-047) is the only cluster whose evidence is not screenshots. It was heard, not seen. That means it is also the one cluster your smoke suite cannot protect with a picture, and it is where the rejected F-048 was pointing.",
+  "type-tiles carries two different complaints that I merged into one (F-037 contrast, F-056 missing glyph) plus a separate, sound one I left alone: F-061, that a move which is super-effective and a move which is useless both wear the same orange badge, distinguished only by the direction of a six-pixel triangle. Colour is free there."
+ ],
+ "summary": "Kevin \u2014 98 threads reached me. Twenty-five were the same finding filed two or three times, which is the useful part: where reviewers collided independently is where the real bugs are.\n\nFour things deserve fixing before anything else.\n\n1. Your service worker has never installed. One line is duplicated in sw.js, the browser rejects the whole cache list, so there is no offline mode and every sprite re-downloads on every launch (F-096).\n2. When the tablet runs out of room a catch half-saves: the dex ticks the Pok\u00e9mon off, but the Pok\u00e9mon comes back Lv5 \u2014 or vanishes with the ball that caught it (F-091). That is the saves-are-sacred rule.\n3. ROUND 2 shows ROUND 1's ticks. Gabe's champion screen says 58/58 DONE for a ladder he has not started (F-066, two reviewers).\n4. Versus has no handicap. Art's Lv9 Pikachu meets Gabe's Lv62 Charizard and Art's team faints \u2014 the one place Junior Mode's promise breaks, in the mode the boys play together (F-016).\n\nThe loudest pattern, across half the forum: Art is fine wherever meaning is a picture and stranded wherever it is a word. Trainer card, PASS TO ART, quest rewards, the out-of-storage warning, CANCEL, CLOSE. Junior Mode redrew the dex, the battle buttons and the box beautifully, then stopped.\n\nAlso: mashing blanks the Junior dex \u2014 three reviewers, four saves.\n\nThe praise is specific enough to become tests: the boot faces, colour-versus-shadow in Art's box, the battle move grid, the import-and-undo path. And checked directly: the game still never speaks."
+}

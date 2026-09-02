@@ -1,0 +1,42 @@
+[
+ {
+  "id": "E-0001",
+  "scenario": "battle",
+  "step": 0,
+  "label": "opened the map",
+  "shot": "test/playtest/junior-real/battle-01-opened-the-map.png",
+  "screen": "explore-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0002",
+  "scenario": "battle",
+  "step": 1,
+  "label": "a wild Pokemon appeared",
+  "shot": "test/playtest/junior-real/battle-02-a-wild-Pokemon-appeared.png",
+  "screen": "battle",
+  "log": "WILD MARACTUS APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0003",
+  "scenario": "battle",
+  "step": 2,
+  "label": "attacked (turn 1)",
+  "shot": "test/playtest/junior-real/battle-03-attacked-turn-1-.png",
+  "screen": "battle",
+  "log": "MARACTUS USED FACADE!",
+  "notes": []
+ },
+ {
+  "id": "E-0004",
+  "scenario": "battle",
+  "step": 3,
+  "label": "pressed BALL",
+  "shot": "test/playtest/junior-real/battle-04-pressed-BALL.png",
+  "screen": "battle",
+  "log": "WHAT WILL CHARIZARD DO?",
+  "notes": []
+ }
+]

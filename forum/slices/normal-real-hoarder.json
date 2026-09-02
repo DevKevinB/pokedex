@@ -1,0 +1,394 @@
+[
+ {
+  "id": "E-0110",
+  "scenario": "collection",
+  "step": 0,
+  "label": "opened the PC box",
+  "shot": "test/playtest/normal-real-hoarder/collection-01-opened-the-PC-box.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0111",
+  "scenario": "collection",
+  "step": 1,
+  "label": "tapped a Pokemon in the box",
+  "shot": "test/playtest/normal-real-hoarder/collection-02-tapped-a-Pokemon-in-the-box.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0112",
+  "scenario": "collection",
+  "step": 2,
+  "label": "opened the trainer card",
+  "shot": "test/playtest/normal-real-hoarder/collection-03-opened-the-trainer-card.png",
+  "screen": "card-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0113",
+  "scenario": "saturday",
+  "step": 0,
+  "label": "catch 1: before NEXT",
+  "shot": "test/playtest/normal-real-hoarder/saturday-01-catch-1-before-NEXT.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0114",
+  "scenario": "saturday",
+  "step": 1,
+  "label": "catch 1: on a new Pokemon",
+  "shot": "test/playtest/normal-real-hoarder/saturday-02-catch-1-on-a-new-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0115",
+  "scenario": "saturday",
+  "step": 2,
+  "label": "catch 1: ball drawer",
+  "shot": "test/playtest/normal-real-hoarder/saturday-03-catch-1-ball-drawer.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0116",
+  "scenario": "saturday",
+  "step": 3,
+  "label": "catch 1: after the throw",
+  "shot": "test/playtest/normal-real-hoarder/saturday-04-catch-1-after-the-throw.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0117",
+  "scenario": "saturday",
+  "step": 4,
+  "label": "catch 1: modals cleared",
+  "shot": "test/playtest/normal-real-hoarder/saturday-05-catch-1-modals-cleared.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0118",
+  "scenario": "saturday",
+  "step": 5,
+  "label": "catch 2: before NEXT",
+  "shot": "test/playtest/normal-real-hoarder/saturday-06-catch-2-before-NEXT.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0119",
+  "scenario": "saturday",
+  "step": 6,
+  "label": "catch 2: on a new Pokemon",
+  "shot": "test/playtest/normal-real-hoarder/saturday-07-catch-2-on-a-new-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0120",
+  "scenario": "saturday",
+  "step": 7,
+  "label": "catch 2: ball drawer",
+  "shot": "test/playtest/normal-real-hoarder/saturday-08-catch-2-ball-drawer.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0121",
+  "scenario": "saturday",
+  "step": 8,
+  "label": "catch 2: after the throw",
+  "shot": "test/playtest/normal-real-hoarder/saturday-09-catch-2-after-the-throw.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0122",
+  "scenario": "saturday",
+  "step": 9,
+  "label": "catch 2: modals cleared",
+  "shot": "test/playtest/normal-real-hoarder/saturday-10-catch-2-modals-cleared.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0123",
+  "scenario": "saturday",
+  "step": 10,
+  "label": "catch 3: before NEXT",
+  "shot": "test/playtest/normal-real-hoarder/saturday-11-catch-3-before-NEXT.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0124",
+  "scenario": "saturday",
+  "step": 11,
+  "label": "catch 3: on a new Pokemon",
+  "shot": "test/playtest/normal-real-hoarder/saturday-12-catch-3-on-a-new-Pokemon.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0125",
+  "scenario": "saturday",
+  "step": 12,
+  "label": "catch 3: ball drawer",
+  "shot": "test/playtest/normal-real-hoarder/saturday-13-catch-3-ball-drawer.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0126",
+  "scenario": "saturday",
+  "step": 13,
+  "label": "catch 3: after the throw",
+  "shot": "test/playtest/normal-real-hoarder/saturday-14-catch-3-after-the-throw.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0127",
+  "scenario": "saturday",
+  "step": 14,
+  "label": "catch 3: modals cleared",
+  "shot": "test/playtest/normal-real-hoarder/saturday-15-catch-3-modals-cleared.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0128",
+  "scenario": "saturday",
+  "step": 15,
+  "label": "after three catches",
+  "shot": "test/playtest/normal-real-hoarder/saturday-16-after-three-catches.png",
+  "screen": "dex",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0129",
+  "scenario": "saturday",
+  "step": 16,
+  "label": "tapped EXPLORE",
+  "shot": "test/playtest/normal-real-hoarder/saturday-17-tapped-EXPLORE.png",
+  "screen": "explore-container",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0130",
+  "scenario": "saturday",
+  "step": 17,
+  "label": "wild fight begins",
+  "shot": "test/playtest/normal-real-hoarder/saturday-18-wild-fight-begins.png",
+  "screen": "battle",
+  "log": "WILD EKANS APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0131",
+  "scenario": "saturday",
+  "step": 18,
+  "label": "wild ended",
+  "shot": "test/playtest/normal-real-hoarder/saturday-19-wild-ended.png",
+  "screen": "battle",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0132",
+  "scenario": "saturday",
+  "step": 19,
+  "label": "back on the dex after the wild fight",
+  "shot": "test/playtest/normal-real-hoarder/saturday-20-back-on-the-dex-after-the-wild-fig.png",
+  "screen": "explore-container",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0133",
+  "scenario": "saturday",
+  "step": 20,
+  "label": "the first gym stop",
+  "shot": "test/playtest/normal-real-hoarder/saturday-21-the-first-gym-stop.png",
+  "screen": "gym-container",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0134",
+  "scenario": "saturday",
+  "step": 21,
+  "label": "no unlocked trainer left at #0",
+  "shot": "test/playtest/normal-real-hoarder/saturday-22-no-unlocked-trainer-left-at-0.png",
+  "screen": "gym-container",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0135",
+  "scenario": "saturday",
+  "step": 22,
+  "label": "gym list before healing",
+  "shot": "test/playtest/normal-real-hoarder/saturday-23-gym-list-before-healing.png",
+  "screen": "gym-container",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0136",
+  "scenario": "saturday",
+  "step": 23,
+  "label": "after the Poke Center",
+  "shot": "test/playtest/normal-real-hoarder/saturday-24-after-the-Poke-Center.png",
+  "screen": "gym-container",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0137",
+  "scenario": "saturday",
+  "step": 24,
+  "label": "PC box open",
+  "shot": "test/playtest/normal-real-hoarder/saturday-25-PC-box-open.png",
+  "screen": "pc-modal",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0138",
+  "scenario": "saturday",
+  "step": 25,
+  "label": "tapped team slot 1",
+  "shot": "test/playtest/normal-real-hoarder/saturday-26-tapped-team-slot-1.png",
+  "screen": "pc-modal",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0139",
+  "scenario": "saturday",
+  "step": 26,
+  "label": "tapped a box Pokemon",
+  "shot": "test/playtest/normal-real-hoarder/saturday-27-tapped-a-box-Pokemon.png",
+  "screen": "dex",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0140",
+  "scenario": "saturday",
+  "step": 27,
+  "label": "tapped another box Pokemon",
+  "shot": "test/playtest/normal-real-hoarder/saturday-28-tapped-another-box-Pokemon.png",
+  "screen": "dex",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0141",
+  "scenario": "saturday",
+  "step": 28,
+  "label": "closed the PC",
+  "shot": "test/playtest/normal-real-hoarder/saturday-29-closed-the-PC.png",
+  "screen": "dex",
+  "log": "CATCHING EKANS...",
+  "notes": []
+ },
+ {
+  "id": "E-0142",
+  "scenario": "saturday",
+  "step": 29,
+  "label": "the last fight of the session",
+  "shot": "test/playtest/normal-real-hoarder/saturday-30-the-last-fight-of-the-session.png",
+  "screen": "battle",
+  "log": "HIKER CARL: \"THESE ROCKS DON'T ROLL \u2014 THEY CRUSH!\"",
+  "notes": []
+ },
+ {
+  "id": "E-0143",
+  "scenario": "saturday",
+  "step": 30,
+  "label": "final ended",
+  "shot": "test/playtest/normal-real-hoarder/saturday-31-final-ended.png",
+  "screen": "battle",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "notes": [
+   "note: #wild-sprite is fainted (expected grey)"
+  ]
+ },
+ {
+  "id": "E-0144",
+  "scenario": "saturday",
+  "step": 31,
+  "label": "end of the session",
+  "shot": "test/playtest/normal-real-hoarder/saturday-32-end-of-the-session.png",
+  "screen": "gym-container",
+  "log": "YOU DEFEATED HIKER CARL!",
+  "notes": []
+ },
+ {
+  "id": "E-0145",
+  "scenario": "spotcheck",
+  "step": 0,
+  "label": "trainer card, scrolled to the stats",
+  "shot": "test/playtest/normal-real-hoarder/spotcheck-01-trainer-card-scrolled-to-the-stats.png",
+  "screen": "card-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0146",
+  "scenario": "spotcheck",
+  "step": 1,
+  "label": "PC box: the TEAM strip",
+  "shot": "test/playtest/normal-real-hoarder/spotcheck-02-PC-box-the-TEAM-strip.png",
+  "screen": "pc-modal",
+  "log": "WILD POKEMON APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0147",
+  "scenario": "spotcheck",
+  "step": 2,
+  "label": "the BALL drawer",
+  "shot": "test/playtest/normal-real-hoarder/spotcheck-03-the-BALL-drawer.png",
+  "screen": "battle",
+  "log": "WILD GARBODOR APPEARED!",
+  "notes": []
+ },
+ {
+  "id": "E-0148",
+  "scenario": "spotcheck",
+  "step": 3,
+  "label": "the SWITCH menu",
+  "shot": "test/playtest/normal-real-hoarder/spotcheck-04-the-SWITCH-menu.png",
+  "screen": "battle",
+  "log": "WILD GARBODOR APPEARED!",
+  "notes": []
+ }
+]

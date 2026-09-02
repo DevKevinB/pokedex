@@ -9,7 +9,7 @@
 // Bump CACHE_VERSION on every release to purge old shells.
 // ============================================================
 
-const CACHE_VERSION = 'pokedexos-v19.8.0';
+const CACHE_VERSION = 'pokedexos-v19.8.1';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 // DELIBERATELY version-independent. Sprites never change, and at a weekly
 // release cadence a versioned asset cache is emptied every single push — which
@@ -22,14 +22,23 @@ const SHELL_FILES = [
   './css/main.css', './css/gba.css',
   './js/main.js', './js/config.js', './js/state.js', './js/api.js', './js/engine.js',
   './js/audio.js', './js/dex.js', './js/catch.js', './js/battle.js', './js/fx.js', './js/pc.js',
-  './js/music.js', './js/explore.js', './js/progression.js', './js/settings.js', './js/devtools.js', './js/gym.js', './js/gymdata.js', './js/nickname.js', './js/dialog.js', './js/habitatfill.js', './js/fx.js',
+  './js/music.js', './js/explore.js', './js/progression.js', './js/settings.js', './js/devtools.js', './js/gym.js', './js/gymdata.js', './js/nickname.js', './js/dialog.js', './js/habitatfill.js',
   './data/moves.json',
   './manifest.webmanifest'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(SHELL_CACHE).then(c => c.addAll(SHELL_FILES)).then(() => self.skipWaiting())
+    // De-duplicated on the way in. cache.addAll() rejects the ENTIRE list if it
+    // contains the same URL twice, and it does so silently: the named cache is
+    // created, nothing is stored in it, and the app looks fine until the tablet
+    // goes offline. './js/fx.js' was listed twice from v19.4 until v19.8, which
+    // means the boys have had no offline copy for five releases and nothing
+    // anywhere said so. A Set costs nothing and makes the fault unrepeatable.
+    caches.open(SHELL_CACHE)
+      .then(c => c.addAll([...new Set(SHELL_FILES)]))
+      .then(() => self.skipWaiting())
+      .catch(err => console.error('SW install failed — no offline copy:', err))
   );
 });
 

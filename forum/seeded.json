@@ -67,16 +67,16 @@
  {
   "id": "T-006",
   "source": "machine",
-  "title": "battle could not be played through",
-  "body": "The scenario aborted: locator.click: Timeout 30000ms exceeded.",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
   "evidence": [
-   "E-0011"
+   "E-0009"
   ],
   "kind": "issue",
-  "severity": "major",
+  "severity": "minor",
   "helps": "art",
   "confidence": "observed",
-  "scenario": "battle",
+  "scenario": "gym",
   "run": "junior-real-375x667-champion",
   "seed": "champion"
  },
@@ -86,7 +86,7 @@
   "title": "NO SPACE AFTER EMOJI",
   "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
   "evidence": [
-   "E-0012"
+   "E-0019"
   ],
   "kind": "issue",
   "severity": "minor",
@@ -102,7 +102,7 @@
   "title": "NO SPACE AFTER EMOJI",
   "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
   "evidence": [
-   "E-0013"
+   "E-0020"
   ],
   "kind": "issue",
   "severity": "minor",
@@ -118,7 +118,7 @@
   "title": "NO SPACE AFTER EMOJI",
   "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
   "evidence": [
-   "E-0014"
+   "E-0021"
   ],
   "kind": "issue",
   "severity": "minor",
@@ -134,7 +134,7 @@
   "title": "NO SPACE AFTER EMOJI",
   "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
   "evidence": [
-   "E-0015"
+   "E-0022"
   ],
   "kind": "issue",
   "severity": "minor",
@@ -148,7 +148,7 @@
   "id": "T-011",
   "source": "machine",
   "title": "A resource failed to load while playing",
-  "body": "battle console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "body": "gym console: Failed to load resource: the server responded with a status of 404 (Not Found)",
   "evidence": [],
   "kind": "issue",
   "severity": "minor",
@@ -161,7 +161,7 @@
   "id": "T-012",
   "source": "machine",
   "title": "A resource failed to load while playing",
-  "body": "mash console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "body": "battle console: Failed to load resource: the server responded with a status of 404 (Not Found)",
   "evidence": [],
   "kind": "issue",
   "severity": "minor",
@@ -173,21 +173,31 @@
  {
   "id": "T-013",
   "source": "machine",
-  "title": "collection could not be played through",
-  "body": "The scenario aborted: page.click: Timeout 30000ms exceeded.",
-  "evidence": [
-   "E-0018"
-  ],
+  "title": "A resource failed to load while playing",
+  "body": "collection console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "evidence": [],
   "kind": "issue",
-  "severity": "major",
-  "helps": "art",
+  "severity": "minor",
+  "helps": "both",
   "confidence": "observed",
-  "scenario": "collection",
-  "run": "junior-real-375x667-fresh",
-  "seed": "fresh"
+  "run": "junior-real-375x667-champion",
+  "seed": "champion"
  },
  {
   "id": "T-014",
+  "source": "machine",
+  "title": "A resource failed to load while playing",
+  "body": "mash console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "evidence": [],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "run": "junior-real-375x667-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-015",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "collection console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -200,7 +210,7 @@
   "seed": "fresh"
  },
  {
-  "id": "T-015",
+  "id": "T-016",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "mash console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -211,22 +221,6 @@
   "confidence": "observed",
   "run": "junior-real-375x667-fresh",
   "seed": "fresh"
- },
- {
-  "id": "T-016",
-  "source": "machine",
-  "title": "collection could not be played through",
-  "body": "The scenario aborted: page.click: Timeout 30000ms exceeded.",
-  "evidence": [
-   "E-0025"
-  ],
-  "kind": "issue",
-  "severity": "major",
-  "helps": "art",
-  "confidence": "observed",
-  "scenario": "collection",
-  "run": "junior-real-375x667-hoarder",
-  "seed": "hoarder"
  },
  {
   "id": "T-017",
@@ -257,38 +251,6 @@
  {
   "id": "T-019",
   "source": "machine",
-  "title": "collection could not be played through",
-  "body": "The scenario aborted: page.click: Timeout 30000ms exceeded.",
-  "evidence": [
-   "E-0032"
-  ],
-  "kind": "issue",
-  "severity": "major",
-  "helps": "art",
-  "confidence": "observed",
-  "scenario": "collection",
-  "run": "junior-real-375x667-mid",
-  "seed": "mid"
- },
- {
-  "id": "T-020",
-  "source": "machine",
-  "title": "battle could not be played through",
-  "body": "The scenario aborted: locator.click: Timeout 30000ms exceeded.",
-  "evidence": [
-   "E-0035"
-  ],
-  "kind": "issue",
-  "severity": "major",
-  "helps": "art",
-  "confidence": "observed",
-  "scenario": "battle",
-  "run": "junior-real-375x667-mid",
-  "seed": "mid"
- },
- {
-  "id": "T-021",
-  "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "collection console: Failed to load resource: the server responded with a status of 404 (Not Found)",
   "evidence": [],
@@ -300,7 +262,7 @@
   "seed": "mid"
  },
  {
-  "id": "T-022",
+  "id": "T-020",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "battle console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -313,7 +275,7 @@
   "seed": "mid"
  },
  {
-  "id": "T-023",
+  "id": "T-021",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "mash console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -326,12 +288,12 @@
   "seed": "mid"
  },
  {
-  "id": "T-024",
+  "id": "T-022",
   "source": "machine",
   "title": "NO SPACE AFTER EMOJI",
   "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
   "evidence": [
-   "E-0040"
+   "E-0048"
   ],
   "kind": "issue",
   "severity": "minor",
@@ -342,7 +304,7 @@
   "seed": "early"
  },
  {
-  "id": "T-025",
+  "id": "T-023",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "gym console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -355,7 +317,7 @@
   "seed": "early"
  },
  {
-  "id": "T-026",
+  "id": "T-024",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "spotcheck console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -368,7 +330,7 @@
   "seed": "early"
  },
  {
-  "id": "T-027",
+  "id": "T-025",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "collection console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -381,7 +343,7 @@
   "seed": "fresh"
  },
  {
-  "id": "T-028",
+  "id": "T-026",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "dex console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -394,7 +356,7 @@
   "seed": "fresh"
  },
  {
-  "id": "T-029",
+  "id": "T-027",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "catching console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -407,23 +369,190 @@
   "seed": "fresh"
  },
  {
-  "id": "T-030",
+  "id": "T-028",
   "source": "machine",
-  "title": "battle could not be played through",
-  "body": "The scenario aborted: locator.click: Timeout 30000ms exceeded.",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
   "evidence": [
-   "E-0061"
+   "E-0067"
   ],
   "kind": "issue",
-  "severity": "major",
+  "severity": "minor",
   "helps": "both",
   "confidence": "observed",
-  "scenario": "battle",
+  "scenario": "gym",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-029",
+  "source": "machine",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
+  "evidence": [
+   "E-0096"
+  ],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "scenario": "saturday",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-030",
+  "source": "machine",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
+  "evidence": [
+   "E-0097"
+  ],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "scenario": "saturday",
   "run": "normal-real-champion",
   "seed": "champion"
  },
  {
   "id": "T-031",
+  "source": "machine",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
+  "evidence": [
+   "E-0098"
+  ],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "scenario": "saturday",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-032",
+  "source": "machine",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
+  "evidence": [
+   "E-0099"
+  ],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "scenario": "saturday",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-033",
+  "source": "machine",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
+  "evidence": [
+   "E-0100"
+  ],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "scenario": "saturday",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-034",
+  "source": "machine",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
+  "evidence": [
+   "E-0101"
+  ],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "scenario": "saturday",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-035",
+  "source": "machine",
+  "title": "NO SPACE AFTER EMOJI",
+  "body": "NO SPACE AFTER EMOJI: round-tab r2  \"👑ROUND 2\"",
+  "evidence": [
+   "E-0102"
+  ],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "scenario": "saturday",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-036",
+  "source": "machine",
+  "title": "note",
+  "body": "note: #wild-sprite is fainted (expected grey)",
+  "evidence": [
+   "E-0104"
+  ],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "scenario": "saturday",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-037",
+  "source": "machine",
+  "title": "A resource failed to load while playing",
+  "body": "gym console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "evidence": [],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-038",
+  "source": "machine",
+  "title": "A resource failed to load while playing",
+  "body": "collection console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "evidence": [],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-039",
+  "source": "machine",
+  "title": "A resource failed to load while playing",
+  "body": "saturday console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "evidence": [],
+  "kind": "issue",
+  "severity": "minor",
+  "helps": "both",
+  "confidence": "observed",
+  "run": "normal-real-champion",
+  "seed": "champion"
+ },
+ {
+  "id": "T-040",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "battle console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -436,15 +565,15 @@
   "seed": "champion"
  },
  {
-  "id": "T-032",
+  "id": "T-041",
   "source": "machine",
-  "title": "saturday could not be played through",
-  "body": "The scenario aborted: page.click: Timeout 30000ms exceeded.",
+  "title": "note",
+  "body": "note: #wild-sprite is fainted (expected grey)",
   "evidence": [
-   "E-0087"
+   "E-0143"
   ],
   "kind": "issue",
-  "severity": "major",
+  "severity": "minor",
   "helps": "both",
   "confidence": "observed",
   "scenario": "saturday",
@@ -452,7 +581,7 @@
   "seed": "hoarder"
  },
  {
-  "id": "T-033",
+  "id": "T-042",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "collection console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -465,7 +594,7 @@
   "seed": "hoarder"
  },
  {
-  "id": "T-034",
+  "id": "T-043",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "saturday console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -478,7 +607,7 @@
   "seed": "hoarder"
  },
  {
-  "id": "T-035",
+  "id": "T-044",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "spotcheck console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -491,23 +620,20 @@
   "seed": "hoarder"
  },
  {
-  "id": "T-036",
+  "id": "T-045",
   "source": "machine",
-  "title": "battle could not be played through",
-  "body": "The scenario aborted: locator.click: Timeout 30000ms exceeded.",
-  "evidence": [
-   "E-0097"
-  ],
+  "title": "A resource failed to load while playing",
+  "body": "gym console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "evidence": [],
   "kind": "issue",
-  "severity": "major",
+  "severity": "minor",
   "helps": "both",
   "confidence": "observed",
-  "scenario": "battle",
   "run": "normal-real-mid",
   "seed": "mid"
  },
  {
-  "id": "T-037",
+  "id": "T-046",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "collection console: Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -520,7 +646,7 @@
   "seed": "mid"
  },
  {
-  "id": "T-038",
+  "id": "T-047",
   "source": "machine",
   "title": "A resource failed to load while playing",
   "body": "battle console: Failed to load resource: the server responded with a status of 404 (Not Found)",
