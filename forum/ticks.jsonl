@@ -1,3 +1,4 @@
 {"tick": 1, "item": "B-004", "event": "picked", "ts": "2026-09-02T12:52:36.900836", "note": "top of the ranked queue: blocker, both boys, effort 2"}
 {"tick": 1, "item": "B-004", "event": "gates", "ts": "2026-09-02T13:42:43.920847", "note": "uat FAIL was an artifact of parallel git stash; re-measured by hand and the cap holds"}
 {"tick": 1, "item": "B-004", "event": "shipped", "ts": "2026-09-02T13:42:43.920847", "note": "v19.8.2"}
+{"tick": 2, "item": "B-006", "event": "picked", "ts": "2026-09-03T09:12:53.214368", "note": "blocker, ART, rule-2 risk: versus is the one mode the brothers play together"}
