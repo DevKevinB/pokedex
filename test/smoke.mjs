@@ -182,6 +182,85 @@ check('pikachu loaded after boot', true);
 check('dex number shown', (await page.locator('#id-text').innerText()).includes('0025'));
 check('type tag rendered', (await page.locator('#types').innerText()).toLowerCase().includes('electric'));
 
+// ---- B-010: the dex type chip, measured on the ELEMENT ----
+// There is already a check further down that every type clears WCAG AA, and
+// it PASSED for months while this exact screen showed white-on-yellow at
+// 1.5:1 — because it measured inkFor() as a function instead of the pill a
+// child actually looks at. dex.js set a background and no colour, so the
+// chip inherited body{color:white} and the helper's answer never reached it.
+// This one reads getComputedStyle on chips living in the real #types
+// container, so the cascade and the inheritance are both in the measurement.
+// PIKACHU is the worst case on purpose: electric #eed535 under white ink.
+// Every mocked species is electric, so to measure more than one type on a
+// REAL chip the route has to hand back a different one. These load through
+// dex.loadPoke — the same path the child's tap takes — and the numbers come
+// off getComputedStyle of the pill sitting in #types.
+const TYPE_PROBE = ['electric', 'ground', 'ice', 'fighting', 'steel', 'fairy', 'dark', 'ghost'];
+const chip = { rows: [], worst: 99, worstType: '' };
+for (let ti = 0; ti < TYPE_PROBE.length; ti++) {
+  const want = TYPE_PROBE[ti];
+  // Deliberately high, unvisited ids: api.js caches by id in localStorage, so
+  // probing a species the suite has already loaded (25 is PIKACHU) would be
+  // served from cache and silently ignore the route — which is exactly what
+  // happened on the first run, and showed up as fairy rendering electric's ⚡.
+  const id = 600 + ti;
+  // Built from the local fixture, never route.fetch() — that would leave the
+  // handler and hit the real PokeAPI, and this suite has to run with no network.
+  await context.route(`https://pokeapi.co/api/v2/pokemon/${id}`, route => {
+    const body = pokemonFixture(id);
+    body.types = [{ slot: 1, type: { name: want, url: '' } }];
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+  });
+  const row = await page.evaluate(async ([pid, wantType]) => {
+    const D = await import('/js/dex.js');
+    await D.loadPoke(pid);
+    const lum = css => {
+      const [r, g, b] = (css.match(/\d+(\.\d+)?/g) || ['0', '0', '0']).slice(0, 3)
+        .map(v => { v = +v / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const el = document.querySelector('#types .tag:not(.habitat-chip)');
+    if (!el) return { want: wantType, type: '', ratio: 0, glyph: '', word: '', found: false };
+    const cs = getComputedStyle(el);
+    const a = lum(cs.color), b = lum(cs.backgroundColor);
+    return {
+      want: wantType, type: el.dataset.type || '', found: true,
+      ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+      glyph: el.querySelector('.tag-ico')?.textContent || '',
+      word: (el.querySelector('.tag-name')?.textContent || '').toLowerCase(),
+    };
+  }, [id, want]);
+  chip.rows.push(row);
+  if (row.ratio < chip.worst) { chip.worst = row.ratio; chip.worstType = row.type || '(none rendered)'; }
+  await context.unroute(`https://pokeapi.co/api/v2/pokemon/${id}`);
+}
+await page.evaluate(async () => { const D = await import('/js/dex.js'); await D.loadPoke(25); });
+await page.waitForTimeout(300);
+
+// Verified red before the fix: electric came back at 1.48:1 with no glyph,
+// and the "readable" check failed at exactly the 1.5:1 the forum measured.
+// FIRST: prove the probe measured what it asked for. api.js caches species in
+// localStorage, so a probe id the suite has already loaded is served from cache
+// and the route override never fires -- every chip then collapses to the SAME
+// type and every check below stays green while measuring one type eight times.
+// That is the exact false-assurance shape this whole item exists to kill, so it
+// is asserted rather than left to the choice of id.
+check(`each dex probe rendered the type it asked for (${chip.rows.map(r => r.type || '?').join(' ')})`,
+  chip.rows.length === TYPE_PROBE.length &&
+  chip.rows.every((r, i) => r.found && r.type === TYPE_PROBE[i] && r.want === TYPE_PROBE[i]));
+check(`every dex type chip is readable as rendered (worst: ${chip.worstType} ${chip.worst.toFixed(2)}:1)`,
+  chip.rows.length === TYPE_PROBE.length && chip.rows.every(r => r.found && r.ratio >= 4.5));
+// The picture is the half ART can use. Without it the chip is a coloured pill
+// with a word in it, which is nothing at all to a four-year-old.
+const glyphless = chip.rows.filter(r => !r.glyph).map(r => r.type);
+check(`every dex type chip leads with a picture (${chip.rows.map(r => r.glyph).join('')})`,
+  glyphless.length === 0);
+// ...and the word is still there beside it, for GABE, who reads it.
+// Compared against TYPE_PROBE, not against r.type: comparing the word to the
+// attribute PASSED on the old code, where both were absent and '' === ''.
+check('the dex chip keeps its word for the brother who reads',
+  chip.rows.every((r, i) => r.word === TYPE_PROBE[i]));
+
 // legacy migration → catch button should show OWNED (25 was in legacy save)
 await page.waitForTimeout(300);
 check('legacy save migrated (25 owned)', (await page.locator('#catch-btn').innerText()).includes('OWNED'));
@@ -1215,7 +1294,7 @@ const visual = await page.evaluate(async () => {
   return { missing, worst, worstType, hasImpactFx: typeof B.battleState === 'object' };
 });
 check('every type has a picture, not just a word', visual.missing.length === 0);
-check(`every type chip clears WCAG AA (worst: ${visual.worstType} ${visual.worst.toFixed(2)}:1)`,
+check(`inkFor picks readable ink for every type colour — helper maths, not the screen (worst: ${visual.worstType} ${visual.worst.toFixed(2)}:1)`,
   visual.worst >= 4.5);
 
 

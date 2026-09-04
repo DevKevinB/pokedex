@@ -138,6 +138,23 @@ img { image-rendering: pixelated; }
 .tags { margin-top: 2px; }
 .tag { border-radius: 2px; font-size: 8px; font-family: var(--pixel-font); padding: 5px 8px; border: 2px solid var(--px-ink); box-shadow: 2px 2px 0 rgba(0,0,0,0.4); }
 
+/* B-010: the type chip used to be the bare word POISON. For ART that was an
+   empty purple pill — the type of the Pokémon he is looking at existed only
+   as text he cannot read. It now leads with the SAME glyph as the battle
+   move tiles, so the picture he already learned in a fight carries over to
+   the dex. The word stays for GABE; nothing was taken away from either boy.
+   Laid out as flex with a gap, so the glyph and the word never touch — the
+   same defect that made header buttons look wrong before .btn-glyph. */
+.tag { display: inline-flex; align-items: center; gap: 5px; }
+.tag-ico {
+  font-size: 14px; line-height: 1; flex: none;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,0.35));
+}
+/* Bigger for ART, because the glyph is the whole message for him. The word is
+   NOT hidden in junior — hiding it would be the game removing something, and
+   it costs him nothing to have it sit there next to the picture. */
+body.junior .tag-ico { font-size: 19px; }
+
 /* sprite plinth */
 .img-container::after {
   content: ''; position: absolute; bottom: 2px; width: 170px; height: 26px;
@@ -1432,8 +1449,14 @@ body.junior .moves-grid > .move-btn.type-tile .tile-ico {
      ---------------------------------------- toolbar block = 312
      .visual-display = 667 - 76 - 312          = 279
        padding-top                      10
-       .identity  (id 20 + name 35 + tags 26) = 81
-       #poke-sprite = 279 - 10 - 81            = 188px
+       .identity  (id 9 + name 29 + tags 33 + gaps) = 92   [B-010]
+       #poke-sprite (measured, not derived)          = 188px
+   The tags row grew 26 -> 33 in v19.8.4 when the type chip gained its glyph
+   (19px in junior). MEASURED at 375x667 junior after that change: .tags 33,
+   .identity 91.6, .visual-display 290, #poke-sprite 188, lowest toolbar button
+   bottom 659 of 667. The sprite is flex-sized, so it is measured rather than
+   computed from this column -- the column is the budget, the measurement is
+   the truth, and they are recorded together on purpose.
    188 >= the 140 floor, with 48px of slack. It was 103px before this sprint,
    i.e. SMALLER than in normal mode. At 390x844 the tiles grow to 88 (11dvh)
    and the sprite reaches its 230px cap.
@@ -2090,8 +2113,8 @@ body.junior .trainer-taunt { display: none; }
 
 /* ---------- DEX: the living entry ---------- */
 /* The ribbon is pinned inside .img-container (already position:relative) and
-   costs ZERO height, because .identity's 81px is load-bearing in the junior
-   375x667 height contract documented above. */
+   costs ZERO height, because .identity's height (92px since B-010) is
+   load-bearing in the junior 375x667 height contract documented above. */
 #dex-ribbon {
   position: absolute; top: 2px; left: 4px; z-index: 5; pointer-events: none; white-space: nowrap;
   font-family: var(--pixel-font); font-size: var(--t-xs); line-height: 1.6; color: var(--ink);

@@ -2,6 +2,31 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.8.4] - THE TYPE IS A PICTURE
+
+On the main Pokédex screen, the type was written as a word — POISON, ELECTRIC —
+in white text on a coloured pill. Two problems with that, and they were both
+worse than they looked.
+
+For Art, the type simply did not exist. He cannot read, so a word is a blank.
+For Gabe, it was often unreadable too: white letters on the yellow ELECTRIC
+pill measured 1.5 to 1 for contrast, where 4.5 to 1 is the readable minimum.
+Nobody reported it, because you can't report what you can't see.
+
+Now the chip leads with a picture — the SAME picture Art already taps on the
+battle buttons, so a ⚡ means electric everywhere in the game — and the word is
+printed in whichever colour is actually readable on that pill, measured rather
+than guessed. Electric went from 1.5 to 1 up to 11.6 to 1.
+
+### What the boys will notice
+- Every Pokémon's type now has a picture beside the word, in both modes.
+- The word is still there. Gabe reads it; Art gets the picture; neither of them
+  loses anything.
+- ELECTRIC, ICE and GROUND are legible for the first time.
+
+### Fixed
+- The dex type label is readable, and means something without reading.
+
 ## [19.8.3] - BROTHER BATTLES ARE REAL BATTLES
 
 Versus mode was not a match. Gabe's Charizard was Lv62 and Art's Pikachu was

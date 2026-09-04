@@ -2,7 +2,7 @@
 // Pokédex OS — main dex screen: load, display, evolutions, gallery
 // ============================================================
 
-import { MAX_POKEMON, typeColors, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
+import { MAX_POKEMON, typeColors, typeEmoji, inkFor, ITEM_SPRITE, PIXEL_SPRITE } from './config.js';
 import { getPokemon, getSpecies, getEvolution } from './api.js';
 import { state, player } from './state.js';
 import { stopAllAudio, setCry, haptic, isMuted, audioUnlocked, playCryAudio } from './audio.js';
@@ -214,8 +214,31 @@ function updateUISafe() {
     flavorIdx = 0;
     renderFlavor();
 
-    const typeTags = (d.types || [])
-      .map(t => `<span class="tag" style="background:${typeColors[t.type?.name] || '#777'};">${t.type?.name}</span>`).join('');
+    // B-010: this chip used to be the bare word POISON on a purple pill with
+    // no colour of its own, so it inherited body{color:white} — white on
+    // electric #eed535 measures about 1.5:1, which is unreadable for anyone
+    // and invisible for ART, who cannot read the word either way. Two fixes,
+    // both using helpers that already existed and were already used together
+    // in battle.js for the move tiles:
+    //   typeEmoji — the SAME glyph he already knows from the battle buttons,
+    //               so the chip means something to him without the word
+    //   inkFor    — picks black or white by MEASURING contrast against this
+    //               chip's own background, rather than assuming white
+    // The word stays for GABE, who reads it. Nothing is taken away.
+    const typeTags = (d.types || []).map(t => {
+      // Whitelisted against typeColors, which IS the closed 18-key table of real
+      // types, so nothing from the network reaches an HTML attribute or a text
+      // node unless it is one of eighteen known words. Same boundary-sanitising
+      // shape state.js uses for player names.
+      const name = typeColors[t.type?.name] ? t.type.name : 'normal';
+      const bg = typeColors[name];
+      // .tags is a flex container, so whitespace between these spans never
+      // becomes a flex item -- ordinary indentation is safe here.
+      return `<span class="tag" data-type="${name}" style="background:${bg}; color:${inkFor(bg)};">
+        <span class="tag-ico" aria-hidden="true">${typeEmoji[name]}</span>
+        <span class="tag-name">${name}</span>
+      </span>`;
+    }).join('');
     // WHERE DOES IT LIVE? A picture of the place, beside the pictures of its
     // types, that opens the map ON that place. It ADDS a route and takes
     // nothing away: the EXPLORE tile is untouched and nothing on the dex is

@@ -98,9 +98,13 @@ a save shape that older code can't read without checking the migration path.
 **Release ritual — do all of it, in order:**
 
 1. Make the change.
-2. Bump the version in **three** places or the boys will get a stale cached app:
-   `js/config.js` (`APP_VERSION`), `sw.js` (`CACHE_VERSION`), and the three
-   `?v=` query strings in `index.html`.
+2. Bump the version in **four** places or the boys will get a stale cached app:
+   `js/config.js` (`APP_VERSION`), `sw.js` (`CACHE_VERSION`), the three `?v=`
+   query strings in `index.html`, and `package.json`. Do NOT do this by hand —
+   run `node tools/release.mjs <version> "<title>"`, which writes all four and
+   verifies they agree before it starts. This file said "three" and omitted
+   `package.json` for a long time; a hand-bump that followed it left
+   `package.json` a version behind, which is why release.mjs now checks four.
 3. Add a `CHANGELOG.md` entry written **for Kevin, not for engineers** — describe
    what the kids will notice.
 4. Run the smoke suite (below). All checks must pass.

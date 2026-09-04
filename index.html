@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.8.3">
-    <link rel="stylesheet" href="css/gba.css?v=19.8.3">
+    <link rel="stylesheet" href="css/main.css?v=19.8.4">
+    <link rel="stylesheet" href="css/gba.css?v=19.8.4">
 </head>
 <body>
 
@@ -59,7 +59,8 @@
             <div class="scanner-line"></div>
             <!-- v19.7: LEGENDARY / MYTHICAL. It lives in .img-container (already
                  position:relative) and not in .identity, because .identity's
-                 81px is load-bearing in the junior 375x667 height contract. -->
+                 height (92px since B-010) is load-bearing in the junior
+                 375x667 height contract. -->
             <div id="dex-ribbon" style="display:none;"></div>
             <img id="poke-sprite" src="" draggable="false">
             <img class="throw-ball" id="dex-throw-ball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
@@ -518,6 +519,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.8.3"></script>
+<script type="module" src="js/main.js?v=19.8.4"></script>
 </body>
 </html>
