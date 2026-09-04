@@ -948,12 +948,16 @@ await page.locator('#gym-back-btn').evaluate(el => el.click());
 await page.waitForTimeout(500);
 check('gym screen closes to dex', await page.locator('#gym-container.active').count() === 0);
 
-// VERSUS MODE: seed P2 with a weak mon, then GABE vs P2 pass-and-play
+// VERSUS MODE: seed the exact mismatch that used to flatten ART — GABE's
+// Lv62 squad against a Lv9 starter — then play GABE vs P2 pass-and-play.
 await page.evaluate(() => {
   const sv = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
   sv.players[2].caught = [1];
-  sv.players[2].mons = { 1: { level: 5, xp: 0 } };
+  sv.players[2].mons = { 1: { level: 9, xp: 0 } };
   sv.players[2].team = [1];
+  for (const id of sv.players[1].team) {
+    sv.players[1].mons[id] = Object.assign({ xp: 0 }, sv.players[1].mons[id], { level: 62 });
+  }
   localStorage.setItem('pokedexos_save_v2', JSON.stringify(sv));
 });
 await page.goto(BASE, { waitUntil: 'networkidle' });
@@ -970,11 +974,47 @@ check('versus title shows both players', (await page.locator('#battle-title').in
 await page.locator('#pass-ready').evaluate(el => el.click());
 await page.waitForTimeout(500);
 check('versus moves rendered', await page.locator('[data-vmove]').count() >= 1);
-// Play the match out. A single tap used to end it, but no single hit can
-// delete a full-health Pokémon any more (engine.MAX_HIT_FRACTION), so this
-// now drives a real multi-turn pass-and-play match: attack, hand over, repeat.
+// B-006: the match level cap. Lv62 against Lv9 was not a match, it was GABE's
+// CHARIZARD deleting everything ART owns on turn one. Both sides now fight at
+// the HIGHER team's top level -- levelling DOWN instead would shrink GABE's
+// Charizard to a Lv9 in front of his little brother, which takes something
+// away from him AND is the game saying "your brother is little" out loud.
+// The full reasoning lives at js/battle.js:1810. If you are here because the
+// numbers look wrong: 62 vs 62 is CORRECT and deliberate. Do not "fix" this
+// to Math.min -- that hands ART's Lv9 Pikachu back to a Lv62 Charizard.
+const vsLv = await page.evaluate(() => {
+  const lv = sel => parseInt((document.querySelector(sel + ' .lvl')?.textContent || '').match(/Lv(\d+)/)?.[1] || '0');
+  return { p1: lv('#player-name'), p2: lv('#wild-name') };
+});
+// Pinned to the exact values, not just the gap: a gap check passes at 9 vs 9
+// too, so it could not catch someone flipping the direction back to Math.min.
+// The seed above is Lv62 (GABE) against Lv9 (ART), so 62 is the only right
+// answer for both sides.
+check(`versus levels meet at the top (Lv${vsLv.p1} vs Lv${vsLv.p2})`,
+  vsLv.p1 === 62 && vsLv.p2 === 62);
+// ...and the cap NEVER says so. Anything that reads as an accommodation on the
+// versus board tells GABE his brother was helped, which is the rule this fix
+// exists to keep. Attributes are checked too; `fair(?!y)` only spares the
+// FAIRY move type, which is a type name and not a word about the match.
+const vsTell = await page.evaluate(() => {
+  const el = document.getElementById('battle-container');
+  const bad = /junior|easy|helper|handicap|fair(?!y)/i;
+  const text = el.textContent || '';
+  return { text: bad.test(text) ? text.match(bad)[0] : '',
+           html: bad.test(el.innerHTML) ? el.innerHTML.match(bad)[0] : '' };
+});
+check('versus never advertises the handicap', !vsTell.text && !vsTell.html);
+// Play the match out. This used to be over almost immediately, because P2 was
+// a lone Lv9 starter facing a Lv62 squad — the mismatch B-006 exists to fix.
+// Now both sides fight at the same level with full teams, so it is a genuine
+// multi-turn pass-and-play match and the loop needs the turns to match: ART's
+// lone starter now fights at Lv62, so it survives several exchanges and takes
+// some of GABE's six down with it, with a hand-over tap between every turn.
+// Measured cost is 51 turns. 160 is ~3x that, generous on purpose -- and it
+// cannot hide a hang, because the waitForFunction on #victory-modal below
+// still hard-fails a match that never ends.
 let vsWon = false;
-for (let turn = 0; turn < 40 && !vsWon; turn++) {
+for (let turn = 0; turn < 160 && !vsWon; turn++) {
   if (await page.locator('#victory-modal').isVisible()) { vsWon = true; break; }
   if (await page.locator('#pass-modal').isVisible()) {
     await page.locator('#pass-ready').evaluate(el => el.click());
@@ -1139,6 +1179,15 @@ const crown = await page.evaluate(async () => {
 check('crown appears on the trainer card once Champion', crown.includes('champ-crown'));
 
 // ...and the crown opens FARAWAY LAND.
+// Clear any celebration first. The versus match above is now a real multi-turn
+// fight, so it earns progress, and the v19.5.2 queue plays the badge card once
+// the battle screen frees — which lands on top of the toolbar. That queue is
+// working exactly as designed; the suite just has to take its turn like a
+// player would, or the next tap waits thirty seconds on a covered button.
+// Drained through the suite's own helper, which taps #badge-ok the way a
+// child does rather than reaching into the module -- so this also covers a
+// nickname prompt if one ever lands here.
+await dismissCelebrations(page);
 await page.click('#explore-btn');
 await page.waitForTimeout(500);
 check('FARAWAY LAND unlocks for the Champion', await page.locator('#habitat-grid .habitat-card.locked').count() === 0);

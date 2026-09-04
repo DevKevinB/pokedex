@@ -2,6 +2,30 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.8.3] - BROTHER BATTLES ARE REAL BATTLES
+
+Versus mode was not a match. Gabe's Charizard was Lv62 and Art's Pikachu was
+Lv9, so the first move usually ended it — Art handed the tablet back before he
+had really had a turn.
+
+Now, in a brother battle, everyone fights at the strongest Pokémon's level.
+Nothing about it is hidden or apologetic, and it is one sentence you can say
+out loud to Gabe if he asks: **"in brother battles, everyone fights at the
+strongest Pokémon's level."** That is the whole rule, and it is true in both
+directions — if Art ever turns up with the higher Pokémon, it lifts Gabe.
+
+### What the boys will notice
+- Art's Pokémon survives more than one hit and can win. In the test match his
+  Pikachu opened for 101 damage and took Gabe down to 6 HP before losing.
+- Gabe's Pokémon are untouched. His Charizard is the same Lv62 with the same
+  four moves it has everywhere else, and his save is not changed by any of
+  this — the level only applies inside the match.
+- Neither boy is told anything about it. There is no "easy mode" label, no
+  helper message, nothing that tells Gabe his brother was given a hand.
+
+### Fixed
+- Brother battles no longer end on turn one.
+
 ## [19.8.2] - ROOM FOR THE COLLECTIONS
 
 Browsing lots of Pokémon can no longer eat the room the boys' saves live in.

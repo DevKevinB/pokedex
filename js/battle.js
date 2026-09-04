@@ -210,7 +210,7 @@ export function exitBattleMode() {
   // its promise pending and its listeners attached — the next prompt's OK
   // then fired both, renaming the previously caught Pokémon too.
   cancelNickname();
-  versus.sides = null; versus.order = []; versus.qi = 0;
+  versus.sides = null; versus.order = []; versus.qi = 0; versus.matchLevel = null;
   // Nothing parked. A .recall left on a sprite is an INVISIBLE Pokémon in the
   // next fight (the keyframes end at opacity 0), and a win card left in the DOM
   // is the last fight's trophy sitting on top of this fight's result.
@@ -1803,9 +1803,36 @@ export async function runEvolutionFor(id) {
 // Side 1 = bottom (back sprite), Side 2 = top (front sprite).
 // No catching, no junior shield, no XP — pure bragging rights.
 // ============================================================
-const versus = { sides: null, order: [], qi: 0 };
+const versus = { sides: null, order: [], qi: 0, matchLevel: null };
 
-const pLevel = (n, id) => state.save.players[n].mons[id]?.level ?? 5;
+// ---- the match level, and why it goes UP ----
+// Versus is the one mode the brothers play together, and it was the one place
+// Junior Mode's promise broke: ART's Lv9 Pikachu met GABE's Lv62 Charizard and
+// was deleted on turn one. juniorActive() returns false here on purpose (see
+// the header above), and re-enabling the shield would be worse — a shield GABE
+// can feel is an accommodation that announces itself, which is the same rule
+// read from the other side.
+//
+// So both sides fight at ONE level: the stronger team's top. Levelling the
+// match DOWN to ART's Lv9 was the obvious move and is the wrong one — it would
+// take GABE's Charizard, the thing he spent weeks raising, and shrink it in
+// front of his little brother. Rule 3 says never take something away from a
+// child, and that is exactly what he would see. Lifting ART up instead costs
+// nobody anything: GABE's own numbers are untouched, both boys get a real
+// fight, and the only number that changed is one ART cannot read.
+//
+// Nothing here is written to a save. matchLevel is set when a match starts and
+// cleared by every teardown path, so a wild battle can never inherit it.
+const topLevelOf = n => {
+  const P = state.save.players[n];
+  const ids = P.team.length ? P.team : P.caught.slice(0, 6);
+  return ids.reduce((hi, id) => Math.max(hi, P.mons[id]?.level ?? 5), 5);
+};
+
+const pLevel = (n, id) => {
+  const raw = state.save.players[n].mons[id]?.level ?? 5;
+  return versus.matchLevel ?? raw;
+};
 const sideActive = n => n === 1 ? active() : battleState.wild;
 
 let passResolver = null;
@@ -1844,6 +1871,10 @@ export async function startVersusBattle() {
   const ids1 = P[1].team.length ? [...P[1].team] : P[1].caught.slice(0, 6);
   const ids2 = P[2].team.length ? [...P[2].team] : P[2].caught.slice(0, 6);
   versus.sides = { 1: { ids: ids1, loaded: {}, activeIdx: 0 }, 2: { ids: ids2, loaded: {}, activeIdx: 0 } };
+
+  // Set BEFORE the first pLevel call, so both fighters and every later
+  // send-out (versusNextMon) read the same match level.
+  versus.matchLevel = Math.max(topLevelOf(1), topLevelOf(2));
 
   try {
     const [f1, f2] = await Promise.all([
@@ -1990,6 +2021,7 @@ async function versusNextMon(n) {
 async function versusMatchOver(winnerSide) {
   battleState.isBattling = false;
   battleState.versusActive = false;
+  versus.matchLevel = null;
   state.save.players[winnerSide].stats.versusWins = (state.save.players[winnerSide].stats.versusWins || 0) + 1;
   persist();
   // v19.8: the 'versus' quest kind. progression.js writes to player(), which is
