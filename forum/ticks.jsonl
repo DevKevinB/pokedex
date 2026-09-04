@@ -2,3 +2,8 @@
 {"tick": 1, "item": "B-004", "event": "gates", "ts": "2026-09-02T13:42:43.920847", "note": "uat FAIL was an artifact of parallel git stash; re-measured by hand and the cap holds"}
 {"tick": 1, "item": "B-004", "event": "shipped", "ts": "2026-09-02T13:42:43.920847", "note": "v19.8.2"}
 {"tick": 2, "item": "B-006", "event": "picked", "ts": "2026-09-03T09:12:53.214368", "note": "blocker, ART, rule-2 risk: versus is the one mode the brothers play together"}
+{"tick": 2, "item": "B-006", "event": "gates", "ts": "2026-09-03T23:48:49.508066", "note": "qa/uat/save/approve PASS; review FAIL (blocking: smoke comment recorded the direction NOT built). Reworked once, all nits taken."}
+{"tick": 2, "item": "B-006", "event": "shipped", "ts": "2026-09-03T23:48:49.508066", "version": "19.8.3", "sha": "0161141", "note": "approver overruled the backlog: level UP to the higher team, not down. Levelling down would shrink GABE's Charizard in front of ART and advertise the accommodation."}
+{"tick": 3, "item": "B-010", "event": "picked", "ts": "2026-09-04T01:08:17.904231", "note": "top of the queue after B-006; effort 1, defect confirmed in source before building"}
+{"tick": 3, "item": "B-010", "event": "gates", "ts": "2026-09-04T01:08:17.904231", "note": "all six PASS/APPROVE. qa+review independently found the same hole: the per-type probe never asserted rendered==requested, so a cache collision collapsed all 8 to electric and stayed green. Closed before commit."}
+{"tick": 3, "item": "B-010", "event": "shipped", "ts": "2026-09-04T01:08:17.904231", "version": "19.8.4", "sha": "e6740fc", "note": "electric 1.48:1 -> 11.59:1. approver ruled KEEP THE WORD in junior (battle-tile precedent does not govern a label screen), and ruled the NEXT PICK MUST SERVE GABE."}

@@ -119,6 +119,13 @@ const cloud = [...tagStat.values()].map(e => ({
 // ---- state ---------------------------------------------------------------
 const now = new Date();
 const shipped = scored.filter(i => i.status === 'shipped');
+// KEVIN: "last shipped" must mean the one that went out MOST RECENTLY. `scored`
+// is in ranked score order, so shipped[0] used to be the highest-SCORING ship,
+// which showed B-004 on the card after B-006 had already gone out. Ordered by
+// the ledger instead, which is the only place ship time is recorded.
+const shipOrder = ticks.filter(t => t.event === 'shipped').map(t => t.item);
+const shippedRecent = [...shipped].sort(
+  (a, b) => shipOrder.lastIndexOf(b.id) - shipOrder.lastIndexOf(a.id));
 const parked = scored.filter(i => i.status === 'parked');
 const inflight = scored.find(i => i.status === 'in-flight') || null;
 const lastTick = ticks[ticks.length - 1] || null;
@@ -151,7 +158,7 @@ const state = {
   },
   sinceArt,
   editorSummary: editor.summary || null,
-  inflight, lastShipped: shipped[0] || null,
+  inflight, lastShipped: shippedRecent[0] || null,
   nextUp: scored.filter(i => i.status === 'queued').slice(0, 3),
   cloud,
   backlog: scored,
