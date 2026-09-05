@@ -14,7 +14,7 @@ import {
 } from './engine.js';
 import { getPokemon, getMove, getSpecies, getEvolution, evolutionOptions, nameOf, getNameIndex, movesReady, moveStats } from './api.js';
 import { state, player, recordCatch, ensureMon, ensureMonAtLeast, monLevel, addXp, evolveMon, persist, spendMasterBall, recordShiny, hasShiny, setNick, nickOf, playerName, recordChampion, championRecord } from './state.js';
-import { sfx, triggerVibration, playBeep, haptic } from './audio.js';
+import { sfx, triggerVibration, playBeep, haptic, playCryFor, isMuted, audioUnlocked } from './audio.js';
 import { spawnMark as fxMark } from './fx.js';
 import { loadPoke } from './dex.js';
 import { openPC } from './pc.js';
@@ -677,7 +677,23 @@ function startBattleUI() {
   document.getElementById('battle-title').innerText =
     t ? t.def.name : hab ? `${hab.emoji} ${hab.name}` : '⚔️ BATTLE ARENA';
   if (!t) logMsg(`WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
+  // ART cannot read "WILD PIDGEY APPEARED!". The cry is the only channel that
+  // tells him WHO turned up. Wild encounters only -- a gym trainer's line-up is
+  // GABE's screen and six cries in a row would be noise, not information.
+  if (!t) cryForWild();
   enableMoves(true);
+}
+
+// The three gates dex.js:49-52 uses for its auto-cry, in one place: sound on,
+// and an AudioContext that a real tap has already unlocked. emitCry's own
+// CRY_MIN_GAP_MS floor (audio.js:263) is what stops a fast catch stacking two.
+// Deliberately does NOT touch setCry: pc.js hands that module global back after
+// a sticker close-up (pc.js:449-454), and stealing it here would leave the home
+// CRY button playing the wrong voice.
+function cryForWild() {
+  const w = battleState.wild;
+  if (!w || isMuted() || !audioUnlocked()) return;
+  playCryFor(w.id);
 }
 
 function renderEnemy() {
@@ -1548,11 +1564,16 @@ function openBallPick() {
   const list = document.getElementById('ballpick-list');
   const mb = player().items.masterBalls;
   const junior = player().settings.junior;
+  // B-031: three of these four rows used to carry the IDENTICAL caption
+  // "BETTER WHEN WEAKENED", so the one thing GABE is choosing between was the
+  // one thing the words refused to tell him. The dex drawer two taps away
+  // already ranks them (index.html:99-104); this is the same ladder, carried
+  // across so both drawers say the same thing.
   const BALLS = [
-    { mod: 1, name: 'poke-ball', label: 'POKÉBALL' },
-    { mod: 1.5, name: 'great-ball', label: 'GREAT BALL' },
-    { mod: 2, name: 'ultra-ball', label: 'ULTRA BALL' },
-    { mod: 99, name: 'master-ball', label: 'MASTER BALL' }
+    { mod: 1, name: 'poke-ball', label: 'POKÉBALL', rate: '1x RATE' },
+    { mod: 1.5, name: 'great-ball', label: 'GREAT BALL', rate: '1.5x RATE' },
+    { mod: 2, name: 'ultra-ball', label: 'ULTRA BALL', rate: '2x RATE' },
+    { mod: 99, name: 'master-ball', label: 'MASTER BALL', rate: '100% CATCH' }
   ];
   list.innerHTML = BALLS.map(b => {
     const isMaster = b.name === 'master-ball';
@@ -1560,7 +1581,7 @@ function openBallPick() {
     const count = isMaster && !junior ? ` x${mb}` : '';
     return `<div class="switch-item ballpick ${disabled ? 'disabled' : ''}" data-mod="${b.mod}" data-ball="${b.name}">
       <img src="${ITEM_SPRITE(b.name)}">
-      <div class="switch-meta"><span>${b.label}${count}</span><small>${isMaster ? 'NEVER FAILS' : 'BETTER WHEN WEAKENED'}</small></div>
+      <div class="switch-meta"><span>${b.label}${count}</span>${junior ? '' : `<small>${b.rate}</small>`}</div>
     </div>`;
   }).join('');
   list.querySelectorAll('.ballpick:not(.disabled)').forEach(el =>
@@ -1625,6 +1646,8 @@ async function executeBallThrow(ballMod, ballName) {
     ball.style.transform = 'translateY(-150px) scale(2)';
     sprite.classList.remove('sucked-in');
     battleState.busy = false;
+    // ...and again on the catch, so the thing he just won says its own name.
+    cryForWild();
     concludeCapture('🔴 GOTCHA!');
     return;
   }

@@ -2,6 +2,47 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.9.0] - PASS THE TABLET
+
+Five things at once, mostly about the moments when the tablet changes hands.
+
+### The big one: switching players now asks first
+
+Tapping the name chip at the top used to switch straight to the other brother —
+one tap, no question, no undo. It sits right next to the Pokéball everybody
+taps first, and it dropped you into the other boy's collection with permission
+to change it. Worse, it quietly threw away a half-finished gym run.
+
+It now shows the same WHO'S PLAYING card you get when the app starts: two
+faces, tap yours. Nothing changes until you pick, backing out changes nothing
+at all, and each brother's face now has his own colour so Art can tell them
+apart even if they both happen to be leading a Pikachu.
+
+### What else the boys will notice
+
+- **Wild Pokémon make their noise now.** When one appears, and again when it is
+  caught, you hear it. Art can't read "WILD PIDGEY APPEARED!", so until now the
+  only part of that moment he could use was the picture.
+- **The four balls finally say what they do.** Three of the four rows in the
+  battle ball drawer read the same words — BETTER WHEN WEAKENED — so Gabe's
+  choice between them was decorative. They now read 1x, 1.5x, 2x and 100%, the
+  same as the drawer on the main screen.
+- **The sound button.** Two problems. The off state was a red "no" sign, which
+  to a four-year-old means *you are not allowed* rather than *the sound is off*;
+  it is now a quiet speaker, and the whole button goes grey and pressed-in, the
+  same way an uncaught Pokémon looks. And underneath, a real bug: the icon lost
+  its proper size permanently after the first tap and never got it back.
+- **Poking a Pokémon he hasn't caught does something.** In Art's sticker book
+  the ones he hasn't got are grey shadows, and prodding one gave a tiny wobble
+  that was over before he lifted his finger — so it felt like a broken button.
+  Now it lifts and shows him its real colours for a moment: *not yet*, said as
+  a promise. It works with the sound off and with motion turned down.
+
+### Fixed
+- The player chip no longer hands over the other brother's game on one tap, or
+  discards a gym run without asking.
+- The sound icon keeps its size through every toggle.
+
 ## [19.8.4] - THE TYPE IS A PICTURE
 
 On the main Pokédex screen, the type was written as a word — POISON, ELECTRIC —

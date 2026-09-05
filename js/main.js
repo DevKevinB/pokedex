@@ -108,17 +108,32 @@ function setPlayer(n) {
   applyPlayerChrome();
 }
 
-function togglePlayer() {
+// B-043. This used to switch players on ONE tap of a chip about a centimetre
+// wide sitting right next to the Pokeball everybody taps first -- no confirm,
+// no undo -- and it landed you in the other boy's PC box with full edit rights
+// over his collection. Rule 4: saves are sacred.
+// There is a second cost the forum missed: setPlayer calls clearGymRun(), so a
+// stray tap also silently threw away a half-finished gym run and its endurance
+// HP. Rule 3: never take something away from a child.
+// It now opens the WHO'S PLAYING card -- the same two-face picker the app
+// already shows on boot, so it needs no new dialog and no reading. Nothing
+// changes until a face is chosen, and choosing the CURRENT player is a no-op
+// rather than a switch, so a mistap costs nothing.
+async function togglePlayer() {
   if (state.isCatching || state.appMode === 'battle') return;
+  // A four-year-old double-taps. Re-opening rebuilt #whoplaying-grid, which
+  // killed the first call's listeners with the nodes they were on, so its
+  // promise could never settle and leaked for the life of the session.
+  if (document.getElementById('whoplaying-modal')?.style.display === 'flex') return;
   haptic('select');
-  setPlayer(state.currentPlayer === 1 ? 2 : 1);
+  await showPlayerPicker({ cancellable: true });
 }
 
 // ---- WHO'S PLAYING? ----
 // state.js used to hardcode currentPlayer = 1, so ART opening the app landed in
 // GABE's profile with Junior Mode off — his brother's Pokémon, and a game he
 // cannot read. Shown on first boot, and any time the remembered player is gone.
-function showPlayerPicker() {
+function showPlayerPicker({ cancellable = false } = {}) {
   return new Promise(resolve => {
     const modal = document.getElementById('whoplaying-modal');
     if (!modal) { resolve(); return; }
@@ -126,17 +141,52 @@ function showPlayerPicker() {
     const P = state.save.players;
     grid.innerHTML = [1, 2].map(n => {
       const lead = P[n].team[0] || P[n].caught[0] || (n === 1 ? 25 : 1);
-      return `<div class="whoplaying-choice" data-player="${n}">
+      // The two sprites are the only thing on this card a pre-reader can use,
+      // and they are NOT guaranteed to differ -- both brothers leading a
+      // Pikachu is not a stretch, and B-043 made this card load-bearing for
+      // every mid-session switch. So each seat also wears its own colour, the
+      // SAME red/blue the header band already uses for P1/P2, which is a cue
+      // ART cannot confuse and does not have to read.
+      return `<div class="whoplaying-choice p${n}" data-player="${n}">
         <img src="${PIXEL_SPRITE(lead)}" alt="">
         <span>${playerName(n)}</span>
       </div>`;
     }).join('');
+    // On boot there is no way out but choosing. Opened from the header chip
+    // there IS: backing out must leave currentPlayer AND any in-progress gym
+    // run exactly as they were, which is why setPlayer is not called at all on
+    // this path.
+    const backBtn = document.getElementById('whoplaying-back');
+    const close = () => {
+      modal.style.display = 'none';
+      if (backBtn) backBtn.style.display = 'none';
+      resolve();
+    };
+    if (backBtn) {
+      backBtn.style.display = cancellable ? '' : 'none';
+      // Assignment, not addEventListener: backBtn is a persistent element, so
+      // adding would stack one handler per open and close() would run N times.
+      backBtn.onclick = () => { haptic('select'); close(); };
+    }
+    // ...and a tap on the dark surround is an exit too. BACK being the only way
+    // out made a mistap on the chip a small trap. Only when cancellable: on
+    // first boot there is deliberately no way past this card but choosing.
+    modal.onclick = cancellable ? (e => { if (e.target === modal) close(); }) : null;
     grid.querySelectorAll('.whoplaying-choice').forEach(el =>
       el.addEventListener('click', () => {
         playBeep(1046.5, 'square', 0.12, 0.12);
-        setPlayer(parseInt(el.dataset.player, 10));
-        modal.style.display = 'none';
-        resolve();
+        const want = parseInt(el.dataset.player, 10);
+        // ALWAYS remember the choice -- on first boot, picking the boy who
+        // happens to be the default is still a choice this device must keep.
+        rememberPlayer(want);
+        // But only a real SWITCH runs setPlayer, because setPlayer clears the
+        // gym run: re-picking the boy already playing must not cost him a
+        // half-finished run. The else branch is NOT a no-op -- on first boot
+        // the default player is already 1, so picking GABE took neither path
+        // and applyPlayerChrome() never ran, leaving the lead chip unpainted
+        // for the whole session. applyPlayerChrome does not clear the gym run.
+        if (want !== state.currentPlayer) setPlayer(want); else applyPlayerChrome();
+        close();
       }));
     modal.style.display = 'flex';
   });

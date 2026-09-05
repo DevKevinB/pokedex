@@ -163,7 +163,11 @@ export const sfx = {
   // The sound of a button being a button. Short and quiet on purpose: it
   // plays on EVERY tap in the app, so it has to sit under the music rather
   // than on top of it.
-  tick:     () => playBeep(880, 'square', 0.03, 0.05)
+  tick:     () => playBeep(880, 'square', 0.03, 0.05),
+  // B-036: the sound of "not yet". Two soft descending sine notes -- it must
+  // NOT sound like the break/fail buzz, because a four-year-old poking a
+  // Pokemon he has not caught has not failed at anything. Quiet and round.
+  notYet:   () => { playBeep(392, 'sine', 0.10, 0.10); setTimeout(() => playBeep(294, 'sine', 0.16, 0.09), 90); }
 };
 
 // ---- one sound per type ----
@@ -324,11 +328,20 @@ export function synthCry(meta) {
   }
 }
 
+// Counts cries that ACTUALLY sounded -- past the mute check and past the
+// 400ms floor. It exists because B-011 made the cry carry real information for
+// ART at the encounter and the catch, and an ES module's exported binding
+// cannot be spied on from outside, so there was no other way to assert that
+// those two moments fire once each and fire ZERO times on mute.
+let cryCount = 0;
+export const criesEmitted = () => cryCount;
+
 function emitCry(url, meta) {
   if (muted) return;
   const now = Date.now();
   if (now - lastCryAt < CRY_MIN_GAP_MS) return;   // pet taps outrun the cry
   lastCryAt = now;
+  cryCount++;
   if (!url) { synthCry(meta); return; }
   const el = (url === cryUrl && cryAudio) ? cryAudio : new Audio(url);
   playingCry = el;

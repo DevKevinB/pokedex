@@ -17,9 +17,26 @@ function syncHeaderPlayerBtn() {
   document.getElementById('player-btn').innerText = playerName();
 }
 
+// B-013. Two bugs in three lines, and the first one nobody filed:
+// this used to assign btn.innerText, which DESTROYS the <span class="btn-glyph">
+// the markup provides (index.html:40) and replaces it with a bare text node. So
+// after the very first toggle the glyph permanently lost its 15px sizing and
+// alignment and never got it back -- the same defect .btn-glyph exists to fix.
+// Write into the span instead, so the shape survives every toggle.
+// Second: the OFF state was 🔇, a red prohibition circle, which to a four-year-
+// old reads "you are not allowed" rather than "the sound is off". 🔈 is the same
+// speaker with its waves gone -- a picture of quiet, not of a rule.
 function syncMusicBtn() {
   const btn = document.getElementById('music-btn');
-  if (btn) btn.innerText = isMuted() ? '🔇' : '🔊';
+  if (!btn) return;
+  const glyph = btn.querySelector('.btn-glyph');
+  const off = isMuted();
+  const face = off ? '🔈' : '🔊';
+  if (glyph) glyph.textContent = face; else btn.textContent = face;
+  // The glyph swap alone was only ~2% of the button's pixels. The class greys
+  // the WHOLE button, which is the app's existing picture for "sleeping".
+  btn.classList.toggle('is-muted', off);
+  btn.title = off ? 'Sound is off' : 'Sound is on';
 }
 
 // toggle labels only — never touches the name inputs, so typed-but-unsaved

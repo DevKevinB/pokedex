@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.8.4">
-    <link rel="stylesheet" href="css/gba.css?v=19.8.4">
+    <link rel="stylesheet" href="css/main.css?v=19.9.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.9.0">
 </head>
 <body>
 
@@ -80,7 +80,10 @@
         <button class="tool-btn" id="lead-btn" title="Your lead Pokémon — it sets how tough wild Pokémon are. Tap to change it.">
             <img id="lead-sprite" alt="" src=""><span id="lead-label">LEAD</span>
         </button>
-        <button class="tool-btn" id="cry-btn" title="Play this Pokémon's cry"><span class="btn-icon">🔊</span> CRY</button>
+        <!-- B-013: 📣 not 🔊. The header sound toggle owns the plain speaker; CRY
+             wearing the identical glyph made "turn the sound off" and "hear this
+             Pokemon" the same picture to a pre-reader. -->
+        <button class="tool-btn" id="cry-btn" title="Play this Pokémon's cry"><span class="btn-icon">📣</span> CRY</button>
         <button class="tool-btn" id="shiny-btn" title="Show the rare shiny coloring"><span class="btn-icon">✨</span> SHINY</button>
         <button class="tool-btn" id="random-btn" title="Jump to a random Pokémon"><span class="btn-icon">🎲</span> RNDM</button>
         <button class="tool-btn" id="data-btn" title="Stats, abilities and evolution" style="background: #2c2c2c;"><span class="btn-icon">📊</span> DATA</button>
@@ -319,6 +322,10 @@
         <div style="font-size: 44px;">🎮</div>
         <h2 style="margin: 12px 0 4px;">WHO'S PLAYING?</h2>
         <div id="whoplaying-grid"></div>
+        <!-- B-043: only shown when the picker is opened from the header chip,
+             never on first boot. A back arrow, not a word, so a pre-reader who
+             opened it by accident can still get out. -->
+        <button class="btn-escape" id="whoplaying-back" style="display:none; margin-top:14px;"><span class="btn-glyph">🔙</span> BACK</button>
     </div>
 </div>
 
@@ -519,6 +526,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.8.4"></script>
+<script type="module" src="js/main.js?v=19.9.0"></script>
 </body>
 </html>

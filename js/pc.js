@@ -8,7 +8,7 @@ import { getNameIndex, nameOf, getPokemon, evolutionOptions } from './api.js';
 import { state, player, playerName, monLevel, setTeam, setLead, nickOf,
          isFavorite, toggleFavorite, MAX_FAVORITES } from './state.js';
 import { loadPoke } from './dex.js';
-import { triggerVibration, setCry, stopAllAudio, playCryAudio, sfx } from './audio.js';
+import { triggerVibration, setCry, stopAllAudio, playCryAudio, sfx, haptic } from './audio.js';
 
 let pcContext = 'dex';
 let teamPick = [];
@@ -411,9 +411,19 @@ function syncStickerFav() {
 // and its voice.
 async function openSticker(id, el) {
   if (el && el.classList.contains('uncaught')) {
-    // Not a refusal — a nudge. No red, no buzz-of-failure, no words.
+    // B-036. This was a 320ms 5px shake in steps(3) — over before a four-year-
+    // old had finished taking his finger off the glass, which is why it read as
+    // a dead button rather than an answer. A pre-reader's entire vocabulary for
+    // "tell me about this" is poking the picture, so the poke has to answer.
+    // It now LIFTS and lets the shadow peek at its real colours for a beat
+    // before settling back: not a refusal, a promise. Nothing is taken away and
+    // nothing says he failed — there is no red, no buzz, and no words.
+    el.classList.remove('tease');
+    void el.offsetWidth;                 // restart the animation on a fast re-tap
     el.classList.add('tease');
-    setTimeout(() => el.classList.remove('tease'), 320);
+    haptic('select');
+    sfx.notYet();
+    setTimeout(() => el.classList.remove('tease'), 900);
     return;
   }
   const modal = document.getElementById('sticker-modal');

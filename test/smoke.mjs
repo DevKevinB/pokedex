@@ -357,9 +357,25 @@ check('sparkle locked without shiny', await page.evaluate(() => document.getElem
 check('sparkle hint explains unlock', (await page.locator('#sparkle-hint').innerText()).toUpperCase().includes('SHINY'));
 // force RNG low: guarantees the wild rolls SHINY (0.011 < 1/50) and the throw lands
 await page.evaluate(() => { window.__realRandom = Math.random; Math.random = () => 0.011; document.getElementById('variant-sparkle').disabled = false; });
+// B-011 baseline. battle.js imported NO cry function at all before this, so at
+// the moment a wild Pokemon appeared, who had turned up existed only as the
+// words "WILD PIDGEY APPEARED!" in a log ART cannot read. Counted through
+// audio.js's own emitCry -- past the mute check and past the 400ms anti-stack
+// floor -- because an ES module's exported binding cannot be spied on.
+const cryBefore = await page.evaluate(async () => {
+  const A = await import('/js/audio.js');
+  return { n: A.criesEmitted(), unlocked: A.audioUnlocked(), muted: A.isMuted() };
+});
 await page.click('#variant-sparkle');
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 10000 });
 check('battle screen active', true);
+await page.waitForTimeout(500);
+const cryAfter = await page.evaluate(async () => (await import('/js/audio.js')).criesEmitted());
+// Reported rather than assumed: if the AudioContext were still locked the
+// encounter would be CORRECTLY silent, and asserting a cry would be a false
+// pass rather than a real guard.
+check(`the wild encounter says who it is (unlocked=${cryBefore.unlocked}, muted=${cryBefore.muted}, +${cryAfter - cryBefore.n})`,
+  cryBefore.unlocked && !cryBefore.muted && cryAfter - cryBefore.n === 1);
 await page.waitForFunction(() => document.querySelectorAll('.move-btn').length > 0, null, { timeout: 5000 });
 check('move tiles + hero row rendered', await page.locator('.move-btn').count() >= 3 && await page.locator('#switch-btn').count() === 1 && await page.locator('#run-btn').count() === 0);
 check('player level shown', /lv\d+/i.test(await page.locator('#player-name').innerText()));
@@ -372,9 +388,54 @@ check('shiny wild announced', (await page.locator('#wild-name').innerText()).inc
 await page.locator('#ball-btn').evaluate(el => el.click());
 await page.waitForTimeout(400);
 check('ball picker opens', await page.locator('#ballpick-modal').isVisible());
+// ---- B-031: the four balls have to be tellable apart ----
+// Three of these four rows used to read BETTER WHEN WEAKENED, so the one thing
+// GABE is choosing between was the one thing the words refused to tell him.
+const ballCaps = await page.evaluate(() =>
+  [...document.querySelectorAll('#ballpick-list .ballpick')].map(el => ({
+    ball: el.dataset.ball,
+    cap: (el.querySelector('small')?.textContent || '').trim(),
+  })));
+check(`the four balls carry four different captions (${ballCaps.map(b => b.cap).join(' / ')})`,
+  ballCaps.length === 4 && new Set(ballCaps.map(b => b.cap)).size === 4 && ballCaps.every(b => b.cap));
+// ---- B-031: ...and ART's drawer stays silent ----
+// The caption check above only ever runs in normal mode, so the junior branch
+// could be deleted and every check would still pass -- QA proved exactly that.
+// A visible 1x/1.5x/2x ladder in ART's mode is the accommodation advertising
+// itself (rule 2), and it would be a lie besides: his balls always succeed.
+// Re-rendered through the real openBallPick, in the real battle, then flipped
+// straight back so nothing downstream sees a junior profile.
+const juniorBalls = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const was = S.player().settings.junior;
+  S.player().settings.junior = true;
+  document.getElementById('ballpick-modal').style.display = 'none';
+  document.getElementById('ball-btn').click();
+  await new Promise(r => setTimeout(r, 400));
+  const rows = [...document.querySelectorAll('#ballpick-list .ballpick')];
+  const out = {
+    rows: rows.length,
+    captions: rows.map(r => (r.querySelector('small')?.textContent || '').trim()).filter(Boolean),
+    counts: rows.filter(r => /x\d/.test(r.textContent)).length,
+  };
+  S.player().settings.junior = was;
+  document.getElementById('ballpick-modal').style.display = 'none';
+  document.getElementById('ball-btn').click();
+  await new Promise(r => setTimeout(r, 400));
+  return out;
+});
+check(`ART still picks from four balls (${juniorBalls.rows})`, juniorBalls.rows === 4);
+check('...and his drawer says nothing about odds or counts',
+  juniorBalls.captions.length === 0 && juniorBalls.counts === 0);
+const cryBeforeCatch = await page.evaluate(async () => (await import('/js/audio.js')).criesEmitted());
 await page.locator('.ballpick[data-ball="ultra-ball"]').evaluate(el => el.click());
 await page.waitForFunction(() => document.getElementById('victory-modal').style.display === 'flex', null, { timeout: 20000 });
 check('ball catch → gotcha screen', (await page.locator('#victory-lines').innerText()).includes('GOTCHA'));
+// ...and the thing he just won says its own name. Same reason as the encounter:
+// "GOTCHA!" is a word, and words do not exist for ART.
+const cryAfterCatch = await page.evaluate(async () => (await import('/js/audio.js')).criesEmitted());
+check(`the catch says what he just got (+${cryAfterCatch - cryBeforeCatch})`,
+  cryAfterCatch - cryBeforeCatch === 1);
 check('shiny recorded on capture', await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].shinies.length > 0));
 await page.evaluate(() => { Math.random = window.__realRandom; });
 await page.locator('#victory-continue').evaluate(el => el.click());
@@ -624,6 +685,52 @@ await page.waitForTimeout(300);
 check('player button shows custom name', (await page.locator('#player-btn').innerText()) === 'GABE');
 check('junior body class applied', await page.evaluate(() => document.body.classList.contains('junior')));
 check('search input hidden in junior', !(await page.locator('#search').isVisible()));
+
+// ---- B-036: an uncaught shadow has to ANSWER a poke ----
+// A pre-reader's entire vocabulary for "tell me about this" is poking the
+// picture. In ART's sticker book every one of the 649 slots is rendered, so on
+// a young save most of the screen is grey shadows -- and poking one used to
+// produce a 320ms 5px shake in steps(3), over before he had lifted his finger.
+// That teaches a four-year-old the pictures are not for touching. The answer
+// now lifts the tile and lets the shadow peek at its real colours, and the
+// acceptance is specifically that it is STILL HAPPENING 300ms later.
+await page.click('#pc-btn');
+await page.waitForTimeout(700);
+const poke = await page.evaluate(async () => {
+  const el = document.querySelector('#pc-grid .pc-item.uncaught');
+  if (!el) return { found: false };
+  const img = el.querySelector('img');
+  const before = { t: getComputedStyle(el).transform, f: getComputedStyle(img).filter };
+  el.click();
+  await new Promise(r => setTimeout(r, 200));
+  const at300 = { t: getComputedStyle(el).transform, f: getComputedStyle(img).filter };
+  await new Promise(r => setTimeout(r, 400));
+  const at600 = { t: getComputedStyle(el).transform, f: getComputedStyle(img).filter,
+                  // The durable signal: at 600ms the filter has eased back to
+                  // within a few percent of resting, so comparing values there
+                  // discriminates by a hair and goes flaky on a loaded machine.
+                  // Whether the answer is STILL RUNNING is unambiguous.
+                  anim: getComputedStyle(img).animationName, cls: el.classList.contains('tease') };
+  await new Promise(r => setTimeout(r, 900));
+  const after = { t: getComputedStyle(el).transform, f: getComputedStyle(img).filter };
+  return { found: true, before, at300, at600, after, cls: el.className };
+});
+check('the sticker book is full of shadows to poke', poke.found);
+// Measured on the FILTER, not just on movement, and again at 600ms. The old
+// 320ms shake was still technically mid-frame at exactly 300ms, so a check
+// that only asked "has anything changed by 300ms" passed on the broken code --
+// verified, not assumed. What the old shake never did was touch the colour,
+// and it was long finished by 600ms.
+check('poking an uncaught shadow shows it its own colours',
+  poke.found && poke.at300.f !== poke.before.f);
+check('and the answer is still going 600ms later',
+  poke.found && poke.at600.cls && poke.at600.anim === 'stickerTeaseInk');
+// ...and then it settles back, so the book does not slowly fill with tiles
+// stuck mid-animation.
+check('and the answer finishes, leaving the shadow where it was',
+  poke.found && poke.after.t === poke.before.t && poke.after.f === poke.before.f);
+await page.click('#close-pc-btn');
+await page.waitForTimeout(300);
 // v19.6: the old check measured EXPLORE against the top of the collapsed data
 // sheet. In junior the sheet is display:none now, so its rect.top is 0 and the
 // old assertion could only ever fail. Replaced with the three facts that
@@ -659,12 +766,64 @@ check('confetti spawned', await page.evaluate(() => document.querySelectorAll('.
 await page.waitForTimeout(2400);
 await dismissCelebrations(page);
 
+// ---- B-043: the header chip ASKS before handing over the other boy's game ----
+// It used to switch on one tap of a centimetre-wide chip beside the Pokeball,
+// with no confirm and no undo, landing you in the other brother's PC box with
+// full edit rights -- and silently discarding a half-finished gym run on the
+// way (setPlayer calls clearGymRun). It now opens the two-face WHO'S PLAYING
+// card the app already shows on boot.
+const switchTo = async n => {
+  await page.click('#player-btn');
+  await page.waitForFunction(() => document.getElementById('whoplaying-modal').style.display === 'flex',
+    null, { timeout: 8000 });
+  await page.locator(`.whoplaying-choice[data-player="${n}"]`).evaluate(el => el.click());
+  await page.waitForTimeout(350);
+};
+await page.click('#player-btn');
+await page.waitForFunction(() => document.getElementById('whoplaying-modal').style.display === 'flex',
+  null, { timeout: 8000 });
+check('the header chip asks before switching player',
+  await page.evaluate(() => document.getElementById('whoplaying-modal').style.display === 'flex'));
+check('and it does not switch anybody until a face is tapped',
+  await page.evaluate(() => document.getElementById('player-btn').innerText.includes('GABE')));
+// Backing out is a real exit, not a trap: a boy who opened it by accident must
+// be able to leave without picking, and leave everything as it was.
+check('the ask offers a way out', await page.locator('#whoplaying-back').isVisible());
+await page.locator('#whoplaying-back').evaluate(el => el.click());
+await page.waitForTimeout(300);
+check('backing out leaves the player alone',
+  await page.evaluate(() => document.getElementById('whoplaying-modal').style.display === 'none'
+    && document.getElementById('player-btn').innerText.includes('GABE')));
+// Re-picking the boy ALREADY playing must not run setPlayer, because setPlayer
+// calls clearGymRun -- that is the quiet half of B-043, and without this the
+// guard could be deleted with the suite still fully green.
+const gymRunKept = await page.evaluate(async () => {
+  const G = await import('/js/gym.js');
+  // A half-finished run: one stop, one damaged Pokemon. This is exactly what
+  // the old one-tap chip threw away without asking.
+  G.gymRun.gymKey = 'rock'; G.gymRun.hp = { 25: 7 }; G.gymRun.max = { 25: 30 };
+  const snap = () => JSON.stringify([G.gymRun.gymKey, G.gymRun.hp, G.gymRun.max]);
+  const before = snap();
+  document.getElementById('player-btn').click();
+  await new Promise(r => setTimeout(r, 400));
+  document.querySelector('.whoplaying-choice[data-player="1"]').click();
+  await new Promise(r => setTimeout(r, 400));
+  const after = snap();
+  G.clearGymRun();
+  return { before, after, supported: before.includes('rock') };
+});
+check('re-picking the same brother keeps his half-finished gym run',
+  gymRunKept.supported && gymRunKept.before === gymRunKept.after);
+// ...and the boot path still paints the chrome. Picking the boy who is already
+// the default took NEITHER branch and left the lead chip unpainted all session.
+check('picking the current player still paints his chrome',
+  await page.evaluate(() => getComputedStyle(document.documentElement)
+    .getPropertyValue('--p-primary').trim().length > 0));
+
 // junior mode is per-player: P2 unaffected
-await page.click('#player-btn');
-await page.waitForTimeout(300);
+await switchTo(2);
 check('P2 not in junior mode', !(await page.evaluate(() => document.body.classList.contains('junior'))));
-await page.click('#player-btn');
-await page.waitForTimeout(300);
+await switchTo(1);
 check('P1 junior persists', await page.evaluate(() => document.body.classList.contains('junior')));
 
 // PARENT TOOLS: hold to open, set the PIN on the in-app keypad (the old
@@ -1272,6 +1431,114 @@ await page.waitForTimeout(500);
 check('FARAWAY LAND unlocks for the Champion', await page.locator('#habitat-grid .habitat-card.locked').count() === 0);
 await page.click('#explore-back-btn');
 await page.waitForTimeout(400);
+
+// ---- B-011 / B-013: the sound switch still means what it says ----
+const soundGuards = await page.evaluate(async () => {
+  const A = await import('/js/audio.js');
+  const out = {};
+  // Muting must silence the NEW channel completely. A cry that survives the
+  // mute button is worse than no cry: it is the one control Kevin uses in a
+  // waiting room, quietly not working.
+  const wasMuted = A.isMuted();
+  if (!wasMuted) A.toggleMute();
+  const b = A.criesEmitted();
+  A.playCryFor(25); A.playCryFor(6);
+  out.whenMuted = A.criesEmitted() - b;
+  A.toggleMute();
+  if (wasMuted) A.toggleMute();
+
+  // B-013: syncMusicBtn used to assign btn.innerText, which DESTROYED the
+  // <span class="btn-glyph"> the markup provides and replaced it with a bare
+  // text node -- so after the FIRST toggle the glyph permanently lost its 15px
+  // sizing and never got it back. Toggle twice and the span must survive both.
+  // Driven by CLICKING the button, not by calling toggleMute() -- the repaint
+  // lives in the click handler (main.js:366), so calling the module directly
+  // would test a path no child ever takes and pass while the button was broken.
+  const btn = document.getElementById('music-btn');
+  const face = () => btn.querySelector('.btn-glyph')?.textContent || btn.textContent;
+  btn.click();
+  out.spanAfter1 = !!btn.querySelector('.btn-glyph');
+  out.glyphOff = face();
+  btn.click();
+  out.spanAfter2 = !!btn.querySelector('.btn-glyph');
+  out.glyphOn = face();
+  out.mutedClass = null; out.liveClass = null;
+  btn.click(); out.mutedClass = btn.classList.contains('is-muted');
+  btn.click(); out.liveClass = btn.classList.contains('is-muted');
+  out.cryGlyph = document.querySelector('#cry-btn .btn-icon')?.textContent || '';
+  out.finallyMuted = A.isMuted();
+  return out;
+});
+check('the sound switch silences cries too', soundGuards.whenMuted === 0);
+check('the sound button keeps its shape through both toggles',
+  soundGuards.spanAfter1 && soundGuards.spanAfter2);
+check(`silence looks different from sound (${soundGuards.glyphOff} vs ${soundGuards.glyphOn})`,
+  soundGuards.glyphOff && soundGuards.glyphOn && soundGuards.glyphOff !== soundGuards.glyphOn);
+// 🔇 is a red prohibition circle. To a four-year-old that reads "you are not
+// allowed", not "the sound is off" -- so OFF must not be that glyph...
+check('and silence does not look like a rule he broke', soundGuards.glyphOff !== '\u{1F507}');
+// ...and the glyph swap alone was only ~2% of the button's pixels, so the whole
+// button greys out. That is the app's own picture for "sleeping".
+check('the muted button reads as sleeping, not as a tiny different arc',
+  soundGuards.mutedClass === true && soundGuards.liveClass === false);
+// ...and neither of them is the CRY button's picture. A pre-reader navigating
+// entirely by glyph must not see "turn the sound off" and "hear this Pokemon"
+// wearing the same face.
+check(`CRY does not wear the sound switch's face (${soundGuards.cryGlyph})`,
+  soundGuards.cryGlyph && soundGuards.cryGlyph !== soundGuards.glyphOn
+  && soundGuards.cryGlyph !== soundGuards.glyphOff);
+check('and the sound is left on afterwards', soundGuards.finallyMuted === false);
+
+// ---- B-036: the answer survives prefers-reduced-motion ----
+// The reduced-motion block kills .tease's animation outright. If nothing
+// replaced it, ART would be handed back the dead button this item exists to
+// remove -- and QA found that branch had ZERO coverage, so it could silently
+// return. A whole separate context, because reduced motion is set at browser
+// level and cannot be toggled on a live page.
+{
+  const ctxRM = await browser.newContext({
+    viewport: { width: 390, height: 844 }, serviceWorkers: 'block', reducedMotion: 'reduce',
+  });
+  await mockRoutes(ctxRM);
+  await ctxRM.addInitScript(() => {
+    localStorage.setItem('pokedexos_lastplayer', '1');
+    localStorage.setItem('pokedexos_save_v2', JSON.stringify({
+      version: 2,
+      players: {
+        1: { name: 'GABE', caught: [25], team: [25], mons: { 25: { level: 9, xp: 0 } },
+             badges: [], shinies: [], nicks: {}, items: {}, quests: {}, gyms: {},
+             settings: { junior: true }, stats: {} },
+        2: { name: 'ART', caught: [], team: [], mons: {}, badges: [], shinies: [], nicks: {},
+             items: {}, quests: {}, gyms: {}, settings: { junior: true }, stats: {} },
+      },
+    }));
+  });
+  const pRM = await ctxRM.newPage();
+  await pRM.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await pRM.waitForTimeout(1200);
+  await pRM.evaluate(() => document.getElementById('boot-screen')?.click());
+  await pRM.waitForTimeout(2200);
+  await pRM.evaluate(() => document.getElementById('pc-btn').click());
+  await pRM.waitForTimeout(900);
+  const rm = await pRM.evaluate(async () => {
+    const el = document.querySelector('#pc-grid .pc-item.uncaught');
+    if (!el) return { found: false };
+    const img = el.querySelector('img');
+    const rest = getComputedStyle(img).filter;
+    el.click();
+    await new Promise(r => setTimeout(r, 250));
+    return {
+      found: true, rest, held: getComputedStyle(img).filter,
+      anim: getComputedStyle(img).animationName, motionless: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    };
+  });
+  check('reduced motion really is on for this context', rm.motionless === true);
+  check('...and the animation is genuinely suppressed there', rm.found && rm.anim === 'none');
+  // The whole point: no movement, but still an ANSWER.
+  check('...yet poking a shadow still answers, without moving anything',
+    rm.found && rm.held !== rm.rest);
+  await ctxRM.close();
+}
 
 // ---- v18.6: the battle screen works without words ----
 // ART cannot read. These assert that the wordless channel actually exists,

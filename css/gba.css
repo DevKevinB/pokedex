@@ -155,6 +155,26 @@ img { image-rendering: pixelated; }
    it costs him nothing to have it sit there next to the picture. */
 body.junior .tag-ico { font-size: 19px; }
 
+/* B-013: 🔇 (a red prohibition circle) read as "you are not allowed" to a
+   four-year-old, so the OFF face became 🔈 -- the same speaker with its waves
+   gone. But that alone left ON and OFF differing in ~2% of pixels: three thin
+   arcs, about twenty device pixels. So the whole button goes grey and flat when
+   the sound is off, which is the app's OWN existing vocabulary for "sleeping" --
+   it is exactly what the uncaught stickers already say to ART. No words, no red,
+   and the difference is now the size of the button rather than the size of an
+   arc. */
+/* B-043: one seat per brother, in the colours the header band already uses. */
+.whoplaying-choice.p1 { border-color: var(--p1); box-shadow: 0 0 0 3px rgba(211,47,47,0.25); }
+.whoplaying-choice.p2 { border-color: var(--p2); box-shadow: 0 0 0 3px rgba(25,118,210,0.25); }
+/* The ask is now the route for EVERY mid-session switch, so its way out has to
+   clear the 44px touch minimum -- it was 97x37. */
+#whoplaying-back { min-height: 44px; padding-left: 18px; padding-right: 18px; }
+
+#music-btn.is-muted {
+  filter: grayscale(1) brightness(0.72);
+  box-shadow: none; transform: translateY(2px);
+}
+
 /* sprite plinth */
 .img-container::after {
   content: ''; position: absolute; bottom: 2px; width: 170px; height: 26px;
@@ -1588,12 +1608,32 @@ body.junior #settings-btn.holding::after {
   60%  { transform: scale(1.18) rotate(-4deg); }
   100% { transform: scale(1) rotate(0deg); }
 }
-/* tapping one he has not caught: a nudge, not a refusal */
-.pc-item.sticker.tease { animation: stickerTease 0.3s steps(3, end); }
+/* B-036: tapping one he has not caught. This used to be a 320ms 5px shake in
+   steps(3) — jerky, tiny, and finished before a four-year-old had lifted his
+   finger, so it read as a broken button rather than an answer. It now LIFTS
+   the tile and lets the grey shadow peek at its real colours before settling:
+   "not yet", said as a promise. 900ms, so it is still visibly happening a
+   third of a second after the tap. */
+.pc-item.sticker.tease { animation: stickerTease 0.9s ease-out; z-index: 3; }
+.pc-item.sticker.tease img { animation: stickerTeaseInk 0.9s ease-out; }
 @keyframes stickerTease {
-  0%, 100% { transform: translateX(0); }
-  33% { transform: translateX(-5px); }
-  66% { transform: translateX(5px); }
+  0%   { transform: translateY(0) scale(1); }
+  22%  { transform: translateY(-9px) scale(1.10); }
+  55%  { transform: translateY(-4px) scale(1.05); }
+  100% { transform: translateY(0) scale(1); }
+}
+/* The endpoints MUST equal the resting filter of the element actually in play.
+   openSticker only runs when juniorBook is true, so that element is
+   `.pc-item.sticker.uncaught img` (gba.css:1580, grayscale(1) brightness(.35))
+   -- NOT the non-junior `.pc-item.uncaught img` (gba.css:438), which also
+   carries sepia+hue-rotate. Copying the wrong one made the shadow SNAP from
+   neutral grey to olive-green the instant it was poked, and snap back at 900ms.
+   Matched now, so the peek eases out of grey and settles back into it. */
+@keyframes stickerTeaseInk {
+  0%   { filter: grayscale(1) brightness(0.35); }
+  30%  { filter: grayscale(0.15) brightness(1); }
+  60%  { filter: grayscale(0.25) brightness(0.9); }
+  100% { filter: grayscale(1) brightness(0.35); }
 }
 .pc-empty-glyph { font-size: 56px; line-height: 1; }
 
@@ -1664,9 +1704,17 @@ body.junior #settings-btn.holding::after {
    still full, the star is still gold. Only the movement stops. */
 @media (prefers-reduced-motion: reduce) {
   .pc-item.sticker-new, .pc-item.sticker.tease,
+  .pc-item.sticker.tease img,
   #fav-shelf.wobble, .sticker-fav.wobble, .pc-item.wobble,
   #pc-modal.sticker-book .team-slot.lead em,
   body.junior #settings-btn.holding::after { animation: none !important; }
+  /* B-036 still has to ANSWER here. Killing the animation outright would hand
+     ART a dead button again — the exact defect — so the peek is delivered as a
+     held state instead of a movement: the shadow simply shows its colours for
+     the 900ms the class is on, and nothing travels. */
+  .pc-item.sticker.tease img {
+    filter: grayscale(0.15) brightness(1) !important;
+  }
 }
 /* iOS raises the native image callout (and on iPad starts a system drag)
    on a long press over an <img> - which is exactly GABE's 600ms favourite
