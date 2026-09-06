@@ -189,6 +189,29 @@ body.junior .tag-ico { font-size: 19px; }
    screen -- which is the ergonomic half of B-019, not a side effect. */
 #pc-modal > #close-pc-btn, #pc-modal > .close-pc-btn { margin-top: auto; }
 
+/* B-005: the way back into Parent Tools. Deliberately quiet -- it is for Kevin,
+   it is under the keypad rather than on it, and it fills like the PARENT TOOLS
+   button does so the hold is visibly a hold and not a dead tap. */
+#pin-forgot {
+  display: block; margin: 14px auto 0; padding: 10px 14px; min-height: 44px;
+  font-family: var(--pixel-font); font-size: 8px; letter-spacing: 0;
+  color: var(--ink-2); background: var(--paper-3);
+  border: 2px solid var(--ink); border-radius: 3px; cursor: pointer;
+  position: relative; overflow: hidden;
+  /* iOS: a 2s hold must not become a scroll gesture (pointercancel) or a
+     text callout -- either one would end the hold before it lands. */
+  touch-action: none; -webkit-touch-callout: none;
+}
+#pin-forgot.holding::after {
+  content: ''; position: absolute; inset: 0; background: var(--gold);
+  mix-blend-mode: multiply; transform-origin: left;
+  animation: pinHoldFill 2s linear forwards;
+}
+@keyframes pinHoldFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+  #pin-forgot.holding::after { animation: none; background: var(--gold); opacity: 0.35; }
+}
+
 /* B-043: one seat per brother, in the colours the header band already uses. */
 .whoplaying-choice.p1 { border-color: var(--p1); box-shadow: 0 0 0 3px rgba(211,47,47,0.25); }
 .whoplaying-choice.p2 { border-color: var(--p2); box-shadow: 0 0 0 3px rgba(25,118,210,0.25); }

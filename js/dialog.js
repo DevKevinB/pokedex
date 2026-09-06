@@ -77,6 +77,9 @@ function showDialog({ icon, sprite, title = '', text = '', input = false, value 
 // shakes the dots and clears; the pad stays open for another try.
 // Shares the dialog queue: two gated actions triggered together get one pad
 // each, in turn — never two listener sets on the same shared keypad.
+// `onForgot` (optional) turns on the FORGOT PIN? affordance under the keypad.
+// It is a HOLD, not a tap, and it is only ever passed by the one caller that
+// has a stored PIN to recover from.
 export function pinPad(opts = {}) {
   const run = () => showPinPad(opts);
   const p = queue.then(run, run);
@@ -84,7 +87,7 @@ export function pinPad(opts = {}) {
   return p;
 }
 
-function showPinPad({ title = '🔒 GROWN-UPS ONLY', sub = 'ENTER PIN', verify = null } = {}) {
+function showPinPad({ title = '🔒 GROWN-UPS ONLY', sub = 'ENTER PIN', verify = null, onForgot = null } = {}) {
   return new Promise(resolve => {
     const modal = document.getElementById('pin-modal');
     const keys = document.getElementById('pin-keys');
@@ -99,9 +102,22 @@ function showPinPad({ title = '🔒 GROWN-UPS ONLY', sub = 'ENTER PIN', verify =
     paint();
     modal.style.display = 'flex';
 
+    // B-005: the way back in when the PIN is gone. A 2-second HOLD, so it can
+    // never be reached by the tapping a child does on a keypad, and the button
+    // does not exist at all unless the caller passed a recovery route.
+    const forgot = document.getElementById('pin-forgot');
+    let holdTimer = null;
+    const HOLD_MS = 2000;
+    const endHold = () => { clearTimeout(holdTimer); forgot?.classList.remove('holding'); };
+
     const done = val => {
       modal.style.display = 'none';
       keys.removeEventListener('click', onKey);
+      if (forgot) {
+        endHold();
+        forgot.style.display = 'none';
+        forgot.onpointerdown = forgot.onpointerup = forgot.onpointerleave = forgot.onpointercancel = null;
+      }
       resolve(val);
     };
     const reject = () => {
@@ -126,5 +142,26 @@ function showPinPad({ title = '🔒 GROWN-UPS ONLY', sub = 'ENTER PIN', verify =
       }
     };
     keys.addEventListener('click', onKey);
+
+    if (forgot && onForgot) {
+      forgot.style.display = '';
+      forgot.onpointerdown = e => {
+        e.preventDefault();
+        endHold();
+        forgot.classList.add('holding');
+        holdTimer = setTimeout(() => {
+          forgot.classList.remove('holding');
+          // Hand the pad over to the recovery route. done(null) first, so the
+          // keypad's own listeners are gone before anything else opens one.
+          done(null);
+          onForgot();
+        }, HOLD_MS);
+      };
+      forgot.onpointerup = endHold;
+      forgot.onpointerleave = endHold;
+      forgot.onpointercancel = endHold;
+    } else if (forgot) {
+      forgot.style.display = 'none';
+    }
   });
 }

@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.10.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.10.0">
+    <link rel="stylesheet" href="css/main.css?v=19.11.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.11.0">
 </head>
 <body>
 
@@ -307,6 +307,13 @@
             <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
             <button data-k="cancel" class="pin-cancel">✖</button><button data-k="0">0</button><button data-k="back">⌫</button>
         </div>
+        <!-- B-005: there was NO way to clear a forgotten PIN anywhere in the
+             app, and the PIN gates the entire restore path (PASTE CODE, LOAD
+             FILE, UNDO IMPORT). If either boy set or changed it, Kevin was
+             locked out of his own save with no route back but a browser
+             console on a device that has none. Hidden unless a PIN is
+             actually stored, and it is a HOLD, not a tap. -->
+        <button id="pin-forgot" style="display:none;">FORGOT PIN? — HOLD</button>
     </div>
 </div>
 
@@ -532,6 +539,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.10.0"></script>
+<script type="module" src="js/main.js?v=19.11.0"></script>
 </body>
 </html>

@@ -40,6 +40,25 @@ Designed specifically for mobile browsers with zero external dependencies, this 
 * PC Box: name search across all 649, ALL-view, generation tabs, TEAM strip with tap-to-promote lead; wild spawns track your lead's level (±20%).
 * **Parent Tools** behind a PIN: add any Pokémon at any level with live name suggestions.
 
+### If you are locked out of Parent Tools
+
+The PIN is set the first time anyone opens Parent Tools, which means one of the
+boys can claim it — and the PIN gates the whole restore path (PASTE CODE, LOAD
+FILE, UNDO IMPORT), so being locked out is a real problem, not an inconvenience.
+
+To get back in: open Parent Tools, and when the keypad appears, **press and hold
+the FORGOT PIN? button under the keys for two seconds**. It will ask for a reset
+code. The code is:
+
+    0649
+
+Type it and the old PIN is cleared, then set a new one. It never opens Parent
+Tools by itself — it only lets you set a fresh PIN — so it is not a back door
+either of the boys can use to get at the save. Your save is not touched.
+
+The code is here rather than on the tablet on purpose: it is the one thing in
+this process the boys do not have.
+
 ## 🆕 v16 GAME BOY EDITION Highlights
 * **GBA pixel overhaul:** Press Start 2P font, animated pixel sprites, typewriter text, CRT scanlines, screen-wipe transitions, procedural chiptune soundtrack.
 * **Real RPG battles:** teams of 6, levels & XP, evolution cutscenes, switching, crits & STAB, wild level scaling.

@@ -942,6 +942,76 @@ check('right PIN reaches the in-world paste box', await page.locator('#dlg-input
 await page.locator('#dlg-cancel').evaluate(el => el.click());
 await page.waitForTimeout(300);
 
+// ---- B-005: a grown-up can always get back into Parent Tools ----
+// Nothing anywhere in the app removed the PIN, and the PIN gates the ENTIRE
+// restore path. Either boy claiming it (the gate is trust-on-first-use) locked
+// Kevin out of his own save with no route back but a console on a device that
+// has none.
+const saveBeforeRecovery = await page.evaluate(() => localStorage.getItem('pokedexos_save_v2'));
+await page.locator('#set-import-paste').evaluate(el => el.click());
+await page.waitForTimeout(300);
+check('the pad offers a way back when a PIN is stored',
+  await page.locator('#pin-forgot').isVisible());
+
+// It is a HOLD, not a tap: a child mashing the keypad must not reach it.
+await page.locator('#pin-forgot').dispatchEvent('pointerdown');
+await page.waitForTimeout(250);
+await page.locator('#pin-forgot').dispatchEvent('pointerup');
+await page.waitForTimeout(400);
+check('a short tap on it does nothing at all',
+  (await page.locator('#pin-title').innerText()).includes('GROWN-UPS'));
+
+// The real hold reaches the reset code -- which is NOT on the tablet.
+await page.locator('#pin-forgot').dispatchEvent('pointerdown');
+await page.waitForTimeout(2400);
+check('holding it asks for the reset code',
+  (await page.locator('#pin-title').innerText()).toUpperCase().includes('RESET'));
+// A wrong code leaves the PIN exactly where it was.
+await tapPin('1111');
+await page.waitForTimeout(400);
+check('a wrong reset code leaves the gate shut',
+  await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === '1234'));
+await page.locator('#pin-keys button[data-k="cancel"]').evaluate(el => el.click());
+await page.waitForTimeout(300);
+check('backing out of recovery also leaves the PIN alone',
+  await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === '1234'));
+
+// The real code clears the PIN and immediately makes you set a new one. It is
+// NOT a bypass: succeeding never opens Parent Tools by itself.
+await page.locator('#set-import-paste').evaluate(el => el.click());
+await page.waitForTimeout(300);
+await page.locator('#pin-forgot').dispatchEvent('pointerdown');
+await page.waitForTimeout(2400);
+const D = await page.evaluate(async () => (await import('/js/devtools.js')).PIN_RESET_CODE);
+await tapPin(D);
+await page.waitForTimeout(400);
+check(`the reset code clears the old PIN (${D})`,
+  await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === null));
+check('...and immediately asks for a new one, rather than letting you in',
+  (await page.locator('#pin-sub').innerText()).toUpperCase().includes('NEW PIN'));
+await tapPin('1234');
+await page.waitForTimeout(250);
+await tapPin('1234');
+await page.waitForTimeout(500);
+check('a fresh PIN can be set straight away',
+  await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === '1234'));
+// THE thing that must never happen: recovery touching the boys' collections.
+check('and the save came through the whole thing byte-identical',
+  (await page.evaluate(() => localStorage.getItem('pokedexos_save_v2'))) === saveBeforeRecovery);
+// Review finding, batch 3: recovery used to hand its success straight to the
+// caller, so setting the new PIN opened the gated action (here PASTE CODE) in
+// the same gesture with no PIN ever typed. It must be TERMINAL.
+await page.waitForTimeout(400);
+check('setting the new PIN does NOT open the gated action behind it',
+  !(await page.locator('#dlg-modal').isVisible()) && !(await page.locator('#dlg-input').isVisible())
+  && !(await page.locator('#pin-modal').isVisible()));
+await page.locator('#set-import-paste').evaluate(el => el.click());
+await page.waitForTimeout(300);
+check('...the PIN pad simply comes back',
+  await page.locator('#pin-modal').isVisible());
+await page.locator('#pin-keys button[data-k="cancel"]').evaluate(el => el.click());
+await page.waitForTimeout(300);
+
 // turn junior back off for the remaining checks
 await page.waitForTimeout(100);
 await page.locator('#set-p1-junior').evaluate(el => el.click());
@@ -1508,6 +1578,179 @@ check(`CRY does not wear the sound switch's face (${soundGuards.cryGlyph})`,
   soundGuards.cryGlyph && soundGuards.cryGlyph !== soundGuards.glyphOn
   && soundGuards.cryGlyph !== soundGuards.glyphOff);
 check('and the sound is left on afterwards', soundGuards.finallyMuted === false);
+
+// ---- B-003: one catch, one save write ----
+// In its OWN context on purpose. This test deliberately makes every save write
+// fail, and the app answers CORRECTLY by logging the quota error and raising
+// its save-failure banner for Kevin -- which then sits over the screen and
+// blocks the rest of the run. Isolating it keeps both truths: the app really
+// does shout about a full tablet, and the suite is not poisoned by it.
+{
+  const ctxSave = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  await mockRoutes(ctxSave);
+  await ctxSave.addInitScript(() => {
+    localStorage.setItem('pokedexos_lastplayer', '1');
+    localStorage.setItem('pokedexos_save_v2', JSON.stringify({
+      version: 2,
+      players: {
+        1: { name: 'GABE', caught: [25], team: [25], mons: { 25: { level: 20, xp: 0 } },
+             badges: [], shinies: [], nicks: {}, items: { masterBalls: 3 }, quests: {}, gyms: {},
+             settings: { junior: false }, stats: {} },
+        2: { name: 'ART', caught: [], team: [], mons: {}, badges: [], shinies: [], nicks: {},
+             items: {}, quests: {}, gyms: {}, settings: { junior: true }, stats: {} },
+      },
+    }));
+  });
+  const page = await ctxSave.newPage();
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1200);
+  await page.evaluate(() => document.getElementById('boot-screen')?.click());
+  await page.waitForTimeout(2400);
+
+    const oneWrite = await page.evaluate(async () => {
+    const S = await import('/js/state.js');
+    const C = await import('/js/catch.js');
+    const D = await import('/js/dex.js');
+    await D.loadPoke(133);
+    await new Promise(r => setTimeout(r, 900));
+  
+    // Count the real writes across one whole catch.
+    const realSet = localStorage.setItem.bind(localStorage);
+    let writes = 0;
+    localStorage.setItem = (k, v) => { if (k === 'pokedexos_save_v2') writes++; return realSet(k, v); };
+    S.player().items.masterBalls = 3;
+    await C.executeCatch(99, 'master-ball', true);
+    await new Promise(r => setTimeout(r, 2600));
+    localStorage.setItem = realSet;
+    const after = JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1];
+    return { writes, caught: after.caught.includes(133), mon: !!after.mons[133], balls: after.items.masterBalls };
+  });
+  check(`a whole catch is one save write (${oneWrite.writes})`, oneWrite.writes === 1);
+  check('...and the catch actually landed', oneWrite.caught && oneWrite.mon);
+  
+  // THE failure that costs a child something: the tablet runs out of room part
+  // way through. The save must be all-or-nothing -- never caught-without-mons
+  // (which falls through to DEFAULT_LEVEL and hands back a Lv5), and never a
+  // spent Master Ball with nothing to show for it.
+  const torn = await page.evaluate(async () => {
+    const S = await import('/js/state.js');
+    const C = await import('/js/catch.js');
+    const D = await import('/js/dex.js');
+    await D.loadPoke(143);
+    await new Promise(r => setTimeout(r, 900));
+    const realSet = localStorage.setItem.bind(localStorage);
+    const before = JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1];
+    const ballsBefore = before.items.masterBalls;
+    // Fails from the SECOND save write onward. That is the real tearing case
+    // and the one the acceptance names: if EVERY write fails, nothing lands and
+    // even the old five-write code looks all-or-nothing. Letting the first
+    // through is what separates one batched write from five separate ones --
+    // with five, the ball is spent and the catch is not.
+    let saveWrites = 0;
+    localStorage.setItem = (k, v) => {
+      if (k === 'pokedexos_save_v2' && ++saveWrites >= 2) throw new DOMException('QuotaExceededError');
+      return realSet(k, v);
+    };
+    try { await C.executeCatch(99, 'master-ball', true); } catch (e) { /* the app must not throw */ }
+    await new Promise(r => setTimeout(r, 2600));
+    localStorage.setItem = realSet;
+    const disk = JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1];
+    const mem = S.state.save.players[1];
+    return {
+      ballsBefore, diskBalls: disk.items.masterBalls,
+      diskCaught: disk.caught.includes(143), diskMon: !!disk.mons[143],
+      memCaught: mem.caught.includes(143), memMon: !!mem.mons[143],
+    };
+  });
+  // All-or-nothing on disk. Both halves together, or neither.
+  check(`a failed write leaves the save whole (caught=${torn.diskCaught} mons=${torn.diskMon})`,
+    torn.diskCaught === torn.diskMon);
+  // ...and specifically never the destructive half: a ball gone, nothing caught.
+  check(`and never a spent Master Ball with no Pokemon (${torn.ballsBefore} -> ${torn.diskBalls})`,
+    torn.diskCaught || torn.diskBalls === torn.ballsBefore);
+  // Memory was rolled back to match the disk, so the screen cannot be showing a
+  // Pokemon that was never saved.
+  check(`memory agrees with disk after the failure (mem=${torn.memCaught} disk=${torn.diskCaught})`,
+    torn.memCaught === torn.diskCaught && torn.memMon === torn.diskMon);
+  await ctxSave.close();
+}
+
+// ---- B-001: mashing the arrows must not strand the screen ----
+// loadPoke had no in-flight token: state.curId was assigned AFTER the await, so
+// with N taps in flight the screen settled on whichever request resolved LAST,
+// and that stale response re-seeded the arrows too. Cache hits resolve
+// instantly while misses take network time, so out-of-order resolution is the
+// NORMAL case when a four-year-old mashes, not an edge case.
+// The mocks all answer at the same speed, so left alone they resolve in the
+// order they were asked and the race never happens -- a mash test against
+// in-order mocks passes on the BROKEN code too, which is exactly the false
+// assurance this item is about. Staggered latency makes later taps overtake
+// earlier ones, which is what a real cache hit does next to a real miss.
+await context.route(/\/api\/v2\/pokemon\/(\d+)$/, async route => {
+  const id = Number(/\/pokemon\/(\d+)$/.exec(route.request().url())[1]);
+  await new Promise(r => setTimeout(r, [420, 40, 240, 90][id % 4]));
+  await route.fallback();
+});
+await page.evaluate(async () => { const D = await import('/js/dex.js'); await D.loadPoke(25); });
+await page.waitForTimeout(1600);
+for (let i = 0; i < 20; i++) {
+  await page.evaluate(() => document.getElementById('nav-next')?.click());
+  await page.waitForTimeout(30);
+}
+await page.waitForTimeout(4500);
+const mashed = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const txt = id => (document.getElementById(id)?.innerText || '').trim();
+  return {
+    tags: document.querySelectorAll('#types .tag').length,
+    stats: document.querySelectorAll('#stats-area .stat-row').length,
+    opacity: getComputedStyle(document.getElementById('poke-sprite')).opacity,
+    name: txt('poke-name'),
+    idText: txt('id-text'),
+    curId: S.state.curId,
+    scanning: document.querySelector('.scanning') ? true : false,
+  };
+});
+// THE destination check. Starting at 25 and tapping forward 20 times must land
+// on 45 -- and this is the assertion that actually catches the bug, because on
+// the old code the LAST request to resolve won and the screen settled on #36
+// while still looking perfectly healthy. Asserting only "we landed on some
+// Pokemon" passes on the broken build; asserting WHICH one does not.
+check(`20 fast taps land where he was going (${mashed.name} #${mashed.curId}, wanted 45)`,
+  mashed.curId === 45 && mashed.tags >= 1 && mashed.stats >= 1
+  && mashed.name && !/^(LOADING|ERROR|NOT FOUND)/i.test(mashed.name));
+check(`...with the picture actually visible (opacity ${mashed.opacity})`,
+  mashed.opacity === '1' && mashed.scanning === false);
+// A stale response used to re-seed the arrows, so the NEXT tap went somewhere
+// he never asked for. The number on screen and the number the arrows will step
+// from have to be the same number.
+check(`...and the arrows step from what he is looking at (${mashed.idText} / curId ${mashed.curId})`,
+  mashed.idText.replace(/\D/g, '') === String(mashed.curId).padStart(4, '0'));
+
+await context.unroute(/\/api\/v2\/pokemon\/(\d+)$/);
+
+// A request that FAILS after a newer navigation has started must not wipe the
+// screen the newer one already painted.
+const staleFail = await page.evaluate(async () => {
+  const D = await import('/js/dex.js');
+  const before = {
+    tags: document.querySelectorAll('#types .tag').length,
+    stats: document.querySelectorAll('#stats-area .stat-row').length,
+  };
+  // Kick off a load that will reject, then immediately start a newer one.
+  const doomed = D.loadPoke('definitely-not-a-pokemon-xyz');
+  const fresh = D.loadPoke(25);
+  await Promise.allSettled([doomed, fresh]);
+  await new Promise(r => setTimeout(r, 1800));
+  return { before, after: {
+    tags: document.querySelectorAll('#types .tag').length,
+    stats: document.querySelectorAll('#stats-area .stat-row').length,
+    name: (document.getElementById('poke-name')?.innerText || '').trim(),
+  } };
+});
+check(`an abandoned request cannot wipe the screen (${staleFail.after.name})`,
+  staleFail.after.tags >= 1 && staleFail.after.stats >= 1
+  && !/^(ERROR|NOT FOUND)/i.test(staleFail.after.name));
 
 // ---- B-021 / B-019 / B-002: three things that were off the bottom edge ----
 // All three measured on the real screens at the hard-requirement size, because

@@ -115,8 +115,23 @@ export function updateCatchUI() {
   }
 }
 
+// B-001. ART taps the arrows faster than the network answers, and loadPoke had
+// no in-flight token at all: state.curId was assigned AFTER the await, so with
+// N taps in flight the screen settled on whichever request happened to resolve
+// LAST -- and that stale response also re-seeded the arrows, so the next tap
+// went somewhere he did not ask for. Cache hits resolve instantly while misses
+// take network time, which makes out-of-order resolution the NORMAL case when
+// mashing, not an edge case.
+//
+// One module-level token, re-checked after EVERY await and inside the catch.
+// A load that finds itself superseded returns without touching the DOM: it does
+// NOT restore the sprite or clear the scanning state either, because the newer
+// load already owns both and will finish them.
+let loadToken = 0;
+
 export async function loadPoke(idOrName) {
   if (!idOrName || state.isCatching || state.appMode === 'battle') return;
+  const myLoad = ++loadToken;
   stopAllAudio();
   clearInterval(galleryTimer);
   screenWipe();
@@ -127,17 +142,24 @@ export async function loadPoke(idOrName) {
   try {
     const searchTarget = idOrName.toString().toLowerCase().trim().replace(/\s+/g, '-');
     const data = await getPokemon(searchTarget);
+    if (myLoad !== loadToken) return;          // four taps ago; the screen is not ours
     if (data.id > MAX_POKEMON) throw new Error('GEN_RANGE');
 
     state.curData = data;
     state.curId = data.id;
-    state.curSpeciesData = data.species_url ? await getSpecies(data.species_url) : null;
+    const species = data.species_url ? await getSpecies(data.species_url) : null;
+    if (myLoad !== loadToken) return;          // ...and again, the species call is a second await
+    state.curSpeciesData = species;
 
     updateUISafe();
     loadEvolutionsSafe(state.curSpeciesData?.evolution_chain_url);
     setupGallerySafe();
     updateCatchUI();
   } catch (e) {
+    // Guarded FIRST. Everything below wipes #types and #stats-area, and without
+    // this a request abandoned four taps ago could strip the chips off a
+    // Pokemon that had already rendered perfectly well.
+    if (myLoad !== loadToken) return;
     console.error('Master Fetch Error:', e);
     setScanning(false);
     if (e.message === 'GEN_RANGE') {
@@ -160,6 +182,7 @@ export async function loadPoke(idOrName) {
   // NO. 0028 SANDSLASH, with CATCH live on it. For ART the picture IS the name.
   // 600ms is now a MINIMUM: the reveal also waits for the bitmap to decode, and
   // a later tap's navigation cancels this one's reveal instead of racing it.
+  if (myLoad !== loadToken) return;
   const spEl = document.getElementById('poke-sprite');
   const forId = state.curId;
   const decoded = (spEl.complete && spEl.naturalWidth > 0)
@@ -177,7 +200,10 @@ export async function loadPoke(idOrName) {
         t = setTimeout(fin, 2500);   // a dead sprite URL must never hide the dex
       });
   Promise.all([decoded, new Promise(res => setTimeout(res, 600))]).then(() => {
-    if (state.curId !== forId) return;   // a later tap owns the screen now
+    // Keyed on the TOKEN, not on state.curId: the id alone cannot tell two
+    // navigations to the same Pokemon apart, and state.curId is exactly the
+    // thing a stale response used to be able to overwrite.
+    if (myLoad !== loadToken) return;    // a later tap owns the screen now
     setScanning(false);
     spEl.style.opacity = 1;
     pxReveal(spEl);   // six chunky columns, not a cross-fade

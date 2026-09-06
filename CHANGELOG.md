@@ -2,6 +2,35 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.11.0] - THE WAY BACK IN
+
+Three things nobody would notice on a good day. All three are about a bad day:
+a fast finger, a full tablet, a forgotten number.
+
+### What the boys will notice
+
+- **Art can mash the arrows as fast as he likes.** Tapping NEXT ten times in a
+  second used to leave the dex showing whichever Pokémon happened to answer
+  last, sometimes with the picture missing and the arrows pointing somewhere he
+  never asked for. The screen now always lands on the one he was going to, and
+  a slow answer that arrives late is thrown away instead of painted over him.
+- **A catch is saved in one go.** A catch used to write to the tablet five
+  separate times, so if the tablet ran out of room part-way through, the dex
+  could tick a Pokémon off that then came back at level 5, or spend a Master
+  Ball on nothing. Now it is one write: the Pokémon, its level and the ball
+  either all land together or nothing changes at all.
+
+### What Kevin will notice
+
+- **You can never be locked out of Parent Tools again.** The PIN is set by
+  whoever opens Parent Tools first, and until now there was no way to clear it
+  from inside the app, which meant one of the boys could lock you out of your
+  own save with no way back. There is now a quiet FORGOT PIN? button under the
+  keypad. Press and hold it for two seconds and it asks for a reset code that
+  lives in the README on your computer, not on the tablet. Getting it right does
+  not open Parent Tools. It only lets you set a new PIN. The boys' collections
+  are never touched.
+
 ## [19.10.0] - OFF THE BOTTOM EDGE
 
 Five small things, four of them about the bottom of the screen — where a thumb

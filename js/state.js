@@ -237,11 +237,64 @@ export function loadSave() {
 // disposable, unlike the save. So: evict the cache, retry once, and only if
 // that also fails, stop the game and say so in words a grown-up will see.
 let persistBroken = false;
+
+// ---- B-003: one catch, one save write ----
+// persist() serialises the WHOLE save every time, so no single write is itself
+// partial. The tearing was a PREFIX effect across FIVE independent persists in
+// one catch -- spendMasterBall, recordCatch, ensureMon, the game-progress
+// listener and setNick. If the tablet ran out of room part-way through, some of
+// those landed and the rest did not, and the two failures that actually hurt a
+// child are:
+//   * a Master Ball spent with no Pokemon to show for it, and
+//   * caught-without-a-mons-entry, which falls through to DEFAULT_LEVEL and
+//     hands back a Lv5 of something he caught at Lv40.
+// Inside a batch, persist() only marks the save dirty; the single real write
+// happens at the end. If THAT write fails, the in-memory save is rolled back to
+// the snapshot taken when the batch opened, so what is on screen and what is on
+// disk cannot disagree. Nested batches are counted, and the save SHAPE is
+// unchanged -- this is purely about when the bytes are written.
+let batchDepth = 0;
+let batchDirty = false;
+let batchSnapshot = null;
+
+export function beginSaveBatch() {
+  if (batchDepth === 0) {
+    batchDirty = false;
+    try { batchSnapshot = JSON.stringify(state.save); } catch (e) { batchSnapshot = null; }
+  }
+  batchDepth++;
+}
+
+/** Flush the batch. Returns persist()'s own answer, or true if nothing changed. */
+export function endSaveBatch() {
+  if (batchDepth === 0) return true;          // unbalanced call: never write twice
+  batchDepth--;
+  if (batchDepth > 0) return true;            // an inner batch; the outer one flushes
+  const snap = batchSnapshot;
+  const dirty = batchDirty;
+  batchSnapshot = null;
+  batchDirty = false;
+  if (!dirty) return true;
+  const ok = persist();
+  if (!ok && snap) {
+    // The write failed, so the disk still holds the PREVIOUS save. Put memory
+    // back to match it: a screen showing a Pokemon that was never saved is how
+    // a child loses something between one launch and the next.
+    try { state.save = JSON.parse(snap); } catch (e) { /* nothing better available */ }
+  }
+  return ok;
+}
+
+/** True while a batch is open. Used by the suite; harmless elsewhere. */
+export const saveBatchOpen = () => batchDepth > 0;
+
 export function persist() {
   // Refuse to write over a save we could not read. The recoverable original is
   // in quarantine; every write from the empty session buries it further. The
   // banner is already up telling a grown-up to stop.
   if (quarantined) return false;
+  // In a batch: record the intent, write once at the end.
+  if (batchDepth > 0) { batchDirty = true; return true; }
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state.save));
     persistBroken = false;

@@ -5,7 +5,7 @@
 import { ITEM_SPRITE, awaitOrTap } from './config.js';
 import { catchProbability } from './engine.js';
 import { askNickname } from './nickname.js';
-import { state, player, recordCatch, ensureMon, spendMasterBall, setNick } from './state.js';
+import { state, player, recordCatch, ensureMon, spendMasterBall, setNick, beginSaveBatch, endSaveBatch } from './state.js';
 import { sfx, stopAllAudio, triggerVibration } from './audio.js';
 import { updateCatchUI } from './dex.js';
 
@@ -41,6 +41,20 @@ export function spawnConfetti(host, count = 24) {
 
 export async function executeCatch(ballModifier, ballName, forceSuccess = false) {
   if (state.isCatching) return;
+  // B-003: opens BEFORE the ball is spent, because "a Master Ball gone and no
+  // Pokemon" is the failure that actually costs a child something. Everything
+  // from here to the verdict writes into one batch and lands as one write.
+  beginSaveBatch();
+  try {
+    await runCatch(ballModifier, ballName, forceSuccess);
+  } finally {
+    // finally, not after: a throw anywhere in the sequence must not leave the
+    // batch open, or the next write in the session would silently never land.
+    endSaveBatch();
+  }
+}
+
+async function runCatch(ballModifier, ballName, forceSuccess = false) {
   // Junior mode: every ball is a guaranteed catch, and Master Balls are
   // never consumed — but the drawer looks completely normal, so the
   // choice still feels like a real decision.
@@ -102,7 +116,11 @@ export async function executeCatch(ballModifier, ballName, forceSuccess = false)
     triggerVibration([50]);
   }
   await awaitOrTap(800, { target: stage });
-  finalizeDexCatch(isSuccess, ball, sprite, msg);
+  // AWAITED, unlike before: recordCatch and ensureMon live in here, and the
+  // B-003 batch in executeCatch closes the moment this function returns. Left
+  // un-awaited, the batch flushed before the catch was ever recorded and the
+  // writes fell outside it one at a time again.
+  await finalizeDexCatch(isSuccess, ball, sprite, msg);
 }
 
 async function finalizeDexCatch(isSuccess, ball, sprite, msg) {

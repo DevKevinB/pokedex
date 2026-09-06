@@ -220,12 +220,66 @@ async function setNewPin(title) {
   return true;
 }
 
+// B-005: THE WAY BACK IN.
+// The PIN is per-device localStorage, is not in the save, and nothing anywhere
+// in the app removed it. It gates PASTE CODE, LOAD FILE, UNDO IMPORT and
+// Parent Tools -- the ENTIRE restore path. So if either boy set it (the gate is
+// trust-on-first-use) or changed it, Kevin was locked out of his own save with
+// no route back except a browser console on a device that does not have one.
+//
+// The design that makes this safe to expose to two children:
+//   * It is a HOLD, not a tap, so a child mashing the keypad cannot reach it.
+//   * It asks for a RESET CODE that is not on the tablet -- it is in README.md,
+//     on Kevin's computer.
+//   * MOST IMPORTANTLY it is not a bypass. Succeeding does NOT open Parent
+//     Tools. It clears the PIN and immediately makes you set a new one, so a
+//     child who somehow walked the whole thing gains exactly nothing they did
+//     not already have, and the _set date still makes the claim visible.
+//   * Every failure path leaves the gate shut, the same as requirePin.
+// The save is never read or written here.
+export const PIN_RESET_CODE = '0649';   // documented in README.md — MAX_POKEMON
+
+async function recoverPin() {
+  try {
+    const code = await pinPad({
+      title: '🔑 RESET THE PIN',
+      sub: 'CODE FROM THE README',
+      verify: v => v === PIN_RESET_CODE,
+    });
+    if (code === null) return false;              // cancelled, or gave up: stays shut
+    try {
+      localStorage.removeItem(PIN_KEY);
+      localStorage.removeItem(PIN_KEY + '_set');
+    } catch (e) { return false; }                 // could not clear: stays shut
+    // Not a way in -- a way to set a fresh PIN. The caller discards this.
+    return await setNewPin('🔑 PIN CLEARED');
+  } catch (e) {
+    return false;                                 // fail CLOSED
+  }
+}
+
 export async function requirePin() {
   try {
     let stored = null;
     try { stored = localStorage.getItem(PIN_KEY); } catch (e) { /* fall through: no PIN yet */ }
     if (!stored) return await setNewPin('🔒 GROWN-UPS ONLY');
-    const entry = await pinPad({ title: '🔒 GROWN-UPS ONLY', sub: 'ENTER PIN', verify: v => v === stored });
+    let recovering = false;
+    const entry = await pinPad({
+      title: '🔒 GROWN-UPS ONLY',
+      sub: 'ENTER PIN',
+      verify: v => v === stored,
+      onForgot: () => { recovering = true; },
+    });
+    if (recovering) {
+      // TERMINAL, never pass-through. Recovery's own success is "you have a
+      // fresh PIN", not "you are in": every caller treats true as permission
+      // to run the gated action right now, so forwarding setNewPin's true
+      // would open Parent Tools (or the paste/load/undo dialog) at the end of
+      // the ceremony with no PIN ever entered. Return false and make whoever
+      // it was re-invoke the action and type the PIN they just set.
+      await recoverPin();
+      return false;
+    }
     return entry !== null;
   } catch (e) {
     return false; // fail CLOSED — a broken gate stays shut
