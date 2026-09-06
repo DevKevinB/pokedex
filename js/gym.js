@@ -203,7 +203,7 @@ function renderTrainerList() {
       // words GABE already reads here, and the smoke suite reads them too.
       const cta = !unlocked ? ''
         : beaten
-          ? '<button type="button" class="btn-battle rematch">🔁 REMATCH — HALF XP <span class="chev">›</span></button>'
+          ? '<button type="button" class="btn-battle rematch">🔁 REMATCH — CATCH THEIR TEAM <span class="chev">›</span></button>'
           : '<button type="button" class="btn-battle">⚔️ TAP TO BATTLE <span class="chev">›</span></button>';
       return `<div class="card trainer-card ${r2 ? 'round2' : ''} ${beaten ? 'beaten' : ''} ${unlocked ? '' : 'locked'}" data-idx="${i}">
         <span class="card-band" style="--band:${band}"></span>

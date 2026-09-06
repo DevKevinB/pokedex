@@ -30,7 +30,7 @@
   "bg": "rgba(0, 0, 0, 0)",
   "fs": "16px",
   "display": "flex",
-  "pos": "static"
+  "pos": "relative"
  },
  ".ball-opt span": {
   "x": 35,

@@ -4,7 +4,7 @@
 // awards one more. Professor Oak reacts to dex completion.
 // ============================================================
 
-import { MAX_POKEMON, todayNumber } from './config.js';
+import { MAX_POKEMON, todayNumber, ITEM_SPRITE } from './config.js';
 import { state, player, persist, addXp, playerName } from './state.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
 import { spawnConfetti } from './catch.js';
@@ -392,11 +392,20 @@ export function openTrainerCard() {
     <div>VS WINS <strong>${p.stats.versusWins || 0}</strong></div>
     <div>SHINIES <strong>✨ ${(p.shinies || []).length}</strong></div>`;
 
+  // B-061: seven quests across two saves and not one said what it was worth,
+  // while the badges two inches above are exemplary about exactly this. They
+  // were asking for work and naming no wage. The prize is a picture plus its
+  // number, so GABE can pick which to do first without reading a sentence.
+  // THE ABSENCE IS PART OF THE ITEM: these reset daily, so the row shows what
+  // it PAYS and never a streak or a run of days -- rule 3, nothing to break.
   document.getElementById('card-quests').innerHTML = quests.list.map(q => {
     const def = questDef(q.key);
+    const prize = def.reward === 'ball'
+      ? '<span class="quest-prize" title="1 Master Ball"><img src="' + ITEM_SPRITE('master-ball') + '" alt="">1</span>'
+      : '<span class="quest-prize" title="30 XP">⭐30</span>';
     return `<div class="card-quest ${q.done ? 'done' : ''}">
       <span>${q.done ? '✅' : '🔲'} ${def.label}</span>
-      <small>${Math.min(q.progress, def.target)}/${def.target}</small>
+      <span class="quest-right">${prize}<small>${Math.min(q.progress, def.target)}/${def.target}</small></span>
     </div>`;
   }).join('');
 

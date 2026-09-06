@@ -95,6 +95,8 @@ export function openPC(context = 'dex') {
   renderEvolveRow();
   wireTileHold();
   modal.style.display = 'flex';
+  // After the modal is on screen, so clientHeight is real.
+  scheduleGridSnap();
 }
 
 // ============================================================
@@ -146,6 +148,56 @@ async function renderEvolveRow() {
     }));
 }
 
+// B-019: the grid is flex:1, so its height is whatever is left over -- which
+// means the bottom fold cuts a row wherever it happens to fall. At 375x667
+// that regularly left a 10px sliver of a card directly above the biggest,
+// brightest, full-width control on the screen. A four-year-old reaching for a
+// partly-visible thing plants his fingertip at the TOP of what he can see, and
+// the centre of that contact patch lands on the button that leaves the box.
+// Trimming the grid to a whole number of rows makes every visible card a whole
+// card. Nothing is hidden: the tiles that no longer fit were already only
+// slivers, and the grid still scrolls to all of them.
+function snapGridRows() {
+  const grid = document.getElementById('pc-grid');
+  if (!grid) return;
+  grid.style.maxHeight = '';
+  const items = grid.querySelectorAll('.pc-item');
+  if (items.length < 2) return;
+  const first = items[0].getBoundingClientRect();
+  // Row pitch = the first tile on a LATER row minus the first tile's top.
+  let pitch = 0;
+  for (const el of items) {
+    const t = el.getBoundingClientRect().top;
+    if (t > first.top + 1) { pitch = Math.round(t - first.top); break; }
+  }
+  if (pitch < 8) return;                       // one row, or a layout we do not understand
+  // Row k occupies [k*pitch, k*pitch + itemHeight] inside the visible box, so
+  // the tallest box showing only WHOLE rows is (rows-1)*pitch + itemHeight.
+  // Padding is deliberately not subtracted: it is inside the visible box, and
+  // subtracting it was what made the first version a no-op (it computed the
+  // height it already had).
+  const itemH = Math.round(first.height);
+  const box = grid.clientHeight;
+  const rows = Math.floor((box - itemH) / pitch) + 1;
+  if (rows < 1) return;
+  const want = (rows - 1) * pitch + itemH;
+  if (want > 0 && want < box) grid.style.maxHeight = `${want}px`;
+}
+
+// The first pass runs before the sprites have loaded, when the tiles are still
+// short, so it measures a row pitch that is about to change. Re-run once the
+// images have settled and whenever the box changes shape (rotation, the
+// keyboard opening over the search field). Cheap: it reads two rects.
+let gridSnapTimer = null;
+function scheduleGridSnap() {
+  requestAnimationFrame(snapGridRows);
+  clearTimeout(gridSnapTimer);
+  gridSnapTimer = setTimeout(snapGridRows, 400);
+}
+window.addEventListener('resize', () => {
+  if (document.getElementById('pc-modal')?.style.display === 'flex') scheduleGridSnap();
+});
+
 /** Repaint the open box. A no-op when the PC is not on screen. */
 export function refreshPC() {
   const modal = document.getElementById('pc-modal');
@@ -155,6 +207,7 @@ export function refreshPC() {
   renderGenTabs();
   renderGrid();
   renderEvolveRow();
+  scheduleGridSnap();
 }
 
 // ---- TEAM strip: current party in order; tap a member to make it lead ----

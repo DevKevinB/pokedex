@@ -68,8 +68,14 @@ img { image-rendering: pixelated; }
 }
 
 /* screen-wipe transition */
+/* B-002: this was position:fixed inset:0 at z-index 9400, so the flash between
+   Pokemon swallowed the header, the name, the sprite AND the whole toolbar at
+   once -- a wall of navy with no way out of it while it ran. The wipe is the
+   app's transition voice and is kept; it is just confined to the screen it is
+   actually transitioning. #scanner-container is the picture area, so the
+   chrome a child escapes with stays visible and reachable throughout. */
 #screen-wipe {
-  position: fixed; inset: 0; z-index: 9400; pointer-events: none;
+  position: absolute; inset: 0; z-index: 9400; pointer-events: none;
   background: var(--px-ink); transform: scaleY(0); transform-origin: top;
 }
 #screen-wipe.wipe { animation: wipeSweep 0.45s steps(10, end); }
@@ -163,6 +169,26 @@ body.junior .tag-ico { font-size: 19px; }
    it is exactly what the uncaught stickers already say to ART. No words, no red,
    and the difference is now the size of the button rather than the size of an
    arc. */
+/* B-019: at the scroll fold a row could be left as a 10px sliver directly
+   above the biggest, brightest, full-width control on the screen. A four-year-
+   old reaching for a partly-visible card plants his fingertip at the TOP of
+   what he can see -- and the centre of that contact patch lands on the button
+   that leaves the box. Scroll snapping makes rows land whole, and the extra
+   scroll padding keeps the last row clear of the bar. Nothing is hidden and
+   nothing is removed: the same tiles, landing on row boundaries. */
+#pc-grid {
+  scroll-snap-type: y proximity;
+  scroll-padding-bottom: 28px;
+  padding-bottom: 20px;
+}
+#pc-grid .pc-item { scroll-snap-align: start; }
+/* Trimming the grid to whole rows leaves slack in the flex column. That slack
+   belongs ABOVE the button, not below it: pinned to the bottom, the exit stays
+   exactly where the boys' thumbs already expect it, and the gap it leaves is
+   real distance between the last row and the one destructive control on the
+   screen -- which is the ergonomic half of B-019, not a side effect. */
+#pc-modal > #close-pc-btn, #pc-modal > .close-pc-btn { margin-top: auto; }
+
 /* B-043: one seat per brother, in the colours the header band already uses. */
 .whoplaying-choice.p1 { border-color: var(--p1); box-shadow: 0 0 0 3px rgba(211,47,47,0.25); }
 .whoplaying-choice.p2 { border-color: var(--p2); box-shadow: 0 0 0 3px rgba(25,118,210,0.25); }
@@ -496,7 +522,14 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 #music-btn { min-width: 38px; }
 
 /* ---------- Phase 2: teams, switching, victory, evolution ---------- */
-.ball-count { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-3); font-weight: 900; }
+/* B-021: a badge on the ball, not a fourth line under it. See css/main.css. */
+.ball-count {
+  position: absolute; top: -2px; right: 4px;
+  font-family: var(--pixel-font); font-size: var(--t-xs); font-weight: 900;
+  color: var(--ink); background: var(--gold); border: 2px solid var(--ink);
+  border-radius: 2px; padding: 2px 4px; line-height: 1;
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.4);
+}
 
 .pc-lvl { font-family: var(--pixel-font); font-size: var(--t-xs); font-style: normal; color: rgba(107,255,107,0.7); margin-top: 2px; }
 .pc-item.uncaught .pc-lvl { display: none; }
@@ -634,6 +667,15 @@ button.tool-btn:active { transform: translate(3px,3px); box-shadow: none; }
 .card-quest { display: flex; justify-content: space-between; align-items: center; font-family: var(--pixel-font); font-size: 8px; color: var(--px-ink); background: #fffef2; border: 2px solid var(--px-ink); border-radius: 4px; padding: 8px 10px; margin-bottom: 6px; line-height: 1.6; }
 .card-quest.done { background: #e2f8e2; border-color: #2e8048; }
 .card-quest small { color: var(--ink-2); font-size: var(--t-xs); }
+/* B-061: what the quest pays, as a picture, on the row that asks for the work. */
+.quest-right { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.quest-prize {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink);
+  background: var(--gold); border: 2px solid var(--ink); border-radius: 2px;
+  padding: 2px 5px; line-height: 1; white-space: nowrap;
+}
+.quest-prize img { width: 14px; height: 14px; image-rendering: pixelated; }
 #card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 #card-stats div { font-family: var(--pixel-font); font-size: var(--t-xs); color: var(--ink-2); background: var(--paper-3); border: 2px solid var(--ink); border-radius: 4px; padding: 7px var(--s2); display: flex; justify-content: space-between; }
 #card-stats strong { color: var(--px-ink); }

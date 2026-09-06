@@ -629,6 +629,19 @@ check('18 badge slots (11 circuit + 7 late tier)', await page.locator('.card-bad
 check('badges show live progress, not hover text', await page.locator('.badge-prog').count() >= 1);
 check('badges show their goal as visible text', await page.locator('.card-badge em').count() === 18);
 check('3 daily quests', await page.locator('.card-quest').count() === 3);
+// B-061: every quest asked for work and named no wage, while the badges two
+// inches above it are exemplary about exactly that.
+const quests = await page.evaluate(() => [...document.querySelectorAll('.card-quest')].map(r => ({
+  prize: (r.querySelector('.quest-prize')?.textContent || '').trim(),
+  hasImg: !!r.querySelector('.quest-prize img'),
+  text: r.textContent,
+})));
+check(`every quest says what it pays (${quests.map(q => q.prize || '(none)').join(', ')})`,
+  quests.length > 0 && quests.every(q => (q.prize && /\d/.test(q.prize)) || q.hasImg));
+// ...and NEVER a streak. These reset daily, so a run of days is a thing the
+// game could take away from a child, which is the rule this stays clear of.
+check('and no quest dangles a streak he could break',
+  quests.every(q => !/streak|in a row|day\s*\d|\d+\s*days?\b/i.test(q.text)));
 check('oak speaks', (await page.locator('#card-oak').innerText()).includes('OAK'));
 const mbOk = await page.evaluate(() => {
   const s2 = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
@@ -1090,6 +1103,13 @@ await page.waitForTimeout(1200);
 check('returned to gym trainer list', await page.locator('#gym-container.active').count() === 1);
 check('trainer 1 marked beaten', (await page.locator('.trainer-card').first().innerText()).includes('✅'));
 check('beaten trainer offers a REMATCH', (await page.locator('.trainer-card').first().innerText()).includes('REMATCH'));
+// B-030: "HALF XP" was the most repeated text on this page -- five times down
+// one screen, on the button a returning player presses most. It led with what
+// GABE loses instead of what he wins. The word REMATCH stays (the check above
+// reads it, and it is three words he already knows here).
+const rematchCta = (await page.locator('.trainer-card .btn-battle.rematch').first().innerText()).toUpperCase();
+check(`the rematch button leads with the prize (${rematchCta.replace(/\s+/g, ' ').trim()})`,
+  rematchCta.includes('CATCH THEIR TEAM') && !rematchCta.includes('HALF XP'));
 const gymSave = await page.evaluate(() => {
   const sv = JSON.parse(localStorage.getItem('pokedexos_save_v2'));
   return sv.players[1].caught.includes(74) && sv.players[1].mons['74']?.level === 8 && !!sv.players[1].gyms.beaten['rock:0'];
@@ -1488,6 +1508,106 @@ check(`CRY does not wear the sound switch's face (${soundGuards.cryGlyph})`,
   soundGuards.cryGlyph && soundGuards.cryGlyph !== soundGuards.glyphOn
   && soundGuards.cryGlyph !== soundGuards.glyphOff);
 check('and the sound is left on afterwards', soundGuards.finallyMuted === false);
+
+// ---- B-021 / B-019 / B-002: three things that were off the bottom edge ----
+// All three measured on the real screens at the hard-requirement size, because
+// each one is a geometry bug that reads fine in source and wrong on glass.
+{
+  const ctxGeo = await browser.newContext({ viewport: { width: 375, height: 667 }, serviceWorkers: 'block' });
+  await mockRoutes(ctxGeo);
+  await ctxGeo.addInitScript(() => {
+    localStorage.setItem('pokedexos_lastplayer', '1');
+    const mons = {}, caught = [];
+    for (let i = 1; i <= 60; i++) { caught.push(i); mons[i] = { level: 20, xp: 0 }; }
+    localStorage.setItem('pokedexos_save_v2', JSON.stringify({
+      version: 2,
+      players: {
+        1: { name: 'GABE', caught, team: caught.slice(0, 6), mons, badges: [], shinies: [],
+             nicks: {}, items: { masterBalls: 3 }, quests: {}, gyms: {},
+             settings: { junior: false }, stats: {} },
+        2: { name: 'ART', caught: [25], team: [25], mons: { 25: { level: 9, xp: 0 } }, badges: [],
+             shinies: [], nicks: {}, items: {}, quests: {}, gyms: {},
+             settings: { junior: true }, stats: {} },
+      },
+    }));
+  });
+  const pg = await ctxGeo.newPage();
+  await pg.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await pg.waitForTimeout(1200);
+  await pg.evaluate(() => document.getElementById('boot-screen')?.click());
+  await pg.waitForTimeout(2400);
+
+  // B-021: .ball-count was a FOURTH flex child, so the master column carried a
+  // line its siblings did not and the grid squeezed it to the drawer's bottom
+  // edge -- 15px of clearance, inside the band where Safari's toolbar and the
+  // home indicator live. It is a badge on the ball now.
+  // Navigate to one he does NOT own first -- on a caught Pokemon #catch-btn
+  // reads OWNED and never opens the drawer, which would silently measure a
+  // closed panel sitting below the fold.
+  await pg.evaluate(async () => { const D = await import('/js/dex.js'); await D.loadPoke(300); });
+  await pg.waitForTimeout(1200);
+  await pg.evaluate(() => document.getElementById('catch-btn')?.click());
+  await pg.waitForTimeout(900);
+  const balls = await pg.evaluate(() => {
+    if (!document.getElementById('ball-drawer')?.classList.contains('open')) return { found: false, closed: true };
+    const c = document.getElementById('mb-count');
+    const opts = [...document.querySelectorAll('.ball-opt')];
+    if (!c || !opts.length) return { found: false };
+    return {
+      found: true,
+      gap: Math.round(innerHeight - c.getBoundingClientRect().bottom),
+      // ...and all four cells render the same number of text lines, which is
+      // what made the master column odd in the first place.
+      lines: opts.map(o => [...o.children].filter(x => x.tagName !== 'IMG'
+        && getComputedStyle(x).position === 'static').length),
+    };
+  });
+  check(`the Master Ball count clears the bottom edge (${balls.gap}px)`,
+    balls.found && balls.gap >= 16);
+  check('and all four ball cells are the same shape',
+    balls.found && new Set(balls.lines).size === 1);
+  await pg.evaluate(() => document.getElementById('catch-btn')?.click());
+  await pg.waitForTimeout(500);
+
+  // B-002: the wipe was a top-level fixed inset:0 panel over EVERYTHING.
+  const wipe = await pg.evaluate(() => {
+    const w = document.getElementById('screen-wipe');
+    if (!w) return { found: false };
+    w.classList.add('wipe');
+    const r = w.getBoundingClientRect();
+    const hits = sel => {
+      const e = document.querySelector(sel); if (!e) return null;
+      const b = e.getBoundingClientRect();
+      return !(b.right <= r.left || b.left >= r.right || b.bottom <= r.top || b.top >= r.bottom);
+    };
+    const out = { found: true, pos: getComputedStyle(w).position,
+                  coversHeader: hits('.header'), coversToolbar: hits('.toolbar') };
+    w.classList.remove('wipe');
+    return out;
+  });
+  check('the screen wipe no longer covers the top bar', wipe.found && wipe.coversHeader === false);
+  check('...or the toolbar the child escapes with', wipe.found && wipe.coversToolbar === false);
+
+  // B-019: a 10px sliver of a card at the scroll fold, directly above the
+  // biggest, brightest, full-width control on the screen.
+  await pg.evaluate(() => document.getElementById('pc-btn').click());
+  await pg.waitForTimeout(1000);
+  const fold = await pg.evaluate(() => {
+    const g = document.getElementById('pc-grid');
+    const gr = g.getBoundingClientRect();
+    const items = [...g.querySelectorAll('.pc-item')];
+    const slivers = items.filter(e => {
+      const r = e.getBoundingClientRect();
+      const vis = Math.min(r.bottom, gr.bottom) - Math.max(r.top, gr.top);
+      return vis > 0 && vis < r.height * 0.4;
+    });
+    return { items: items.length, slivers: slivers.length,
+             snap: getComputedStyle(g).scrollSnapType };
+  });
+  check(`no half-row of Pokemon against the BACK bar (${fold.slivers} of ${fold.items})`,
+    fold.items > 0 && fold.slivers === 0);
+  await ctxGeo.close();
+}
 
 // ---- B-036: the answer survives prefers-reduced-motion ----
 // The reduced-motion block kills .tease's animation outright. If nothing

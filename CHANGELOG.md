@@ -2,6 +2,37 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.10.0] - OFF THE BOTTOM EDGE
+
+Five small things, four of them about the bottom of the screen — where a thumb
+lands, where Safari's toolbar sits, and where the button that leaves a screen
+lives.
+
+### What the boys will notice
+
+- **The flash between Pokémon no longer swallows the app.** That dark sweep
+  used to cover everything — the top bar, the buttons, the lot — so for half a
+  second there was nothing to press. It now happens only over the picture.
+- **No more half a Pokémon at the bottom of the PC box.** A sliver of a card at
+  the fold, directly above the big green button that closes the box, is a trap
+  for a four-year-old: he reaches for the bit he can see and hits CLOSE. Rows
+  now land whole, and there is a proper gap above the button.
+- **The Master Ball count moved onto the ball.** It used to be a fourth line
+  underneath, and on a small phone it sat 15 pixels off the bottom, right where
+  the iPhone's home bar lives. It is a little gold badge on the ball now.
+- **Each quest says what it pays.** Seven quests and not one of them mentioned
+  a prize, while the badges just above are perfectly clear about it. Gabe can
+  now see which one is worth doing first. They still never show a streak — a
+  daily streak is something the game could take away from him.
+- **The rematch button leads with the prize.** It said "REMATCH — HALF XP", so
+  the button a returning player presses most told him what he loses. It now
+  says what he wins: CATCH THEIR TEAM.
+
+### Fixed
+- The screen transition no longer covers the toolbar.
+- The PC box no longer offers half a card above the CLOSE button.
+- The Master Ball count sits where a phone's toolbar cannot hide it.
+
 ## [19.9.0] - PASS THE TABLET
 
 Five things at once, mostly about the moments when the tablet changes hands.

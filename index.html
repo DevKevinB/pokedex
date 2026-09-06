@@ -11,13 +11,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.9.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.9.0">
+    <link rel="stylesheet" href="css/main.css?v=19.10.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.10.0">
 </head>
 <body>
 
 <div id="scanlines"></div>
-<div id="screen-wipe"></div>
 
 <div id="boot-screen">
     <div class="boot-logo">POKÉDEX OS</div>
@@ -55,6 +54,13 @@
         </div>
 
         <div class="img-container" id="scanner-container">
+            <!-- B-002: the wipe used to be a top-level position:fixed inset:0
+                 panel, so the flash between Pokemon covered the header and the
+                 whole toolbar -- a wall of navy with no way out while it ran.
+                 It lives in the picture area now (.img-container is already
+                 position:relative), which is the only thing it is actually
+                 transitioning. Same animation, same voice, no chrome. -->
+            <div id="screen-wipe"></div>
             <div id="bg-glow"></div>
             <div class="scanner-line"></div>
             <!-- v19.7: LEGENDARY / MYTHICAL. It lives in .img-container (already
@@ -526,6 +532,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.9.0"></script>
+<script type="module" src="js/main.js?v=19.10.0"></script>
 </body>
 </html>
