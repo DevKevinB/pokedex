@@ -50,14 +50,21 @@ To get back in: open Parent Tools, and when the keypad appears, **press and hold
 the FORGOT PIN? button under the keys for two seconds**. It will ask for a reset
 code. The code is:
 
-    0649
+    7391
 
-Type it and the old PIN is cleared, then set a new one. It never opens Parent
-Tools by itself — it only lets you set a fresh PIN — so it is not a back door
-either of the boys can use to get at the save. Your save is not touched.
+Type it, then set a new PIN. It does **not** open Parent Tools for you — once the
+new PIN is set you come back in through the keypad with it. So even if one of the
+boys worked out the whole sequence, all he could do is change the PIN, which he
+could already do the first time anyone opened Parent Tools. Your save is never
+read or written by any of this.
 
-The code is here rather than on the tablet on purpose: it is the one thing in
-this process the boys do not have.
+If you back out at any point, the old PIN stays exactly as it was.
+
+The code lives here rather than in the app because it is the one thing in this
+process the boys will not think to look for. It is not a secret in the strict
+sense — the app is a website, and a determined adult could find it — but it is
+not a number either of them will guess, and getting it wrong leaves the gate
+shut.
 
 ## 🆕 v16 GAME BOY EDITION Highlights
 * **GBA pixel overhaul:** Press Start 2P font, animated pixel sprites, typewriter text, CRT scanlines, screen-wipe transitions, procedural chiptune soundtrack.

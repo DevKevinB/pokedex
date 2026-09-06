@@ -985,8 +985,13 @@ await page.waitForTimeout(2400);
 const D = await page.evaluate(async () => (await import('/js/devtools.js')).PIN_RESET_CODE);
 await tapPin(D);
 await page.waitForTimeout(400);
-check(`the reset code clears the old PIN (${D})`,
-  await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === null));
+// SECURITY FIX (v19.11.1). This used to assert the PIN was NULL here, which
+// encoded the hole: v19.11.0 cleared it BEFORE the new one was set, so backing
+// out at this exact moment left the tablet with no PIN and no _set date --
+// trust-on-first-use, and a child could claim it and reach PASTE SAVE CODE.
+// The gate is handed over, never left open in between.
+check(`the right reset code reaches the new-PIN step (${D})`,
+  await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === '1234'));
 check('...and immediately asks for a new one, rather than letting you in',
   (await page.locator('#pin-sub').innerText()).toUpperCase().includes('NEW PIN'));
 await tapPin('1234');
@@ -998,6 +1003,29 @@ check('a fresh PIN can be set straight away',
 // THE thing that must never happen: recovery touching the boys' collections.
 check('and the save came through the whole thing byte-identical',
   (await page.evaluate(() => localStorage.getItem('pokedexos_save_v2'))) === saveBeforeRecovery);
+// SECURITY FIX (v19.11.1). v19.11.0's recoverPin returned setNewPin's boolean
+// and requirePin passed it straight through, so a successful reset RESOLVED
+// TRUE and opened the gated action -- PASTE SAVE CODE, the one path that can
+// overwrite both boys' collections -- with no PIN ever typed. README and the
+// changelog both promised it was not a bypass. The code did not agree.
+// #dlg-input is the paste box itself; #dlg-modal is shared with the harmless
+// confirmation, so asserting "no dialog at all" cannot tell them apart.
+await page.waitForTimeout(400);
+check('setting the new PIN does NOT open the gated action behind it',
+  !(await page.locator('#dlg-input').isVisible()) && !(await page.locator('#pin-modal').isVisible()));
+const afterReset = (await page.locator('#dlg-modal').isVisible())
+  ? (await page.locator('#dlg-modal').innerText()).toUpperCase() : '';
+check(`what he gets is a confirmation, not the import box (${afterReset.split('\n')[0] || 'nothing'})`,
+  !afterReset || afterReset.includes('PIN'));
+if (await page.locator('#dlg-modal').isVisible()) {
+  await page.locator('#dlg-ok').evaluate(el => el.click()).catch(() => {});
+  await page.waitForTimeout(300);
+}
+await page.locator('#set-import-paste').evaluate(el => el.click());
+await page.waitForTimeout(300);
+check('...the PIN pad simply comes back', await page.locator('#pin-modal').isVisible());
+await page.locator('#pin-keys button[data-k="cancel"]').evaluate(el => el.click());
+await page.waitForTimeout(300);
 // Review finding, batch 3: recovery used to hand its success straight to the
 // caller, so setting the new PIN opened the gated action (here PASTE CODE) in
 // the same gesture with no PIN ever typed. It must be TERMINAL.

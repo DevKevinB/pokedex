@@ -1,0 +1,14 @@
+# GitHub Pages serves this repository's root, so every tracked Markdown file at
+# the root is fetchable from the live site. That included README.md, which
+# documents the Parent Tools reset code -- one URL away on the same iPad the
+# code is supposed to be absent from. These are notes for Kevin and for Claude,
+# never for the app, so Pages does not publish them.
+exclude:
+  - README.md
+  - CLAUDE.md
+  - COUNCIL-REPORT.md
+  - ROADMAP.md
+  - CHANGELOG.md
+  - forum
+  - test
+  - tools

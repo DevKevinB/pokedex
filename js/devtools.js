@@ -237,7 +237,14 @@ async function setNewPin(title) {
 //     not already have, and the _set date still makes the claim visible.
 //   * Every failure path leaves the gate shut, the same as requirePin.
 // The save is never read or written here.
-export const PIN_RESET_CODE = '0649';   // documented in README.md — MAX_POKEMON
+// NOT 0649. The first version of this used MAX_POKEMON, which is the single
+// most guessable four digits in a Pokedex app and the last entry GABE scrolls
+// to on the dex screen. These four have no meaning anywhere in the game.
+// Honest about what this is: the bundle is served to the tablet, so the code is
+// obscurity rather than a secret. It is enough against two children who will
+// not view-source a Pokedex, and the outcome of walking it is deliberately
+// worthless -- see recoverPin.
+export const PIN_RESET_CODE = '7391';   // documented in README.md
 
 async function recoverPin() {
   try {
@@ -247,12 +254,27 @@ async function recoverPin() {
       verify: v => v === PIN_RESET_CODE,
     });
     if (code === null) return false;              // cancelled, or gave up: stays shut
-    try {
-      localStorage.removeItem(PIN_KEY);
-      localStorage.removeItem(PIN_KEY + '_set');
-    } catch (e) { return false; }                 // could not clear: stays shut
-    // Not a way in -- a way to set a fresh PIN. The caller discards this.
-    return await setNewPin('🔑 PIN CLEARED');
+
+    // The PIN is NOT cleared first. The shipped v19.11.0 removed it here, before
+    // setNewPin had succeeded, so hold + code + back out left the tablet with NO
+    // PIN and no _set date -- the next gated action fell into trust-on-first-use
+    // and a child could claim it and walk straight into PASTE SAVE CODE. That is
+    // fail-OPEN in the one feature whose entire job is to fail closed.
+    // setNewPin writes both keys over the old values on success and never reads
+    // the stored PIN, so pre-clearing bought nothing. Cancel now leaves the old
+    // PIN exactly where it was.
+    const set = await setNewPin('🔑 SET A NEW PIN');
+    if (!set) return false;
+
+    // ...and this is NOT a way in. v19.11.0 returned setNewPin's boolean, which
+    // requirePin passed straight through, so a successful reset RESOLVED TRUE
+    // and opened the gated action -- PASTE SAVE CODE, the one path that can
+    // overwrite both boys' collections. The README and the changelog both
+    // promised it was not a bypass; the code did not agree with them. It does
+    // now: the new PIN is set, and the grown-up comes back in through the front
+    // door with it.
+    await dialog({ icon: '🔑', title: 'PIN CHANGED', text: 'Use the new PIN to carry on.' });
+    return false;
   } catch (e) {
     return false;                                 // fail CLOSED
   }
