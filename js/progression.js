@@ -4,7 +4,8 @@
 // awards one more. Professor Oak reacts to dex completion.
 // ============================================================
 
-import { MAX_POKEMON, todayNumber, ITEM_SPRITE } from './config.js';
+import { MAX_POKEMON, todayNumber, ITEM_SPRITE, typeEmoji } from './config.js';
+import { HABITATS } from './explore.js';
 import { state, player, persist, addXp, playerName } from './state.js';
 import { sfx, triggerVibration, playBeep } from './audio.js';
 import { spawnConfetti } from './catch.js';
@@ -91,11 +92,11 @@ const LEGACY_BADGES = [
 // `easy` marks the ones any child can finish on any day.
 const hasType = (d, t) => (d.types || []).some(x => (x.type?.name || x) === t);
 const catchType = (key, label, type) =>
-  ({ key, label, target: 1, kind: 'catch', match: d => hasType(d, type) });
+  ({ key, label, target: 1, kind: 'catch', type, match: d => hasType(d, type) });
 // habitatKey rides the catch event, and battle.js sets it ONLY for an explore
 // encounter — so these are "go to that place and catch something there".
 const catchIn = (key, label, habitatKey) =>
-  ({ key, label, target: 1, kind: 'catch', match: d => d.habitatKey === habitatKey });
+  ({ key, label, target: 1, kind: 'catch', habitat: habitatKey, match: d => d.habitatKey === habitatKey });
 
 const QUEST_POOL = [
   { key: 'catch2', label: 'Catch 2 Pokémon', target: 2, kind: 'catch', easy: true },
@@ -131,9 +132,9 @@ const QUEST_POOL = [
   { key: 'evolve1', label: 'Evolve a Pokémon', target: 1, kind: 'evolve' },
   { key: 'vs1', label: 'Win a brother battle', target: 1, kind: 'versus' },
   { key: 'rematch1', label: 'Rematch a gym trainer', target: 1, kind: 'rematch' },
-  { key: 'rare1', label: 'Catch something RARE', target: 1, kind: 'catch',
+  { key: 'rare1', label: 'Catch something RARE', target: 1, kind: 'catch', pic: '💎',
     match: d => d.tier === 'rare' || d.tier === 'legendary' },
-  { key: 'lv40catch', label: 'Catch one at Lv40+', target: 1, kind: 'catch',
+  { key: 'lv40catch', label: 'Catch one at Lv40+', target: 1, kind: 'catch', pic: '💪',
     match: d => (d.level || 0) >= 40 }
 ];
 
@@ -142,11 +143,29 @@ const QUEST_POOL = [
 // three ordinary quests stay exactly as they were, so becoming Champion can
 // only ever give a boy more to do, never less.
 const HARD_POOL = [
-  { key: 'hshiny', label: 'Catch a SHINY Pokémon', target: 1, kind: 'catch',
+  { key: 'hshiny', label: 'Catch a SHINY Pokémon', target: 1, kind: 'catch', pic: '✨',
     match: d => !!d.shiny, reward: 'ball' },
-  { key: 'hround2', label: 'Win a ROUND 2 battle', target: 1, kind: 'round2win', reward: 'ball' },
+  { key: 'hround2', label: 'Win a ROUND 2 battle', target: 1, kind: 'round2win', reward: 'ball', pic: '🏅' },
   { key: 'hevolve2', label: 'Evolve 2 Pokémon', target: 2, kind: 'evolve', reward: 'ball' }
 ];
+
+// B-014: WHAT A QUEST ASKS FOR, AS A PICTURE. ART cannot read 'Catch a WATER
+// type', but he reads the 💧 tile fine everywhere else in the game -- and the
+// quest board already picks his quests differently (easyCount); only the
+// telling was left in words. One helper feeds the card row AND the ceremony,
+// so the thing he aimed at and the thing he is congratulated for are the same
+// picture. Plain catches get a Poke Ball, not a red dot: the ball is the one
+// picture that already means "catch" to him.
+const KIND_PIC = { catch: null, win: '⚔️', explore: '🧭', evolve: '🧬', versus: '🆚', rematch: '🔁', round2win: '🏅' };
+const BALL_IMG = name => `<img class="q-pic-img" src="${ITEM_SPRITE(name)}" alt="">`;
+export function questPicHTML(def) {
+  if (!def) return '❔';
+  if (def.pic) return def.pic;
+  if (def.type) return typeEmoji[def.type] || BALL_IMG('poke-ball');
+  if (def.habitat) return HABITATS.find(h => h.key === def.habitat)?.emoji || '🧭';
+  return KIND_PIC[def.kind] || BALL_IMG('poke-ball');
+}
+const isJunior = () => !!player().settings?.junior;
 
 const ALL_QUESTS = [...QUEST_POOL, ...HARD_POOL];
 
@@ -272,6 +291,10 @@ function nextCelebration() {
   }
   document.getElementById('badge-title').innerText = item.title;
   document.getElementById('badge-sub').innerText = item.subtitle;
+  // B-014: a ceremony with PICTURES shows them on their own row, big. Every
+  // card that shipped before passes none and looks exactly as it did.
+  const picsEl = document.getElementById('badge-pics');
+  if (picsEl) { picsEl.innerHTML = item.pics || ''; picsEl.style.display = item.pics ? '' : 'none'; }
   modal.style.display = 'flex';
   if (box) box.classList.toggle('shiny-ceremony', !!item.shiny);
   if (item.shiny) {
@@ -300,7 +323,9 @@ function checkBadges() {
       p.badges.push(b.id);
       p.items.masterBalls++;
       persist();
-      queueCelebration(b.emoji, `${b.name} EARNED!`, `${b.desc} — COMPLETE!\n+1 MASTER BALL!`);
+      // B-014: for ART the sentence becomes the badge, a tick, and the prize.
+      if (isJunior()) queueCelebration(b.emoji, 'BADGE EARNED!', '', { pics: `${b.emoji} ✅ ${BALL_IMG('master-ball')}+1` });
+      else queueCelebration(b.emoji, `${b.name} EARNED!`, `${b.desc} — COMPLETE!\n+1 MASTER BALL!`);
     }
   }
 }
@@ -326,20 +351,27 @@ function bumpQuests(kind, detail = {}) {
     changed = true;
     if (q.progress >= def.target) {
       q.done = true;
+      // B-014: same reward in both modes -- the XP and the ball are identical;
+      // only the telling changes. ART gets the picture he aimed at, a tick,
+      // and what it paid. No sentence anywhere on his card.
+      const jr = isJunior();
       if (def.reward === 'ball') {
         player().items.masterBalls++;
-        queueCelebration('👑', 'CHAMPION QUEST!', `${def.label} — done!\n+1 MASTER BALL!`);
+        if (jr) queueCelebration('👑', 'CHAMPION QUEST!', '', { pics: `${questPicHTML(def)} ✅ ${BALL_IMG('master-ball')}+1` });
+        else queueCelebration('👑', 'CHAMPION QUEST!', `${def.label} — done!\n+1 MASTER BALL!`);
       } else {
         const lead = player().team[0] || player().caught[0];
         if (lead) addXp(lead, 30);
-        queueCelebration('⭐', 'QUEST COMPLETE!', `${def.label} — done!\n+30 XP to your lead Pokémon!`);
+        if (jr) queueCelebration('⭐', 'QUEST COMPLETE!', '', { pics: `${questPicHTML(def)} ✅ ⭐+30` });
+        else queueCelebration('⭐', 'QUEST COMPLETE!', `${def.label} — done!\n+30 XP to your lead Pokémon!`);
       }
     }
   }
   if (!quests.allDone && quests.list.every(q => q.done)) {
     quests.allDone = true;
     player().items.masterBalls++;
-    queueCelebration('🏆', 'ALL QUESTS DONE!', 'Daily sweep!\n+1 MASTER BALL!');
+    if (isJunior()) queueCelebration('🏆', 'ALL QUESTS DONE!', '', { pics: `🏆 ✅ ${BALL_IMG('master-ball')}+1` });
+    else queueCelebration('🏆', 'ALL QUESTS DONE!', 'Daily sweep!\n+1 MASTER BALL!');
   }
   if (changed) persist();
 }
@@ -382,15 +414,26 @@ export function openTrainerCard() {
     legacyEarned.map(b => badgeTile(b, true, 'legacy')).join('');
 
   const maxLv = Object.values(p.mons).reduce((a, m) => Math.max(a, m.level), 0) || '--';
+  // B-008: ART's card, in pictures. The numbers stay -- he counts fine -- but
+  // each row leads with the picture the rest of the game already uses for
+  // that thing, instead of a word. GABE's card is unchanged.
+  const jr = isJunior();
+  const W = (word, pic) => jr ? `<span class="stat-pic">${pic}</span>` : word;
+  // The section labels: the word for GABE, the picture for ART. The word is
+  // kept on the element so the same card can be opened by either boy in turn.
+  document.querySelectorAll('#card-modal [data-pic]').forEach(el => {
+    if (!el.dataset.word) el.dataset.word = el.textContent;
+    el.textContent = jr ? el.dataset.pic : el.dataset.word;
+  });
   document.getElementById('card-stats').innerHTML = `
-    <div>CAUGHT <strong>${p.caught.length}</strong></div>
-    <div>BATTLES WON <strong>${p.stats.battlesWon}</strong></div>
-    <div>EXPLORES <strong>${p.stats.explores || 0}</strong></div>
-    <div>TOP LEVEL <strong>${maxLv}</strong></div>
-    <div>MASTER BALLS <strong>x${p.items.masterBalls}</strong></div>
-    <div>BADGES <strong>${BADGES.filter(b => p.badges.includes(b.id)).length + legacyEarned.length}/${BADGES.length + legacyEarned.length}</strong></div>
-    <div>VS WINS <strong>${p.stats.versusWins || 0}</strong></div>
-    <div>SHINIES <strong>✨ ${(p.shinies || []).length}</strong></div>`;
+    <div>${W('CAUGHT', BALL_IMG('poke-ball'))} <strong>${p.caught.length}</strong></div>
+    <div>${W('BATTLES WON', '⚔️')} <strong>${p.stats.battlesWon}</strong></div>
+    <div>${W('EXPLORES', '🧭')} <strong>${p.stats.explores || 0}</strong></div>
+    <div>${W('TOP LEVEL', '⬆️')} <strong>${maxLv}</strong></div>
+    <div>${W('MASTER BALLS', BALL_IMG('master-ball'))} <strong>x${p.items.masterBalls}</strong></div>
+    <div>${W('BADGES', '🎖️')} <strong>${BADGES.filter(b => p.badges.includes(b.id)).length + legacyEarned.length}/${BADGES.length + legacyEarned.length}</strong></div>
+    <div>${W('VS WINS', '🆚')} <strong>${p.stats.versusWins || 0}</strong></div>
+    <div>${W('SHINIES', '✨')} <strong>${jr ? '' : '✨ '}${(p.shinies || []).length}</strong></div>`;
 
   // B-061: seven quests across two saves and not one said what it was worth,
   // while the badges two inches above are exemplary about exactly this. They
@@ -403,8 +446,9 @@ export function openTrainerCard() {
     const prize = def.reward === 'ball'
       ? '<span class="quest-prize" title="1 Master Ball"><img src="' + ITEM_SPRITE('master-ball') + '" alt="">1</span>'
       : '<span class="quest-prize" title="30 XP">⭐30</span>';
+    // B-014: for ART the row asks with a picture, so he can AIM at it.
     return `<div class="card-quest ${q.done ? 'done' : ''}">
-      <span>${q.done ? '✅' : '🔲'} ${def.label}</span>
+      <span>${q.done ? '✅' : '🔲'} ${jr ? `<span class="q-pic">${questPicHTML(def)}</span>` : def.label}</span>
       <span class="quest-right">${prize}<small>${Math.min(q.progress, def.target)}/${def.target}</small></span>
     </div>`;
   }).join('');

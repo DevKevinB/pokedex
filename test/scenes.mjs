@@ -176,6 +176,23 @@ const SCENES = [
         await p.click('#card-btn');
       }
       await p.waitForTimeout(900);
+    },
+    // B-008: ART's card is pictures. No caption, no fraction, the dex count is
+    // a meter, and the whole card scrolls less than two screens.
+    async assert(p, { junior }) {
+      if (!junior) return [];
+      return p.evaluate(() => {
+        const out = [];
+        const shown = sel => [...document.querySelectorAll(sel)].some(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
+        if (shown('.card-badge em')) out.push('JUNIOR CARD SHOWS BADGE CAPTIONS');
+        if (shown('.badge-prog')) out.push('JUNIOR CARD SHOWS BADGE FRACTIONS');
+        const fill = document.getElementById('card-dex-fill');
+        if (!fill || getComputedStyle(fill.parentElement).display === 'none') out.push('JUNIOR CARD HAS NO DEX METER');
+        const box = document.querySelector('#card-modal .modal-box');
+        if (box && box.scrollHeight > box.clientHeight * 2)
+          out.push('JUNIOR CARD SCROLLS TOO FAR: ' + box.scrollHeight + 'px in ' + box.clientHeight + 'px');
+        return out;
+      });
     } },
 
   { name: 'explore', boxes: ['#habitat-grid', '#explore-back-btn', '.habitat-diff', '.habitat-card', '.card-band'],

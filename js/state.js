@@ -205,10 +205,12 @@ function quarantine(rawText, why) {
   // them touched anything. The quarantined copy is recoverable, but only if
   // somebody knows to stop. So this blocks the screen and says so.
   quarantined = true;
+  // B-017: the rescue button on THIS variant must carry the unreadable text
+  // itself -- the in-memory save is the empty one, and exporting that is the
+  // exact loss the banner exists to prevent.
   showSaveFailureBanner(
-    'The saved game on this tablet could not be read, so the game has started ' +
-    'empty. The old save has been kept safely — but playing on will write over ' +
-    'it. Please stop and tell Dad now.');
+    'THE OLD GAME COULD NOT BE READ. IT IS KEPT SAFE, BUT PLAYING ON WILL ' +
+    'WRITE OVER IT. STOP AND TELL DAD.', { rawText });
 }
 
 // While this is true the save is NOT ours to write: the real one is sitting in
@@ -318,7 +320,22 @@ export function persist() {
 
 // Deliberately blocking and deliberately wordy — this is the one message in
 // the game aimed at Kevin rather than at a child.
-function showSaveFailureBanner(msg) {
+// B-017: THE MOST IMPORTANT SCREEN IN THE APP, AND THE ONE WRITTEN IN WORDS.
+// It appears at the exact moment the collection is at stake, full-screen, in a
+// sans-serif this game uses nowhere else, and until now with NO WAY TO GET THE
+// SAVE OFF THE DEVICE. ART closes the app; the message never reaches Kevin.
+// Now: a picture first (a tablet with its bar full and red), the app's own
+// pixel font, six-word lines, and two rescue buttons that need NO PIN -- the
+// PIN gate is the thing B-005 is about, and a locked-out parent plus a full
+// disk is the worst case in this whole review.
+//   SAVE FILE  writes the same JSON that Settings' SAVE FILE writes, so the
+//              ordinary LOAD FILE reads it back on any device.
+//   SHOW CODE  puts the save code on screen to select and copy. No dialog
+//              system is involved: this banner sits above everything at
+//              z-99999, and a dialog would open underneath it.
+// For the unreadable-save variant both carry the quarantined raw text instead
+// (see quarantine()). Nothing here writes to the save.
+function showSaveFailureBanner(msg, { rawText = null } = {}) {
   try {
     if (document.getElementById('save-fail-banner')) return;
     const el = document.createElement('div');
@@ -326,13 +343,54 @@ function showSaveFailureBanner(msg) {
     el.setAttribute('role', 'alert');
     el.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(120,0,0,0.97);' +
       'color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;' +
-      'text-align:center;padding:24px;font-family:sans-serif;font-size:16px;line-height:1.5;';
-    el.innerHTML = '<div style="font-size:56px">⚠️</div>' +
-      '<div style="font-weight:800;font-size:20px;margin:12px 0">SHOW A GROWN-UP</div>' +
-      '<div style="max-width:420px">' + (msg ||
-        'This tablet is out of storage, so the game cannot save. ' +
-        'Please stop playing and tell Dad now, before anything is lost.') + '</div>';
+      'text-align:center;padding:20px;overflow:auto;' +
+      "font-family:var(--pixel-font,'Courier New',monospace);font-size:10px;line-height:1.9;";
+    const btn = 'font:inherit;font-size:10px;padding:14px 16px;min-height:48px;cursor:pointer;' +
+      'background:#f8f8e8;color:#24243a;border:3px solid #24243a;border-radius:4px;box-shadow:0 4px 0 #24243a;';
+    el.innerHTML =
+      '<svg id="save-fail-pic" width="120" height="120" viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">' +
+        '<rect x="4" y="1" width="16" height="22" fill="#f8f8e8"/><rect x="5" y="2" width="14" height="20" fill="#24243a"/>' +
+        '<rect x="6" y="3" width="12" height="15" fill="#3a3a5a"/>' +
+        '<rect x="7" y="14" width="10" height="3" fill="#f8f8e8"/><rect x="7" y="14" width="10" height="3" fill="#e84040"/>' +
+        '<rect x="11" y="5" width="2" height="5" fill="#ffd040"/><rect x="11" y="11" width="2" height="2" fill="#ffd040"/>' +
+        '<rect x="11" y="19" width="2" height="2" fill="#f8f8e8"/>' +
+      '</svg>' +
+      '<div style="font-size:14px;margin:14px 0 8px">✋ SHOW A GROWN-UP</div>' +
+      '<div style="max-width:420px;font-size:8px;line-height:2.2;opacity:.92">' + (msg ||
+        'THE TABLET IS FULL. THE GAME CANNOT SAVE. TAP SAVE FILE, THEN TELL DAD.') + '</div>' +
+      '<div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;justify-content:center">' +
+        '<button id="save-fail-file" style="' + btn + '">📄 SAVE FILE</button>' +
+        '<button id="save-fail-code" style="' + btn + '">💾 SHOW CODE</button>' +
+      '</div>' +
+      '<textarea id="save-fail-text" readonly aria-label="save code" style="display:none;width:min(420px,90vw);' +
+        'height:96px;margin-top:14px;font-family:monospace;font-size:11px;color:#24243a;background:#f8f8e8;' +
+        'border:3px solid #24243a;border-radius:4px;padding:8px;user-select:text;-webkit-user-select:text;"></textarea>';
     document.body.appendChild(el);
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const rescue = () => rawText != null
+      ? { text: rawText, name: `pokedex-save-RESCUE-${stamp}.txt`, type: 'text/plain' }
+      : { text: JSON.stringify({ pokedexOS: true, exported: new Date().toISOString(),
+            players: { 1: playerName(1), 2: playerName(2) }, code: exportCode() }, null, 2),
+          name: `pokedex-save-${stamp}.json`, type: 'application/json' };
+    document.getElementById('save-fail-file').onclick = () => {
+      try {
+        const r = rescue();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([r.text], { type: r.type }));
+        a.download = r.name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch (e) { /* the code button is the fallback */ }
+    };
+    document.getElementById('save-fail-code').onclick = () => {
+      try {
+        const ta = document.getElementById('save-fail-text');
+        ta.value = rawText != null ? rawText : exportCode();
+        ta.style.display = 'block';
+        ta.focus(); ta.select();
+      } catch (e) { /* nothing better available */ }
+    };
   } catch (e) { /* if even this fails, the console warning is all we have */ }
 }
 

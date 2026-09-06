@@ -1870,6 +1870,19 @@ export function onPassReady() {
 
 function waitForPass(n) {
   document.getElementById('pass-name').innerText = `PASS TO ${playerName(n)}!`;
+  // B-016: show the boy, not a controller. His active Pokemon is the picture
+  // ART can read; the seat colour is the second cue. Falls back to the static
+  // sprite by id if the fighter is somehow not built yet, never to nothing.
+  const side = versus.sides?.[n];
+  const f = side ? side.loaded[side.ids[side.activeIdx]] : null;
+  const img = document.getElementById('pass-sprite');
+  if (img) {
+    const id = f?.id || side?.ids?.[side.activeIdx] || 25;
+    img.src = f?.spriteFront || f?.shinyFront || PIXEL_SPRITE(id);
+    img.dataset.id = id;
+  }
+  const box = document.getElementById('pass-box');
+  if (box) { box.classList.remove('p1', 'p2'); box.classList.add(`p${n}`); }
   show('pass-modal');
   return new Promise(res => { passResolver = res; });
 }

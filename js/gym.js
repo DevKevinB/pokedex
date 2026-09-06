@@ -74,6 +74,14 @@ export function totalBeaten(round = 1) {
 }
 
 // ---- screens ----
+// B-016: each brother's lead on the VS button, the same lead #whoplaying-modal
+// draws, so the button means something before anyone has typed a name. The
+// P1/P2 name fallback is untouched: it works on day one either way.
+function leadOf(n) {
+  const p = state.save.players[n];
+  return p?.team?.[0] || p?.caught?.[0] || (n === 1 ? 25 : 1);
+}
+
 export function openGyms() {
   if (state.isCatching || state.appMode === 'battle') return;
   state.appMode = 'gym';
@@ -152,7 +160,7 @@ function renderGymList() {
       </div>`;
     }).join('') + `</div>
     <button class="poke-center-btn" id="poke-center-btn" title="Fully heal your team">💗 POKÉ CENTER — HEAL TEAM</button>
-    <button class="vs-btn" id="vs-btn" title="Pass-and-play battle: each player uses their own team">🆚 ${playerName(1)} VS ${playerName(2)}</button>
+    <button class="vs-btn" id="vs-btn" title="Pass-and-play battle: each player uses their own team"><img src="${PIXEL_SPRITE(leadOf(1))}" alt="">${playerName(1)} VS ${playerName(2)}<img src="${PIXEL_SPRITE(leadOf(2))}" alt=""></button>
     <div class="gym-center-msg" id="gym-center-msg"></div>`;
 
   document.getElementById('poke-center-btn').addEventListener('click', () => pokeCenterHeal());

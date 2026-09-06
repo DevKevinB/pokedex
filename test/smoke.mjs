@@ -985,11 +985,11 @@ await page.waitForTimeout(2400);
 const D = await page.evaluate(async () => (await import('/js/devtools.js')).PIN_RESET_CODE);
 await tapPin(D);
 await page.waitForTimeout(400);
-// SECURITY FIX (v19.11.1). This used to assert the PIN was NULL here, which
-// encoded the hole: v19.11.0 cleared it BEFORE the new one was set, so backing
-// out at this exact moment left the tablet with no PIN and no _set date --
-// trust-on-first-use, and a child could claim it and reach PASTE SAVE CODE.
-// The gate is handed over, never left open in between.
+// The OLD PIN must still be standing at this point. v19.11.0 removed it here,
+// BEFORE the new one was set, so backing out at this exact moment left the
+// tablet with no PIN at all and no _set date -- the next gated action fell into
+// trust-on-first-use and a child could claim it and reach PASTE SAVE CODE. The
+// gate is only ever handed over, never left open in between.
 check(`the right reset code reaches the new-PIN step (${D})`,
   await page.evaluate(() => localStorage.getItem('pokedexos_devpin') === '1234'));
 check('...and immediately asks for a new one, rather than letting you in',
@@ -1003,16 +1003,16 @@ check('a fresh PIN can be set straight away',
 // THE thing that must never happen: recovery touching the boys' collections.
 check('and the save came through the whole thing byte-identical',
   (await page.evaluate(() => localStorage.getItem('pokedexos_save_v2'))) === saveBeforeRecovery);
-// SECURITY FIX (v19.11.1). v19.11.0's recoverPin returned setNewPin's boolean
-// and requirePin passed it straight through, so a successful reset RESOLVED
-// TRUE and opened the gated action -- PASTE SAVE CODE, the one path that can
-// overwrite both boys' collections -- with no PIN ever typed. README and the
-// changelog both promised it was not a bypass. The code did not agree.
-// #dlg-input is the paste box itself; #dlg-modal is shared with the harmless
-// confirmation, so asserting "no dialog at all" cannot tell them apart.
+// Review finding, batch 3: recovery used to hand its success straight to the
+// caller, so setting the new PIN opened the gated action (here PASTE CODE) in
+// the same gesture with no PIN ever typed. It must be TERMINAL.
 await page.waitForTimeout(400);
+// #dlg-input is the paste box itself -- the gated action. #dlg-modal is shared
+// with the harmless PIN CHANGED confirmation, so asserting "no dialog at all"
+// cannot tell the two apart; asserting the INPUT can.
 check('setting the new PIN does NOT open the gated action behind it',
   !(await page.locator('#dlg-input').isVisible()) && !(await page.locator('#pin-modal').isVisible()));
+// ...and what IS on screen is the confirmation, not the save-import box.
 const afterReset = (await page.locator('#dlg-modal').isVisible())
   ? (await page.locator('#dlg-modal').innerText()).toUpperCase() : '';
 check(`what he gets is a confirmation, not the import box (${afterReset.split('\n')[0] || 'nothing'})`,
@@ -1023,22 +1023,85 @@ if (await page.locator('#dlg-modal').isVisible()) {
 }
 await page.locator('#set-import-paste').evaluate(el => el.click());
 await page.waitForTimeout(300);
-check('...the PIN pad simply comes back', await page.locator('#pin-modal').isVisible());
-await page.locator('#pin-keys button[data-k="cancel"]').evaluate(el => el.click());
-await page.waitForTimeout(300);
-// Review finding, batch 3: recovery used to hand its success straight to the
-// caller, so setting the new PIN opened the gated action (here PASTE CODE) in
-// the same gesture with no PIN ever typed. It must be TERMINAL.
-await page.waitForTimeout(400);
-check('setting the new PIN does NOT open the gated action behind it',
-  !(await page.locator('#dlg-modal').isVisible()) && !(await page.locator('#dlg-input').isVisible())
-  && !(await page.locator('#pin-modal').isVisible()));
-await page.locator('#set-import-paste').evaluate(el => el.click());
-await page.waitForTimeout(300);
 check('...the PIN pad simply comes back',
   await page.locator('#pin-modal').isVisible());
 await page.locator('#pin-keys button[data-k="cancel"]').evaluate(el => el.click());
 await page.waitForTimeout(300);
+
+// ---- B-008: ART's trainer card, in pictures ----
+// The badge glyphs were already pictures; the captions, the fraction and the
+// POKEDEX 0/649 (0%) line were left behind, and a CSS comment described the
+// junior rules that nobody ever wrote.
+await page.click('#settings-close');
+await page.waitForTimeout(300);
+await page.click('#pc-btn');
+await page.waitForTimeout(900);
+await page.locator('#pc-card-chip').evaluate(el => el.click());
+await page.waitForTimeout(700);
+const jrCard = await page.evaluate(() => {
+  const shown = sel => [...document.querySelectorAll(sel)].filter(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none').length;
+  const box = document.querySelector('#card-modal .modal-box');
+  const fill = document.getElementById('card-dex-fill');
+  return {
+    open: getComputedStyle(document.getElementById('card-modal')).display !== 'none',
+    captions: shown('.card-badge em'), fractions: shown('.badge-prog'), names: shown('.card-badge small'),
+    pct: shown('#card-dex-pct'), oak: shown('#card-oak'),
+    meter: !!fill && getComputedStyle(fill.parentElement).display !== 'none',
+    scroll: box.scrollHeight, boxH: box.clientHeight,
+    questWords: [...document.querySelectorAll('.card-quest')].map(q => q.textContent.replace(/[^A-Za-z]+/g, ' ').trim().split(/\s+/).filter(Boolean).length),
+    statPics: document.querySelectorAll('#card-stats .stat-pic').length,
+  };
+});
+check('ART opens his card from the sticker book', jrCard.open);
+check(`his badges carry no caption, no fraction, no name (${jrCard.captions}/${jrCard.fractions}/${jrCard.names})`,
+  jrCard.captions === 0 && jrCard.fractions === 0 && jrCard.names === 0);
+check('the dex count is a meter, not a fraction', jrCard.meter && jrCard.pct === 0);
+check('no professor prose', jrCard.oak === 0);
+check(`his quests ask with a picture (${jrCard.questWords.join('/')} words)`, jrCard.questWords.every(n => n <= 1));
+check('his stats lead with a picture', jrCard.statPics >= 8);
+check(`the card scrolls less than two screens (${jrCard.scroll}px in ${jrCard.boxH}px)`, jrCard.scroll < jrCard.boxH * 2);
+await page.locator('#card-close').evaluate(el => el.click());
+await page.waitForTimeout(300);
+
+// ---- B-014: quest rewards Art can aim at ----
+// The reward must be IDENTICAL in both modes; only the telling changes.
+const questXp = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const Pg = await import('/js/progression.js');
+  const C = await import('/js/config.js');
+  const p = S.player();
+  const lead = p.team[0] || p.caught[0];
+  const run = junior => {
+    p.settings.junior = junior;
+    p.mons[lead] = { level: 10, xp: 0 };
+    p.quests = { day: C.todayNumber(), list: [{ key: 'water1', progress: 0, done: false }], allDone: true };
+    Pg.onProgress('catch', { types: ['water'] });
+    return { level: p.mons[lead].level, xp: p.mons[lead].xp };
+  };
+  const normal = run(false);
+  Pg.dismissCelebration();            // GABE's card, dismissed like a tap on AWESOME!
+  await new Promise(r => setTimeout(r, 250));
+  const junior = run(true);
+  await new Promise(r => setTimeout(r, 400));
+  const m = document.getElementById('badge-modal');
+  const pics = document.getElementById('badge-pics');
+  const longest = ['badge-title', 'badge-sub'].map(id => document.getElementById(id).innerText.trim())
+    .flatMap(t => t.split(/\n/)).reduce((a, s) => Math.max(a, s.split(/\s+/).filter(Boolean).length), 0);
+  return {
+    normal, junior,
+    shown: getComputedStyle(m).display !== 'none',
+    picsShown: !!pics && pics.style.display !== 'none' && pics.innerHTML.trim().length > 0,
+    hasGlyph: !!pics && pics.textContent.includes('💧'),
+    longest,
+  };
+});
+check(`the same quest pays the same in both modes (${questXp.normal.level}/${questXp.normal.xp} vs ${questXp.junior.level}/${questXp.junior.xp})`,
+  questXp.normal.level === questXp.junior.level && questXp.normal.xp === questXp.junior.xp);
+check('ART\'s ceremony shows the picture he aimed at', questXp.shown && questXp.picsShown && questXp.hasGlyph);
+check(`...and no sentence longer than six words (${questXp.longest})`, questXp.longest <= 6);
+await dismissCelebrations(page);
+await page.evaluate(async () => { const S = await import('/js/state.js'); S.player().settings.junior = true; });
+await openSettingsPanel(page);
 
 // turn junior back off for the remaining checks
 await page.waitForTimeout(100);
@@ -1323,9 +1386,37 @@ await dismissCelebrations(page);
 await page.click('#gyms-btn');
 await page.waitForTimeout(600);
 check('VS button on gym screen', await page.locator('#vs-btn').isVisible());
+// ---- B-016: PASS TO shows the boy, not a controller ----
+check('the VS button carries both leads as pictures', await page.locator('#vs-btn img').count() === 2);
+const vsUnnamed = await page.evaluate(async () => {
+  const S = await import('/js/state.js');
+  const G = await import('/js/gym.js');
+  const was = S.state.save.players[2].name;
+  S.state.save.players[2].name = '';
+  G.closeGyms(); G.openGyms();
+  const btn = document.getElementById('vs-btn');
+  const out = { text: btn?.innerText || '', imgs: btn ? btn.querySelectorAll('img').length : 0 };
+  S.state.save.players[2].name = was;
+  G.closeGyms(); G.openGyms();
+  return out;
+});
+check(`...and still renders before player 2 has a name (${vsUnnamed.text.trim()})`,
+  vsUnnamed.imgs === 2 && /P2/.test(vsUnnamed.text));
+await page.waitForTimeout(300);
 await page.locator('#vs-btn').evaluate(el => el.click());
 await page.waitForFunction(() => document.getElementById('pass-modal').style.display === 'flex', null, { timeout: 20000 });
 check('pass-and-play handoff appears', (await page.locator('#pass-name').innerText()).includes('GABE'));
+const passSprites = {};   // B-016: receiving player -> the sprite on the card
+const recordPass = async () => {
+  const p = await page.evaluate(() => ({
+    name: document.getElementById('pass-name').innerText,
+    src: document.getElementById('pass-sprite')?.getAttribute('src') || '',
+    id: document.getElementById('pass-sprite')?.dataset.id || '',
+    seat: document.getElementById('pass-box')?.className || '',
+  }));
+  passSprites[p.name] = p;
+};
+await recordPass();
 check('versus title shows both players', (await page.locator('#battle-title').innerText()).includes('VS'));
 await page.locator('#pass-ready').evaluate(el => el.click());
 await page.waitForTimeout(500);
@@ -1373,6 +1464,7 @@ let vsWon = false;
 for (let turn = 0; turn < 160 && !vsWon; turn++) {
   if (await page.locator('#victory-modal').isVisible()) { vsWon = true; break; }
   if (await page.locator('#pass-modal').isVisible()) {
+    await recordPass();
     await page.locator('#pass-ready').evaluate(el => el.click());
     await page.waitForTimeout(350);
     continue;
@@ -1385,6 +1477,17 @@ for (let turn = 0; turn < 160 && !vsWon; turn++) {
 }
 await page.waitForFunction(() => document.getElementById('victory-modal').style.display === 'flex', null, { timeout: 25000 });
 check('versus match plays to a winner over multiple turns', true);
+{
+  const seen = Object.values(passSprites);
+  check(`PASS TO shows a Pokemon, not a controller (${seen.length} hand-overs seen)`,
+    seen.length >= 2 && seen.every(p => /\/pokemon\/\d+|\.png|\.gif|^data:/.test(p.src)));
+  // (the suite's sprite mock serves ONE image for every id, so the identity
+  // check is on the Pokemon id the card was drawn for, not the URL)
+  check(`...and a different one for each boy (${seen.map(p => '#' + p.id).join(' / ')})`,
+    seen.length >= 2 && new Set(seen.map(p => p.id)).size >= 2);
+  check('...in his own seat colour',
+    seen.length >= 2 && new Set(seen.map(p => /\bp[12]\b/.exec(p.seat)?.[0])).size >= 2);
+}
 check('versus winner announced', (await page.locator('#victory-lines').innerText()).includes('WINS'));
 await page.locator('#victory-continue').evaluate(el => el.click());
 await page.waitForTimeout(1000);
@@ -1700,6 +1803,56 @@ check('and the sound is left on afterwards', soundGuards.finallyMuted === false)
   // Pokemon that was never saved.
   check(`memory agrees with disk after the failure (mem=${torn.memCaught} disk=${torn.diskCaught})`,
     torn.memCaught === torn.diskCaught && torn.memMon === torn.diskMon);
+
+  // ---- B-017: a picture for the moment the tablet is full ----
+  // The failed write above raised the save-failure screen. It is the single
+  // most important screen in the app and it used to be 26 words of sans-serif
+  // with NO way to get the save off the device.
+  await page.evaluate(async () => {
+    const S = await import('/js/state.js');
+    const realSet = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = (k, v) => { if (k === 'pokedexos_save_v2') throw new DOMException('QuotaExceededError'); return realSet(k, v); };
+    S.persist();                      // fails, retries after evicting the cache, fails again
+    localStorage.setItem = realSet;
+  });
+  await page.waitForTimeout(300);
+  const banner = await page.evaluate(() => {
+    const b = document.getElementById('save-fail-banner');
+    if (!b) return { up: false };
+    const font = getComputedStyle(b).fontFamily;
+    return {
+      up: true,
+      picture: !!b.querySelector('svg, img'),
+      fileBtn: !!document.getElementById('save-fail-file'),
+      codeBtn: !!document.getElementById('save-fail-code'),
+      pixel: /Press Start/i.test(font),
+      sans: /^sans-serif$/i.test(font.trim()),
+    };
+  });
+  check('a full tablet raises the rescue screen', banner.up);
+  check('...with a picture, not only an emoji', banner.picture);
+  check('...and two rescue buttons', banner.fileBtn && banner.codeBtn);
+  check('...in the game\'s own font, not sans-serif', banner.pixel && !banner.sans);
+  const rescue = await page.evaluate(() => {
+    let blobs = 0;
+    const realURL = URL.createObjectURL;
+    URL.createObjectURL = b => { blobs++; return realURL.call(URL, b); };
+    document.getElementById('save-fail-file').click();
+    URL.createObjectURL = realURL;
+    document.getElementById('save-fail-code').click();
+    const ta = document.getElementById('save-fail-text');
+    let decoded = null;
+    try { decoded = JSON.parse(decodeURIComponent(escape(atob(ta.value)))); } catch (e) { /* not a code */ }
+    return {
+      blobs,
+      codeShown: !!ta && getComputedStyle(ta).display !== 'none' && ta.value.length > 20,
+      codeIsSave: !!decoded && decoded.v === 2 && Array.isArray(decoded.save?.players?.[1]?.caught),
+      pin: getComputedStyle(document.getElementById('pin-modal')).display !== 'none',
+    };
+  });
+  check(`SAVE FILE builds the file in one tap (${rescue.blobs} blob)`, rescue.blobs === 1);
+  check('SHOW CODE puts a real save code on screen', rescue.codeShown && rescue.codeIsSave);
+  check('and neither asked for a PIN', !rescue.pin);
   await ctxSave.close();
 }
 

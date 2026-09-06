@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.11.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.11.0">
+    <link rel="stylesheet" href="css/main.css?v=19.12.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.12.0">
 </head>
 <body>
 
@@ -343,8 +343,13 @@
 </div>
 
 <div class="overlay-screen" id="pass-modal" style="z-index: 2400; background: rgba(4,4,16,0.97);">
-    <div class="modal-box" style="text-align:center;">
-        <div style="font-size: 46px;">🎮</div>
+    <div class="modal-box" id="pass-box" style="text-align:center;">
+        <!-- B-016: the boy's OWN lead Pokemon, not a controller. The 46px 🎮
+             was identical on both boys' cards, so nothing on screen changed
+             between turns for a pre-reader. The sprite is already loaded and
+             in scope at the moment of the hand-over; the box also wears the
+             seat's red/blue, the same cue #whoplaying-modal already uses. -->
+        <img id="pass-sprite" alt="" draggable="false">
         <h2 id="pass-name" style="margin: 14px 0;">PASS TO P2!</h2>
         <p>No peeking at their move choice!</p>
         <button class="btn-large btn-reg" id="pass-ready">I'M READY ▶</button>
@@ -490,6 +495,9 @@
         <div id="badge-emoji">🪨</div>
         <h2 id="badge-title">BADGE EARNED!</h2>
         <p id="badge-sub"></p>
+        <!-- B-014: the picture row -- what was asked for, a tick, what it paid.
+             Only ART's ceremonies fill it; GABE's keep the sentence above. -->
+        <div id="badge-pics" style="display:none;"></div>
         <button class="btn-large btn-reg" id="badge-ok">AWESOME!</button>
     </div>
 </div>
@@ -498,19 +506,19 @@
     <div class="modal-box card-box">
         <h2 id="card-title">TRAINER CARD — P1</h2>
         <div class="card-section">
-            <div class="card-row"><span>POKÉDEX</span><strong id="card-dex-pct">0/151 (0%)</strong></div>
+            <div class="card-row"><span data-pic="📕">POKÉDEX</span><strong id="card-dex-pct">0/151 (0%)</strong></div>
             <div class="card-dex-bar"><div id="card-dex-fill"></div></div>
         </div>
         <div class="card-section">
-            <div class="card-label">BADGES</div>
+            <div class="card-label" data-pic="🎖️">BADGES</div>
             <div id="card-badges"></div>
         </div>
         <div class="card-section">
-            <div class="card-label">TODAY'S QUESTS</div>
+            <div class="card-label" data-pic="⭐">TODAY'S QUESTS</div>
             <div id="card-quests"></div>
         </div>
         <div class="card-section">
-            <div class="card-label">STATS</div>
+            <div class="card-label" data-pic="📊">STATS</div>
             <div id="card-stats"></div>
         </div>
         <p id="card-oak"></p>
@@ -539,6 +547,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.11.0"></script>
+<script type="module" src="js/main.js?v=19.12.0"></script>
 </body>
 </html>

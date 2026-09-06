@@ -2,6 +2,40 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.12.0] - IN PICTURES
+
+Four things, three of them for Art. Words he could not read have become
+pictures he already knows.
+
+### What the boys will notice
+
+- **PASS TO shows the boy, not a controller.** In a brother battle the
+  hand-over card used to show the same game-controller picture whichever boy
+  it was for, so for Art nothing on screen changed between turns. It now shows
+  the Pokémon whose turn it is, in a red frame for Gabe and a blue one for Art,
+  the same colours the "who is playing" screen uses. The VS button on the gym
+  screen carries both boys' lead Pokémon too.
+- **Art's trainer card is pictures now.** His badges were an emoji plus three
+  lines of tiny writing each, the Pokédex line was a fraction and a percent,
+  and the bottom was a paragraph from Professor Oak. For Art every word is
+  gone: the badge pictures and their gold-or-grey, a meter for the Pokédex, a
+  picture for each stat, and each quest drawn as the thing it asks for. The
+  card scrolls half as far. Gabe's card is exactly as it was.
+- **Art can aim at a quest.** "Catch a WATER type" is now a 💧 on his card, a
+  deep-forest tree for a forest hunt, a Poké Ball for a plain catch. When he
+  finishes one, the celebration shows that same picture, a tick, and what it
+  paid. The prize itself is unchanged and identical in both modes.
+
+### What Kevin will notice
+
+- **The "tablet is full" screen can save the game.** It used to be a wall of
+  words in the wrong font, with no way to get the save off the device, so a
+  child would just close the app. It is now a picture of a full tablet, SHOW A
+  GROWN-UP in the game's own font, and two buttons that need no PIN: SAVE FILE
+  downloads the same file Settings makes, and SHOW CODE puts the save code on
+  screen to copy. If the old save could not be read at boot, the same buttons
+  carry the unreadable original instead, so nothing is lost.
+
 ## [19.11.0] - THE WAY BACK IN
 
 Three things nobody would notice on a good day. All three are about a bad day:
