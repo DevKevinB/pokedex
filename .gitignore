@@ -21,3 +21,6 @@ test/_*
 forum/evidence.json
 forum/threads/
 docs/forum-artifact.html
+
+# Claude Code session reports (/session-report): local usage data, never published
+session-report-*.html
