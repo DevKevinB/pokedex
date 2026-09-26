@@ -9,7 +9,7 @@
 // Bump CACHE_VERSION on every release to purge old shells.
 // ============================================================
 
-const CACHE_VERSION = 'pokedexos-v19.13.0';
+const CACHE_VERSION = 'pokedexos-v19.14.0';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 // DELIBERATELY version-independent. Sprites never change, and at a weekly
 // release cadence a versioned asset cache is emptied every single push — which
@@ -57,6 +57,12 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET') return;
+  // v19.14: SPROUT ROAD lives at /next/ with its own service worker. This one
+  // must stay out of its way: never answer its pages, and never hand a CORS
+  // request (the new app loads sprites with crossorigin) the opaque copy this
+  // cache holds, which the browser would reject as a broken image.
+  if (url.origin === self.location.origin && url.pathname.includes('/next/')) return;
+  if (event.request.mode === 'cors' && url.origin !== self.location.origin) return;
 
   const isShell = url.origin === self.location.origin;
   // pokeapi.co is NOT cached here. api.js already keeps its own slim

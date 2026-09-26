@@ -1,0 +1,713 @@
+// SPROUT ROAD core tests: node --test next/test/core.test.mjs
+// Covers validate, migrate, save (with a mock localStorage), store, rng,
+// pace and api (with a stubbed fetch). No network, no browser.
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+// ------------------------------------------------------------ mock storage
+// Items are own enumerable properties so Object.keys(localStorage) works as
+// it does in a browser. A v2 write of ANY kind fails the test outright.
+class MockStorage {
+  constructor({ quota = Infinity, failKeys = [] } = {}) {
+    Object.defineProperty(this, '_q', { value: { quota, failKeys, writes: [] }, enumerable: false });
+  }
+  getItem(k) { return Object.hasOwn(this, k) ? this[k] : null; }
+  setItem(k, v) {
+    if (k === 'pokedexos_save_v2') throw new Error('TEST GUARD: pokedexos_save_v2 was written');
+    if (this._q.failKeys.some(p => k.startsWith(p))) { const e = new Error('QuotaExceededError'); e.name = 'QuotaExceededError'; throw e; }
+    const size = Object.keys(this).reduce((a, key) => a + (key === k ? 0 : key.length + this[key].length), 0) + k.length + String(v).length;
+    if (size > this._q.quota) { const e = new Error('QuotaExceededError'); e.name = 'QuotaExceededError'; throw e; }
+    this._q.writes.push(k);
+    this[k] = String(v);
+  }
+  removeItem(k) {
+    if (k === 'pokedexos_save_v2') throw new Error('TEST GUARD: pokedexos_save_v2 was removed');
+    delete this[k];
+  }
+  get length() { return Object.keys(this).length; }
+  key(i) { return Object.keys(this)[i] ?? null; }
+}
+const freshLS = opts => (globalThis.localStorage = new MockStorage(opts));
+freshLS();
+
+// ------------------------------------------------------------ stub fetch (before api.js loads)
+const HERE = fileURLToPath(new URL('.', import.meta.url));
+const MOVES = JSON.parse(readFileSync(HERE + '../data/moves.json', 'utf8'));
+const fetchLog = [];
+function pokemonFixture(id) {
+  return {
+    id, name: id === 1 ? 'bulbasaur' : id === 122 ? 'mr-mime' : 'pokemon' + id, base_experience: 64,
+    types: [{ slot: 2, type: { name: 'poison' } }, { slot: 1, type: { name: 'grass' } }],
+    stats: [
+      { stat: { name: 'hp' }, base_stat: 45 }, { stat: { name: 'attack' }, base_stat: 49 },
+      { stat: { name: 'defense' }, base_stat: 49 }, { stat: { name: 'special-attack' }, base_stat: 65 },
+      { stat: { name: 'special-defense' }, base_stat: 65 }, { stat: { name: 'speed' }, base_stat: 45 },
+    ],
+    moves: ['vine-whip', 'tackle', 'razor-leaf', 'growl', 'sludge-bomb', 'solar-beam', 'body-slam', '<script>', 'take-down', 'seed-bomb']
+      .map(n => ({ move: { name: n, url: 'x' } })),
+  };
+}
+globalThis.fetch = async (url) => {
+  const u = String(url);
+  fetchLog.push(u);
+  const ok = body => ({ ok: true, status: 200, json: async () => body });
+  if (u.endsWith('/data/moves.json')) return ok(MOVES);
+  let m = /\/pokemon\/(\d+)$/.exec(u);
+  if (m) return ok(pokemonFixture(Number(m[1])));
+  m = /\/pokemon-species\/(\d+)$/.exec(u);
+  if (m) return ok({ name: Number(m[1]) === 122 ? 'mr-mime' : (Number(m[1]) === 1 ? 'bulbasaur' : 'pokemon' + m[1]), capture_rate: 45 });
+  return { ok: false, status: 404, json: async () => ({}) };
+};
+
+const V = await import('../core/validate.js');
+const M = await import('../core/migrate.js');
+const S = await import('../core/save.js');
+const { store } = await import('../core/store.js');
+const R = await import('../core/rng.js');
+const P = await import('../core/pace.js');
+const A = await import('../core/api.js');
+
+// ------------------------------------------------------------ fixtures
+
+// A realistic classic save: GABE deep into the circuit (Champion, round 2
+// started), ART in Junior Mode with a small box. Includes every v2 field,
+// quests, settings, extra gyms fields and an unknown future key.
+function v2Fixture() {
+  return {
+    version: 2,
+    players: {
+      1: {
+        name: "GABE'S", caught: [1, 4, 6, 7, 25, 94, 130, 149, 150, 248, 445, 649],
+        team: [6, 130, 25, 149, 94, 445],
+        mons: { 6: { level: 72, xp: 310 }, 130: { level: 68, xp: 12 }, 25: { level: 55, xp: 0 }, 149: { level: 70, xp: 5 }, 94: { level: 61, xp: 44 }, 445: { level: 66, xp: 100 }, 1: { level: 5, xp: 0 } },
+        badges: ['gym-rock', 'gym-water', 'gym-electric', 'first-catch'],
+        shinies: [25, 130], nicks: { 6: 'BLAZE', 25: "SPARKY'S" },
+        favorites: [6, 25, 150], items: { masterBalls: 2, potions: 3 },
+        quests: { day: 20120, allDone: false, list: [{ key: 'catch_fire', progress: 1, done: false }] },
+        gyms: { beaten: { 'rock:0': true, 'rock:1': true, 'rock:2': true, 'rock:3': true, 'rock:4': true, 'water:0': true, 'water:4': true, 'elite:4': true, 'rock:0:r2': true }, round: 2 },
+        settings: { junior: false, music: true },
+        champion: { date: '2026-08-14', team: [6, 130, 25, 149, 94, 445], levels: { 6: 70, 130: 66 } },
+        stats: { catches: 12, battlesWon: 58, battlesLost: 9, versusWins: 3 },
+        futureThing: { a: [1, 2, 3], b: 'kept' },
+      },
+      2: {
+        name: 'ART', caught: [1, 7, 25, 133], team: [25, 1],
+        mons: { 25: { level: 12, xp: 30 }, 1: { level: 9, xp: 2 }, 7: { level: 5, xp: 0 }, 133: { level: 6, xp: 1 } },
+        badges: [], shinies: [133], nicks: { 25: 'PIKA' }, favorites: [133],
+        items: { masterBalls: 0 }, quests: {}, gyms: { beaten: {} },
+        settings: { junior: true }, champion: null,
+        stats: { catches: 4, battlesWon: 7, battlesLost: 0, versusWins: 0 },
+      },
+    },
+  };
+}
+
+const clone = o => JSON.parse(JSON.stringify(o));
+function deepFreeze(o) { if (o && typeof o === 'object') { Object.freeze(o); for (const v of Object.values(o)) deepFreeze(v); } return o; }
+function reset(opts) { S._resetForTests(); store.save = null; return freshLS(opts); }
+// Every string reachable in a player, except inside legacy{} (verbatim by contract, never rendered).
+function strings(o, out = [], path = '') {
+  if (typeof o === 'string') out.push([path, o]);
+  else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (k !== 'legacy') { out.push([path + '#key', k]); strings(v, out, path + '.' + k); } }
+  return out;
+}
+
+// ============================================================ validate
+
+test('freshPlayer carries every v3 field from the contract', () => {
+  const p = V.freshPlayer();
+  for (const k of ['name', 'profile', 'caught', 'team', 'mons', 'shinies', 'nicks', 'favorites', 'items', 'badges', 'gyms', 'champion', 'stats', 'bulba', 'garden', 'road', 'legacy']) {
+    assert.ok(Object.hasOwn(p, k), k);
+  }
+  assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [] });
+  assert.deepEqual(p.road, { chapter: 0, cleared: {}, bloomed: [] });
+  assert.deepEqual(Object.keys(p.stats).sort(), ['battlesLost', 'battlesWon', 'catches', 'explores', 'versusWins']);
+});
+
+test('cleanPlayer is idempotent on a migrated real-shaped player', () => {
+  const p = M.fromV2(v2Fixture()).players[1];
+  assert.deepEqual(V.cleanPlayer(p), p);
+  assert.deepEqual(V.cleanPlayer(V.cleanPlayer(clone(p))), p);
+});
+
+test('hostile: markup in every string and counter comes out clean', () => {
+  const X = '<img src=x onerror=alert(1)>"&';
+  const raw = {
+    name: X, profile: X, caught: [X, 25, '<b>'], team: [X, 25], mons: { 25: { level: X, xp: X }, [X]: { level: 5 } },
+    shinies: [X], nicks: { 25: X, [X]: 'A' }, favorites: [X, 25], items: { masterBalls: X, [X]: 3, potions: X },
+    badges: [X, 'gym-rock', '<svg>'], gyms: { beaten: { [X]: true, 'rock:0': X } },
+    champion: { date: X, team: [25] }, stats: { catches: X, battlesWon: '<b>9</b>', [X]: 1 },
+    bulba: { petals: X, stage: X, stayStone: X, visitors: [X, 1] },
+    garden: { plots: [{ x: X, y: 1, kind: 'flower', grown: 1 }, { x: 1, y: 2, kind: X, grown: 1 }, { x: 3, y: 4, kind: 'berry', grown: X }], berries: X },
+    road: { chapter: X, cleared: { [X]: true, 'c0-t0': true }, bloomed: [X, 0] },
+  };
+  const p = V.cleanPlayer(JSON.parse(JSON.stringify(raw)));
+  for (const [path, s] of strings(p)) assert.ok(!/[<>"&]/.test(s), `markup survived at ${path}: ${s}`);
+  assert.ok(p.name.length <= 12);
+  assert.equal(p.profile, 'reader');
+  assert.deepEqual(p.caught, [25]);
+  assert.deepEqual(p.team, [25]);
+  assert.deepEqual(p.mons, { 25: { level: 5, xp: 0 } });
+  assert.equal(p.items.masterBalls, 0);
+  assert.equal(p.items.potions, 0);
+  assert.deepEqual(p.badges, ['gym-rock']);
+  assert.deepEqual(p.gyms.beaten, { 'rock:0': true });
+  assert.equal(p.champion, null);
+  assert.equal(p.stats.catches, 0);
+  assert.equal(p.stats.battlesWon, 0);
+  assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [1] });
+  assert.deepEqual(p.garden.plots, [{ x: 3, y: 4, kind: 'berry', grown: 0 }]);
+  assert.equal(p.garden.berries, 0);
+  assert.deepEqual(p.road, { chapter: 0, cleared: { 'c0-t0': true }, bloomed: [0] });
+  for (const v of Object.values(p.stats)) assert.equal(typeof v, 'number');
+  for (const v of Object.values(p.items)) assert.equal(typeof v, 'number');
+});
+
+test('hostile: __proto__ / constructor keys never pollute and never survive', () => {
+  const json = `{"name":"A","caught":[1],"__proto__":{"polluted":1},"constructor":{"prototype":{"polluted":2}},
+    "mons":{"__proto__":{"level":99}},"nicks":{"__proto__":"X"},"stats":{"__proto__":5,"catches":2},
+    "items":{"__proto__":{"polluted":3}},"gyms":{"beaten":{"__proto__":true}},
+    "road":{"cleared":{"__proto__":true}},"legacy":{"__proto__":{"polluted":4},"ok":{"__proto__":{"polluted":5},"v":1}}}`;
+  const p = V.cleanPlayer(JSON.parse(json));
+  assert.equal(({}).polluted, undefined);
+  assert.equal(Object.prototype.polluted, undefined);
+  for (const o of [p, p.mons, p.nicks, p.stats, p.items, p.gyms.beaten, p.road.cleared, p.legacy, p.legacy.ok]) {
+    assert.equal(Object.getPrototypeOf(o), Object.prototype);
+    assert.equal(o.polluted, undefined);
+    assert.ok(!Object.hasOwn(o, '__proto__'));
+    assert.ok(!Object.hasOwn(o, 'constructor'));
+  }
+  assert.equal(p.stats.catches, 2);
+  assert.deepEqual(p.legacy.ok, { v: 1 });
+});
+
+test('hostile: ids out of range and wrong types are dropped', () => {
+  const bad = [0, -1, 650, 1.5, NaN, null, 'abc', '1e3', 1e308, true, {}, [], '25', 649, 1];
+  const p = V.cleanPlayer({ caught: bad, shinies: bad, team: bad, favorites: bad, bulba: { visitors: bad }, mons: { 0: { level: 5 }, 650: { level: 5 }, '-1': { level: 5 }, 1.5: { level: 1 }, 649: { level: 500, xp: -9 } } });
+  assert.deepEqual(p.caught, [1, 25, 649]);
+  assert.deepEqual(p.shinies, [1, 25, 649]);
+  assert.deepEqual(p.team, [25, 649, 1]);
+  assert.deepEqual(p.bulba.visitors, [1, 25, 649]);
+  assert.deepEqual(p.mons, { 649: { level: 100, xp: 0 } });
+});
+
+test('hostile: huge arrays and objects are bounded and fast', () => {
+  const big = Array.from({ length: 1_000_000 }, (_, i) => (i % 700) + 1);
+  const mons = {}; for (let i = 0; i < 200_000; i++) mons['k' + i] = { level: 5 };
+  const plots = Array.from({ length: 100_000 }, (_, i) => ({ x: i, y: i, kind: 'flower', grown: true }));
+  const t0 = Date.now();
+  const p = V.cleanPlayer({ caught: big, team: big, favorites: big, mons, badges: big.map(String), garden: { plots }, legacy: { huge: 'x'.repeat(200_000), fine: 'y' } });
+  assert.ok(Date.now() - t0 < 2000, 'took too long');
+  assert.ok(p.caught.length <= 649);
+  assert.equal(p.team.length, 6);
+  assert.equal(p.favorites.length, 6);
+  assert.equal(p.garden.plots.length, V.MAX_PLOTS);
+  assert.ok(!('huge' in p.legacy), 'oversized legacy entry is refused');
+  assert.equal(p.legacy.fine, 'y');
+});
+
+test('team and favorites must be owned; team order is kept', () => {
+  const p = V.cleanPlayer({ caught: [3, 1, 2], team: [3, 9, 1], favorites: [2, 9] });
+  assert.deepEqual(p.team, [3, 1]);
+  assert.deepEqual(p.favorites, [2]);
+});
+
+test('petals: validation never lowers a legal value', () => {
+  for (const n of [0, 1, 7, 12345, 99_999_999, 5_000_000_000]) {
+    assert.equal(V.cleanPlayer({ bulba: { petals: n } }).bulba.petals, n);
+  }
+  assert.equal(V.cleanPlayer({ bulba: { stage: 3 } }).bulba.stage, 3);
+  assert.equal(V.cleanPlayer({ bulba: { stage: 9 } }).bulba.stage, 3);
+  assert.equal(V.cleanPlayer({ bulba: { petals: -4 } }).bulba.petals, 0);
+});
+
+test('cleanSave refuses non-v3 shapes', () => {
+  assert.equal(V.cleanSave(null), null);
+  assert.equal(V.cleanSave({ version: 2, players: { 1: {} } }), null);
+  assert.equal(V.cleanSave({ version: 3, players: {} }), null);
+  assert.equal(V.cleanSave({ version: 3, players: { 1: {} } }).players[2].profile, 'reader');
+});
+
+// ============================================================ migrate
+
+test('fromV2 preserves every v2 field, player by player', () => {
+  const v2 = v2Fixture();
+  const v3 = M.fromV2(deepFreeze(clone(v2)), '2026-09-26');
+  assert.equal(v3.version, 3);
+  assert.equal(v3.created, '2026-09-26');
+  for (const n of [1, 2]) {
+    const a = v2.players[n], b = v3.players[n];
+    assert.equal(b.name, a.name, 'name');
+    assert.deepEqual(b.caught, [...a.caught].sort((x, y) => x - y), 'caught');
+    assert.deepEqual(b.team, a.team, 'team order');
+    for (const [id, m] of Object.entries(a.mons)) assert.deepEqual(b.mons[id], m, 'mons ' + id);
+    assert.deepEqual(b.shinies, a.shinies, 'shinies');
+    assert.deepEqual(b.nicks, a.nicks, 'nicks');
+    assert.deepEqual(b.badges, a.badges, 'badges');
+    assert.deepEqual(b.gyms.beaten, a.gyms.beaten, 'gyms.beaten');
+    assert.deepEqual(b.champion, a.champion, 'champion');
+    for (const [k, v] of Object.entries(a.stats)) assert.equal(b.stats[k], v, 'stats ' + k);
+    for (const [k, v] of Object.entries(a.items)) assert.equal(b.items[k], v, 'items ' + k);
+    assert.deepEqual(b.favorites, a.favorites.filter(id => a.caught.includes(id)), 'favorites');
+    assert.deepEqual(b.legacy.quests, a.quests, 'quests kept in legacy');
+    assert.deepEqual(b.legacy.settings, a.settings, 'settings kept in legacy');
+    assert.deepEqual(b.bulba, V.freshPlayer().bulba);
+  }
+  assert.equal(v3.players[1].profile, 'reader');
+  assert.equal(v3.players[2].profile, 'prereader');
+  assert.deepEqual(v3.players[1].legacy.futureThing, { a: [1, 2, 3], b: 'kept' });
+  assert.deepEqual(v3.players[1].legacy.gyms, { round: 2 });
+  assert.equal(v3.players[1].stats.explores, 0);
+});
+
+test('fromV2 carries classic gym wins onto the Road', () => {
+  const p = M.fromV2(v2Fixture()).players[1];
+  assert.deepEqual(p.road.bloomed, [0, 1, 11]);
+  assert.equal(p.road.chapter, 2);
+  assert.ok(p.road.cleared['c0-t4'] && p.road.cleared['c1-t0'] && p.road.cleared['c11-t4']);
+  assert.ok(!p.road.cleared['c1-t1']);
+  assert.equal(Object.keys(p.road.cleared).length, 8, 'round-2 keys are not road progress');
+});
+
+test('fromV2: v3-only keys smuggled into a v2 save go to legacy, not to Bulba', () => {
+  const v2 = v2Fixture();
+  v2.players[2].bulba = { petals: 999999, stage: 3 };
+  v2.players[2].profile = 'reader';
+  const p = M.fromV2(v2).players[2];
+  assert.equal(p.bulba.petals, 0);
+  assert.equal(p.profile, 'prereader');
+  assert.deepEqual(p.legacy.bulba, { petals: 999999, stage: 3 });
+});
+
+test('fromV2 of junk gives a fresh save', () => {
+  for (const junk of [null, 5, 'x', {}, { version: 2 }, { version: 2, players: {} }, { version: 1, players: { 1: {} } }]) {
+    const s = M.fromV2(junk);
+    assert.equal(s.version, 3);
+    assert.deepEqual(s.players[1], V.freshPlayer());
+  }
+});
+
+test('mergeV2: union of everything, v3-only data untouched', () => {
+  const v3 = M.fromV2({ version: 2, players: { 1: { name: 'G', caught: [1, 2, 3], team: [3, 1], mons: { 1: { level: 40, xp: 5 }, 2: { level: 10, xp: 50 } }, nicks: { 1: 'BULBY' }, badges: ['gym-rock'], stats: { battlesWon: 100 }, items: { masterBalls: 0 }, gyms: { beaten: { 'rock:0': true } } }, 2: { caught: [9] } } });
+  v3.players[1].bulba = { petals: 50, stage: 2, stayStone: true, visitors: [4] };
+  v3.players[1].garden = { plots: [{ x: 1, y: 1, kind: 'flower', grown: true }], berries: 3 };
+  v3.players[1].road.cleared['c0-t1'] = true;
+  const v2 = { version: 2, players: { 1: { name: 'OTHER', caught: [2, 5], team: [5], mons: { 1: { level: 30, xp: 99 }, 2: { level: 10, xp: 60 }, 5: { level: 7, xp: 0 } }, nicks: { 1: 'NOPE', 5: 'FIVE' }, badges: ['gym-water'], stats: { battlesWon: 3, catches: 40 }, items: { masterBalls: 2 }, gyms: { beaten: { 'water:0': true } }, champion: { date: '2026-01-01', team: [5] }, settings: { junior: true } } } };
+  const before = clone(v3);
+  const out = M.mergeV2(deepFreeze(v3), deepFreeze(v2));
+  const p = out.players[1];
+  assert.deepEqual(clone(v3), before, 'input not mutated');
+  assert.equal(p.name, 'G');
+  assert.equal(p.profile, 'reader', 'profile stays v3');
+  assert.deepEqual(p.caught, [1, 2, 3, 5]);
+  assert.deepEqual(p.team, [3, 1], 'v3 team kept');
+  assert.deepEqual(p.mons[1], { level: 40, xp: 5 }, 'higher level wins');
+  assert.deepEqual(p.mons[2], { level: 10, xp: 60 }, 'same level: higher xp wins');
+  assert.deepEqual(p.mons[5], { level: 7, xp: 0 });
+  assert.deepEqual(p.nicks, { 1: 'BULBY', 5: 'FIVE' });
+  assert.deepEqual(p.badges, ['gym-rock', 'gym-water']);
+  assert.equal(p.stats.battlesWon, 100);
+  assert.equal(p.stats.catches, 40);
+  assert.equal(p.items.masterBalls, 2);
+  assert.deepEqual(p.gyms.beaten, { 'rock:0': true, 'water:0': true });
+  assert.deepEqual(p.champion, { date: '2026-01-01', team: [5], levels: {} });
+  assert.ok(p.road.cleared['c0-t1'] && p.road.cleared['c0-t0'] && p.road.cleared['c1-t0']);
+  assert.deepEqual(p.bulba, { petals: 50, stage: 2, stayStone: true, visitors: [4] });
+  assert.equal(p.garden.berries, 3);
+  assert.deepEqual(out.players[2].caught, [9], 'player 2 untouched when v2 has none');
+});
+
+test('mergeV2 never removes: randomized property check', () => {
+  const rng = R.seededRng(42);
+  const ids = n => Array.from({ length: n }, () => 1 + Math.floor(rng() * 649));
+  for (let round = 0; round < 150; round++) {
+    const mk = () => {
+      const caught = ids(Math.floor(rng() * 40));
+      const mons = {}; for (const id of caught) mons[id] = { level: 1 + Math.floor(rng() * 100), xp: Math.floor(rng() * 500) };
+      const beaten = {}; for (const g of ['rock', 'water', 'fire']) if (rng() < 0.5) beaten[g + ':' + Math.floor(rng() * 5)] = true;
+      return { caught, mons, shinies: ids(3), badges: ['b' + Math.floor(rng() * 5)], gyms: { beaten }, stats: { catches: Math.floor(rng() * 90) }, nicks: rng() < 0.5 ? { [caught[0] || 1]: 'N' + round } : {} };
+    };
+    const v3 = M.fromV2({ version: 2, players: { 1: mk(), 2: mk() } });
+    v3.players[2].bulba.petals = Math.floor(rng() * 1000);
+    const v2 = { version: 2, players: { 1: mk(), 2: mk() } };
+    const out = M.mergeV2(v3, v2);
+    for (const n of [1, 2]) {
+      const a = v3.players[n], b = M.playerFromV2(v2.players[n]), o = out.players[n];
+      for (const id of [...a.caught, ...b.caught]) assert.ok(o.caught.includes(id), 'caught lost');
+      for (const id of [...a.shinies, ...b.shinies]) assert.ok(o.shinies.includes(id), 'shiny lost');
+      for (const k of [...a.badges, ...b.badges]) assert.ok(o.badges.includes(k), 'badge lost');
+      for (const k of Object.keys({ ...a.gyms.beaten, ...b.gyms.beaten })) assert.ok(o.gyms.beaten[k], 'beaten lost');
+      for (const k of Object.keys({ ...a.road.cleared, ...b.road.cleared })) assert.ok(o.road.cleared[k], 'road lost');
+      for (const [id, m] of Object.entries(a.mons)) assert.ok(o.mons[id].level >= m.level, 'v3 level lowered');
+      for (const [id, m] of Object.entries(b.mons)) assert.ok(o.mons[id].level >= m.level, 'v2 level lowered');
+      for (const [id, nk] of Object.entries(a.nicks)) assert.equal(o.nicks[id], nk, 'v3 nick lost');
+      for (const [k, v] of Object.entries(a.stats)) assert.ok(o.stats[k] >= v);
+      assert.deepEqual(o.bulba, a.bulba, 'bulba touched');
+    }
+    assert.deepEqual(M.mergeV2(out, v2), out, 'merge is idempotent');
+  }
+});
+
+test('mergeV2 with a missing or junk v2 leaves v3 as it was', () => {
+  const v3 = M.fromV2(v2Fixture());
+  v3.players[2].bulba.petals = 77;
+  for (const junk of [null, undefined, 'x', {}, { version: 3, players: { 1: {} } }]) {
+    assert.deepEqual(M.mergeV2(v3, junk), v3);
+  }
+});
+
+test('applyV1 unions bare caught lists, never replaces', () => {
+  const v3 = M.fromV2({ version: 2, players: { 1: { caught: [1, 2] } } });
+  const out = M.applyV1(v3, { p1: [2, 3, 999, 'x'], p2: [7] });
+  assert.deepEqual(out.players[1].caught, [1, 2, 3]);
+  assert.deepEqual(out.players[2].caught, [7]);
+  assert.equal(out.players[2].stats.catches, 1);
+});
+
+// ============================================================ save
+
+test('load: v2 only -> migrated; v2 key is never written; one backup', () => {
+  const ls = reset();
+  const raw = JSON.stringify(v2Fixture());
+  ls.pokedexos_save_v2 = raw;               // seeded directly (the guard blocks setItem)
+  const save = S.load();
+  assert.equal(S.getLoadInfo().source, 'v2');
+  assert.equal(save.players[1].name, "GABE'S");
+  assert.ok(S.persist(save));
+  assert.ok(S.persist(save));
+  assert.equal(ls.pokedexos_save_v2, raw, 'v2 byte-identical');
+  const backups = Object.keys(ls).filter(k => k.startsWith('pokedexos_v2_backup_'));
+  assert.equal(backups.length, 1);
+  assert.equal(ls[backups[0]], raw);
+  assert.match(backups[0], /^pokedexos_v2_backup_\d{4}-\d{2}-\d{2}$/);
+  assert.equal(ls._q.writes.filter(k => k.startsWith('pokedexos_v2_backup_')).length, 1);
+  // A later session never makes a second backup.
+  S._resetForTests();
+  S.load();
+  S.persist(save);
+  assert.equal(Object.keys(ls).filter(k => k.startsWith('pokedexos_v2_backup_')).length, 1);
+});
+
+test('load: v3 + v2 -> classic progress merges in on every boot', () => {
+  const ls = reset();
+  ls.pokedexos_save_v2 = JSON.stringify(v2Fixture());
+  const v3 = M.fromV2(v2Fixture());
+  v3.players[1].caught = v3.players[1].caught.filter(id => id !== 649);
+  v3.players[2].bulba.petals = 30;
+  ls.pokedexos_save_v3 = JSON.stringify(v3);
+  const save = S.load();
+  assert.equal(S.getLoadInfo().source, 'v3');
+  assert.ok(S.getLoadInfo().mergedV2);
+  assert.ok(save.players[1].caught.includes(649));
+  assert.equal(save.players[2].bulba.petals, 30);
+});
+
+test('load: unreadable v3 is quarantined, not overwritten, and v2 rescues', () => {
+  const ls = reset();
+  ls.pokedexos_save_v2 = JSON.stringify(v2Fixture());
+  ls.pokedexos_save_v3 = '{"version":3,"players":{"1":{"cau';
+  const save = S.load();
+  const info = S.getLoadInfo();
+  assert.ok(info.quarantinedKey);
+  assert.equal(ls[info.quarantinedKey], '{"version":3,"players":{"1":{"cau');
+  assert.equal(info.source, 'v2');
+  assert.equal(save.players[1].caught.length, 12);
+  assert.ok(S.persist(save));
+});
+
+test('load: if quarantine itself fails, writing is blocked', () => {
+  const ls = reset({ failKeys: ['pokedexos_save_v3_corrupt_'] });
+  ls.pokedexos_save_v3 = 'not json';
+  const save = S.load();
+  assert.ok(S.getLoadInfo().blocked);
+  assert.equal(S.persist(save), false);
+  assert.equal(ls.pokedexos_save_v3, 'not json');
+});
+
+test('load: v15 legacy keys when nothing newer exists', () => {
+  const ls = reset();
+  ls.pokedex_caught_p1 = '[1,4,7,4]';
+  ls.pokedex_caught_p2 = '[25]';
+  const save = S.load();
+  assert.equal(S.getLoadInfo().source, 'v1');
+  assert.deepEqual(save.players[1].caught, [1, 4, 7]);
+  assert.deepEqual(save.players[2].caught, [25]);
+});
+
+test('persist: quota error sheds the API cache and retries once', () => {
+  const ls = reset({ quota: 4000 });
+  ls.pokedexos_apicache_v2 = 'x'.repeat(3500);
+  const save = V.freshSave();
+  assert.ok(S.persist(save));
+  assert.equal(ls.pokedexos_apicache_v2, undefined);
+  assert.ok(ls.pokedexos_save_v3);
+});
+
+test('persist: returns false when the disk is truly full', () => {
+  reset({ quota: 10 });
+  assert.equal(S.persist(V.freshSave()), false);
+});
+
+test('petals only go up: persist ratchets a lowered in-memory value', () => {
+  const ls = reset();
+  const save = V.freshSave();
+  save.players[2].bulba.petals = 40;
+  save.players[2].bulba.stage = 2;
+  S.persist(save);
+  save.players[2].bulba.petals = 3;               // a bug somewhere
+  save.players[2].bulba.stage = 1;
+  S.persist(save);
+  assert.equal(save.players[2].bulba.petals, 40, 'memory raised too');
+  assert.equal(JSON.parse(ls.pokedexos_save_v3).players[2].bulba.petals, 40);
+  assert.equal(JSON.parse(ls.pokedexos_save_v3).players[2].bulba.stage, 2);
+  save.players[2].bulba.petals = 41;
+  S.persist(save);
+  assert.equal(JSON.parse(ls.pokedexos_save_v3).players[2].bulba.petals, 41);
+});
+
+test('codes: export -> import round-trip is exact', () => {
+  reset();
+  const save = M.fromV2(v2Fixture());
+  save.players[2].bulba = { petals: 12, stage: 2, stayStone: true, visitors: [4, 7] };
+  save.players[2].garden = { plots: [{ x: 1.5, y: 2, kind: 'flower', grown: 3 }], berries: 4 };
+  const code = S.exportCode(save);
+  assert.match(code, /^SR3\.[A-Za-z0-9_-]+\.[0-9a-f]{8}$/);
+  const back = S.importCode(code, V.freshSave());
+  assert.deepEqual(back, save);
+  // Unicode names survive the base64 trip.
+  const u = V.freshSave(); u.players[1].name = 'ÉLODIE ★';
+  assert.equal(S.decodeCode(S.exportCode(u)).data.players[1].name, 'ÉLODIE ★');
+  // Whitespace / line breaks from a paste are tolerated.
+  assert.deepEqual(S.decodeCode(code.slice(0, 20) + '\n  ' + code.slice(20)).data, save);
+});
+
+test('codes: a corrupted code is refused before anything is written', () => {
+  const ls = reset();
+  const code = S.exportCode(M.fromV2(v2Fixture()));
+  const i = 30;
+  const bad = code.slice(0, i) + (code[i] === 'A' ? 'B' : 'A') + code.slice(i + 1);
+  assert.throws(() => S.importCode(bad, V.freshSave()), /CRC_MISMATCH|BAD_CODE/);
+  for (const junk of ['', '   ', 'hello', 'SR3.abc', '{"v":9}', btoa('[1,2,3]'), 42, null]) {
+    assert.throws(() => S.importCode(junk, V.freshSave()));
+  }
+  assert.equal(ls._q.writes.length, 0, 'no key written by a failed import');
+});
+
+test('codes: classic v2 export codes are accepted via fromV2', () => {
+  reset();
+  const classic = btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, save: v2Fixture() }))));
+  const cur = V.freshSave();
+  cur.players[2].bulba.petals = 9;
+  const out = S.importCode(classic, cur);
+  assert.deepEqual(out.players[1].caught, M.fromV2(v2Fixture()).players[1].caught);
+  assert.equal(out.players[2].profile, 'prereader');
+  assert.equal(out.players[2].bulba.petals, 9, 'Bulba survives a v2 import');
+  // Classic SAVE FILE wrapper.
+  const file = JSON.stringify({ pokedexOS: true, exported: 'x', code: classic });
+  assert.equal(S.decodeCode(file).kind, 'v2');
+});
+
+test('codes: an empty v2 code cannot wipe both boys', () => {
+  reset();
+  const empty = btoa(JSON.stringify({ v: 2, save: { players: {} } }));
+  assert.throws(() => S.importCode(empty, V.freshSave()), /EMPTY_SAVE/);
+  const noCaught = btoa(JSON.stringify({ v: 2, save: { players: { 1: { name: 'X' } } } }));
+  assert.throws(() => S.importCode(noCaught, V.freshSave()), /EMPTY_SAVE/);
+});
+
+test('codes: v1 {p1,p2} codes union into the current save', () => {
+  reset();
+  const cur = M.fromV2({ version: 2, players: { 1: { caught: [1, 2] } } });
+  const out = S.importCode(btoa(JSON.stringify({ p1: [2, 3], p2: [4] })), cur);
+  assert.deepEqual(out.players[1].caught, [1, 2, 3]);
+  assert.deepEqual(out.players[2].caught, [4]);
+});
+
+test('codes: hostile v3 code comes out clean', () => {
+  reset();
+  const evil = { v: 3, save: { version: 3, players: { 1: { name: '<script>x</script>', caught: [1, 99999, '<b>'], stats: { battlesWon: '<img onerror=1>' }, nicks: { 1: '"><svg>' } } } } };
+  const json = JSON.stringify(evil);
+  const code = 'SR3.' + S.toB64url(json) + '.' + S.crc32(json);
+  const out = S.importCode(code, V.freshSave());
+  for (const [path, s] of strings(out.players[1])) assert.ok(!/[<>"]/.test(s), path + ': ' + s);
+  assert.deepEqual(out.players[1].caught, [1]);
+  assert.equal(out.players[1].stats.battlesWon, 0);
+});
+
+test('import petals ratchet: an older code cannot lower Bulba', () => {
+  reset();
+  const old = V.freshSave(); old.players[2].bulba = { petals: 5, stage: 1, stayStone: false, visitors: [1] };
+  const cur = V.freshSave(); cur.players[2].bulba = { petals: 80, stage: 3, stayStone: true, visitors: [7] };
+  const out = S.importCode(S.exportCode(old), cur);
+  assert.equal(out.players[2].bulba.petals, 80);
+  assert.equal(out.players[2].bulba.stage, 3);
+  assert.deepEqual(out.players[2].bulba.visitors, [1, 7]);
+});
+
+test('import snapshots _prev first; restore swaps and is itself undoable', () => {
+  const ls = reset();
+  const a = M.fromV2(v2Fixture());
+  S.persist(a);
+  const b = V.freshSave(); b.players[1].caught = [150];
+  const out = S.importCode(S.exportCode(b), a);
+  assert.deepEqual(JSON.parse(ls.pokedexos_save_v3_prev), a);
+  assert.ok(S.hasPrevious());
+  const restored = S.restorePrevious(out);
+  assert.deepEqual(restored.players[1].caught, a.players[1].caught);
+  assert.deepEqual(JSON.parse(ls.pokedexos_save_v3_prev).players[1].caught, [150]);
+});
+
+test('import refuses to proceed without an undo slot', () => {
+  reset({ failKeys: ['pokedexos_save_v3_prev'] });
+  assert.throws(() => S.importCode(S.exportCode(V.freshSave()), M.fromV2(v2Fixture())), /SNAPSHOT_FAILED/);
+});
+
+test('crc32 matches the IEEE reference value', () => {
+  assert.equal(S.crc32('123456789'), 'cbf43926');
+  assert.equal(S.crc32(''), '00000000');
+});
+
+// ============================================================ store
+
+test('store: lazy load, commit emits change, saveFailed on a full disk', () => {
+  const ls = reset();
+  ls.pokedexos_save_v2 = JSON.stringify(v2Fixture());
+  ls.pokedexos_next_lastplayer = '2';
+  assert.equal(store.current, 2);
+  assert.equal(store.player().name, 'ART');
+  const seen = [];
+  const off = store.on('change', () => seen.push('change'));
+  const off2 = store.on('saveFailed', d => seen.push('failed:' + d.reason));
+  store.player().bulba.petals += 1;
+  assert.ok(store.commit());
+  assert.equal(JSON.parse(ls.pokedexos_save_v3).players[2].bulba.petals, 1);
+  ls._q.quota = 10;
+  assert.equal(store.commit(), false);
+  assert.deepEqual(seen, ['change', 'failed:quota', 'change']);
+  off(); off2();
+  store.commit();
+  assert.equal(seen.length, 3, 'off() unsubscribes');
+  ls._q.quota = Infinity;
+  store.setPlayer(1);
+  assert.equal(ls.pokedexos_next_lastplayer, '1');
+  assert.equal(store.player().name, "GABE'S");
+});
+
+test('store: a throwing listener does not break the bus', () => {
+  reset();
+  let got = 0;
+  const offA = store.on('x', () => { throw new Error('boom'); });
+  const offB = store.on('x', () => { got++; });
+  const err = console.error; console.error = () => {};
+  store.emit('x');
+  console.error = err;
+  assert.equal(got, 1);
+  offA(); offB();
+});
+
+// ============================================================ rng & pace
+
+test('rng: seeded streams repeat, stay in [0,1), and read ?seed=', () => {
+  const a = R.seededRng(7), b = R.seededRng(7);
+  for (let i = 0; i < 1000; i++) { const x = a(); assert.equal(x, b()); assert.ok(x >= 0 && x < 1); }
+  assert.notEqual(R.seededRng(1)(), R.seededRng(2)());
+  assert.equal(R.rngFromUrl(''), Math.random);
+  assert.equal(R.rngFromUrl('?seed=5')(), R.seededRng(5)());
+  assert.equal(R.rngFromUrl('?seed=MOSSY-714')(), R.seededRng(R.hashSeed('MOSSY-714'))());
+});
+
+test('pace: wait resolves, fast mode collapses it, abort resolves it', async () => {
+  P.initPace('?fast=1');
+  assert.equal(P.PACE.fast, true);
+  let t = Date.now(); await P.wait(5000); assert.ok(Date.now() - t < 200);
+  P.initPace('');
+  assert.equal(P.PACE.fast, false);
+  t = Date.now(); await P.wait(30); assert.ok(Date.now() - t >= 25);
+  const ac = new AbortController();
+  t = Date.now(); const w = P.wait(5000, { signal: ac.signal }); ac.abort(); await w; assert.ok(Date.now() - t < 200);
+});
+
+test('pace: a pointerdown hurries the wait, and the listener is removed', async () => {
+  const listeners = new Set();
+  globalThis.document = {
+    addEventListener: (t, fn) => { if (t === 'pointerdown') listeners.add(fn); },
+    removeEventListener: (t, fn) => { listeners.delete(fn); },
+  };
+  try {
+    P.initPace('');
+    const t = Date.now();
+    const w = P.wait(5000);
+    assert.equal(listeners.size, 1);
+    for (const fn of [...listeners]) fn();
+    await w;
+    assert.ok(Date.now() - t < 200);
+    assert.equal(listeners.size, 0);
+    await P.wait(1);
+    assert.equal(listeners.size, 0);
+  } finally { delete globalThis.document; }
+});
+
+// ============================================================ api
+
+test('api: moves load and look up synchronously', async () => {
+  assert.equal(await A.movesReady, true);
+  assert.deepEqual(A.moveInfo('vine-whip'), { name: 'vine-whip', type: 'grass', power: MOVES['vine-whip'].p, damage_class: MOVES['vine-whip'].c });
+  assert.equal(A.moveInfo('VINE WHIP').name, 'vine-whip');
+  assert.equal(A.moveInfo('not-a-move'), null);
+  assert.equal(A.moveInfo('__proto__'), null);
+  assert.equal(A.moveInfo('constructor'), null);
+});
+
+test('api: getMon projects, validates and caches (memory, no IDB in node)', async () => {
+  A._resetForTests();
+  fetchLog.length = 0;
+  const m = await A.getMon(1);
+  assert.deepEqual(Object.keys(m).sort(), ['baseExp', 'baseStats', 'captureRate', 'id', 'moveNames', 'name', 'types', 'v'].sort());
+  assert.equal(m.name, 'BULBASAUR');
+  assert.deepEqual(m.types, ['grass', 'poison'], 'slot order');
+  assert.deepEqual(m.baseStats, { hp: 45, atk: 49, def: 49, spatk: 65, spdef: 65, spe: 45 });
+  assert.equal(m.captureRate, 45);
+  assert.ok(!m.moveNames.includes('<script>'));
+  const n = fetchLog.length;
+  m.types.push('fire');                       // mutating a copy must not poison the cache
+  const again = await A.getMon(1);
+  assert.equal(fetchLog.length, n, 'served from memory');
+  assert.deepEqual(again.types, ['grass', 'poison']);
+  await Promise.all([A.getMon(2), A.getMon(2), A.getMon(2)]);
+  assert.equal(fetchLog.filter(u => u.endsWith('/pokemon/2')).length, 1, 'in-flight requests are shared');
+  assert.equal((await A.getMon(122)).name, 'MR. MIME');
+  for (const bad of [0, 650, -1, 1.5, 'x', null]) await assert.rejects(A.getMon(bad), /BAD_ID/);
+});
+
+test('api: buildFighter is deterministic per seed and battle-shaped', async () => {
+  const f1 = await A.buildFighter(1, 20, { seed: 1234 });
+  const f2 = await A.buildFighter(1, 20, { seed: 1234 });
+  assert.deepEqual(f1, f2);
+  assert.equal(f1.id, 1);
+  assert.equal(f1.level, 20);
+  assert.equal(f1.name, 'BULBASAUR');
+  assert.deepEqual(f1.types, ['grass', 'poison']);
+  assert.deepEqual(Object.keys(f1.stats).sort(), ['atk', 'def', 'hp', 'spatk', 'spdef', 'spe']);
+  assert.ok(f1.stats.hp > 20);
+  assert.ok(f1.moves.length >= 1 && f1.moves.length <= 4);
+  for (const mv of f1.moves) {
+    assert.ok(mv.power > 0 && mv.type && mv.damage_class !== 'status', JSON.stringify(mv));
+    assert.equal(mv.label, mv.name.replace(/-/g, ' ').toUpperCase());
+  }
+  assert.equal(f1.moves[0].type, 'grass', 'STAB move leads');
+  const lv = await A.buildFighter(1, 999);
+  assert.equal(lv.level, 100);
+});
+
+test('api: buildFighter output drives createBattle when it is present', async () => {
+  let createBattle;
+  try { ({ createBattle } = await import('../battle/createBattle.js')); } catch (e) { return; }
+  const me = await A.buildFighter(1, 10, { seed: 1 });
+  const foe = await A.buildFighter(4, 10);
+  const b = createBattle({ myTeam: [me], enemyTeam: [foe], profile: 'reader', rng: R.seededRng(3), moveLookup: A.moveInfo });
+  const ev = await b.choose({ kind: 'move', index: 0 });
+  assert.ok(Array.isArray(ev) && ev.length > 0);
+});

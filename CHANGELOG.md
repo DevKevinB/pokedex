@@ -2,6 +2,38 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.14.0] - SPROUT ROAD (EARLY LOOK)
+
+The new game has started. It lives next door to this one, at
+**devkevinb.github.io/pokedex/next/**, and nothing in the current game
+changes. Open that address on the iPad to try it.
+
+### What the boys will notice (in the new game)
+
+- **Art: BULBA.** Art's own Bulbasaur follows his finger around a big
+  garden. Every tap grows something and earns a petal, and petals never go
+  away. Visitors wander in, and he can feed them berries or catch them with
+  the same ball drawer. When Bulba is ready to evolve, a bud on his back
+  glows, and nothing happens until Art taps it. There's also a pebble he can
+  tap to keep Bulba small.
+- **Gabe: the Verdant Road.** The gyms are now twelve chapters along one
+  road with a giant Venusaur Tree on the horizon. A big NEXT BATTLE button
+  goes straight to the next fight. Damage numbers count up, super-effective
+  hits catch fire, he can see which move the enemy will use next, and a
+  leader gets a second wind halfway through. Beating a leader brings the
+  region back into colour, then comes a campfire rest.
+- **Nothing is lost.** Everything already caught, levelled and won carries
+  over, and gyms Gabe already beat show as cleared chapters. Anything the
+  boys do in the old game keeps showing up in the new one.
+
+### What Kevin will notice
+
+- The new game keeps its own save next to the old one and never changes the
+  old save. The first time it opens, it makes a backup copy of the old save.
+- The grown-up menu in the new game is the ⚙ in the corner: hold it for two
+  seconds. It switches each boy between the reading and picture versions,
+  turns the sound off, and has a link back to the old Pokédex.
+
 ## [19.13.0] - LOCKED DOORS
 
 A safety release, and the first step of the Sprout Road plan (ROADMAP-v20.md).

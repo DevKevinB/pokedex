@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- SPROUT ROAD: strict CSP. Scripts and styles come only from this site,
+       with NO inline anything (styles are set from JS through element.style).
+       Pictures and cries come from the PokeAPI sprite repo, data from pokeapi.co. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https://raw.githubusercontent.com data: blob:; media-src 'self' https://raw.githubusercontent.com data: blob:; connect-src 'self' https://pokeapi.co https://raw.githubusercontent.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sprout Road">
+  <meta name="theme-color" content="#16162a">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <title>Sprout Road</title>
+  <link rel="preload" href="../fonts/press-start-2p-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <link rel="modulepreload" href="main.js">
+</head>
+<body>
+  <main id="app"></main>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

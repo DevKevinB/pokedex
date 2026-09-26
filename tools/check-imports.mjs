@@ -85,7 +85,15 @@ function importsOf(src) {
   return out;
 }
 
-const files = existsSync(JS) ? readdirSync(JS).filter(f => f.endsWith('.js')) : [];
+// v19.14: js/ (the classic app) AND next/ (Sprout Road, which nests modules in
+// folders). Paths are relative to the repo root from here on.
+function walk(dir, rel) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true }).flatMap(d =>
+    d.isDirectory() ? (d.name === 'test' ? [] : walk(join(dir, d.name), `${rel}/${d.name}`))
+      : d.name.endsWith('.js') ? [`${rel}/${d.name}`] : []);
+}
+const files = [...walk(JS, 'js'), ...walk(join(ROOT, 'next'), 'next')];
 if (!files.length) {
   console.error('✗ No modules found in js/ — is this the right directory?');
   process.exit(1);
@@ -93,23 +101,23 @@ if (!files.length) {
 
 const table = new Map();   // absolute path -> {names, starFrom}
 for (const f of files) {
-  const p = join(JS, f);
+  const p = join(ROOT, f);
   table.set(resolve(p), exportsOf(readFileSync(p, 'utf8')));
 }
 
 const problems = [];
 let checked = 0;
 for (const f of files) {
-  const p = join(JS, f);
+  const p = join(ROOT, f);
   for (const imp of importsOf(readFileSync(p, 'utf8'))) {
     if (!imp.from.startsWith('.')) continue;             // bare specifier: not ours
     const target = resolve(dirname(p), imp.from);
     const mod = table.get(target);
-    if (!mod) { problems.push(`js/${f}:${imp.line}  imports from "${imp.from}" — no such module`); continue; }
+    if (!mod) { problems.push(`${f}:${imp.line}  imports from "${imp.from}" — no such module`); continue; }
     checked++;
     if (mod.names.has(imp.name)) continue;
     if (mod.starFrom.length) continue;                   // re-export chain: leave it to the human
-    problems.push(`js/${f}:${imp.line}  imports { ${imp.name} } from "${imp.from}" — that module does not export it`);
+    problems.push(`${f}:${imp.line}  imports { ${imp.name} } from "${imp.from}" — that module does not export it`);
   }
 }
 
