@@ -8,11 +8,16 @@
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
     <link rel="manifest" href="manifest.webmanifest">
     <title>Pokédex OS</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css?v=19.12.0">
-    <link rel="stylesheet" href="css/gba.css?v=19.12.0">
+    <!-- v19.13 SECURITY: what this page may load, and from where. Scripts come
+         only from this site. Pictures and cries come from the PokeAPI sprite
+         repo, data from pokeapi.co. Nothing else can be fetched or run, so even a
+         poisoned save code has nowhere to send anything. style-src keeps
+         'unsafe-inline' because the current screens set inline style
+         attributes; styles cannot run code. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https://raw.githubusercontent.com data: blob:; media-src 'self' https://raw.githubusercontent.com blob:; connect-src 'self' https://pokeapi.co https://raw.githubusercontent.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <meta name="referrer" content="no-referrer">
+    <link rel="stylesheet" href="css/main.css?v=19.13.0">
+    <link rel="stylesheet" href="css/gba.css?v=19.13.0">
 </head>
 <body>
 
@@ -547,6 +552,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=19.12.0"></script>
+<script type="module" src="js/main.js?v=19.13.0"></script>
 </body>
 </html>

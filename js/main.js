@@ -435,6 +435,10 @@ const FALLBACK_SPRITE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
 
 // ---- Service worker (network-first shell: fixes stale iOS PWA installs) ----
 function registerSW() {
+  // v19.13: ask the browser to treat the save as something to keep, not a cache
+  // it may clear when the device is short of space. Safari grants it to a
+  // home-screen app; elsewhere it is a harmless no.
+  try { navigator.storage?.persist?.().catch(() => {}); } catch {}
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW registration failed', e));
   }

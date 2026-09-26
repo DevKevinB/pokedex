@@ -27,6 +27,10 @@ import { spawnConfetti } from './catch.js';
 // v19.4: sprite life lives in fx.js now. spawnDamagePop / spawnParticles /
 // spawnMark moved there unchanged except for how they find their host — see
 // the note on sideOf() in fx.js.
+
+// v19.13: species names come from PokeAPI — a third party — so they are text,
+// never markup, on their way into an innerHTML template.
+const escHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 import {
   lunge, hitStop, recall, sendout, puffAway, clearSpriteFx,
   spawnDamagePop, spawnParticles, spawnMark
@@ -630,7 +634,7 @@ function preloadSprites(...urls) {
 function renderActive() {
   const f = active();
   unfaintSprites();
-  document.getElementById('player-name').innerHTML = `${nickOf(f.id) || f.name} <span class="lvl">Lv${f.level}</span>`;
+  document.getElementById('player-name').innerHTML = `${escHtml(nickOf(f.id) || f.name)} <span class="lvl">Lv${f.level}</span>`;
   setFighterSprite(document.getElementById('player-sprite'), f.spriteBack);
   xpBarMark = null;   // a fresh send-out PAINTS the bar, it never tweens it
   updateHP('player');
@@ -1955,11 +1959,11 @@ function renderVersusSide(n) {
   const owner = state.save.players[n];
   const nick = owner.nicks[f.id];
   if (n === 1) {
-    document.getElementById('player-name').innerHTML = `${nick || f.name} <span class="lvl">Lv${f.level} · ${playerName(1)}</span>`;
+    document.getElementById('player-name').innerHTML = `${escHtml(nick || f.name)} <span class="lvl">Lv${f.level} · ${playerName(1)}</span>`;
     setFighterSprite(document.getElementById('player-sprite'), f.spriteBack);
     updateHP('player');
   } else {
-    document.getElementById('wild-name').innerHTML = `${nick || f.name} <span class="lvl">Lv${f.level} · ${playerName(2)}</span>`;
+    document.getElementById('wild-name').innerHTML = `${escHtml(nick || f.name)} <span class="lvl">Lv${f.level} · ${playerName(2)}</span>`;
     setFighterSprite(document.getElementById('wild-sprite'), f.spriteFront);
     updateHP('wild');
   }

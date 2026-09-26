@@ -202,10 +202,17 @@ Version ${version} is ready. Two things left:
 1. Open CHANGELOG.md and write the ${version} entry — say what
    Gabe and Art will notice, in your own words.
 
-2. Then run these three commands, one at a time:
+2. Then run these commands, one at a time:
 
-   git add -A
-       (gathers up every file you changed)
+   git status
+       (lists every changed file -- read it first. Anything
+        under test/ with an underscore, or a folder you don't
+        recognise, is scratch output: leave it out.)
+
+   git add -u
+       (gathers up the files you CHANGED; new files are not
+        included. If git status showed a new file that belongs
+        in the app, add it by name: git add path/to/file)
 
    git commit -m "v${version} ${title}"
        (saves them together with that message)

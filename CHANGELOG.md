@@ -2,6 +2,38 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.13.0] - LOCKED DOORS
+
+A safety release, and the first step of the Sprout Road plan (ROADMAP-v20.md).
+The boys will not see anything different. What changed is what the game will
+and won't let in.
+
+### What the boys will notice
+
+- Nothing, on purpose. Every Pokémon, badge, level and name in both saves is
+  exactly where it was.
+
+### What Kevin will notice
+
+- **A booby-trapped save code can no longer do anything.** If someone sent you
+  a "cool save" code with hidden script tucked into the battle counters, the
+  trainer card used to run it every time it opened. Counters are now checked
+  to be plain numbers when a save loads. A real save loses nothing; a doctored
+  one loses the doctored parts.
+- **The game now carries a lock list.** A content security policy tells the
+  iPad the only places the game may load anything from: this site, PokeAPI
+  and the PokeAPI picture library. Even if something got in, it would have
+  nowhere to send anything.
+- **The pixel font comes from our own site now,** not Google, so Google no
+  longer hears about it every time the boys open the game. It looks the same.
+- **The old project status page is no longer on the public site.** It named
+  the boys. Your forum dashboard stays exactly where it was.
+- **The iPad is asked to keep the save,** not treat it as a cache it may clear
+  when storage runs low.
+- **The release script no longer tells you to run `git add -A`.** That
+  command swept up any scratch files lying around. It now shows you the list
+  first and adds only files you changed.
+
 ## [19.12.0] - IN PICTURES
 
 Four things, three of them for Art. Words he could not read have become

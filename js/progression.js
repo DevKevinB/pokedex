@@ -206,7 +206,9 @@ function pickDailyQuests() {
 export function ensureDailyQuests() {
   const p = player();
   const day = todayNumber();
-  if (!p.quests || p.quests.day !== day) {
+  // An imported board naming a quest this build doesn't know would crash the
+  // card on questDef(); treat it like yesterday's board and deal a fresh one.
+  if (!p.quests || p.quests.day !== day || !Array.isArray(p.quests.list) || !p.quests.list.every(q => questDef(q.key))) {
     p.quests = { day, list: pickDailyQuests(), allDone: false };
     persist();
   }

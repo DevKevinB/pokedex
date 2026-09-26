@@ -114,6 +114,38 @@ function validChampion(c) {
   return { date, team, levels };
 }
 
+// ---- v19.13 import hygiene: shapes the trainer card and gym screens trust ----
+// A key is an id we wrote ourselves ('boulder', 'g3-1-r2', 'catch_fire'):
+// short, and made of characters that can never open a tag or an attribute.
+const isSafeKey = k => typeof k === 'string' && /^[A-Za-z0-9_:.-]{1,64}$/.test(k);
+const count = v => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n > 0 ? Math.min(n, 1e9) : 0; };
+
+function countMap(base, raw) {
+  const out = { ...base };
+  if (raw && typeof raw === 'object') {
+    for (const [k, v] of Object.entries(raw)) if (isSafeKey(k)) out[k] = count(v);
+  }
+  return out;
+}
+
+function cleanQuests(raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.list)) return {};
+  return {
+    day: count(raw.day),
+    allDone: !!raw.allDone,
+    list: raw.list.filter(q => q && isSafeKey(q.key))
+      .map(q => ({ key: q.key, progress: count(q.progress), done: !!q.done })),
+  };
+}
+
+function cleanGyms(raw) {
+  const beaten = {};
+  if (raw && raw.beaten && typeof raw.beaten === 'object') {
+    for (const [k, v] of Object.entries(raw.beaten)) if (isSafeKey(k) && v) beaten[k] = true;
+  }
+  return { ...(raw && typeof raw === 'object' ? raw : {}), beaten };
+}
+
 function hydratePlayer(raw) {
   const base = freshPlayer();
   if (!raw || typeof raw !== 'object') return base;
@@ -141,11 +173,16 @@ function hydratePlayer(raw) {
   return {
     ...base, ...raw,
     name: cleanName(raw.name),
-    items: { ...base.items, ...(raw.items || {}) },
+    // v19.13 SECURITY: items, stats, quests and gyms used to be spread through
+    // unchecked, and the trainer card renders stats/items with innerHTML — so a
+    // pasted "cool save" code carrying markup in battlesWon ran script every
+    // time the card opened. Counters are now numbers and nothing else; every
+    // number that was already a number survives untouched.
+    items: countMap(base.items, raw.items),
     settings: { ...base.settings, ...(raw.settings || {}), junior: !!(raw.settings || {}).junior },
-    stats: { ...base.stats, ...(raw.stats || {}) },
-    mons, quests: (raw.quests && typeof raw.quests === 'object') ? raw.quests : {},
-    gyms: (raw.gyms && raw.gyms.beaten) ? raw.gyms : { beaten: {} },
+    stats: countMap(base.stats, raw.stats),
+    mons, quests: cleanQuests(raw.quests),
+    gyms: cleanGyms(raw.gyms),
     shinies: cleanIds(raw.shinies),
     nicks,
     caught,
@@ -161,7 +198,7 @@ function hydratePlayer(raw) {
     // A team member you don't own is a guaranteed crash on battle start.
     // Order preserved — team[0] is the lead.
     team: cleanOrderedIds(raw.team).filter(id => caught.includes(id)).slice(0, 6),
-    badges: Array.isArray(raw.badges) ? raw.badges : [],
+    badges: Array.isArray(raw.badges) ? raw.badges.filter(isSafeKey) : [],
     champion: validChampion(raw.champion)
   };
 }

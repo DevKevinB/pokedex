@@ -2395,6 +2395,52 @@ check('every app module is in the offline file list', await page.evaluate(async 
   await ctx2.close();
 }
 
+// ---- v19.13: a booby-trapped save code cannot run script ----
+// stats and items used to be spread through hydratePlayer unchecked and then
+// rendered by the trainer card with innerHTML. Seed a save carrying markup in
+// every counter, open the card, and nothing may execute -- and the real
+// numbers in the same save must survive untouched.
+{
+  const ctx3 = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  await mockRoutes(ctx3);
+  await ctx3.addInitScript(() => {
+    const bad = '<img src=x onerror="window.__PWNED__=1">';
+    localStorage.setItem('pokedexos_save_v2', JSON.stringify({
+      version: 2,
+      players: {
+        1: { name: 'GABE', caught: [1, 25], stats: { battlesWon: bad, versusWins: bad, catches: 7 },
+             items: { masterBalls: bad }, badges: ['boulder', bad], gyms: { beaten: { [bad]: true, 'g1-0': true } },
+             quests: { day: 1, list: [{ key: bad, progress: bad, done: false }] } },
+        2: { name: 'ART', caught: [1] }
+      }
+    }));
+    localStorage.setItem('pokedexos_lastplayer', '1');
+  });
+  const p3 = await ctx3.newPage();
+  await p3.goto(BASE, { waitUntil: 'networkidle' });
+  const r = await p3.evaluate(async () => {
+    const S = await import('/js/state.js');
+    const p = S.state.save.players[1];
+    return { stats: p.stats, items: p.items, badges: p.badges, beaten: Object.keys(p.gyms.beaten) };
+  });
+  await p3.evaluate(async () => {
+    const P = await import('/js/progression.js');
+    P.openTrainerCard();
+  });
+  await p3.waitForTimeout(300);
+  check('an imported save cannot smuggle markup into the trainer card',
+    await p3.evaluate(() => window.__PWNED__ === undefined) &&
+    r.stats.battlesWon === 0 && r.stats.versusWins === 0 && r.items.masterBalls === 0);
+  check('...and the honest numbers in that save survive',
+    r.stats.catches === 7 && r.badges.join() === 'boulder' && r.beaten.join() === 'g1-0');
+  check('the page carries a content security policy with no inline script',
+    await p3.evaluate(() => {
+      const m = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+      return !!m && /script-src 'self'(;|$)/.test(m.content) && !/script-src[^;]*unsafe/.test(m.content);
+    }));
+  await ctx3.close();
+}
+
 // ---- the game never talks ----
 check('no VOICE button in the toolbar', await page.locator('#voice-btn').count() === 0);
 check('speech synthesis never invoked', await page.evaluate(() => window.__SPOKE__ === false));

@@ -9,7 +9,7 @@
 // Bump CACHE_VERSION on every release to purge old shells.
 // ============================================================
 
-const CACHE_VERSION = 'pokedexos-v19.12.0';
+const CACHE_VERSION = 'pokedexos-v19.13.0';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 // DELIBERATELY version-independent. Sprites never change, and at a weekly
 // release cadence a versioned asset cache is emptied every single push — which
@@ -24,6 +24,7 @@ const SHELL_FILES = [
   './js/audio.js', './js/dex.js', './js/catch.js', './js/battle.js', './js/fx.js', './js/pc.js',
   './js/music.js', './js/explore.js', './js/progression.js', './js/settings.js', './js/devtools.js', './js/gym.js', './js/gymdata.js', './js/nickname.js', './js/dialog.js', './js/habitatfill.js',
   './data/moves.json',
+  './fonts/press-start-2p-latin.woff2', './fonts/press-start-2p-latin-ext.woff2',
   './manifest.webmanifest'
 ];
 
@@ -61,7 +62,7 @@ self.addEventListener('fetch', event => {
   // pokeapi.co is NOT cached here. api.js already keeps its own slim
   // localStorage projection; caching the full JSON as well doubled the storage
   // for the same data — on the device where a full quota breaks saving.
-  const isStaticAsset = ['raw.githubusercontent.com', 'fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname);
+  const isStaticAsset = ['raw.githubusercontent.com'].includes(url.hostname);
 
   if (isShell) {
     // Network-first with cache fallback, but never wait forever: on a flaky

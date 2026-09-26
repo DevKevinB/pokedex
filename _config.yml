@@ -12,3 +12,20 @@ exclude:
   - forum
   - test
   - tools
+  # v19.13: these were still served. The status page named the boys; the rest
+  # are notes and tooling, never the app. docs/forum.html stays published on
+  # purpose -- it is Kevin's live dashboard (see tools/forum-dashboard.mjs).
+  - docs/project-status.html
+  - docs/forum-artifact.html
+  - ROADMAP-v19.md
+  - ROADMAP-v20.md
+  - CODESPACES.md
+  - SECURITY.md
+  - package.json
+  - package-lock.json
+  - LICENSE
+  - node_modules
+  - "*.html.bak"
+  - "session-report-*.html"
+  - next/ARCHITECTURE.md
+  - next/test
