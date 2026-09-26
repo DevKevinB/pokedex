@@ -167,3 +167,153 @@ export function applyWin(p, onEnd) {
 
 /** Lead level of a trainer card (the highest level on their team). */
 export const trainerLevel = t => t.team.reduce((a, m) => Math.max(a, m.level), 0);
+
+// ============================================================
+// OLD VENUSAUR GUARDIANS (ROADMAP 5.2 Thread B)
+// Every bloomed chapter has one. Beat it once for a seed; the third
+// seed hatches Gabe's own Bulbasaur (scenes/hatch.js).
+// ============================================================
+
+export const GUARDIAN_ID = 3;          // Venusaur
+export const GUARDIAN_NAME = 'OLD VENUSAUR';
+export const HATCH_SEEDS = 3;          // seeds needed to hatch
+export const HATCH_ID = 1;             // Bulbasaur
+export const HATCH_LEVEL = 10;
+const MAX_SEEDS = 99;                  // matches core/validate.js MAX_SEEDS
+
+const GUARDIAN_TAUNTS = ['SHOW ME YOUR STRENGTH.', 'EARN MY SEED, YOUNG ONE.', 'ONLY THE BRAVE GROW.'];
+
+/** Level of chapter i's Old Venusaur: the leader's top level + 2. */
+export const guardianLevel = i => Math.min(100, trainerLevel(CHAPTERS[i].trainers[leaderIdx(i)]) + 2);
+
+export const guardianBeaten = (p, i) => !!(roadOf(p).guardians && roadOf(p).guardians[i]);
+
+/** Present on the map once chapter i has bloomed (Road or classic). */
+export const hasGuardian = (p, i) => !!CHAPTERS[i] && isChapterDone(p, i);
+
+/** Can Gabe challenge it now? (bloomed, and not beaten yet) */
+export const guardianOpen = (p, i) => hasGuardian(p, i) && !guardianBeaten(p, i);
+
+export function guardianParams(i) {
+  return {
+    enemyTeam: [{ id: GUARDIAN_ID, level: guardianLevel(i) }],
+    trainer: { name: GUARDIAN_NAME, taunt: GUARDIAN_TAUNTS[i % GUARDIAN_TAUNTS.length], leader: true },
+    wild: false,
+    returnTo: 'road',
+    onEnd: 'guardian:' + i
+  };
+}
+
+/** 'guardian:3' -> 3; anything else -> -1. */
+export function parseGuardianEnd(s) {
+  const m = /^guardian:(\d{1,2})$/.exec(typeof s === 'string' ? s : '');
+  if (!m) return -1;
+  const i = +m[1];
+  return CHAPTERS[i] ? i : -1;
+}
+
+/** Seeds Gabe holds (0..99). */
+export function seedCount(p) {
+  const n = Number(roadOf(p).seeds);
+  return Number.isInteger(n) && n > 0 ? Math.min(MAX_SEEDS, n) : 0;
+}
+
+export const isHatched = p => roadOf(p).hatched === true;
+
+/** Time for the egg ceremony: enough seeds, not hatched yet. */
+export const readyToHatch = p => seedCount(p) >= HATCH_SEEDS && !isHatched(p);
+
+/**
+ * Record an Old Venusaur win. Mutates the player (caller commits).
+ * Idempotent: a second win over the same guardian gives nothing.
+ * -> null for a bad/unearned onEnd, else {i, seeds, hatch}.
+ */
+export function applyGuardianWin(p, onEnd) {
+  const i = parseGuardianEnd(onEnd);
+  if (i < 0 || !p || !hasGuardian(p, i)) return null;
+  const r = ensureRoad(p);
+  if (!r.guardians || typeof r.guardians !== 'object' || Array.isArray(r.guardians)) r.guardians = {};
+  if (r.guardians[i]) return null;
+  r.guardians[i] = true;
+  r.seeds = Math.min(MAX_SEEDS, seedCount(p) + 1);
+  return { i, seeds: r.seeds, hatch: readyToHatch(p) };
+}
+
+/**
+ * Hatch Gabe's own Bulbasaur. Mutates the player (caller commits).
+ * New: adds #1 to caught, level max(existing, 10), team if room.
+ * Already owned: same, and his becomes shiny if it isn't yet.
+ * Sets road.hatched. Safe to call twice (the second call is a no-op).
+ * -> {isNew, shiny, already} ; already=true when it had hatched before.
+ */
+export function applyHatch(p) {
+  if (!p) return { isNew: false, shiny: false, already: true };
+  const r = ensureRoad(p);
+  const shinies = Array.isArray(p.shinies) ? p.shinies : (p.shinies = []);
+  if (r.hatched === true) return { isNew: false, shiny: shinies.includes(HATCH_ID), already: true };
+  if (!Array.isArray(p.caught)) p.caught = [];
+  if (!Array.isArray(p.team)) p.team = [];
+  if (!p.mons || typeof p.mons !== 'object') p.mons = {};
+  const had = p.caught.includes(HATCH_ID);
+  if (!had) p.caught.push(HATCH_ID);
+  const m = p.mons[HATCH_ID];
+  const lv = m && Number.isFinite(Number(m.level)) ? Number(m.level) : 0;
+  if (lv < HATCH_LEVEL) p.mons[HATCH_ID] = { ...(m || {}), level: HATCH_LEVEL, xp: 0 };
+  if (p.team.length < 6 && !p.team.includes(HATCH_ID)) p.team.push(HATCH_ID);
+  let shiny = shinies.includes(HATCH_ID);
+  if (had && !shiny) { shinies.push(HATCH_ID); shiny = true; }
+  r.hatched = true;
+  return { isNew: !had, shiny, already: false };
+}
+
+// ============================================================
+// GIFTS FROM ART -> ORAN BERRIES
+// Art's garden adds leaf-stamped gifts (save.gifts.toReader). A gift stays
+// on the save until its berry is EATEN: the battle scene caps its berry
+// button at the gifts waiting and calls store.takeGift() per berry eaten.
+// Unwrapping on the Road only moves a gift into Gabe's pouch: the pouch
+// count lives in player.items[BERRY_KEY] (items keeps any safe counter key
+// through validate + merge) and is always <= the gifts waiting.
+//   wrapped boxes on the Road = gifts - berries
+//   params.berries to battle  = berries (unwrapped, uneaten)
+// ============================================================
+
+export const BERRY_KEY = 'oranBerries';
+
+const nat = v => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n > 0 ? n : 0; };
+
+/** Unwrapped, uneaten Oran Berries in Gabe's pouch (never more than gifts waiting). */
+export function berryCount(p, gifts) {
+  return Math.min(nat(p && p.items && p.items[BERRY_KEY]), nat(gifts));
+}
+
+/** Leaf-stamped boxes still wrapped on the Road. */
+export const wrappedGifts = (p, gifts) => nat(gifts) - berryCount(p, gifts);
+
+function setBerries(p, n) {
+  if (!p.items || typeof p.items !== 'object') p.items = {};
+  p.items[BERRY_KEY] = nat(n);
+  return p.items[BERRY_KEY];
+}
+
+/** Unwrap one gift into the pouch. Mutates; caller commits. -> true when one was opened. */
+export function openGift(p, gifts) {
+  if (!p || wrappedGifts(p, gifts) < 1) return false;
+  setBerries(p, berryCount(p, gifts) + 1);
+  return true;
+}
+
+/**
+ * After a battle: berries the battle ate came out of the gifts (gifts went
+ * from `before` to `after`), so they leave the pouch too. Always re-clamps
+ * the pouch to the gifts waiting. Mutates; -> the new pouch count.
+ */
+export function settleBerries(p, before, after) {
+  if (!p) return 0;
+  const eaten = Math.max(0, nat(before) - nat(after));
+  const had = berryCount(p, before);
+  return setBerries(p, Math.min(nat(after), Math.max(0, had - eaten)));
+}
+
+/** Any Road battle params + the berries Gabe carries into it. */
+export const withBerries = (p, gifts, params) => ({ ...params, berries: berryCount(p, gifts) });

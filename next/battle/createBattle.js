@@ -21,6 +21,7 @@ export const BALL_MODS = { poke: 1, great: 1.5, ultra: 2, master: 255 };
 export const PHASE2_AT = 0.5;       // leader's last mon at <= 50% HP
 export const PHASE2_HEAL = 0.25;    // heals +25% maxHp
 export const PHASE2_ATK = 1.25;     // and hits 1.25x harder
+export const BERRY_HEAL = 0.3;      // an Oran Berry heals 30% of max HP by default
 
 const TACKLE = { name: 'tackle', type: 'normal', power: 40, damage_class: 'physical' };
 
@@ -73,7 +74,64 @@ function engineView(f) {
   };
 }
 
-export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math.random, moveLookup = null, wild = false, leader = false } = {}) {
+// ------------------------------------------------------------
+// Move pictures (pure; the battle screen draws them). A pre-reader sees no
+// move names, and four moves of one type used to look identical. Each move
+// now gets a big SHAPE (what the move does: a fist, a kick, a bite, a swirl,
+// a beam...), coloured by its type, plus 1-4 power dots. Within one moveset
+// no two buttons of the same type ever share a shape.
+// Glyphs avoid every type emoji (config.typeEmoji) and every star (a star
+// means "reward" elsewhere in the game).
+// ------------------------------------------------------------
+const PHYS_SHAPES = [                 // first = the plain default; body-part shapes last
+  ['\u270A', /punch|fist|hammer|arm|jab/],                               // raised fist
+  ['\u{1F4A5}', /tackle|slam|body|rush|take-down|headbutt|charge|ram|crash|smash|press|bash/], // bang
+  ['\u{1F43E}', /scratch|claw|slash|cut|fury|swipe|scrape/],             // paw prints
+  ['\u{1F4CC}', /peck|horn|drill|sting|pin|spike|needle/],               // pin
+  ['\u{1FA83}', /throw|toss|boomerang|return|rollout|roll/],             // boomerang
+  ['\u{1F9B6}', /kick|stomp|foot|trample|step/],                         // foot
+  ['\u{1F9B7}', /bite|fang|crunch|chomp|jaw/],                           // tooth
+];
+const SPEC_SHAPES = [
+  ['\u{1F300}', null],                                                   // swirl (default)
+  ['\u{1F506}', /beam|ray|flash|blast|cannon|gun|shot/],                // bright sun
+  ['\u{1FAE7}', /bubble|surf|spray|splash|wave|mist|foam/],             // bubbles
+  ['\u{1F4AB}', /confus|psy|dream|hypno|mind|dizzy/],                   // dizzy
+  ['\u{1F308}', /aurora|rainbow|prism|signal|color/],                   // rainbow
+  ['\u{1F32A}\uFE0F', /wind|gust|twister|storm|air|hurricane|tornado/], // tornado
+  ['\u{1F4A8}', /breath|puff|smog|powder|spore|dust/],                  // puff
+];
+
+/** Power dots for a move: 1 (weak) .. 4 (huge). */
+export function powerDots(power) {
+  const p = num(power, 0);
+  return p <= 40 ? 1 : p <= 65 ? 2 : p <= 90 ? 3 : 4;
+}
+
+/**
+ * [{ glyph, dots, type, shape:'physical'|'special' }] for a moveset, same
+ * order. Same-type moves never share a glyph (a later one takes the next free
+ * glyph of its own class, then of the other class).
+ */
+export function movePictures(moves) {
+  const used = new Map();              // type -> Set(glyph)
+  return (moves || []).map(m => {
+    const name = String((m && m.name) || '').toLowerCase();
+    const type = (m && m.type) || 'normal';
+    const special = m && m.damage_class === 'special';
+    const own = special ? SPEC_SHAPES : PHYS_SHAPES;
+    const rest = special ? PHYS_SHAPES : SPEC_SHAPES;
+    const taken = used.get(type) || new Set();
+    const match = own.find(([, re]) => re && re.test(name));
+    const order = [match, ...own, ...rest].filter(Boolean).map(([g]) => g);
+    const glyph = order.find(g => !taken.has(g)) || order[0];
+    taken.add(glyph);
+    used.set(type, taken);
+    return { glyph, dots: powerDots(m && m.power), type, shape: special ? 'special' : 'physical' };
+  });
+}
+
+export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math.random, moveLookup = null, wild = false, leader = false, berries = Infinity } = {}) {
   if (!Array.isArray(myTeam) || !myTeam.length) throw new Error('createBattle: myTeam is empty');
   if (!Array.isArray(enemyTeam) || !enemyTeam.length) throw new Error('createBattle: enemyTeam is empty');
 
@@ -86,6 +144,8 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     turn: 0, over: false, winner: null, phase: 1
   };
 
+  let berriesLeft = typeof berries === 'number' && berries >= 0 ? (Number.isFinite(berries) ? Math.floor(berries) : Infinity) : Infinity;
+  state.me.berries = berriesLeft;
   let phase2Done = false;
   let intent = 0;
   let busy = false;
@@ -254,6 +314,24 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     return finishTurn(events);
   }
 
+  // A berry is a turn: the active mon heals, then the foe's committed move
+  // lands. Nothing happens (and no turn passes) when it is already full, when
+  // no berries are left, or for a bad fraction, so a berry is never wasted.
+  function doBerry(fraction) {
+    const f = num(fraction, BERRY_HEAL);
+    if (!(f > 0) || berriesLeft < 1) return [];
+    const me = active('me');
+    if (me.fainted || me.hp >= me.maxHp) return [];
+    const heal = Math.max(1, Math.round(me.maxHp * Math.min(1, f)));
+    const hpAfter = Math.min(me.maxHp, me.hp + heal);
+    const events = [{ type: 'heal', side: 'me', index: state.me.active, amount: hpAfter - me.hp, hpAfter }];
+    me.hp = hpAfter;
+    berriesLeft--;
+    state.me.berries = berriesLeft;
+    foeTurn(events);
+    return finishTurn(events);
+  }
+
   function doRun() {
     if (!wild) return [];
     const events = [];
@@ -276,6 +354,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
         if (action.kind === 'switch') return doSwitch(action.index);
         if (action.kind === 'ball') return doBall(action.ball);
         if (action.kind === 'run') return doRun();
+        if (action.kind === 'berry') return doBerry(action.fraction);
         return [];
       } finally {
         busy = false;

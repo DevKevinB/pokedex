@@ -6,7 +6,9 @@
 // a native dialog, never logs a console error. New here: save v2 -> v3
 // migration on a realistic save (v2 byte-identical afterwards), the garden
 // and road loops, a full trainer battle, a no-innerHTML grep, the CSP meta,
-// and a layout net at 375x667 and 390x844 with screenshots.
+// and a layout net at 375x667, 390x844 and 1024x1366 (iPad) with screenshots.
+// Batch 2: guardians + seeds + the egg, the rival, Art's gifts as battle
+// berries, the picture lock, Family Table, Couch Versus and the postcard.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, statSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -282,7 +284,7 @@ async function fightToEnd(page, returnTo, maxTurns = 80) {
 }
 
 const NAMES_OK = ['ART', 'GABE', ...Object.values(NAMES).map(n => n.toUpperCase())];
-const SIZES = [{ width: 375, height: 667 }, { width: 390, height: 844 }];
+const SIZES = [{ width: 375, height: 667 }, { width: 390, height: 844 }, { width: 1024, height: 1366 }];   // phone, phone, iPad
 const sz = v => `${v.width}x${v.height}`;
 
 // ============================================================ 1. empty boot
@@ -608,6 +610,16 @@ const sz = v => `${v.width}x${v.height}`;
       await shot(page, `rest-${who}-${sz(v)}`);
     }
     await page.setViewportSize(SIZES[0]);
+    if (n === 2) {
+      // Art's own way to the FAMILY POSTCARD: icons only, no words.
+      await page.locator('.rest-postcard').click();
+      await waitScene(page, 'postcard');
+      await page.waitForSelector('.pc-img:not([hidden])', { timeout: 15000 }).catch(() => {});
+      check('postcard (prereader): the card is drawn', await page.locator('.pc-img').isVisible());
+      await fitAll(page, 'postcard (prereader)', { words: true, shotName: 'postcard-prereader' });
+      await page.locator('.pc-back').click();
+      await waitScene(page, 'rest');
+    }
   }
   await finishPage('prereader + fresh reader', P);
 }
@@ -627,6 +639,459 @@ const sz = v => `${v.width}x${v.height}`;
   await shot(page, 'oops-375x667');
   page.errors = page.errors.filter(e => !/boom test|SPROUT ROAD/.test(e));
   await finishPage('error net', P);
+}
+
+// ============================================================ batch 2 helpers
+
+// Every trainer of chapters [0, upTo) cleared, plus `extra` keys.
+function clearedThrough(upTo, extra = []) {
+  const out = {};
+  const counts = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5];
+  for (let i = 0; i < upTo; i++) for (let j = 0; j < counts[i]; j++) out[`c${i}-t${j}`] = true;
+  for (const k of extra) out[k] = true;
+  return out;
+}
+async function fitAll(page, label, { words = false, shotName = null, wait = 250 } = {}) {
+  for (const v of SIZES) {
+    await page.setViewportSize(v);
+    await page.waitForTimeout(wait);
+    await layoutCheck(page, label, sz(v));
+    if (words) {
+      const w = await visibleWords(page, NAMES_OK);
+      check(`${label} ${sz(v)}: no words`, w.length === 0, w.slice(0, 5).join(' | '));
+    }
+    if (shotName) await shot(page, `${shotName}-${sz(v)}`);
+  }
+  await page.setViewportSize(SIZES[0]);
+  await page.waitForTimeout(150);
+}
+const road = page => page.evaluate(() => window.__road && window.__road());
+const clickEl = (page, sel) => page.evaluate(s => { const el = document.querySelector(s); if (el) el.click(); return !!el; }, sel);
+
+// ============================================================ 6. Gabe's story: leader -> rest -> postcard, rival, guardian -> seed -> hatch
+{
+  const save = { version: 3, created: '2026-09-01', players: {
+    1: { name: 'GABE', profile: 'reader', caught: [25, 6], team: [25, 6], mons: { 25: { level: 100, xp: 0 }, 6: { level: 100, xp: 0 } },
+      road: { chapter: 2, cleared: clearedThrough(2, ['c2-t0', 'c2-t1', 'c2-t2', 'c2-t3']), bloomed: [0, 1], seeds: 2, guardians: { 1: true }, hatched: false, rival: { wins: 1, losses: 0, last: 1 } } },
+    2: { name: 'ART', profile: 'prereader', caught: [1], bulba: { petals: 3, stage: 1, stayStone: false, visitors: [] } },
+  } };
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  let r = await road(page);
+  check('story: no rival before the leader falls (he stepped aside last gap)', r && r.rival === -1, JSON.stringify(r && r.rival));
+  check('story: the next fight is chapter 3\'s leader', r && r.next && r.next.i === 2 && r.next.j === 4, JSON.stringify(r && r.next));
+  check('story: seeds carried in the save', r && r.seeds === 2);
+  // The egg is earned. Jumping straight to the hatch scene with 2 seeds must
+  // bounce back to the road and give nothing.
+  await page.evaluate(() => window.__go('hatch'));
+  await waitScene(page, 'road', 8000).catch(() => {});
+  check('hatch: no egg without three seeds', (await scene(page)) === 'road' &&
+    await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v3')).players[1].road.hatched !== true));
+  await page.locator('.road-next').click({ force: true });
+  await waitScene(page, 'battle');
+  await fightToEnd(page, 'road', 120);
+  await waitScene(page, 'rest', 20000).catch(() => {});
+  check('story: a leader win blooms the chapter and ends at the campfire', (await scene(page)) === 'rest');
+  check('rest: has a postcard button', (await page.locator('.rest-postcard').count()) === 1);
+  await fitAll(page, 'rest (after leader)', { shotName: 'rest-postcard' });
+  // Postcard entry point #1: the campfire. BACK comes home to the same fire.
+  await page.locator('.rest-postcard').click();
+  await waitScene(page, 'postcard');
+  await page.waitForSelector('.pc-img:not([hidden])', { timeout: 15000 }).catch(() => {});
+  check('rest -> postcard: the card is drawn', await page.locator('.pc-img').isVisible());
+  await page.locator('.pc-back').click();
+  await waitScene(page, 'rest');
+  check('postcard BACK returns to the same campfire (chapter kept)', (await page.locator('.rest-badge').count()) === 1);
+  check('postcard: counted once in the family save', ((await v3(page))?.family?.postcards | 0) === 1);
+  await page.locator('.rest-go').click();
+  await waitScene(page, 'road');
+  await page.waitForTimeout(400);
+  r = await road(page);
+  check('rival: appears after a leader win (between chapters 3 and 4)', r && r.rival === 2, JSON.stringify(r && r.rival));
+  check('rival: his token is on the map', (await page.locator('.road-rival').count()) === 1);
+  await clickEl(page, '.road-rival');
+  await page.waitForSelector('.rival-card', { timeout: 4000 }).catch(() => {});
+  check('rival: tapping him shows his team card', await page.locator('.rival-card').isVisible());
+  await fitAll(page, 'rival card', { shotName: 'rival-card' });
+  await page.locator('.rival-past').click();
+  await page.waitForTimeout(200);
+  check('rival: WALK PAST closes the card', (await page.locator('.rival-card').count()) === 0);
+  const nextFree = await page.evaluate(() => {
+    const b = document.querySelector('.road-next');
+    if (!b) return false;
+    const rc = b.getBoundingClientRect();
+    const hit = document.elementFromPoint(rc.left + rc.width / 2, rc.top + rc.height / 2);
+    return !!hit && (hit === b || b.contains(hit));
+  });
+  check('rival: skippable, NEXT BATTLE is not blocked', nextFree);
+  r = await road(page);
+  check('rival: skipping him never costs anything (seeds unchanged)', r && r.seeds === 2);
+
+  // The Old Venusaur of chapter 1 -> the third seed -> the egg hatches.
+  check('guardian: chapter 1\'s Old Venusaur is on the map', (await page.locator('.road-guardian[data-guardian="0"]').count()) === 1);
+  await clickEl(page, '.road-guardian[data-guardian="0"]');
+  await waitScene(page, 'battle');
+  await fightToEnd(page, 'road', 120);
+  await waitScene(page, 'road');
+  await page.waitForFunction(() => window.__hatch && window.__hatch().phase === 'done', null, { timeout: 15000 })
+    .then(() => true, () => false).then(ok => check('seed: the third seed hatches the egg', ok));
+  const s6 = await v3(page);
+  const g = s6?.players?.[1];
+  check('guardian win -> seed (3 seeds, guardian 0 beaten)', g?.road?.seeds === 3 && !!g?.road?.guardians?.['0'], JSON.stringify(g?.road));
+  check('hatch: Bulbasaur added to caught', g?.caught?.includes(1));
+  check('hatch: Bulbasaur joins the team (room for it)', g?.team?.includes(1));
+  check('hatch: marked hatched in the save', g?.road?.hatched === true);
+  await fitAll(page, 'hatch', { shotName: 'hatch' });
+  await page.locator('.hatch-ok').click();
+  await page.waitForTimeout(300);
+  check('hatch: OK closes the ceremony back to the Road', (await scene(page)) === 'road' && (await page.locator('.hatch').count()) === 0);
+  // The egg is also a real route now.
+  await page.evaluate(() => window.__go('hatch'));
+  await waitScene(page, 'hatch');
+  check('hatch: routed scene renders (no second Bulbasaur)', ((await v3(page))?.players?.[1]?.caught || []).filter(x => x === 1).length === 1);
+  await page.waitForSelector('.hatch-ok:not([hidden])', { timeout: 8000 }).catch(() => {});
+  await page.locator('.hatch-ok').click();
+  await waitScene(page, 'road');
+  check('v3 save: v2 key never created by story play', await page.evaluate(() => localStorage.getItem('pokedexos_save_v2') === null));
+  await finishPage('gabe story', P);
+}
+
+// ============================================================ 7. Art's berries -> gift on Gabe's Road -> a battle berry
+{
+  const save = { version: 3, created: '2026-09-01', players: {
+    1: { name: 'GABE', profile: 'reader', caught: [25], team: [25], mons: { 25: { level: 7, xp: 0 } } },
+    2: { name: 'ART', profile: 'prereader', caught: [1], bulba: { petals: 3, stage: 1, stayStone: false, visitors: [] },
+      garden: { plots: [{ x: 0.5, y: 0.72, kind: 'oran', grown: 4 }], berries: 9 } },
+  }, gifts: { toReader: 0 } };
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  await page.waitForSelector('.gd-plot.bush', { timeout: 5000 });
+  await tapCenter(page, '.gd-plot.bush');
+  await page.waitForFunction(() => (JSON.parse(localStorage.getItem('pokedexos_save_v3') || '{}').gifts || {}).toReader === 1, null, { timeout: 6000 })
+    .then(() => true, () => false).then(ok => check('gift: Art\'s 10th berry sends a gift', ok));
+  check('gift: Art keeps every berry he grew', (await v3(page))?.players?.[2]?.garden?.berries === 10);
+  await page.waitForTimeout(800);
+  const w7 = await visibleWords(page, NAMES_OK);
+  check('gift: no words on Art\'s screen while it flies', w7.length === 0, w7.join(' | '));
+  await tapCenter(page, '.gd-home');
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  check('gift: a leaf-stamped box waits on Gabe\'s Road', (await page.locator('.road-gift').count()) === 1);
+  await shot(page, 'road-gift-375x667');
+  await clickEl(page, '.road-gift');
+  await page.waitForTimeout(300);
+  let r = await road(page);
+  check('gift: unwrapping puts an Oran Berry in his pouch', r && r.berries === 1 && r.gifts === 1, JSON.stringify(r && { b: r.berries, g: r.gifts }));
+  await page.waitForTimeout(1600);
+  await page.locator('.road-next').click({ force: true });
+  await waitScene(page, 'battle');
+  await page.waitForSelector('.bt[data-ready="1"]', { timeout: 10000 });
+  check('berry: the battle offers his berry (x1)', (await page.locator('.bt-act-berry').count()) === 1 && (await page.locator('.bt-berry-n').innerText()) === 'x1');
+  check('berry: disabled at full health', await page.locator('.bt-act-berry').isDisabled());
+  let ate = false;
+  for (let t = 0; t < 12 && !ate && (await scene(page)) === 'battle'; t++) {
+    await page.waitForFunction(() => { const b = document.querySelector('.bt'); return !b || !b.classList.contains('busy'); }, null, { timeout: 8000 }).catch(() => {});
+    if ((await page.locator('.bt-card:not([hidden])').count())) break;
+    const berry = page.locator('.bt-act-berry:not([disabled])');
+    if (await berry.count()) { await berry.click({ force: true }); ate = true; break; }
+    const mv = page.locator('.bt-moves button:not([disabled]):visible');
+    if (await mv.count()) await mv.first().click({ force: true });
+    await page.waitForTimeout(150);
+  }
+  check('berry: he could eat it once hurt', ate);
+  await page.waitForTimeout(400);
+  check('berry: eating it used up Art\'s gift', ((await v3(page))?.gifts?.toReader | 0) === 0);
+  await fightToEnd(page, 'road', 150);
+  await waitScene(page, 'road').catch(() => {});
+  await page.waitForTimeout(400);
+  r = await road(page);
+  check('berry: back on the Road, the pouch is empty and no box waits', r && r.berries === 0 && r.gifts === 0 && (await page.locator('.road-gift').count()) === 0, JSON.stringify(r && { b: r.berries, g: r.gifts }));
+  await finishPage('gifts', P);
+}
+
+// ============================================================ 8. picture lock
+{
+  const save = { version: 3, created: '2026-09-01', players: {
+    1: { name: 'GABE', profile: 'reader', caught: [25, 6, 7, 1, 4], team: [25], mons: { 25: { level: 10, xp: 0 } }, lock: { pics: [25, 6, 7] } },
+    2: { name: 'ART', profile: 'prereader', caught: [1], bulba: { petals: 3, stage: 1, stayStone: false, visitors: [] } },
+  } };
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await page.waitForSelector('.lk', { timeout: 4000 }).catch(() => {});
+  check('lock: a locked card shows the picture lock', await page.locator('.lk').isVisible());
+  check('lock: nine pictures, his three among them', (await page.locator('.lk-pic').count()) === 9 &&
+    (await page.locator('.lk-pic[data-id="25"], .lk-pic[data-id="6"], .lk-pic[data-id="7"]').count()) === 3);
+  await fitAll(page, 'lock', { shotName: 'lock' });
+  for (const id of [6, 25, 7]) { await page.locator(`.lk-pic[data-id="${id}"]`).click(); await page.waitForTimeout(60); }
+  await page.waitForTimeout(700);
+  check('lock: the wrong order does not open', (await scene(page)) === 'who' && (await page.locator('.lk').count()) === 1);
+  check('lock: the dots empty again after a miss', (await page.locator('.lk-dot.on').count()) === 0);
+  check('lock: nothing written on a miss', (await v3(page))?.players?.[1]?.lock?.pics?.join() === '25,6,7');
+  for (const id of [25, 6, 7]) { await page.locator(`.lk-pic[data-id="${id}"]`).click(); await page.waitForTimeout(60); }
+  await waitScene(page, 'road').catch(() => {});
+  check('lock: the right order opens his Road', (await scene(page)) === 'road');
+  await page.evaluate(() => window.__go('who'));
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden').catch(() => {});
+  check('lock: Art is never locked out', (await scene(page)) === 'garden');
+
+  // PLAY TOGETHER: Art never takes the battle seat, and Gabe's lock guards it.
+  await page.evaluate(() => window.__go('together'));
+  await waitScene(page, 'together');
+  check('together: swap hidden when it would seat Art to battle',
+    await page.locator('.tg-swap').evaluate(el => getComputedStyle(el).visibility === 'hidden'));
+  await page.locator('.tg-swap').click({ force: true });
+  check('together: swap cannot put Art in the battle seat', (await page.locator('.tg-seat-battle[data-player="1"]').count()) === 1);
+  check('together: seat params never seat a prereader over a reader',
+    await page.evaluate(async () => { const m = await import('./scenes/together.js'); const s = m.seatsFrom(JSON.parse(localStorage.getItem('pokedexos_save_v3')), { battler: 2, helper: 1 }); return s.battler === 1 && s.helper === 2; }));
+  await page.locator('.tg-table').click();
+  await page.waitForSelector('.lk', { timeout: 4000 }).catch(() => {});
+  check('together: a locked battler must open his lock first', (await page.locator('.lk').count()) === 1 && (await scene(page)) === 'together');
+  for (const id of [25, 6, 7]) { await page.locator(`.lk-pic[data-id="${id}"]`).click(); await page.waitForTimeout(60); }
+  await waitScene(page, 'family-table').catch(() => {});
+  check('together: the right pictures open FAMILY TABLE', (await scene(page)) === 'family-table');
+
+  // Grown-up panel: it never shows the combination, and a locked card's
+  // profile / lock need a grown-up sum first.
+  await page.evaluate(() => window.__go('who'));
+  await waitScene(page, 'who');
+  const gb = await page.locator('.who-gear').boundingBox();
+  await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
+  await page.mouse.down(); await page.waitForTimeout(2200); await page.mouse.up();
+  check('gear: the lock\'s pictures are not shown', (await page.locator('.gu-panel .gu-lock-sprite').count()) === 0);
+  await page.locator('.gu-profile[data-player="1"]').click();
+  check('gear: a locked card\'s profile needs a grown-up check', (await page.locator('.gu-check-q').count()) === 1 &&
+    (await v3(page))?.players?.[1]?.profile === 'reader');
+  const [qa, qb] = await page.locator('.gu-check-q').evaluate(el => [Number(el.dataset.a), Number(el.dataset.b)]);
+  for (const d of String(qa * qb)) await page.locator(`.gu-check-key[data-key="${d}"]`).click();
+  check('gear: the right answer flips the profile', (await v3(page))?.players?.[1]?.profile === 'prereader');
+  await finishPage('picture lock', P);
+}
+
+// ============================================================ 7b. a gift survives leaving mid-flight
+{
+  const save = { version: 3, created: '2026-09-01', players: {
+    1: { name: 'GABE', profile: 'reader', caught: [25], team: [25], mons: { 25: { level: 7, xp: 0 } } },
+    2: { name: 'ART', profile: 'prereader', caught: [1], bulba: { petals: 3, stage: 1, stayStone: false, visitors: [] },
+      garden: { plots: [{ x: 0.5, y: 0.72, kind: 'oran', grown: 4 }], berries: 19 } },
+  }, gifts: { toReader: 0 } };
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  await page.waitForSelector('.gd-plot.bush', { timeout: 5000 });
+  await tapCenter(page, '.gd-plot.bush');
+  await page.evaluate(() => window.__go('who'));     // leave at once, before the box has flown
+  await waitScene(page, 'who');
+  const sv = await v3(page);
+  check('gift: leaving mid-flight still keeps Art\'s gift', (sv?.gifts?.toReader | 0) === 1 && sv?.players?.[2]?.garden?.berries === 20,
+    JSON.stringify({ g: sv?.gifts, b: sv?.players?.[2]?.garden?.berries }));
+  await finishPage('gift mid-flight', P);
+}
+
+// ============================================================ 9-11. PLAY TOGETHER: family table, couch versus, postcard
+{
+  const save = { version: 3, created: '2026-09-01', players: {
+    1: { name: 'GABE', profile: 'reader', caught: [25, 6, 7], team: [25, 6, 7], mons: { 25: { level: 12, xp: 0 }, 6: { level: 12, xp: 0 }, 7: { level: 12, xp: 0 } },
+      road: { chapter: 1, cleared: clearedThrough(1), bloomed: [0] } },
+    2: { name: 'ART', profile: 'prereader', caught: [1], bulba: { petals: 5, stage: 1, stayStone: false, visitors: [] } },
+  } };
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  check('together: PLAY TOGETHER card on WHO\'S PLAYING', (await page.locator('.who-together').count()) === 1);
+  await page.locator('.who-together').click();
+  await waitScene(page, 'together');
+  check('together: routes to the seats screen', (await scene(page)) === 'together');
+  check('together: the reader sits in the battle seat', (await page.locator('.tg-seat-battle[data-player="1"]').count()) === 1);
+  await fitAll(page, 'together', { shotName: 'together' });
+
+  // ---- 9. FAMILY TABLE
+  await page.locator('.tg-table').click();
+  await waitScene(page, 'family-table');
+  await page.waitForSelector('.ft[data-ready="1"]', { timeout: 10000 });
+  await page.waitForFunction(() => !document.querySelector('.ft').classList.contains('busy'), null, { timeout: 8000 });
+  check('table: TEAM-UP hidden while the pot is empty', await page.locator('.ft-teamup').isHidden());
+  check('table: moves use the battle view\'s button', (await page.locator('.ft-moves .bt-move.ft-move').count()) > 0);
+  await fitAll(page, 'family table', { shotName: 'family-table' });
+  // Record every damage number (side, class, final value) as it leaves.
+  await page.evaluate(() => {
+    window.__dmg = [];
+    const seen = new WeakSet();
+    const read = n => {
+      if (seen.has(n)) return; seen.add(n);
+      const v = parseInt((n.querySelector('.fs-dmg-num') || n).textContent.replace(/[^0-9]/g, ''), 10);
+      window.__dmg.push({ foe: !!n.closest('.fs-spot-foe'), cls: n.className, v: Number.isFinite(v) ? v : 0 });
+    };
+    new MutationObserver(ms => {
+      for (const m of ms) for (const n of m.addedNodes) {
+        if (n.nodeType === 1 && n.classList.contains('fs-dmg')) setTimeout(() => read(n), 700);
+      }
+    }).observe(document.querySelector('.fs-field'), { childList: true, subtree: true });
+  });
+  const idle = () => page.waitForFunction(() => { const f = document.querySelector('.ft'); return !f || !f.classList.contains('busy') || !document.querySelector('.ft-card[hidden]'); }, null, { timeout: 10000 }).catch(() => {});
+  const hpMe = () => page.evaluate(() => parseFloat(document.querySelector('.fs-hud-me .fs-hp-fill').style.width) || 0);
+  const artTap = async () => { await tapCenter(page, '.ft-bulba'); await page.waitForTimeout(60); };
+  let healed = null;
+  for (let t = 0; t < 3; t++) {
+    if (await page.locator('.ft-card:not([hidden])').count()) break;
+    await artTap();
+    await page.locator('.ft-move:not([disabled])').first().click({ force: true });
+    await page.waitForTimeout(100);
+    await idle();
+    if (healed === null) {
+      const before = await hpMe();
+      if (before < 100 && before > 0) {
+        await page.locator('.ft-berry').click();
+        await page.waitForTimeout(200);
+        const after = await hpMe();
+        healed = { before, after };
+      }
+    }
+  }
+  check('table: Art\'s berry heals Gabe\'s Pokemon', !!healed && healed.after > healed.before, JSON.stringify(healed));
+  check('table: the leaf pot fills from Art\'s taps', (await page.locator('.ft-pot').getAttribute('data-fill')) === '3');
+  const teamupShown = (await page.locator('.ft-gabe .ft-teamup').isVisible());
+  check('table: TEAM-UP appears on Gabe\'s side when the pot is full', teamupShown);
+  await fitAll(page, 'family table teamup', { shotName: 'family-table-teamup' });
+  if (teamupShown) {
+    await page.locator('.ft-teamup').click();
+    await page.waitForTimeout(200);
+    await idle();
+    await page.waitForTimeout(900);
+    const dmg = await page.evaluate(() => window.__dmg);
+    const tu = dmg.filter(d => d.foe && /teamup/.test(d.cls));
+    const normal = dmg.filter(d => d.foe && !/teamup|heal|heart/.test(d.cls)).map(d => d.v);
+    const bonus = await page.evaluate(async () => {
+      const m = await import('./scenes/family-table.js');
+      const mv = m.teamUpMove({ moves: [{ power: 40 }, { power: 85 }], atk: 10, spatk: 5 });
+      return mv.type === 'grass' && mv.power > 85 && mv.teamUp === true;
+    });
+    check('table: TEAM-UP lands a real hit on the foe', tu.length === 1 && tu[0].v > 0, JSON.stringify(dmg));
+    check('table: TEAM-UP deals bonus damage', bonus && tu.length === 1 && (normal.length === 0 || tu[0].v > Math.max(...normal) || tu[0].v >= Math.min(...normal) * 1.2), JSON.stringify({ tu, normal }));
+    check('table: the pot empties after a TEAM-UP', (await page.locator('.ft-pot').getAttribute('data-fill')) === '0');
+  }
+  const petalsBefore = (await v3(page))?.players?.[2]?.bulba?.petals | 0;
+  for (let t = 0; t < 120; t++) {
+    if (await page.locator('.ft-card:not([hidden])').count()) break;
+    const mv = page.locator('.ft-move:not([disabled])');
+    if (await mv.count()) await mv.first().click({ force: true }).catch(() => {});
+    await page.waitForTimeout(120);
+  }
+  check('table: the fight ends on a result card', await page.locator('.ft-card').isVisible());
+  await page.waitForTimeout(1200);
+  const s9 = await v3(page);
+  const won9 = await page.locator('.ft-card-box.win').count();
+  check('table: Art\'s BULBA gets petals either way', (s9?.players?.[2]?.bulba?.petals | 0) > petalsBefore);
+  if (won9) check('table: a win clears the trainer on Gabe\'s Road', !!s9?.players?.[1]?.road?.cleared?.['c1-t0']);
+  await fitAll(page, 'family table card', { shotName: 'family-table-card' });
+
+  // ---- 11. POSTCARD (entry point #2: the end of the family table)
+  await page.evaluate(() => {
+    window.__shared = null;
+    navigator.canShare = () => true;
+    navigator.share = d => { window.__shared = { n: d.files.length, type: d.files[0].type, size: d.files[0].size, name: d.files[0].name }; return Promise.resolve(); };
+  });
+  await page.locator('.ft-card-go').click();
+  await waitScene(page, 'postcard');
+  await page.waitForSelector('.pc-img:not([hidden])', { timeout: 15000 }).catch(() => {});
+  check('postcard: family table ▶ opens the postcard', await page.locator('.pc-img').isVisible());
+  const blob = await page.evaluate(async () => {
+    const m = await import('./ui/postcard.js');
+    const { store } = await import('./core/store.js');
+    const b = await m.makePostcard({ players: store.save.players, date: '2026-09-26', highlight: 25, number: 7 });
+    const head = new Uint8Array(await b.slice(0, 8).arrayBuffer());
+    return { type: b.type, size: b.size, sig: Array.from(head.slice(1, 4)).map(c => String.fromCharCode(c)).join('') };
+  });
+  check('postcard: makePostcard returns a PNG blob', blob.type === 'image/png' && blob.sig === 'PNG' && blob.size > 5000, JSON.stringify(blob));
+  check('postcard: SHARE shows when canShare says yes', await page.locator('.pc-share').isVisible());
+  await page.locator('.pc-share').click();
+  await page.waitForTimeout(200);
+  const shared = await page.evaluate(() => window.__shared);
+  check('postcard: SHARE calls navigator.share with the PNG file', !!shared && shared.n === 1 && shared.type === 'image/png' && shared.size > 0 && /\.png$/.test(shared.name), JSON.stringify(shared));
+  await fitAll(page, 'postcard', { shotName: 'postcard' });
+  await page.locator('.pc-back').click();
+  await waitScene(page, 'together');
+  check('postcard: BACK returns to PLAY TOGETHER', (await scene(page)) === 'together');
+
+  // ---- 10. COUCH VERSUS
+  await page.locator('.tg-versus').click();
+  await waitScene(page, 'versus');
+  await page.waitForSelector('.vs-dad', { timeout: 5000 });
+  await fitAll(page, 'versus setup', { shotName: 'versus-setup' });
+  await page.waitForTimeout(300);
+  await page.locator('.vs-dad-random').click();
+  await page.waitForTimeout(300);
+  await page.locator('.vs-dad-go').click();
+  await page.waitForSelector('.vs-curtain[data-side="me"]', { timeout: 10000 }).catch(() => {});
+  check('versus: a curtain before Gabe\'s pick', await page.locator('.vs-curtain[data-side="me"]').isVisible());
+  check('versus: no moves visible behind the curtain', (await page.locator('.vs-move').count()) === 0);
+  await fitAll(page, 'versus curtain', { shotName: 'versus-curtain' });
+  const hpOf = side => page.evaluate(s => parseFloat(document.querySelector(`.fs-hud-${s} .fs-hp-fill`).style.width) || 0, side);
+  let round1 = null, rounds = 0, curtainBetween = true;
+  for (; rounds < 80; rounds++) {
+    if (await page.locator('.vs-win').count()) break;
+    await page.waitForTimeout(250);
+    await page.waitForSelector('.vs-curtain[data-side="me"], .vs-win', { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    if (await page.locator('.vs-win').count()) break;
+    const hp0 = { me: await hpOf('me'), foe: await hpOf('foe') };
+    // Each new screen ignores a tap in its first 250ms (ghost-click guard),
+    // so the test taps at a human pace.
+    await page.locator('.vs-pass').click();
+    await page.waitForTimeout(300);
+    await page.locator('.vs-move').first().click();
+    await page.waitForTimeout(300);
+    const between = (await page.locator('.vs-curtain[data-side="foe"]').isVisible()) && (await page.locator('.vs-move').count()) === 0;
+    curtainBetween = curtainBetween && between;
+    if (rounds === 0) await fitAll(page, 'versus curtain (dad)', { shotName: 'versus-curtain-dad' });
+    await page.waitForTimeout(300);
+    await page.locator('.vs-pass').click();
+    await page.waitForTimeout(300);
+    if (rounds === 0) await fitAll(page, 'versus pick', { shotName: 'versus-pick' });
+    await page.locator('.vs-move').first().click();
+    await page.waitForSelector('.vs-curtain[data-side="me"], .vs-win', { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    if (rounds === 0) round1 = { before: hp0, after: { me: await hpOf('me'), foe: await hpOf('foe') }, over: (await page.locator('.vs-win').count()) > 0 };
+  }
+  check('versus: the curtain comes down between the two picks', curtainBetween);
+  check('versus: both picks resolve (both sides hit in round 1)', !!round1 && (round1.over || (round1.after.me < round1.before.me && round1.after.foe < round1.before.foe)), JSON.stringify(round1));
+  check('versus: a winner is crowned', (await page.locator('.vs-win').count()) === 1, 'rounds ' + rounds);
+  const tally = (await v3(page))?.family?.versus || {};
+  check('versus: the tally is saved', ((tally.gabe | 0) + (tally.dad | 0)) === 1, JSON.stringify(tally));
+  await fitAll(page, 'versus win', { shotName: 'versus-win' });
+  await page.locator('.vs-win-btn[aria-label="HOME"]').click();
+  await waitScene(page, 'who');
+  await finishPage('play together', P);
+}
+
+// ============================================================ 12. offline shell + manifest
+{
+  const sw = readFileSync(join(NEXT, 'sw.js'), 'utf8');
+  const missing = ['hatch', 'together', 'family-table', 'versus', 'lock', 'postcard']
+    .filter(n => !sw.includes(`'./scenes/${n}.js'`));
+  check('sw: every new scene is in the offline list', missing.length === 0, missing.join(','));
+  check('sw: cache bumped to alpha.2', sw.includes("'sprout-20.0.0-alpha.2'"));
+  const man = JSON.parse(readFileSync(join(NEXT, 'manifest.webmanifest'), 'utf8'));
+  check('manifest: Sprout Road, own scope, standalone portrait',
+    man.name === 'Sprout Road' && man.start_url === './' && man.scope === './' && man.display === 'standalone' && man.orientation === 'portrait');
+  check('index.html points at next/manifest.webmanifest', /<link rel="manifest" href="manifest\.webmanifest">/.test(readFileSync(join(NEXT, 'index.html'), 'utf8')));
 }
 
 check('no requests to hosts outside the allowlist', OFFSITE.length === 0, OFFSITE.slice(0, 3).join(', '));

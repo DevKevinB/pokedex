@@ -10,6 +10,7 @@
 // ============================================================
 
 import * as saveMod from './save.js';
+import * as V from './validate.js';
 
 const LAST_PLAYER_KEY = 'pokedexos_next_lastplayer';
 const listeners = new Map();
@@ -93,4 +94,28 @@ export const store = {
     return _save;
   },
   requestPersistence: saveMod.requestPersistence,
+
+  // Shared-state helpers: each mutates store.save through the pure helper in
+  // validate.js (clamped, never throws) and then commit()s.
+  /** Art grew a leaf-stamped gift for the reader's Road. -> new count (<= 99). */
+  addGift(n = 1) { const v = V.addGift(store.save, n); commit(); return v; },
+  /** The reader opens one gift. -> true when there was one. Commits only when one was taken. */
+  takeGift() { const ok = V.takeGift(store.save); if (ok) commit(); return ok; },
+  /** Gifts waiting on the reader's Road. */
+  giftCount() { return V.cleanGifts(store.save.gifts).toReader; },
+  /** A Family Postcard was made today. -> new postcard count. */
+  addPostcard(date) { const v = V.addPostcard(store.save, date); commit(); return v; },
+  /** Couch Versus: 'gabe' | 'dad' won. -> {gabe, dad} or null for anything else. */
+  addVersusWin(winner) { const v = V.addVersusWin(store.save, winner); if (v) commit(); return v; },
+  /** Set (exactly 3 dex ids) or clear (null) player n's picture-lock. Invalid pics change nothing. -> the stored lock. */
+  setLock(n, pics) {
+    const p = store.save.players[Number(n) === 2 ? 2 : 1];
+    const next = pics == null ? null : V.cleanLock({ pics });
+    if (pics != null && !next) return p.lock || null;
+    p.lock = next;
+    commit();
+    return p.lock;
+  },
+  /** Does `pics` open player n's picture-lock? (true when he has none) */
+  lockOpens(n, pics) { return V.lockOpens(store.save.players[Number(n) === 2 ? 2 : 1], pics); },
 };

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   MAX_PLOTS, VISITORS, KINDS, plotKind, plotLook, ensureGardenState, addPetals, visitorsDue,
   meterFill, budReady, evolve, bulbSwell, stageId, findPlotNear, addPlot, growPlot,
-  pickVisitor, recordCatch,
+  pickVisitor, recordCatch, giftsDue, BERRIES_PER_GIFT,
 } from '../scenes/garden-logic.js';
 
 const fresh = () => ensureGardenState({ name: 'ART', profile: 'prereader' });
@@ -84,4 +84,19 @@ test('recordCatch adds at level 5 and never lowers an existing mon', () => {
   p.mons[152] = { level: 30, xp: 10 };
   recordCatch(p, 152);
   assert.deepEqual(p.caught, [152]); assert.equal(p.mons[152].level, 30); assert.equal(p.stats.catches, 2);
+});
+
+test('giftsDue: one gift per 10 berries, lifetime milestones, never negative', () => {
+  assert.equal(BERRIES_PER_GIFT, 10);
+  assert.equal(giftsDue(0, 9), 0);
+  assert.equal(giftsDue(9, 10), 1);
+  assert.equal(giftsDue(10, 11), 0);
+  assert.equal(giftsDue(19, 20), 1);
+  assert.equal(giftsDue(5, 35), 3);
+  assert.equal(giftsDue(20, 10), 0);
+  assert.equal(giftsDue(NaN, 10), 1);
+  assert.equal(giftsDue(-5, 'x'), 0);
+  let n = 0;
+  for (let b = 0; b < 100; b++) n += giftsDue(b, b + 1);
+  assert.equal(n, 10);
 });

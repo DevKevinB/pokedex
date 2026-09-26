@@ -2,6 +2,43 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [19.15.0] - PLAY TOGETHER
+
+Batch two of Sprout Road (still at **devkevinb.github.io/pokedex/next/**).
+This is the first version the three of you can play together.
+
+### What the boys will notice
+
+- **PLAY TOGETHER** is a third big card on the first screen.
+  - **Family Table.** Gabe fights while Art sits in a green strip at the
+    bottom. Art has a berry that heals Gabe's Pokémon, and a leaf pot that
+    fills as he taps. When it's full, a TEAM-UP button appears on *Gabe's*
+    side: Gabe calls it, Bulba leaps in, and a big Vine Whip lands. Art can
+    only help, never get in the way. A win gives Art petals.
+  - **Couch Versus.** Gabe against Dad on one iPad. Dad picks any three
+    Pokémon. Between turns a Bulbasaur curtain hides the screen while you pass
+    it over, so neither of you sees the other's move.
+- **Gabe's own Bulbasaur.** Each region he brings back to life has an Old
+  Venusaur guarding it. Beating one earns a seed, and three seeds hatch an egg
+  with his own Bulbasaur inside. He already owns one, so his hatches shiny.
+- **A rival, Thorn,** blocks the path after each gym leader. His team grows
+  as Gabe's does. Gabe can battle him or walk past; it's never required.
+- **Presents from Art.** Every ten berries Art grows in his garden, Bulba
+  sends a leaf-wrapped gift up the road. Gabe opens it and gets an Oran Berry
+  to heal with in his next battle. Nothing is taken from Art.
+- **Art's move buttons now look different from each other** (shape, colour
+  and power dots), so he can tell them apart without reading.
+- **Family Postcard.** After a campfire rest, tap the postcard: a dated
+  picture of Bulba and Gabe's partner that you can AirDrop or save.
+
+### What Kevin will notice
+
+- **Picture lock for Gabe.** In the grown-up menu (hold ⚙ for two seconds)
+  you can give Gabe's card three secret pictures, so Art can't wander into
+  his save. Changing or removing it asks a times-table sum first.
+- The new game now has its own home-screen name, "Sprout Road", if you add
+  it to the iPad home screen from that address.
+
 ## [19.14.0] - SPROUT ROAD (EARLY LOOK)
 
 The new game has started. It lives next door to this one, at

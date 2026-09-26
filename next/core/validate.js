@@ -23,6 +23,10 @@ export const MAX_LEVEL = 100;
 export const DEFAULT_LEVEL = 5;
 export const CHAPTER_COUNT = 12;
 export const PROFILES = ['reader', 'prereader'];
+export const MAX_SEEDS = 99;        // road.seeds (Old Venusaur seeds)
+export const MAX_GIFTS = 99;        // save.gifts.toReader (Art's leaf-stamped berries)
+export const LOCK_PICS = 3;         // player.lock.pics length
+export const MAX_FAMILY_COUNT = 99999; // family.postcards and each family.versus tally
 
 // Input caps. Real saves are far below these (649 species, 58 trainers); a
 // payload above them is hostile or corrupt, and walking it would stall boot.
@@ -113,13 +117,35 @@ export function freshPlayer() {
     stats: { catches: 0, battlesWon: 0, battlesLost: 0, versusWins: 0, explores: 0 },
     bulba: { petals: 0, stage: 1, stayStone: false, visitors: [] },
     garden: { plots: [], berries: 0 },
-    road: { chapter: 0, cleared: {}, bloomed: [] },
+    road: freshRoad(),
+    lock: null,
     legacy: {},
   };
 }
 
+export function freshRoad() {
+  return {
+    chapter: 0, cleared: {}, bloomed: [],
+    seeds: 0, guardians: {}, hatched: false,
+    rival: { wins: 0, losses: 0, last: -1 },
+  };
+}
+
+/** Save-root fields shared by both players (the family, and gifts that cross from Art to Gabe). */
+export function freshFamily() {
+  return { postcards: 0, lastPostcard: null, versus: { gabe: 0, dad: 0 } };
+}
+export function freshGifts() {
+  return { toReader: 0 };
+}
+
 export function freshSave(created = today()) {
-  return { version: 3, created, players: { 1: freshPlayer(), 2: freshPlayer() } };
+  return {
+    version: 3, created,
+    players: { 1: freshPlayer(), 2: freshPlayer() },
+    family: freshFamily(),
+    gifts: freshGifts(),
+  };
 }
 
 // ---------------------------------------------------------------- pieces
@@ -225,7 +251,54 @@ export function cleanRoad(raw) {
   }
   const bloomed = [...new Set(arr(r.bloomed).map(toId)
     .filter(n => Number.isInteger(n) && n >= 0 && n < CHAPTER_COUNT))].sort((a, b) => a - b);
-  return { chapter: clampInt(r.chapter, 0, CHAPTER_COUNT, 0) || 0, cleared, bloomed };
+  const guardians = {};
+  for (const [k, v] of entries(r.guardians)) {
+    const i = toId(k);
+    if (v && Number.isInteger(i) && i >= 0 && i < CHAPTER_COUNT) guardians[i] = true;
+  }
+  const rv = isObj(r.rival) ? r.rival : {};
+  return {
+    chapter: clampInt(r.chapter, 0, CHAPTER_COUNT, 0) || 0,
+    cleared,
+    bloomed,
+    seeds: clampInt(r.seeds, 0, MAX_SEEDS, 0) || 0,
+    guardians,
+    hatched: r.hatched === true,
+    rival: {
+      wins: clampInt(rv.wins, 0, MAX_FAMILY_COUNT, 0) || 0,
+      losses: clampInt(rv.losses, 0, MAX_FAMILY_COUNT, 0) || 0,
+      last: clampInt(rv.last, -1, CHAPTER_COUNT - 1, -1),
+    },
+  };
+}
+
+/**
+ * Picture-lock: null, or exactly LOCK_PICS dex ids in order (repeats allowed,
+ * like a PIN). Anything else is null — a mangled lock opens, it never traps
+ * a boy outside his own card.
+ */
+export function cleanLock(raw) {
+  if (!isObj(raw) || !Array.isArray(raw.pics) || raw.pics.length !== LOCK_PICS) return null;
+  const pics = raw.pics.map(toId);
+  return pics.every(isDexId) ? { pics } : null;
+}
+
+/** save.family: shared postcards and couch-versus tallies. */
+export function cleanFamily(raw) {
+  const f = isObj(raw) ? raw : {};
+  const vs = isObj(f.versus) ? f.versus : {};
+  const c = v => clampInt(v, 0, MAX_FAMILY_COUNT, 0) || 0;
+  return {
+    postcards: c(f.postcards),
+    lastPostcard: isDate(f.lastPostcard) ? f.lastPostcard : null,
+    versus: { gabe: c(vs.gabe), dad: c(vs.dad) },
+  };
+}
+
+/** save.gifts: berries Art grew, waiting on a reader's Road. */
+export function cleanGifts(raw) {
+  const g = isObj(raw) ? raw : {};
+  return { toReader: clampInt(g.toReader, 0, MAX_GIFTS, 0) || 0 };
 }
 
 // legacy{}: stored VERBATIM (it is never rendered), but made JSON-safe and
@@ -301,6 +374,7 @@ export function cleanPlayer(raw) {
     bulba: cleanBulba(raw.bulba),
     garden: cleanGarden(raw.garden),
     road: cleanRoad(raw.road),
+    lock: cleanLock(raw.lock),
     legacy,
   };
 }
@@ -314,7 +388,59 @@ export function cleanSave(raw) {
     version: 3,
     created: isDate(raw.created) ? raw.created : today(),
     players: { 1: cleanPlayer(ps[1]), 2: cleanPlayer(ps[2]) },
+    family: cleanFamily(raw.family),
+    gifts: cleanGifts(raw.gifts),
   };
+}
+
+// ---------------------------------------------------------------- shared-state helpers
+// Pure mutators on a (clean) v3 save. They clamp, never throw, and return the
+// new value. store.js wraps each one with a commit().
+
+/** Art grew a gift for the reader's Road. Returns the new count (capped at MAX_GIFTS). */
+export function addGift(save, n = 1) {
+  if (!isObj(save)) return 0;
+  const g = cleanGifts(save.gifts);
+  g.toReader = Math.min(MAX_GIFTS, g.toReader + (clampInt(n, 0, MAX_GIFTS, 0) || 0));
+  save.gifts = g;
+  return g.toReader;
+}
+
+/** The reader opens one gift. Returns true when there was one to open. */
+export function takeGift(save) {
+  if (!isObj(save)) return false;
+  const g = cleanGifts(save.gifts);
+  const had = g.toReader > 0;
+  if (had) g.toReader -= 1;
+  save.gifts = g;
+  return had;
+}
+
+/** A Family Postcard was made on `date` (YYYY-MM-DD). Returns the new count. */
+export function addPostcard(save, date = today()) {
+  if (!isObj(save)) return 0;
+  const f = cleanFamily(save.family);
+  f.postcards = Math.min(MAX_FAMILY_COUNT, f.postcards + 1);
+  if (isDate(date)) f.lastPostcard = date;
+  save.family = f;
+  return f.postcards;
+}
+
+/** Couch Versus result: winner 'gabe' | 'dad'. Returns the new tally, or null for an unknown winner. */
+export function addVersusWin(save, winner) {
+  if (!isObj(save) || (winner !== 'gabe' && winner !== 'dad')) return null;
+  const f = cleanFamily(save.family);
+  f.versus[winner] = Math.min(MAX_FAMILY_COUNT, f.versus[winner] + 1);
+  save.family = f;
+  return { ...f.versus };
+}
+
+/** True when `pics` opens `player`'s picture-lock (always true when there is no lock). */
+export function lockOpens(player, pics) {
+  const lock = isObj(player) ? cleanLock(player.lock) : null;
+  if (!lock) return true;
+  if (!Array.isArray(pics) || pics.length !== LOCK_PICS) return false;
+  return lock.pics.every((id, i) => toId(pics[i]) === id);
 }
 
 /** True when a player carries any progress worth protecting. */

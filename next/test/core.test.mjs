@@ -119,11 +119,14 @@ function strings(o, out = [], path = '') {
 
 test('freshPlayer carries every v3 field from the contract', () => {
   const p = V.freshPlayer();
-  for (const k of ['name', 'profile', 'caught', 'team', 'mons', 'shinies', 'nicks', 'favorites', 'items', 'badges', 'gyms', 'champion', 'stats', 'bulba', 'garden', 'road', 'legacy']) {
+  for (const k of ['name', 'profile', 'caught', 'team', 'mons', 'shinies', 'nicks', 'favorites', 'items', 'badges', 'gyms', 'champion', 'stats', 'bulba', 'garden', 'road', 'lock', 'legacy']) {
     assert.ok(Object.hasOwn(p, k), k);
   }
   assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [] });
-  assert.deepEqual(p.road, { chapter: 0, cleared: {}, bloomed: [] });
+  assert.deepEqual(p.road, { chapter: 0, cleared: {}, bloomed: [], seeds: 0, guardians: {}, hatched: false, rival: { wins: 0, losses: 0, last: -1 } });
+  assert.equal(p.lock, null);
+  assert.deepEqual(V.freshSave('2026-01-01').family, { postcards: 0, lastPostcard: null, versus: { gabe: 0, dad: 0 } });
+  assert.deepEqual(V.freshSave('2026-01-01').gifts, { toReader: 0 });
   assert.deepEqual(Object.keys(p.stats).sort(), ['battlesLost', 'battlesWon', 'catches', 'explores', 'versusWins']);
 });
 
@@ -161,7 +164,7 @@ test('hostile: markup in every string and counter comes out clean', () => {
   assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [1] });
   assert.deepEqual(p.garden.plots, [{ x: 3, y: 4, kind: 'berry', grown: 0 }]);
   assert.equal(p.garden.berries, 0);
-  assert.deepEqual(p.road, { chapter: 0, cleared: { 'c0-t0': true }, bloomed: [0] });
+  assert.deepEqual(p.road, { ...V.freshRoad(), cleared: { 'c0-t0': true }, bloomed: [0] });
   for (const v of Object.values(p.stats)) assert.equal(typeof v, 'number');
   for (const v of Object.values(p.items)) assert.equal(typeof v, 'number');
 });
@@ -710,4 +713,192 @@ test('api: buildFighter output drives createBattle when it is present', async ()
   const b = createBattle({ myTeam: [me], enemyTeam: [foe], profile: 'reader', rng: R.seededRng(3), moveLookup: A.moveInfo });
   const ev = await b.choose({ kind: 'move', index: 0 });
   assert.ok(Array.isArray(ev) && ev.length > 0);
+});
+
+// ============================================================ Road v3 fields, picture-lock, family, gifts
+
+test('road: seeds, guardians, hatched and rival are kept when legal', () => {
+  const road = { chapter: 3, cleared: { 'c0-t0': true }, bloomed: [0, 1], seeds: 7, guardians: { 0: true, 2: true }, hatched: true, rival: { wins: 4, losses: 2, last: 2 } };
+  const p = V.cleanPlayer({ road });
+  assert.deepEqual(p.road, road);
+  assert.deepEqual(V.cleanPlayer(clone(p)), p, 'idempotent');
+});
+
+test('road: hostile seeds / guardians / hatched / rival are clamped or cleaned', () => {
+  const json = `{"road":{"seeds":500,"guardians":{"0":true,"3":1,"11":"yes","12":true,"-1":true,"x":true,"5":false,"__proto__":{"polluted":1},"constructor":true},"hatched":"true","rival":{"wins":-4,"losses":"<b>9</b>","last":99}}}`;
+  const p = V.cleanPlayer(JSON.parse(json));
+  assert.equal(p.road.seeds, 99);
+  assert.deepEqual(p.road.guardians, { 0: true, 3: true, 11: true });
+  assert.equal(Object.getPrototypeOf(p.road.guardians), Object.prototype);
+  assert.equal(({}).polluted, undefined);
+  assert.equal(p.road.hatched, false, 'only a real true hatches');
+  assert.deepEqual(p.road.rival, { wins: 0, losses: 0, last: 11 });
+  for (const [seeds, want] of [[-3, 0], ['x', 0], [2.7, 2], [null, 0], [Infinity, 0], ['42', 42]]) {
+    assert.equal(V.cleanPlayer({ road: { seeds } }).road.seeds, want, String(seeds));
+  }
+  for (const [last, want] of [[-5, -1], [-1, -1], [0, 0], ['x', -1], [null, 0], [11, 11], [12, 11]]) {
+    assert.equal(V.cleanPlayer({ road: { rival: { last } } }).road.rival.last, want, String(last));
+  }
+  assert.deepEqual(V.cleanPlayer({ road: { rival: 'x', guardians: [1, 2] } }).road.rival, { wins: 0, losses: 0, last: -1 });
+  assert.equal(V.cleanPlayer({ road: { rival: { wins: 1e12 } } }).road.rival.wins, V.MAX_FAMILY_COUNT);
+});
+
+test('lock: exactly three valid dex ids, or null', () => {
+  assert.deepEqual(V.cleanLock({ pics: [1, 25, 25] }), { pics: [1, 25, 25] }, 'repeats allowed, order kept');
+  assert.deepEqual(V.cleanLock({ pics: ['4', 7, 649] }), { pics: [4, 7, 649] });
+  for (const bad of [null, undefined, 'x', [1, 2, 3], {}, { pics: [1, 2] }, { pics: [1, 2, 3, 4] }, { pics: [0, 1, 2] },
+    { pics: [1, 2, 650] }, { pics: [1, 2, '<b>'] }, { pics: [1, 2, 2.5] }, { pics: 'abc' }]) {
+    assert.equal(V.cleanLock(bad), null, JSON.stringify(bad));
+  }
+  assert.deepEqual(V.cleanPlayer({ lock: { pics: [1, 4, 7], extra: '<x>' } }).lock, { pics: [1, 4, 7] });
+  assert.equal(V.cleanPlayer({ lock: { pics: [1, 4] } }).lock, null);
+  const p = V.cleanPlayer({ lock: { pics: [1, 4, 7] } });
+  assert.ok(V.lockOpens(p, [1, 4, 7]));
+  assert.ok(V.lockOpens(p, ['1', '4', '7']));
+  assert.ok(!V.lockOpens(p, [1, 7, 4]));
+  assert.ok(!V.lockOpens(p, [1, 4]));
+  assert.ok(!V.lockOpens(p, null));
+  assert.ok(V.lockOpens(V.freshPlayer(), []), 'no lock -> always open');
+});
+
+test('family and gifts live on the save root and are cleaned', () => {
+  const json = `{"version":3,"created":"2026-01-01","players":{"1":{"caught":[1]},"2":{}},
+    "family":{"postcards":1e12,"lastPostcard":"<b>","versus":{"gabe":-2,"dad":"7","art":9,"__proto__":{"polluted":1}},"extra":1},
+    "gifts":{"toReader":500,"toArt":3}}`;
+  const s = V.cleanSave(JSON.parse(json));
+  assert.deepEqual(s.family, { postcards: V.MAX_FAMILY_COUNT, lastPostcard: null, versus: { gabe: 0, dad: 7 } });
+  assert.deepEqual(s.gifts, { toReader: 99 });
+  assert.equal(({}).polluted, undefined);
+  const missing = V.cleanSave({ version: 3, players: { 1: {} } });
+  assert.deepEqual(missing.family, V.freshFamily(), 'an older v3 save gets defaults');
+  assert.deepEqual(missing.gifts, V.freshGifts());
+  for (const [v, want] of [[-1, 0], ['x', 0], [3.9, 3], [99, 99], [100, 99]]) assert.equal(V.cleanGifts({ toReader: v }).toReader, want);
+  const good = { version: 3, created: '2026-01-01', players: { 1: V.freshPlayer(), 2: V.freshPlayer() },
+    family: { postcards: 3, lastPostcard: '2026-09-20', versus: { gabe: 5, dad: 4 } }, gifts: { toReader: 2 } };
+  assert.deepEqual(V.cleanSave(clone(good)), good, 'legal values kept exactly');
+});
+
+test('fromV2 defaults every new field; v2 lookalike keys go to legacy', () => {
+  const v2 = v2Fixture();
+  v2.players[1].lock = { pics: [1, 2, 3] };
+  v2.players[1].road = { seeds: 50, hatched: true };
+  v2.family = { postcards: 9 };
+  const s = M.fromV2(v2);
+  assert.deepEqual(s.family, V.freshFamily());
+  assert.deepEqual(s.gifts, V.freshGifts());
+  assert.equal(s.players[1].lock, null);
+  assert.equal(s.players[1].road.seeds, 0);
+  assert.equal(s.players[1].road.hatched, false);
+  assert.deepEqual(s.players[1].road.rival, { wins: 0, losses: 0, last: -1 });
+  assert.deepEqual(s.players[1].legacy.lock, { pics: [1, 2, 3] });
+  assert.deepEqual(s.players[1].legacy.road, { seeds: 50, hatched: true });
+});
+
+test('mergeV2 / applyV1 carry the new fields through untouched', () => {
+  const v3 = M.fromV2(v2Fixture());
+  v3.players[1].road = { ...v3.players[1].road, seeds: 3, guardians: { 0: true }, hatched: true, rival: { wins: 2, losses: 1, last: 0 } };
+  v3.players[1].lock = { pics: [1, 25, 6] };
+  v3.family = { postcards: 4, lastPostcard: '2026-09-01', versus: { gabe: 3, dad: 5 } };
+  v3.gifts = { toReader: 6 };
+  const before = clone(v3);
+  const v2 = v2Fixture();
+  v2.players[1].gyms.beaten['fire:4'] = true;          // classic progress that DOES change the road
+  v2.players[1].lock = null; v2.players[1].road = { seeds: 0, hatched: false };
+  const out = M.mergeV2(deepFreeze(v3), deepFreeze(v2));
+  assert.deepEqual(clone(v3), before, 'input not mutated');
+  const r = out.players[1].road;
+  assert.equal(r.seeds, 3); assert.deepEqual(r.guardians, { 0: true }); assert.equal(r.hatched, true);
+  assert.deepEqual(r.rival, { wins: 2, losses: 1, last: 0 });
+  assert.ok(r.bloomed.includes(8), 'classic fire gym still blooms chapter 8');
+  assert.deepEqual(out.players[1].lock, { pics: [1, 25, 6] });
+  assert.deepEqual(out.family, before.family);
+  assert.deepEqual(out.gifts, before.gifts);
+  assert.deepEqual(M.mergeV2(out, v2), out, 'idempotent');
+  for (const junk of [null, 'x', {}]) {
+    const o = M.mergeV2(before, junk);
+    assert.deepEqual(o.family, before.family); assert.deepEqual(o.gifts, before.gifts);
+    assert.deepEqual(o.players[1].road, before.players[1].road);
+  }
+  const v1 = M.applyV1(before, { p1: [151] });
+  assert.deepEqual(v1.family, before.family); assert.deepEqual(v1.gifts, before.gifts);
+  assert.deepEqual(v1.players[1].lock, before.players[1].lock);
+  assert.equal(v1.players[1].road.seeds, 3);
+});
+
+test('helpers: addGift / takeGift / addPostcard / addVersusWin clamp and never throw', () => {
+  const s = V.freshSave('2026-01-01');
+  assert.equal(V.addGift(s), 1);
+  assert.equal(V.addGift(s, 5), 6);
+  assert.equal(V.addGift(s, 1000), 99, 'capped');
+  assert.equal(V.addGift(s, -5), 99, 'a negative add is a no-op');
+  s.gifts.toReader = 1;
+  assert.equal(V.takeGift(s), true);
+  assert.equal(s.gifts.toReader, 0);
+  assert.equal(V.takeGift(s), false, 'nothing to open');
+  assert.equal(s.gifts.toReader, 0, 'never negative');
+  delete s.gifts; assert.equal(V.addGift(s), 1, 'works on an older save with no gifts{}');
+  assert.equal(V.addPostcard(s, '2026-09-26'), 1);
+  assert.equal(s.family.lastPostcard, '2026-09-26');
+  assert.equal(V.addPostcard(s, 'junk'), 2);
+  assert.equal(s.family.lastPostcard, '2026-09-26', 'a junk date is ignored');
+  assert.deepEqual(V.addVersusWin(s, 'gabe'), { gabe: 1, dad: 0 });
+  assert.deepEqual(V.addVersusWin(s, 'dad'), { gabe: 1, dad: 1 });
+  assert.equal(V.addVersusWin(s, '__proto__'), null);
+  assert.deepEqual(s.family.versus, { gabe: 1, dad: 1 });
+  for (const junk of [null, 5, 'x']) {
+    assert.equal(V.addGift(junk), 0); assert.equal(V.takeGift(junk), false);
+    assert.equal(V.addPostcard(junk), 0); assert.equal(V.addVersusWin(junk, 'gabe'), null);
+  }
+});
+
+test('codes: new fields round-trip; an import can raise family/gifts but never lower them', () => {
+  reset();
+  const save = M.fromV2(v2Fixture());
+  save.players[1].road.seeds = 5; save.players[1].road.guardians = { 1: true }; save.players[1].road.hatched = true;
+  save.players[1].road.rival = { wins: 1, losses: 3, last: 1 };
+  save.players[1].lock = { pics: [6, 6, 25] };
+  save.family = { postcards: 2, lastPostcard: '2026-08-01', versus: { gabe: 1, dad: 2 } };
+  save.gifts = { toReader: 3 };
+  assert.deepEqual(S.importCode(S.exportCode(save), V.freshSave()), save, 'exact round trip');
+
+  const cur = clone(save);
+  cur.family = { postcards: 9, lastPostcard: '2026-09-20', versus: { gabe: 0, dad: 8 } };
+  cur.gifts = { toReader: 1 };
+  const out = S.importCode(S.exportCode(save), cur);
+  assert.deepEqual(out.family, { postcards: 9, lastPostcard: '2026-09-20', versus: { gabe: 1, dad: 8 } });
+  assert.deepEqual(out.gifts, { toReader: 3 });
+  const classic = btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, save: v2Fixture() }))));
+  const out2 = S.importCode(classic, cur);
+  assert.deepEqual(out2.family, cur.family, 'a classic code has no family and cannot erase ours');
+  assert.deepEqual(out2.gifts, cur.gifts);
+});
+
+test('store: gift, postcard, versus and lock helpers commit to disk', () => {
+  const ls = reset();
+  ls.pokedexos_save_v2 = JSON.stringify(v2Fixture());
+  const disk = () => JSON.parse(ls.pokedexos_save_v3);
+  assert.equal(store.giftCount(), 0);
+  assert.equal(store.addGift(), 1);
+  assert.equal(disk().gifts.toReader, 1);
+  assert.equal(store.takeGift(), true);
+  assert.equal(store.takeGift(), false);
+  assert.equal(disk().gifts.toReader, 0);
+  assert.equal(store.addPostcard('2026-09-26'), 1);
+  assert.deepEqual(disk().family.lastPostcard, '2026-09-26');
+  assert.deepEqual(store.addVersusWin('dad'), { gabe: 0, dad: 1 });
+  assert.equal(store.addVersusWin('art'), null);
+  assert.deepEqual(store.setLock(1, [1, 4, 7]), { pics: [1, 4, 7] });
+  assert.deepEqual(store.setLock(1, [1, 4]), { pics: [1, 4, 7] }, 'a bad lock changes nothing');
+  assert.deepEqual(disk().players[1].lock, { pics: [1, 4, 7] });
+  assert.ok(store.lockOpens(1, [1, 4, 7]));
+  assert.ok(!store.lockOpens(1, [7, 4, 1]));
+  assert.ok(store.lockOpens(2, []), 'player 2 has no lock');
+  assert.equal(store.setLock(1, null), null);
+  assert.equal(disk().players[1].lock, null);
+  // A reboot (v3 + v2 merge) keeps all of it.
+  store.addGift(2); store.addPostcard('2026-09-27');
+  S._resetForTests(); store.save = null;
+  assert.equal(store.giftCount(), 2);
+  assert.equal(store.save.family.postcards, 2);
+  assert.deepEqual(store.save.family.versus, { gabe: 0, dad: 1 });
 });

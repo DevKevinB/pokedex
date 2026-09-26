@@ -19,7 +19,7 @@ import * as music from '../audio/music.js';
 import { wait } from '../core/pace.js';
 import { rngFromUrl } from '../core/rng.js';
 import { buildFighter, moveInfo, movesReady } from '../core/api.js';
-import { createBattle, BALL_MODS } from '../battle/createBattle.js';
+import { createBattle, BALL_MODS, BERRY_HEAL, movePictures, powerDots } from '../battle/createBattle.js';
 import { applyXp, xpProgress, moveSeed, catchProbability } from '../data/engine.js';
 import { typeEmoji, typeColors, inkFor } from '../data/config.js';
 
@@ -36,6 +36,40 @@ const pct = (hp, max) => Math.max(0, Math.min(100, (hp / Math.max(1, max)) * 100
 const put = (el, ...kids) => { el.append(...kids.flat().filter(k => k != null && k !== false)); return el; };
 const reduceMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// ---------- battle view exports (see ARCHITECTURE.md "Battle view exports") ----------
+export { movePictures, powerDots };
+export const BERRY_ITEM = 'oran-berry';
+
+/** The big move picture: shape glyph + 1..4 power dots + a small type badge. No words. */
+export function movePicture(pic) {
+  const tc = typeColors[pic.type] || typeColors.normal;
+  return h('span', { class: ['bt-pic', `bt-pic-${pic.shape}`], style: { '--tc': tc }, attrs: { 'aria-hidden': 'true' } },
+    h('span', { class: 'bt-pic-glyph' }, pic.glyph),
+    h('span', { class: 'bt-pic-type' }, typeEmoji[pic.type] || typeEmoji.normal),
+    h('span', { class: 'bt-pic-dots' }, Array.from({ length: 4 }, (_, i) => h('span', { class: ['bt-dot', { on: i < pic.dots }] }))));
+}
+
+/**
+ * One move button, as the battle screen draws it. `pic` is that move's entry
+ * from movePictures(moves) (pass it so same-type moves stay distinct).
+ * opts: { reader:bool, onClick(e) }
+ */
+export function moveButton(move, pic, { reader = true, onClick = null } = {}) {
+  const bg = typeColors[move.type] || typeColors.normal;
+  return h('button', {
+    class: ['bt-move', `t-${move.type}`, { 'bt-move-pic': !reader }],
+    type: 'button',
+    style: { '--tc': bg, '--ink': inkFor(bg) },
+    attrs: { 'aria-label': moveLabel(move.name) },
+    on: onClick ? { click: onClick } : {}
+  },
+  reader ? h('span', { class: 'bt-move-emoji', attrs: { 'aria-hidden': 'true' } }, typeEmoji[move.type] || typeEmoji.normal) : movePicture(pic),
+  reader ? h('span', { class: 'bt-move-name' }, moveLabel(move.name)) : null);
+}
+
+/** HP percentage 0..100 for a bar. */
+export const hpPercent = (hp, max) => pct(hp, max);
+
 export function mount(root, ctx) {
   const params = ctx.params || {};
   const store = ctx.store;
@@ -43,9 +77,22 @@ export function mount(root, ctx) {
   const onEnd = params.onEnd ?? null;
   const wild = !!params.wild;
   const trainer = params.trainer || null;
+  // params.coop: optional hooks so another scene (family-table) can ride on
+  // this battle view. Every hook is optional and wrapped; a throwing hook
+  // never breaks the fight.
+  const coop = params.coop && typeof params.coop === 'object' ? params.coop : null;
+  const hook = (name, ...args) => {
+    const fn = coop && coop[name];
+    if (typeof fn !== 'function') return undefined;
+    try { return fn(...args); } catch (e) { console.warn('battle: coop.' + name + ' failed', e); return undefined; }
+  };
 
   const p0 = store.player();
   const reader = p0.profile !== 'prereader';
+  // Oran Berries from Art's leaf-stamped gifts. Readers only; never more
+  // than the gifts actually waiting on the save.
+  const giftsNow = () => { try { return store.giftCount ? store.giftCount() | 0 : 0; } catch (e) { return 0; } };
+  let berries = reader ? Math.max(0, Math.min(Math.floor(Number(params.berries) || 0), giftsNow())) : 0;
   const calm = !reader || document.body.classList.contains('calm');
 
   let alive = true;
@@ -156,17 +203,9 @@ export function mount(root, ctx) {
   function renderMoves() {
     clear(ui.moves);
     const f = fighter('me');
+    const pics = movePictures(f.moves);
     f.moves.forEach((m, i) => {
-      const bg = typeColors[m.type] || typeColors.normal;
-      ui.moves.appendChild(h('button', {
-        class: ['bt-move', `t-${m.type}`],
-        type: 'button',
-        style: { '--tc': bg, '--ink': inkFor(bg) },
-        attrs: { 'aria-label': moveLabel(m.name) },
-        on: { click: guarded(() => act({ kind: 'move', index: i })) }
-      },
-      h('span', { class: 'bt-move-emoji', attrs: { 'aria-hidden': 'true' } }, typeEmoji[m.type] || typeEmoji.normal),
-      reader ? h('span', { class: 'bt-move-name' }, moveLabel(m.name)) : null));
+      ui.moves.appendChild(moveButton(m, pics[i], { reader, onClick: guarded(() => act({ kind: 'move', index: i })) }));
     });
   }
 
@@ -186,6 +225,15 @@ export function mount(root, ctx) {
         class: 'bt-act bt-act-ball', type: 'button', attrs: { 'aria-label': 'BALL' }, on: { click: guarded(openBalls) }
       }, h('img', { class: 'bt-ball-icon', src: ITEM('poke-ball'), alt: '', draggable: false }),
       reader ? h('span', { class: 'bt-act-label' }, 'BALL') : null) : null,
+      reader && berries > 0 ? h('button', {
+        class: 'bt-act bt-act-berry', type: 'button',
+        disabled: (() => { const f = fighter('me'); return !f || f.hp >= f.maxHp; })(),
+        attrs: { 'aria-label': 'BERRY' },
+        on: { click: guarded(() => act({ kind: 'berry', fraction: BERRY_HEAL, gift: true })) }
+      }, h('img', { class: 'bt-berry-icon', src: ITEM(BERRY_ITEM), alt: '', draggable: false }),
+      h('span', { class: 'bt-act-label' }, 'BERRY'),
+      h('span', { class: 'bt-berry-n' }, 'x' + berries)) : null,
+      hook('actions', coopApi),
       wild && reader ? h('button', {
         class: 'bt-act bt-act-run', type: 'button', attrs: { 'aria-label': 'RUN' },
         on: { click: guarded(() => act({ kind: 'run' })) }
@@ -315,6 +363,19 @@ export function mount(root, ctx) {
       ui.tag.hidden = true;
       return;
     }
+    if (e.type === 'heal') {
+      sfx.petal?.();
+      const host = ui[e.side + 'Sprite'].parentNode;
+      const glow = h('div', { class: 'bt-heal', attrs: { 'aria-hidden': 'true' } },
+        h('img', { class: 'bt-heal-berry', src: ITEM(BERRY_ITEM), alt: '', draggable: false }),
+        ['🍃', '💚', '🍃'].map((c, i) => h('span', { style: { '--i': i } }, c)));
+      host.appendChild(glow);
+      restart(ui[e.side + 'Sprite'], 'healed');
+      setHp(e.side, e.hpAfter);
+      if (!await pause(700)) return;
+      glow.remove();
+      return;
+    }
     if (e.type === 'phase2') {
       sfx.phase2();
       const img = ui.foeSprite.querySelector('.bt-sprite');
@@ -383,6 +444,12 @@ export function mount(root, ctx) {
     ui.intent.hidden = true;
     const events = await battle.choose(action);
     if (!events.length) { busy = false; setControls(true); renderIntent(); return; }
+    if (action.kind === 'berry' && action.gift) {
+      // The berry was eaten: open one of Art's gifts for real.
+      berries = Math.max(0, berries - 1);
+      try { store.takeGift(); } catch (e) { /* the store reports its own save failures */ }
+    }
+    hook('onEvents', events, coopApi);
     let endEv = null;
     for (const e of events) {
       if (!alive) return;
@@ -390,11 +457,21 @@ export function mount(root, ctx) {
       await play(e);
     }
     if (!alive) return;
-    if (endEv) { await finish(endEv); return; }
+    if (endEv) { hook('onEnd', endEv, coopApi); await finish(endEv); return; }
     busy = false;
     setControls(true);
     renderIntent();
+    hook('onTurn', coopApi);
   }
+
+  // What params.coop hooks receive. act() is the same path the buttons use.
+  const coopApi = {
+    get battle() { return battle; },
+    get busy() { return busy; },
+    act: action => act(action),
+    refresh: () => { if (battle && !busy) { renderActions(); renderMoves(); } },
+    root: el,
+  };
 
   // ---------- the result ----------
   function applyResult(ev, result) {
@@ -550,6 +627,7 @@ export function mount(root, ctx) {
     busy = false;
     setControls(true);
     renderIntent();
+    hook('onReady', coopApi);
   }
 
   boot();

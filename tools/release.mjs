@@ -131,6 +131,23 @@ if (!DRY) {
   say(`\n  ✓ all four places now say ${version}`);
 }
 
+// ---- 3b. Sprout Road (/next/) has its own service worker -----------------
+// Its cache name must change every release too, or an installed iPad keeps
+// serving the previous release's offline files. It also has to list every
+// module, or that module is missing when the tablet is offline.
+if (existsSync(p('next/sw.js'))) {
+  const nsw = readFileSync(p('next/sw.js'), 'utf8');
+  if (!/const NEXT_CACHE = '[^']*'/.test(nsw)) die('next/sw.js has no NEXT_CACHE line.', 'Open next/sw.js and restore: const NEXT_CACHE = \'sprout-...\'');
+  if (!DRY) writeFileSync(p('next/sw.js'), nsw.replace(/const NEXT_CACHE = '[^']*'/, `const NEXT_CACHE = 'sprout-${version}'`));
+  say(`  ${DRY ? 'would update' : 'updated'}  next/sw.js  (NEXT_CACHE → sprout-${version})`);
+  const walkNext = (dir, rel) => readdirSync(dir, { withFileTypes: true }).flatMap(d =>
+    d.isDirectory() ? (d.name === 'test' ? [] : walkNext(join(dir, d.name), `${rel}${d.name}/`))
+      : d.name.endsWith('.js') && !(rel === '' && d.name === 'sw.js') ? [`${rel}${d.name}`] : []);
+  const missing = walkNext(p('next'), '').filter(f => !nsw.includes(f));
+  if (missing.length) die(`next/sw.js does not list: ${missing.join(', ')}`, 'Add them to the offline file list in next/sw.js, then run this again.');
+  say(`  ✓ next/sw.js lists all ${walkNext(p('next'), '').length} Sprout Road modules`);
+}
+
 // ---- 4. the service worker must list every file -------------------------
 // A file missing from SHELL_FILES means the boys get a stale copy of it when
 // the tablet is offline — the hardest kind of bug to notice or explain.

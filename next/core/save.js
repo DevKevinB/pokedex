@@ -16,7 +16,7 @@
 // says, through import, restore, merge or bug.
 // ============================================================
 
-import { cleanSave, cleanPlayer, freshSave, isObj, hasProgress, today } from './validate.js';
+import { cleanSave, cleanPlayer, freshSave, isObj, hasProgress, today, cleanFamily, cleanGifts } from './validate.js';
 import { fromV2, mergeV2, applyV1, isV2Save } from './migrate.js';
 
 export const KEYS = {
@@ -284,6 +284,23 @@ function keepBulba(next, current) {
   return next;
 }
 
+// The save-root family{} and gifts{} belong to the whole household, not to
+// whoever made the code. An import (often an older code, or a classic v2 code
+// that has no family at all) can raise them but never lower them: postcards
+// and versus tallies take the max, the newest postcard date wins, and waiting
+// gifts take the max (a gift re-appearing is a bonus; one vanishing is not).
+function keepShared(next, current) {
+  const a = cleanFamily(current && current.family);
+  const b = cleanFamily(next.family);
+  next.family = {
+    postcards: Math.max(a.postcards, b.postcards),
+    lastPostcard: [a.lastPostcard, b.lastPostcard].filter(Boolean).sort().pop() || null,
+    versus: { gabe: Math.max(a.versus.gabe, b.versus.gabe), dad: Math.max(a.versus.dad, b.versus.dad) },
+  };
+  next.gifts = { toReader: Math.max(cleanGifts(current && current.gifts).toReader, cleanGifts(next.gifts).toReader) };
+  return next;
+}
+
 /** One-deep undo slot. Returns true when the snapshot was written. */
 export function snapshot(save) {
   let json;
@@ -298,8 +315,8 @@ export function snapshot(save) {
  * (a typo costs nothing, not even the undo slot), then the current save is
  * snapshotted to pokedexos_save_v3_prev, then the new save is written.
  * Returns the new save. Throws the decodeCode errors, 'SNAPSHOT_FAILED' or 'SAVE_FAILED'.
- *   v3 code -> replaces the save (Bulba ratcheted)
- *   v2 code -> fromV2, replaces the save (Bulba ratcheted)
+ *   v3 code -> replaces the save (Bulba, family{} and gifts{} ratcheted)
+ *   v2 code -> fromV2, replaces the save (Bulba, family{} and gifts{} ratcheted)
  *   v1 code -> caught ids unioned into the current save
  */
 export function importCode(code, currentSave) {
@@ -307,7 +324,7 @@ export function importCode(code, currentSave) {
   const current = cleanSave(currentSave) || freshSave();
   let next;
   if (kind === 'v1') next = applyV1(current, data);
-  else next = keepBulba(data, current);
+  else next = keepShared(keepBulba(data, current), current);
   // No undo slot, no import: an overwrite that cannot be taken back is
   // exactly the loss this whole module exists to prevent.
   if (!snapshot(currentSave || current)) throw codeError('SNAPSHOT_FAILED');

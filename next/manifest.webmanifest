@@ -1,0 +1,19 @@
+{
+  "name": "Sprout Road",
+  "short_name": "Sprout Road",
+  "description": "Gabe's Verdant Road and Art's Garden: a Pokémon adventure for two brothers.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16162a",
+  "theme_color": "#4caf50",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png",
+      "sizes": "30x30",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

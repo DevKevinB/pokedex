@@ -6,6 +6,8 @@
 // OH NO card instead of a black screen for the whole app.
 //
 // Scene contract: mod.mount(section, { go, store, params }) -> unmount().
+// Scenes: who, garden, road, battle, rest, hatch, together, family-table,
+// versus, lock, postcard (see ARCHITECTURE.md).
 // ============================================================
 
 import { initPace, PACE } from './core/pace.js';
@@ -21,7 +23,17 @@ const SCENES = {
   road: () => import('./scenes/road.js'),
   battle: () => import('./scenes/battle.js'),
   rest: () => import('./scenes/rest.js'),
+  // batch 2
+  hatch: () => import('./scenes/hatch.js'),
+  together: () => import('./scenes/together.js'),
+  'family-table': () => import('./scenes/family-table.js'),
+  versus: () => import('./scenes/versus.js'),
+  lock: () => import('./scenes/lock.js'),
+  postcard: () => import('./scenes/postcard.js'),
 };
+// Scenes that belong to both boys at once (PLAY TOGETHER): never calm-gated
+// on whoever was picked last, and never redirected by profile.
+const SHARED = new Set(['who', 'together', 'family-table', 'versus', 'lock']);
 
 // ---------------------------------------------------------------- error net
 // A child never sees a stack trace. One icon-led card, one big ⟳ button.
@@ -101,11 +113,13 @@ function isPrereader() {
 function resolveScene(name) {
   if (!SCENES[name]) return 'who';
   if (name === 'garden' && !isPrereader()) return 'road';
+  // The egg is the reader's story: a prereader never hatches anything.
+  if (name === 'hatch' && isPrereader()) return 'garden';
   return name;
 }
 
 function applyCalm(name) {
-  document.body.classList.toggle('calm', name !== 'who' && isPrereader());
+  document.body.classList.toggle('calm', !SHARED.has(name) && isPrereader());
 }
 
 async function go(name, params = {}) {

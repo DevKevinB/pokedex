@@ -53,7 +53,16 @@ next/scenes/battle.js      battle screen UI over createBattle                   
 next/scenes/who.js         WHO'S PLAYING picker                                 [integrator]
 next/scenes/garden.js      Art's Garden + BULBA                                 [garden]
 next/scenes/road.js        Gabe's Verdant Road map + chapter screen             [road]
-next/scenes/rest.js        campfire rest scene after a chapter                  [road]
+next/scenes/rest.js        campfire rest scene after a chapter (+ 📮 postcard)  [road]
+next/scenes/hatch.js       the egg ceremony (route AND a Road overlay)          [road]
+next/data/rival.js         Rival Thorn: team, placement, results                [road]
+next/scenes/together.js    PLAY TOGETHER seats + mode pick                      [together]
+next/scenes/family-table.js co-op battle; exports makeStage() for versus        [together]
+next/scenes/versus.js      Couch Versus (reader vs DAD, curtain between picks)  [together]
+next/scenes/lock.js        picture lock (overlay via openLock, or a route)      [together]
+next/scenes/postcard.js    FAMILY POSTCARD scene                                [postcard]
+next/ui/postcard.js        makePostcard() -> PNG Blob (canvas, CORS sprites)    [postcard]
+next/manifest.webmanifest  'Sprout Road' PWA manifest, scope ./                 [integrator]
 next/test/*.test.mjs       node --test unit tests (pure modules)                [each owner]
 test/next-smoke.mjs        playwright smoke for /next/                          [integrator]
 ```
@@ -63,10 +72,29 @@ test/next-smoke.mjs        playwright smoke for /next/                          
 Every scene module exports **`mount(root, ctx)`**, which returns an
 **`unmount()`** function. `root` is an empty `<section>` the router owns.
 `ctx = { go(sceneName, params), store, params }`. Scene names are `who`,
-`garden`, `road`, `battle`, `rest`. A scene must clean up all of its timers,
-listeners and rAF in `unmount`.
+`garden`, `road`, `battle`, `rest`, `hatch`, `together`, `family-table`,
+`versus`, `lock`, `postcard`. An unknown name goes to `who`; `garden` for a
+reader goes to `road`; `hatch` for a prereader goes to `garden`. A scene must
+clean up all of its timers, listeners and rAF in `unmount`.
+`body.calm` follows the current player's profile, except on the shared scenes
+(`who`, `together`, `family-table`, `versus`, `lock`), which are never calm-gated.
 
-`battle` params: `{ enemyTeam:[{id,level}], trainer:{name,taunt,leader:bool}|null, wild:bool, returnTo:'road'|'garden', onEnd:'chapter:<i>:<t>'|null }`.
+Batch 2 params:
+- `together` / `family-table`: `{ battler:1|2, helper:1|2 }` (sanitised by `together.seatsFrom`). `versus`: `{ battler }`.
+- `lock`: `{ player }` (who.js normally uses the `openLock()` overlay instead).
+- `hatch`: none. The Road also plays it as an overlay when `readyToHatch(p)`; its OK goes to `road`.
+- `postcard`: `{ returnTo, returnParams?, highlight? }`. BACK calls `go(returnTo, returnParams)`; only integer
+  `chapter`/`battler`/`helper` survive in `returnParams`. Entry points: the rest scene's 📮 button
+  (`returnTo:'rest'`, `returnParams:{chapter}`) and the ▶ on the Family Table / Couch Versus result card
+  (`returnTo:'together'`, `returnParams:{battler, helper}`).
+
+Battle end codes (`params.onEnd`) handled by the Road: `'chapter:<i>:<j>'`, `'guardian:<i>'`
+(Old Venusaur, a win gives a seed) and `'rival:<i>'` (Rival Thorn, win or lose recorded).
+Every Road battle carries `params.berries` = Gabe's unwrapped Oran Berries (`chapters.withBerries`).
+
+`battle` params: `{ enemyTeam:[{id,level}], trainer:{name,taunt,leader:bool}|null, wild:bool, returnTo:'road'|'garden', onEnd:'chapter:<i>:<t>'|null, berries?:number, coop?:object }`.
+`berries` (optional, readers only): Oran Berries the caller offers from Art's gifts. The BERRY button shows `min(berries, store.giftCount())`
+and each berry eaten calls `store.takeGift()`. `coop` (optional): hooks, see "Battle view exports".
 When a battle ends it calls `ctx.go(params.returnTo, { result:'win'|'lose'|'caught'|'fled', onEnd })`.
 
 ## Store (`core/store.js`)
@@ -78,6 +106,8 @@ export const store = {
   player(),        // -> save.players[current]
   on(evt, fn) -> off, emit(evt, data),
   commit(),        // persist() + emit('change')
+  addGift(n), takeGift(), giftCount(), addPostcard(date), addVersusWin(w),
+  setLock(n, pics), lockOpens(n, pics),   // see "Save v3" below
 };
 ```
 
@@ -87,7 +117,9 @@ export const store = {
 
 ```js
 { version: 3, created: 'YYYY-MM-DD',
-  players: { 1: Player, 2: Player } }
+  players: { 1: Player, 2: Player },
+  family: { postcards:0..99999, lastPostcard:'YYYY-MM-DD'|null, versus:{ gabe:0..99999, dad:0..99999 } },  // shared
+  gifts:  { toReader:0..99 } }   // berries Art grew, waiting on the reader's Road as leaf-stamped gifts
 Player = {
   name, profile: 'reader'|'prereader',          // from v2 settings.junior
   caught:[ids], team:[ids<=6], mons:{id:{level,xp}}, shinies:[ids], nicks:{id:str},
@@ -95,10 +127,63 @@ Player = {
   champion:null|{date,team,levels}, stats:{catches,battlesWon,battlesLost,versusWins,explores},
   bulba:{ petals:0, stage:1, stayStone:false, visitors:[ids] },   // stage 1..3 = Bulbasaur/Ivysaur/Venusaur
   garden:{ plots:[{x,y,kind,grown}] (<=60), berries:0 },
-  road:{ chapter:0, cleared:{ 'c<i>-t<j>': true }, bloomed:[chapterIdx] },
+  road:{ chapter:0, cleared:{ 'c<i>-t<j>': true }, bloomed:[chapterIdx],
+         seeds:0..99,                  // Old Venusaur seeds earned
+         guardians:{ <chapterIdx>: true },   // which Old Venusaur guardians he beat (keys '0'..'11')
+         hatched:false,                // his own Bulbasaur has hatched (only a real `true` counts)
+         rival:{ wins:0, losses:0, last:-1 } },   // last = chapterIdx of the last rival fight, -1 = none
+  lock: null | { pics:[id,id,id] },  // picture-lock on this card: EXACTLY 3 dex ids, order matters, repeats allowed
   legacy:{}                                      // unknown v2 keys, verbatim, NEVER rendered
 }
 ```
+
+**New fields (batch 2), all optional on disk.** An older v3 save without them
+loads with the defaults above (`freshRoad()`, `lock:null`, `freshFamily()`,
+`freshGifts()`); nothing needs a version bump.
+- Every counter clamps (`seeds` and `gifts.toReader` to 0..99, the rest to
+  0..99999); junk, negatives, NaN and poisoned keys are cleaned, never thrown.
+  A lock that is not exactly 3 valid ids becomes `null` (a mangled lock opens;
+  it never traps a boy outside his own card).
+- **Why gifts are on the save root:** they cross players (Art's Garden adds,
+  the reader's Road takes), and player numbers are not fixed to boys. The
+  root counter means neither scene has to find "the other player".
+- Migration only DEFAULTS these (`fromV2`) or carries them through
+  untouched (`mergeV2`, `applyV1`). A v2 player carrying `lock`/`road`
+  lookalikes goes to `legacy{}` as usual. `mergeRoad` keeps every v3-only
+  Road field from v3.
+- Import (`importCode`) **ratchets `family` and `gifts`**: postcards and
+  versus tallies take the max of current vs code, the newest `lastPostcard`
+  wins, and `gifts.toReader` takes the max. A classic v2 code (no family)
+  can never erase them. Per-player Road fields follow the code, like the
+  rest of the player.
+- Petals / stage and caught rules are unchanged.
+
+Helpers (pure, in `core/validate.js`; mutate the given save, clamp, never throw):
+
+```js
+export const MAX_SEEDS = 99, MAX_GIFTS = 99, LOCK_PICS = 3, MAX_FAMILY_COUNT = 99999
+export function freshRoad(); export function freshFamily(); export function freshGifts()
+export function cleanLock(raw)     // -> {pics:[3 ids]} | null
+export function cleanFamily(raw); export function cleanGifts(raw)
+export function addGift(save, n = 1)      // -> new toReader count (<= 99)
+export function takeGift(save)            // -> true when one was taken (never below 0)
+export function addPostcard(save, date = today())   // -> new postcard count; sets lastPostcard
+export function addVersusWin(save, 'gabe'|'dad')    // -> {gabe, dad} | null for any other winner
+export function lockOpens(player, pics)   // -> true if pics match the lock (always true with no lock)
+```
+
+Store wrappers (each calls the helper on `store.save`, then `commit()`):
+`store.addGift(n=1)`, `store.takeGift()` (commits only when one was taken),
+`store.giftCount()`, `store.addPostcard(date?)`, `store.addVersusWin(w)`,
+`store.setLock(n, pics|null)` (invalid pics change nothing; returns the
+stored lock), `store.lockOpens(n, pics)`.
+Oran Berries: unwrapping a gift on the Road moves it into `player.items.oranBerries`
+(a pouch counter, always <= `gifts.toReader`; no schema change, `items` keeps safe counter keys).
+The gift itself stays on the save root until the berry is eaten in battle.
+Who calls them: the Garden calls `store.addGift(n)` each time `garden.berries`
+(a lifetime count that only goes up) crosses a multiple of 10
+(`garden-logic.giftsDue`, `BERRIES_PER_GIFT = 10`); the battle's BERRY
+button calls `store.takeGift()` once per berry eaten.
 
 - `load()`: v3 exists → validate it → **`mergeV2(v3, v2)`** if v2 exists
   (additive, see below) → return. No v3 → `fromV2(v2)` or fresh.
@@ -130,16 +215,31 @@ reader → `road`.
 ## Battle factory (`battle/createBattle.js`, DOM-free and unit-tested)
 
 ```js
-export function createBattle({ myTeam, enemyTeam, profile, rng, moveLookup, wild, leader })
+export function createBattle({ myTeam, enemyTeam, profile, rng, moveLookup, wild, leader, berries = Infinity })
 // myTeam/enemyTeam: [{ id, level, name, types:[..], stats:{hp,atk,def,spatk,spdef,spe}, moves:[{name,type,power,damage_class}] }]
 // returns battle = {
 //   state: { me:{active, team:[{...,hp,maxHp}]}, foe:{...}, turn, over:false, winner:null, phase:1 },
-//   async choose({ kind:'move', index } | { kind:'switch', index } | { kind:'ball', ball:'poke'|'great'|'ultra'|'master' }) -> events[],
+//   async choose({ kind:'move', index } | { kind:'switch', index } | { kind:'ball', ball:'poke'|'great'|'ultra'|'master' }
+//                | { kind:'berry', fraction = BERRY_HEAL (0.3) }) -> events[],
 //   foeIntent()   // the move index the foe will use next (committed before the player acts)
 // }
 // events: [{type:'move', side, move, dmg, crit, eff, hpAfter} | {type:'faint', side} | {type:'phase2', side}
-//          | {type:'catch', shakes, success} | {type:'end', winner}]
+//          | {type:'catch', shakes, success} | {type:'heal', side:'me', index, amount, hpAfter} | {type:'end', winner}]
 ```
+
+**Berry:** heals my active mon by `fraction` of maxHp (at least 1, capped at
+maxHp) and **is a turn**: the foe's committed move then lands. It returns `[]`
+and passes no turn when the mon is already full, the fraction is not > 0, or
+`berries` (the factory's own limit, `state.me.berries`) is used up. The scene
+gates the gift count; the factory default is unlimited, so a coop caller can
+heal without spending gifts.
+
+Also exported (pure): `BERRY_HEAL = 0.3`, `powerDots(power) -> 1..4`
+(≤40, ≤65, ≤90, more), and `movePictures(moves) -> [{glyph, dots, type,
+shape:'physical'|'special'}]`: a shape per move (fist, bang, paw, pin,
+boomerang, foot, tooth / swirl, beam, bubbles, dizzy, rainbow, tornado,
+puff), picked from the move name and damage class, never a type emoji or a
+star, and **never the same glyph twice for one type in one moveset**.
 
 Use `engine.computeDamage` / `catchProbability` / `applyXp`. For a
 prereader: enemy damage is capped by `JUNIOR_MAX_TAKE` and HP floors at 1
@@ -147,6 +247,37 @@ prereader: enemy damage is capped by `JUNIOR_MAX_TAKE` and HP floors at 1
 **Leader phase 2:** at ≤50% HP on the leader's LAST mon, emit `phase2`
 once, heal it +25% maxHp, and raise its attack by 1.25×. A new object is
 made per fight, with **no module-level mutable state**.
+
+## Battle view exports (`scenes/battle.js`)
+
+For other scenes (family-table) that want the battle's look without copying
+it. All are named exports next to `mount`:
+
+```js
+export { movePictures, powerDots }            // re-exported from battle/createBattle.js
+export const BERRY_ITEM = 'oran-berry'        // ITEM(BERRY_ITEM) is the berry picture
+export function movePicture(pic)              // <span.bt-pic>: big glyph, small type badge, 4 power dots. No words, aria-hidden.
+export function moveButton(move, pic, { reader = true, onClick = null })
+                                              // <button.bt-move>: reader = type emoji + NAME; prereader = movePicture(pic) only
+export const hpPercent = (hp, max) => 0..100
+```
+
+`params.coop` hooks (all optional; each is wrapped in try/catch, so a
+throwing hook never breaks the fight):
+
+```js
+coop = {
+  onReady(api),               // the fight is on screen and the controls are live
+  onEvents(events, api),      // right after battle.choose() returned (before playback)
+  onTurn(api),                // playback finished and the controls are live again
+  onEnd(endEvent, api),       // before the result card; the scene still writes the result and calls ctx.go
+  actions(api) -> Node | Node[] | null,   // extra buttons appended to the action row on every render
+}
+api = { battle, busy, act(action) -> Promise, refresh(), root }
+// api.act goes down the same path as the buttons (ignored while busy or over).
+// api.act({ kind:'berry', fraction }) heals WITHOUT spending a gift; only the
+// BERRY button (action.gift === true) calls store.takeGift().
+```
 
 ## Chapters (`data/chapters.js`)
 

@@ -17,6 +17,7 @@ const BALLS = ['poke-ball', 'great-ball', 'ultra-ball', 'master-ball'];
 const E = {                                      // emoji pictures (never words)
   sprout: '\u{1F331}', home: '\u{1F3E0}', sign: '\u{1FAA7}', basket: '\u{1F9FA}',
   heart: '\u{1F497}', leaf: '\u{1F343}', zzz: '\u{1F4A4}', spark: '\u{2728}',
+  gift: '\u{1F381}',
 };
 
 const { sfx, cry, unlock } = audio;
@@ -300,7 +301,7 @@ export function mount(root, ctx) {
     for (let i = 0; i < due; i++) pendingVisitors++;
     if (due) later(trySpawnVisitor, 900);
     updateBulbaLook();
-    if (!wasReady && L.budReady(bulba)) play('bloom');
+    if (!wasReady && L.budReady(bulba)) { play('bloom'); later(lookAtBud, 1600); }
     save();
   }
   function trySpawnVisitor() {
@@ -474,6 +475,16 @@ export function mount(root, ctx) {
     jump(B);
     save();
   }
+  // The bud is glowing: Bulba stops, peeks up at it and wiggles, and the bud
+  // twinkles, so Art's eye goes to it. No words; slow and calm-safe.
+  function lookAtBud() {
+    if (asleep || busy || !L.budReady(bulba)) return;
+    cancel(B.moveT); B.el.classList.remove('moving');
+    B.hop.classList.remove('jump', 'sniff', 'lookbud'); void B.hop.offsetWidth;
+    B.hop.classList.add('lookbud');
+    bud.classList.remove('peeked'); void bud.offsetWidth; bud.classList.add('peeked');
+    later(() => { B.hop.classList.remove('lookbud'); bud.classList.remove('peeked'); }, 1800);
+  }
   function sleep() {
     if (asleep || busy) return;
     asleep = true;
@@ -575,7 +586,12 @@ export function mount(root, ctx) {
     bushRest.set(pl, now + 8000);
     renderPlot(pl, true);
     later(() => renderPlot(pl), 8100);
-    garden.berries = (Number(garden.berries) || 0) + 1;
+    const beforeBerries = Number(garden.berries) || 0;
+    garden.berries = beforeBerries + 1;
+    const gifts = L.giftsDue(beforeBerries, garden.berries);
+    // The gift lands on disk in the SAME commit as the berry that earned it:
+    // an unmount or app-kill during the flying-box animation must not lose it.
+    if (gifts > 0) { try { if (store.addGift) store.addGift(gifts); } catch (e) { /* a gift is a bonus; never breaks the garden */ } }
     const from = sceneXY(pl.x, pl.y), to = elCenter(basketBtn);
     const b = h('img', { class: 'gd-flying', attrs: { src: ITEM(L.kindInfo(pl.kind).berry), alt: '', draggable: 'false' }, style: { left: from.px + 'px', top: (from.py - 20) + 'px' } });
     fx.appendChild(b);
@@ -583,8 +599,40 @@ export function mount(root, ctx) {
     try {
       b.animate([{ transform: 'translate(-50%,-50%)' }, { transform: `translate(calc(-50% + ${to.px - from.px}px), calc(-50% + ${to.py - from.py + 20}px)) scale(.7)` }], { duration: ms, easing: 'ease-in', fill: 'forwards' });
     } catch (e) { /* noop */ }
-    later(() => { b.remove(); play('petal'); updateBerries(); basketBtn.classList.remove('pop'); void basketBtn.offsetWidth; basketBtn.classList.add('pop'); }, ms);
+    later(() => {
+      b.remove(); play('petal'); updateBerries(); basketBtn.classList.remove('pop'); void basketBtn.offsetWidth; basketBtn.classList.add('pop');
+      if (gifts > 0) sendGift(from, gifts);
+    }, ms);
     save();
+  }
+
+  // ---- gifts for the Road: every 10 berries, a leaf-stamped box flies off to
+  // the signpost. It is Art SENDING something: nothing of his goes down.
+  // Purely visual: the gift itself was already stored by pickBerries.
+  function sendGift(from, n) {
+    const to = elCenter(roadBtn);
+    const box = h('div', { class: 'gd-gift', attrs: { 'aria-hidden': 'true' }, style: { left: from.px + 'px', top: (from.py - 30) + 'px' } },
+      h('span', { class: 'gd-gift-box' }, E.gift), h('span', { class: 'gd-gift-leaf' }, E.leaf));
+    fx.appendChild(box);
+    const ms = dur(1300);
+    const dx = to.px - from.px, dy = to.py - (from.py - 30);
+    try {
+      box.animate([
+        { transform: 'translate(-50%,-50%) scale(.4)', opacity: 0 },
+        { transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1, offset: 0.18 },
+        { transform: `translate(calc(-50% + ${dx / 2}px), calc(-50% + ${dy / 2 - 90}px)) scale(1) rotate(-12deg)`, offset: 0.55 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.5) rotate(8deg)`, opacity: 1, offset: 0.9 },
+        { transform: `translate(calc(-50% + ${dx + 40}px), calc(-50% + ${dy - 30}px)) scale(.2)`, opacity: 0 },
+      ], { duration: ms, easing: 'ease-in-out', fill: 'forwards' });
+    } catch (e) { /* old WebKit: the box just vanishes */ }
+    if (!asleep && busy !== 'evolve') { jump(B); hearts(B); }
+    play('bloom');
+    later(() => {
+      box.remove();
+      play('petal');
+      roadBtn.classList.remove('gifted'); void roadBtn.offsetWidth; roadBtn.classList.add('gifted');
+      later(() => roadBtn.classList.remove('gifted'), 900);
+    }, ms);
   }
   listen(field, 'pointerdown', onFieldTap);
   listen(sky, 'pointerdown', e => {
@@ -601,6 +649,7 @@ export function mount(root, ctx) {
     if (!asleep && now - lastInput > NAP_AFTER) { sleep(); return; }
     if (asleep || now < nextIdleAt) return;
     nextIdleAt = now + rand(4500, 8000);
+    if (L.budReady(bulba) && rng() < 0.5) { lookAtBud(); return; }
     const flowers = garden.plots.filter(pl => L.plotLook(pl.grown) !== 'sprout');
     if (flowers.length && rng() < 0.55) {
       const fl = flowers[Math.floor(rng() * flowers.length)];
@@ -648,6 +697,7 @@ export function mount(root, ctx) {
     bulbaMove(0.5, 0.58, { speed: 3, done: () => { ambientCry(L.stageId(bulba.stage)); jump(B); } });
   });
   if (bulba.petals >= L.PETALS_PER_VISITOR) { pendingVisitors++; later(trySpawnVisitor, 2600); }
+  if (L.budReady(bulba)) later(lookAtBud, 3200);
 
   // test/debug hook: DOM-only, read-only numbers
   scene.dataset.petals = String(bulba.petals);

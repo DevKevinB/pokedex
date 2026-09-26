@@ -8,6 +8,7 @@ export const PETALS_PER_VISITOR = 8;
 export const EVOLVE_AT = { 1: 50, 2: 150 };        // stage -> petals needed to reach stage+1
 export const STAGE_IDS = [1, 2, 3];                 // Bulbasaur, Ivysaur, Venusaur
 export const MAX_GROWN = 4;                         // 0-1 sprout, 2-3 flower, 4 berry bush
+export const BERRIES_PER_GIFT = 10;                 // every 10 berries he picks sends 1 gift to the Road
 
 // Flower look + the berry its bush carries. Keys are what the save stores.
 export const KINDS = [
@@ -149,4 +150,15 @@ export function recordCatch(p, id) {
   if (!p.bulba.visitors.includes(id)) p.bulba.visitors.push(id);
   p.stats.catches = (Number(p.stats.catches) || 0) + 1;
   return p;
+}
+
+/**
+ * Gifts earned crossing from `before` to `after` berries picked (every
+ * BERRIES_PER_GIFT). garden.berries only ever goes up, so this is a lifetime
+ * milestone count: nothing is ever taken from Art to make a gift.
+ */
+export function giftsDue(before, after) {
+  const b = Math.max(0, Math.floor(Number(before) || 0));
+  const a = Math.max(0, Math.floor(Number(after) || 0));
+  return Math.max(0, Math.floor(a / BERRIES_PER_GIFT) - Math.floor(b / BERRIES_PER_GIFT));
 }

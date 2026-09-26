@@ -8,14 +8,21 @@
 // ============================================================
 
 import { h, svg, clear } from '../ui/h.js';
-import { spriteImg } from '../ui/sprite.js';
-import { sfx } from '../audio/audio.js';
+import { spriteImg, ITEM } from '../ui/sprite.js';
+import { sfx, cry } from '../audio/audio.js';
 import * as music from '../audio/music.js';
 import { wait } from '../core/pace.js';
+import { getMon, cachedMon } from '../core/api.js';
 import {
   CHAPTERS, leaderIdx, isCleared, isChapterDone, isTrainerOpen, currentChapter,
-  nextTrainer, chapterView, battleParams, applyWin, trainerLevel
+  nextTrainer, chapterView, battleParams, applyWin, trainerLevel,
+  GUARDIAN_ID, GUARDIAN_NAME, HATCH_SEEDS, hasGuardian, guardianBeaten, guardianLevel,
+  guardianParams, applyGuardianWin, seedCount, isHatched, readyToHatch,
+  BERRY_KEY, berryCount, wrappedGifts, openGift, settleBerries, withBerries
 } from '../data/chapters.js';
+import {
+  RIVAL_NAME, RIVAL_LOSE_LINES, rivalSpot, rivalParams, rivalTeam, rivalLine, applyRivalResult
+} from '../data/rival.js';
 
 const N = CHAPTERS.length;
 const STEP = 150;          // px between chapter stops
@@ -29,6 +36,11 @@ const nodeY = i => TOP + (N - 1 - i) * STEP;
 const TREE_ID = 3;         // Venusaur
 const BULBA_ID = 1;
 
+// Gifts waiting when we sent Gabe into a battle. The battle takes one gift
+// per berry eaten, so the difference on the way back is what he ate. Lives
+// across the road -> battle -> road round trip (module state, not the save).
+let sentGifts = -1;
+
 const play = name => { try { if (sfx && typeof sfx[name] === 'function') sfx[name](); } catch (e) { /* never break a scene over a sound */ } };
 const reduceMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -40,17 +52,35 @@ export function mount(root, ctx) {
   let alive = true;
 
   // --- a Road win coming back from battle ------------------------------
-  let outcome = null;
+  let outcome = null, gOutcome = null, rOutcome = null, dirty = false;
   if (params.result === 'win' && params.onEnd) {
     outcome = applyWin(player(), params.onEnd);
-    if (outcome) { try { store.commit(); } catch (e) { console.warn('road: commit failed', e); } }
+    gOutcome = applyGuardianWin(player(), params.onEnd);
+    if (outcome || gOutcome) dirty = true;
   }
+  if (params.onEnd && (params.result === 'win' || params.result === 'lose')) {
+    rOutcome = applyRivalResult(player(), params.onEnd, params.result);
+    if (rOutcome) dirty = true;
+  }
+  // Berries eaten in that battle leave the pouch (the battle already took
+  // their gifts). The pouch is also re-clamped to the gifts waiting.
+  if (player().profile !== 'prereader') {
+    const gifts = store.giftCount();
+    const p = player();
+    const was = p.items && p.items[BERRY_KEY];
+    const now = settleBerries(p, sentGifts >= 0 ? sentGifts : gifts, gifts);
+    if (was != null && was !== now) dirty = true;
+  }
+  sentGifts = -1;
+  if (dirty) { try { store.commit(); } catch (e) { console.warn('road: commit failed', e); } }
   let blooming = outcome && outcome.bloom ? outcome.i : -1;
 
   // --- skeleton ---------------------------------------------------------
   // A prereader may peek at the Road from his garden's signpost: same map,
   // but pictures only (words hidden here and by .road-pre in style.css).
+  // Gabe's story (guardians, seeds, the rival, Art's gifts) is for a reader.
   const pre = player().profile === 'prereader';
+  const story = !pre;
   const scene = h('div', { class: ['road', pre && 'road-pre'], dataset: { scene: 'road' } });
   const tree = spriteImg(TREE_ID, { class: 'road-tree' });
   const horizon = h('div', { class: 'road-horizon', attrs: { 'aria-hidden': 'true' } }, tree);
@@ -61,11 +91,13 @@ export function mount(root, ctx) {
     class: 'road-home', type: 'button', attrs: { 'aria-label': 'HOME' },
     on: { click: () => { play('tap'); ctx.go('who'); } }
   }, '⌂');
-  const topbar = h('div', { class: 'road-top' }, homeBtn, title);
+  const pouch = h('div', { class: 'road-pouch', hidden: true });
+  const topbar = h('div', { class: 'road-top' }, homeBtn, title, pouch);
   const nextBtn = h('button', { class: 'road-next', type: 'button', on: { click: onNext } });
   const bottombar = h('div', { class: 'road-bottom' }, nextBtn);
   const chapterLayer = h('div', { class: 'road-chapter', hidden: true });
-  scene.append(horizon, scroller, topbar, chapterLayer, bottombar);
+  const rivalLayer = h('div', { class: 'rival-layer', hidden: true });
+  scene.append(horizon, scroller, topbar, chapterLayer, bottombar, rivalLayer);
   root.appendChild(scene);
 
   function refreshChrome() {
@@ -85,12 +117,43 @@ export function mount(root, ctx) {
       nextBtn.append(h('span', { class: 'road-next-label' }, pre ? '🏆 \u25B6\uFE0E' : '🏆 REMATCH \u25B6\uFE0E'));
       nextBtn.classList.add('is-done');
     }
+    drawPouch();
+  }
+
+  // Seeds (and Oran Berries) in the header, as pictures plus a number.
+  function drawPouch() {
+    clear(pouch);
+    if (!story) { pouch.hidden = true; return; }
+    const p = player();
+    const seeds = seedCount(p);
+    const berries = berryCount(p, store.giftCount());
+    if (!seeds && !berries && !isHatched(p)) { pouch.hidden = true; return; }
+    pouch.hidden = false;
+    const seedBox = h('span', { class: 'pouch-seeds', attrs: { 'aria-label': 'SEEDS ' + seeds } });
+    if (seeds <= HATCH_SEEDS && !isHatched(p)) {
+      for (let k = 0; k < HATCH_SEEDS; k++) seedBox.append(h('span', { class: ['seed-pip', k < seeds && 'is-full'] }));
+    } else {
+      seedBox.append(h('span', { class: 'seed-pip is-full' }), h('span', { class: 'pouch-num' }, '\u00D7' + seeds));
+    }
+    pouch.append(seedBox);
+    if (berries) {
+      pouch.append(h('span', { class: 'pouch-berries', attrs: { 'aria-label': 'BERRIES ' + berries } },
+        h('img', { class: 'pouch-berry', src: ITEM('oran-berry'), attrs: { alt: '' } }),
+        h('span', { class: 'pouch-num' }, '\u00D7' + berries)));
+    }
+  }
+
+  // Every battle from the Road carries Gabe's berries (params.berries).
+  function goBattle(bp) {
+    const out = story ? withBerries(player(), store.giftCount(), bp) : bp;
+    sentGifts = story ? store.giftCount() : -1;
+    ctx.go('battle', out);
   }
 
   function onNext() {
     play('tap');
     const nt = nextTrainer(player());
-    if (nt) ctx.go('battle', battleParams(nt.i, nt.j));
+    if (nt) goBattle(battleParams(nt.i, nt.j));
     else openChapter(N - 1);
   }
 
@@ -131,10 +194,18 @@ export function mount(root, ctx) {
     }
     world.append(map);
 
+    const spot = story && blooming < 0 ? rivalSpot(p) : -1;
     for (let i = 0; i < N; i++) {
       const v = view(i);
       if (v === 'fog') continue;
-      world.append(regionPatch(i, v), ...chapterNode(i, v, i === cur && i !== blooming));
+      world.append(regionPatch(i, v), ...chapterNode(i, v, i === cur && i !== blooming, spot >= 0 && i === spot + 1));
+    }
+    if (story) {
+      for (let i = 0; i < N; i++) {
+        if (view(i) === 'done' && i !== blooming && hasGuardian(p, i)) world.append(guardianNode(i));
+      }
+      if (spot >= 0) world.append(rivalNode(spot));
+      if (blooming < 0 && wrappedGifts(p, store.giftCount()) > 0) world.append(giftNode(Math.min(cur, N - 1)));
     }
 
     // Fog over everything beyond the next two chapters.
@@ -176,7 +247,7 @@ export function mount(root, ctx) {
     return patch;
   }
 
-  function chapterNode(i, v, isCurrent) {
+  function chapterNode(i, v, isCurrent, labelAbove) {
     const ch = CHAPTERS[i];
     const btn = h('button', {
       class: ['road-node', 'is-' + v, isCurrent && 'is-current'],
@@ -189,7 +260,7 @@ export function mount(root, ctx) {
     if (v === 'done') btn.append(h('span', { class: 'node-tick' }, '★'));
     const wrap = [btn];
     if (v === 'current') {
-      wrap.push(h('div', { class: 'road-label is-current', style: placed(i) },
+      wrap.push(h('div', { class: ['road-label', 'is-current', labelAbove && 'label-above'], style: placed(i) },
         h('div', { class: 'label-name' }, ch.region),
         i === blooming ? null : h('div', { class: 'label-drought' }, ch.drought)));
     } else if (v === 'done') {
@@ -217,6 +288,202 @@ export function mount(root, ctx) {
     catch (e) { scroller.scrollTop = top; }
   }
 
+  // --- Gabe's story on the map: guardians, the rival, Art's gifts --------------
+  // Beside a stop, on the side away from the middle of the road.
+  const sideOf = i => (XS[i] >= 50 ? -1 : 1);
+  const beside = (i, px, flip = false) => {
+    const s = sideOf(i) * (flip ? -1 : 1);
+    return 'calc(' + XS[i] + '% ' + (s < 0 ? '- ' : '+ ') + px + 'px)';
+  };
+
+  function guardianNode(i) {
+    const ch = CHAPTERS[i];
+    const beaten = guardianBeaten(player(), i);
+    return h('button', {
+      class: ['road-guardian', beaten ? 'is-beaten' : 'is-open'],
+      type: 'button',
+      dataset: { guardian: i },
+      attrs: { 'aria-label': beaten ? GUARDIAN_NAME + ' ASLEEP' : GUARDIAN_NAME },
+      style: { left: beside(i, 118), top: (nodeY(i) - 6) + 'px', ...paletteVars(ch) },
+      on: { click: () => onGuardian(i) }
+    },
+    h('span', { class: 'guardian-moss', attrs: { 'aria-hidden': 'true' } }),
+    spriteImg(GUARDIAN_ID, { class: 'guardian-sprite', lazy: true }),
+    beaten
+      ? h('span', { class: 'guardian-zzz', attrs: { 'aria-hidden': 'true' } }, 'Z')
+      : h('span', { class: 'guardian-seed', attrs: { 'aria-hidden': 'true' } }, h('span', { class: 'seed-pip is-full' })),
+    h('span', { class: 'guardian-lv' }, 'LV ' + guardianLevel(i)));
+  }
+
+  function onGuardian(i) {
+    play('tap');
+    if (guardianBeaten(player(), i)) {
+      // Already won: he just rumbles hello. Nothing to take away, nothing to lose.
+      try { cry(GUARDIAN_ID); } catch (e) { /* silent */ }
+      const n = world.querySelector('.road-guardian[data-guardian="' + i + '"]');
+      if (n) { n.classList.remove('hello'); void n.offsetWidth; n.classList.add('hello'); }
+      return;
+    }
+    goBattle(guardianParams(i));
+  }
+
+  // The rival stands on the road between chapter i and i + 1.
+  function rivalPos(i) {
+    return { left: ((XS[i] + XS[i + 1]) / 2) + '%', top: ((nodeY(i) + nodeY(i + 1)) / 2 + 4) + 'px' };
+  }
+
+  // His lead's types decide the rival's team (he brings what beats it).
+  let leadTypes = [];
+  function leadId() {
+    const p = player();
+    const t = Array.isArray(p.team) ? p.team : [];
+    return Number(t[0]) || 0;
+  }
+  function loadLeadTypes() {
+    const id = leadId();
+    if (!id) return;
+    const c = cachedMon(id);
+    if (c) { leadTypes = c.types || []; return; }
+    getMon(id).then(m => {
+      if (!alive || !m) return;
+      leadTypes = m.types || [];
+      if (!rivalLayer.hidden && rivalOpenAt >= 0) openRival(rivalOpenAt);
+    }).catch(() => { /* the rival brings his default team */ });
+  }
+
+  function rivalNode(i) {
+    const team = rivalTeam(player(), i, leadTypes);
+    const ace = team[team.length - 1];
+    return h('button', {
+      class: 'road-rival', type: 'button', dataset: { rival: i },
+      attrs: { 'aria-label': RIVAL_NAME },
+      style: rivalPos(i),
+      on: { click: () => { play('tap'); openRival(i); } }
+    },
+    h('span', { class: 'rival-face', attrs: { 'aria-hidden': 'true' } }, '\u{1F624}'),
+    spriteImg(ace.id, { class: 'rival-ace', lazy: true }),
+    h('span', { class: 'rival-bang', attrs: { 'aria-hidden': 'true' } }, '!'));
+  }
+
+  // The taunt: a picture of his team plus one short line. Fight or walk past.
+  let rivalOpenAt = -1;
+  function openRival(i) {
+    rivalOpenAt = i;
+    const team = rivalTeam(player(), i, leadTypes);
+    clear(rivalLayer);
+    const fight = h('button', {
+      class: 'rival-fight', type: 'button',
+      on: { click: () => { play('tap'); goBattle(rivalParams(player(), i, leadTypes)); } }
+    }, 'BATTLE! ', h('span', { class: 'rival-fight-ico', attrs: { 'aria-hidden': 'true' } }, '\u2694\uFE0F'));
+    const past = h('button', {
+      class: 'rival-past', type: 'button',
+      on: { click: () => { play('tap'); closeRival(); } }
+    }, 'WALK PAST \u25B6\uFE0E');
+    rivalLayer.append(h('div', { class: 'rival-card', attrs: { role: 'dialog', 'aria-label': RIVAL_NAME } },
+      h('div', { class: 'rival-head' },
+        h('span', { class: 'rival-face big', attrs: { 'aria-hidden': 'true' } }, '\u{1F624}'),
+        h('div', { class: 'rival-words' },
+          h('div', { class: 'rival-name' }, RIVAL_NAME),
+          h('div', { class: 'rival-line' }, rivalLine(i)))),
+      h('div', { class: ['rival-team', 'n' + team.length] },
+        team.map(m => h('span', { class: 'rival-mon' },
+          spriteImg(m.id, { class: 'rival-mon-sprite' }),
+          h('span', { class: 'rival-mon-lv' }, 'LV ' + m.level)))),
+      h('div', { class: 'rival-actions' }, past, fight)));
+    rivalLayer.hidden = false;
+    scene.classList.add('rival-open');
+  }
+  function closeRival() {
+    rivalOpenAt = -1;
+    rivalLayer.hidden = true;
+    clear(rivalLayer);
+    scene.classList.remove('rival-open');
+  }
+
+  function giftNode(i) {
+    return h('button', {
+      class: 'road-gift', type: 'button',
+      attrs: { 'aria-label': 'GIFT' },
+      style: { left: beside(i, 108, hasGuardian(player(), i)), top: (nodeY(i) - 4) + 'px' },
+      on: { click: onGift }
+    },
+    h('span', { class: 'gift-lid', attrs: { 'aria-hidden': 'true' } }),
+    h('span', { class: 'gift-box', attrs: { 'aria-hidden': 'true' } }),
+    h('span', { class: 'gift-stamp', attrs: { 'aria-hidden': 'true' } }, '\u{1F343}'),
+    wrappedGifts(player(), store.giftCount()) > 1 ? h('span', { class: 'gift-count' }, String(wrappedGifts(player(), store.giftCount()))) : null);
+  }
+
+  let giftBusy = false;
+  async function onGift(ev) {
+    if (giftBusy) return;
+    const box = ev && ev.currentTarget;
+    const p = player();
+    if (!openGift(p, store.giftCount())) { drawWorld(); return; }
+    giftBusy = true;
+    try { store.commit(); } catch (e) { console.warn('road: commit failed', e); }
+    play('caught');
+    if (box) {
+      box.classList.add('is-opening');
+      box.append(h('span', { class: 'gift-sparkle', attrs: { 'aria-hidden': 'true' } },
+        h('span', { class: 'sp a' }), h('span', { class: 'sp b' }), h('span', { class: 'sp c' }), h('span', { class: 'sp d' })),
+      h('span', { class: 'gift-berry' },
+        h('img', { src: ITEM('oran-berry'), attrs: { alt: '' } }),
+        h('span', { class: 'gift-berry-words' }, 'ORAN BERRY!')));
+    }
+    drawPouch();
+    await wait(1400, { signal: ac.signal });
+    giftBusy = false;
+    if (!alive) return;
+    drawWorld();
+  }
+
+  // A seed from an Old Venusaur floats up into the pouch.
+  async function seedMoment(i) {
+    scrollToChapter(i, false);
+    const g = world.querySelector('.road-guardian[data-guardian="' + i + '"]');
+    if (g) g.append(h('span', { class: 'seed-pop', attrs: { 'aria-hidden': 'true' } }, h('span', { class: 'seed-pip is-full' })));
+    play('petal');
+    pouch.classList.remove('pulse'); void pouch.offsetWidth; pouch.classList.add('pulse');
+    await wait(1200, { signal: ac.signal });
+  }
+
+  // The rival steps aside after Gabe beats him.
+  async function rivalBye(i) {
+    const team = rivalTeam(player(), i, leadTypes);
+    const toast = h('div', { class: 'rival-toast' },
+      h('span', { class: 'rival-face', attrs: { 'aria-hidden': 'true' } }, '\u{1F624}'),
+      spriteImg(team[team.length - 1].id, { class: 'rival-ace' }),
+      h('span', { class: 'rival-toast-line' }, RIVAL_LOSE_LINES[i % RIVAL_LOSE_LINES.length]));
+    scene.append(toast);
+    await wait(2200, { signal: ac.signal });
+    toast.remove();
+  }
+
+  // Three seeds: the egg hatches, right here on the Road.
+  let hatchUnmount = null;
+  async function runHatch() {
+    if (hatchUnmount || !alive) return;
+    let mod;
+    try { mod = await import('./hatch.js'); } catch (e) { console.warn('road: hatch failed to load', e); return; }
+    if (!alive || hatchUnmount) return;
+    closeChapter(); closeRival();
+    const host = h('section', { class: 'road-hatch-host' });
+    scene.append(host);
+    const close = () => {
+      const u = hatchUnmount;
+      hatchUnmount = null;
+      try { if (typeof u === 'function') u(); } catch (e) { /* ignore */ }
+      host.remove();
+      if (!alive) return;
+      refreshChrome();
+      drawWorld();
+    };
+    hatchUnmount = () => {};
+    try {
+      hatchUnmount = mod.mount(host, { store, params: {}, go: () => close() }) || (() => {});
+    } catch (e) { console.warn('road: hatch failed', e); close(); }
+  }
+
   // --- the chapter screen -------------------------------------------------
   let openIdx = -1;
   function openChapter(i, justWon = -1) {
@@ -240,6 +507,7 @@ export function mount(root, ctx) {
     const path = h('div', { class: 'chapter-path' });
     const L = leaderIdx(i);
     for (let j = 0; j <= L; j++) path.append(trainerCard(p, i, j, L, j === justWon));
+    if (story && hasGuardian(p, i)) path.append(guardianCard(i));
     chapterLayer.append(head, h('div', { class: 'chapter-scroll' }, path));
     chapterLayer.hidden = false;
     scene.classList.add('chapter-open');
@@ -258,7 +526,7 @@ export function mount(root, ctx) {
       type: 'button',
       disabled: !open,
       dataset: { trainer: j },
-      on: { click: () => { if (!open) return; play('tap'); ctx.go('battle', battleParams(i, j)); } }
+      on: { click: () => { if (!open) return; play('tap'); goBattle(battleParams(i, j)); } }
     },
     leader ? h('span', { class: 'card-crown', attrs: { 'aria-hidden': 'true' } }, '👑') : null,
     h('span', { class: 'card-sprite' }, spriteImg(t.team[0].id, { class: !open ? 'is-shadow' : '' })),
@@ -268,6 +536,21 @@ export function mount(root, ctx) {
     beaten ? h('span', { class: 'card-tick', attrs: { 'aria-label': 'BEATEN' } }, '✓')
       : open ? h('span', { class: 'card-go', attrs: { 'aria-hidden': 'true' } }, '\u25B6\uFE0E') : null);
     return card;
+  }
+
+  function guardianCard(i) {
+    const beaten = guardianBeaten(player(), i);
+    return h('button', {
+      class: ['trainer-card', 'guardian-card', beaten ? 'is-beaten' : 'is-next', i % 2 ? 'side-l' : 'side-r'],
+      type: 'button', dataset: { guardian: i },
+      on: { click: () => onGuardian(i) }
+    },
+    h('span', { class: 'card-sprite' }, spriteImg(GUARDIAN_ID)),
+    h('span', { class: 'card-text' },
+      h('span', { class: 'card-name' }, GUARDIAN_NAME),
+      h('span', { class: 'card-level' }, 'LV ' + guardianLevel(i))),
+    beaten ? h('span', { class: 'card-tick', attrs: { 'aria-label': 'BEATEN' } }, '\u2713')
+      : h('span', { class: 'card-go guardian-go', attrs: { 'aria-hidden': 'true' } }, h('span', { class: 'seed-pip is-full' })));
   }
 
   function closeChapter() {
@@ -335,23 +618,40 @@ export function mount(root, ctx) {
   refreshChrome();
   drawWorld();
   const cur = currentChapter(player());
-  requestAnimationFrame(() => {
+  if (story) loadLeadTypes();
+  requestAnimationFrame(async () => {
     if (!alive) return;
     if (blooming >= 0) { bloom(blooming); return; }
-    scrollToChapter(outcome ? outcome.i : cur, false);
-    if (outcome && !outcome.leader) openChapter(outcome.i, outcome.j);
+    if (gOutcome) {
+      await seedMoment(gOutcome.i);
+      if (!alive) return;
+    } else if (rOutcome && rOutcome.result === 'win') {
+      scrollToChapter(rOutcome.i + 1, false);
+      await rivalBye(rOutcome.i);
+      if (!alive) return;
+    } else {
+      scrollToChapter(outcome ? outcome.i : cur, false);
+      if (outcome && !outcome.leader) openChapter(outcome.i, outcome.j);
+    }
+    // Enough seeds and no Bulbasaur yet (just now, or a ceremony that was
+    // interrupted): the egg hatches.
+    if (story && readyToHatch(player())) runHatch();
   });
 
   // Test hook, in the spirit of window.__scene: what is on the map right now.
   const debug = () => ({
     scene: 'road', current: currentChapter(player()), next: nextTrainer(player()), openChapter: openIdx,
-    views: CHAPTERS.map((_, k) => chapterView(player(), k)), blooming
+    views: CHAPTERS.map((_, k) => chapterView(player(), k)), blooming,
+    seeds: seedCount(player()), hatched: isHatched(player()), rival: story ? rivalSpot(player()) : -1,
+    gifts: store.giftCount(), berries: berryCount(player(), store.giftCount())
   });
   try { window.__road = debug; } catch (e) { /* not a browser */ }
 
   return function unmount() {
     alive = false;
     ac.abort();
+    try { if (typeof hatchUnmount === 'function') hatchUnmount(); } catch (e) { /* ignore */ }
+    hatchUnmount = null;
     // The Road theme belongs to the Road: never leak it into a battle, WHO'S
     // PLAYING or Art's garden.
     try { if (typeof music.stopMusic === 'function') music.stopMusic(); } catch (e) { /* ignore */ }

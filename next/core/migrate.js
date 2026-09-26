@@ -9,6 +9,9 @@
 // here mutates its inputs. mergeV2 is UNION ONLY: it never removes an id, a
 // badge, a beaten trainer or a level, and it never touches Bulba or the
 // Garden (Art's partner exists only in v3; the classic app cannot lower him).
+// The same goes for the v3-only Road fields (seeds, guardians, hatched,
+// rival), the picture-lock, and the save-root family{} and gifts{}: migration
+// only ever DEFAULTS them (fromV2) or carries them through untouched (merge).
 //
 // Every v2 player field maps across: caught, team, mons, badges, shinies,
 // nicks, favorites, items, gyms.beaten, champion, stats. settings.junior
@@ -19,6 +22,7 @@
 
 import {
   isObj, cleanPlayer, freshPlayer, freshSave, cleanIds, cleanBeaten, today,
+  cleanFamily, cleanGifts, freshFamily, freshGifts,
   MAX_TEAM, MAX_FAVORITES, CHAPTER_COUNT,
 } from './validate.js';
 
@@ -56,8 +60,11 @@ export function roadFromBeaten(beaten) {
   return { chapter, cleared, bloomed };
 }
 
+// The classic app knows chapters, trainers and blooms only. Every v3-only
+// Road field (seeds, guardians, hatched, rival) is taken from v3 untouched.
 function mergeRoad(a, b) {
   return {
+    ...a,
     chapter: Math.max(a.chapter || 0, b.chapter || 0),
     cleared: { ...b.cleared, ...a.cleared },
     bloomed: [...new Set([...(a.bloomed || []), ...(b.bloomed || [])])].sort((x, y) => x - y),
@@ -106,8 +113,17 @@ export function isV2Save(v2) {
 /** A classic v2 save -> a v3 save. Anything unrecognised -> a fresh save. */
 export function fromV2(v2, created = today()) {
   if (!isV2Save(v2)) return freshSave(created);
-  return { version: 3, created, players: { 1: playerFromV2(v2.players[1]), 2: playerFromV2(v2.players[2]) } };
+  return {
+    version: 3, created,
+    players: { 1: playerFromV2(v2.players[1]), 2: playerFromV2(v2.players[2]) },
+    family: freshFamily(),
+    gifts: freshGifts(),
+  };
 }
+
+// Save-root fields (family, gifts) exist only in v3. The classic app has no
+// such thing, so every merge carries them through exactly as v3 had them.
+const rootOf = base => ({ family: cleanFamily(base.family), gifts: cleanGifts(base.gifts) });
 
 const union = (a, b) => [...new Set([...(a || []), ...(b || [])])];
 const unionIds = (a, b) => union(a, b).sort((x, y) => x - y);
@@ -166,7 +182,7 @@ export function mergeV2(v3, v2) {
   const base = isObj(v3) && isObj(v3.players) ? v3 : freshSave();
   const created = typeof base.created === 'string' ? base.created : today();
   if (!isV2Save(v2)) {
-    return { version: 3, created, players: { 1: cleanPlayer(base.players[1]), 2: cleanPlayer(base.players[2]) } };
+    return { version: 3, created, players: { 1: cleanPlayer(base.players[1]), 2: cleanPlayer(base.players[2]) }, ...rootOf(base) };
   }
   return {
     version: 3, created,
@@ -174,6 +190,7 @@ export function mergeV2(v3, v2) {
       1: mergePlayer(base.players[1], v2.players[1]),
       2: mergePlayer(base.players[2], v2.players[2]),
     },
+    ...rootOf(base),
   };
 }
 
@@ -193,5 +210,6 @@ export function applyV1(v3, { p1 = null, p2 = null } = {}) {
     version: 3,
     created: typeof base.created === 'string' ? base.created : today(),
     players: { 1: add(base.players[1], p1), 2: add(base.players[2], p2) },
+    ...rootOf(base),
   };
 }

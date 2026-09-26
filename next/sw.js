@@ -10,7 +10,7 @@
 // the root sw.js and are never touched from here.
 // ============================================================
 
-const NEXT_CACHE = 'sprout-20.0.0-alpha';
+const NEXT_CACHE = 'sprout-19.15.0';
 const ASSET_CACHE = 'sprout-assets';
 const ASSET_MAX = 800;
 const SHELL_TIMEOUT_MS = 2500;
@@ -25,8 +25,10 @@ const SHELL_FILES = [
   './data/engine.js', './data/config.js', './data/gymdata.js', './data/chapters.js', './data/moves.json',
   './battle/createBattle.js',
   './scenes/battle.js', './scenes/who.js', './scenes/garden.js', './scenes/garden-logic.js', './scenes/road.js', './scenes/rest.js',
+  './scenes/hatch.js', './scenes/together.js', './scenes/family-table.js', './scenes/versus.js', './scenes/lock.js',
+  './scenes/postcard.js', './ui/postcard.js', './data/rival.js',
   '../fonts/press-start-2p-latin.woff2', '../fonts/press-start-2p-latin-ext.woff2',
-  '../manifest.webmanifest'
+  './manifest.webmanifest'
 ];
 
 const cacheableShell = r => !!r && r.ok && r.status === 200 && r.type === 'basic';
@@ -57,9 +59,14 @@ self.addEventListener('activate', event => {
 async function shellFetch(event) {
   const req = event.request;
   const cache = await caches.open(NEXT_CACHE);
+  // ES modules are never raced against the clock: a slow new store.js plus a
+  // fast new main.js must not become "new main.js + OLD store.js" (a missing
+  // named export fails the whole module graph: a blank screen). A script
+  // falls back to the cache only when the network actually fails (offline).
+  const isScript = req.destination === 'script' || /\.m?js$/.test(new URL(req.url).pathname);
   try {
     const net = fetch(req, { cache: 'no-cache' });
-    const resp = await Promise.race([
+    const resp = isScript ? await net : await Promise.race([
       net,
       new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), SHELL_TIMEOUT_MS))
     ]);

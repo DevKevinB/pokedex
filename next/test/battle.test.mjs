@@ -1,7 +1,7 @@
 // node --test next/test/battle.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, BALL_MODS } from '../battle/createBattle.js';
+import { createBattle, BALL_MODS, BERRY_HEAL, movePictures, powerDots } from '../battle/createBattle.js';
 import { seededRng, applyXp } from '../data/engine.js';
 
 const mon = (id, level, types, stats, moves, extra = {}) => ({
@@ -281,4 +281,119 @@ test('two battles share nothing', async () => {
   assert.equal(b.state.turn, 0);
   assert.equal(b.state.over, false);
   assert.equal(b.state.me.team[0].hp, b.state.me.team[0].maxHp);
+});
+
+// ---------- berry action ----------
+const hurtMe = (b, hp) => { b.state.me.team[b.state.me.active].hp = hp; };
+
+test('berry heals the active mon by a fraction and the foe still acts', async () => {
+  const b = createBattle({
+    myTeam: [mon(1, 20, ['grass'], { hp: 100, spe: 99 }, [VINE])],
+    enemyTeam: [mon(4, 5, ['fire'], { hp: 40, atk: 5, spatk: 5 }, [EMBER])],
+    rng: seededRng(7)
+  });
+  hurtMe(b, 20);
+  const ev = await b.choose({ kind: 'berry' });
+  const heal = ev.find(e => e.type === 'heal');
+  assert.ok(heal, 'heal event');
+  assert.equal(heal.side, 'me');
+  assert.equal(heal.amount, Math.round(100 * BERRY_HEAL));
+  assert.equal(heal.hpAfter, 20 + Math.round(100 * BERRY_HEAL));
+  assert.equal(ev[0].type, 'heal', 'the heal comes before the foe move');
+  assert.ok(ev.some(e => e.type === 'move' && e.side === 'foe'), 'the foe acted');
+  assert.equal(b.state.turn, 1);
+});
+
+test('berry: custom fraction, capped at max HP', async () => {
+  const b = createBattle({
+    myTeam: [mon(1, 20, ['grass'], { hp: 100 }, [VINE])],
+    enemyTeam: [mon(4, 5, ['fire'], { hp: 40, atk: 1, spatk: 1 }, [EMBER])],
+    rng: seededRng(2)
+  });
+  hurtMe(b, 90);
+  const ev = await b.choose({ kind: 'berry', fraction: 0.5 });
+  const heal = ev.find(e => e.type === 'heal');
+  assert.equal(heal.hpAfter, 100);
+  assert.equal(heal.amount, 10);
+});
+
+test('berry is refused (no turn passes) at full HP, with a bad fraction, or when none are left', async () => {
+  const mk = berries => createBattle({
+    myTeam: [mon(1, 20, ['grass'], { hp: 100 }, [VINE])],
+    enemyTeam: [mon(4, 5, ['fire'], { hp: 40 }, [EMBER])],
+    rng: seededRng(4), berries
+  });
+  const full = mk(undefined);
+  assert.deepEqual(await full.choose({ kind: 'berry' }), []);
+  assert.equal(full.state.turn, 0);
+
+  const bad = mk(undefined);
+  hurtMe(bad, 10);
+  assert.deepEqual(await bad.choose({ kind: 'berry', fraction: -1 }), []);
+  assert.deepEqual(await bad.choose({ kind: 'berry', fraction: 0 }), []);
+  assert.equal(bad.state.me.team[0].hp, 10);
+
+  const one = mk(1);
+  hurtMe(one, 10);
+  assert.equal(one.state.me.berries, 1);
+  assert.ok((await one.choose({ kind: 'berry' })).length > 0);
+  assert.equal(one.state.me.berries, 0);
+  hurtMe(one, 10);
+  assert.deepEqual(await one.choose({ kind: 'berry' }), []);
+
+  const none = mk(0);
+  hurtMe(none, 10);
+  assert.deepEqual(await none.choose({ kind: 'berry' }), []);
+});
+
+test('berry for a prereader keeps him standing (the foe hit still floors at 1)', async () => {
+  const b = createBattle({
+    myTeam: [mon(1, 5, ['grass'], { hp: 20 }, [VINE])],
+    enemyTeam: [mon(150, 90, ['psychic'], { hp: 999, atk: 300, spatk: 300, spe: 300 }, [SURF])],
+    profile: 'prereader', rng: seededRng(5)
+  });
+  for (let i = 0; i < 20; i++) {
+    hurtMe(b, 1);
+    const ev = await b.choose({ kind: 'berry' });
+    assert.ok(!ev.some(e => e.type === 'faint'));
+    assert.ok(b.state.me.team[0].hp >= 1);
+  }
+});
+
+// ---------- move pictures ----------
+test('powerDots buckets power into 1..4', () => {
+  assert.equal(powerDots(20), 1); assert.equal(powerDots(40), 1);
+  assert.equal(powerDots(60), 2); assert.equal(powerDots(90), 3);
+  assert.equal(powerDots(150), 4); assert.equal(powerDots(undefined), 1);
+});
+
+test('movePictures: four same-type moves never share a glyph', () => {
+  const moves = [
+    { name: 'tackle', type: 'normal', power: 40, damage_class: 'physical' },
+    { name: 'body-slam', type: 'normal', power: 85, damage_class: 'physical' },
+    { name: 'take-down', type: 'normal', power: 90, damage_class: 'physical' },
+    { name: 'headbutt', type: 'normal', power: 70, damage_class: 'physical' },
+  ];
+  const pics = movePictures(moves);
+  assert.equal(pics.length, 4);
+  assert.equal(new Set(pics.map(p => p.glyph)).size, 4);
+  assert.deepEqual(pics.map(p => p.dots), [1, 3, 3, 3]);
+  const spec = movePictures(moves.map(m => ({ ...m, damage_class: 'special', type: 'water' })));
+  assert.equal(new Set(spec.map(p => p.glyph)).size, 4);
+  assert.ok(spec.every(p => p.shape === 'special'));
+});
+
+test('movePictures: glyphs avoid type emoji and stars; names pick a fitting shape', async () => {
+  const { typeEmoji } = await import('../data/config.js');
+  const typeGlyphs = new Set(Object.values(typeEmoji));
+  const names = ['tackle', 'double-kick', 'bite', 'scratch', 'peck', 'mega-punch', 'rollout', 'hyper-beam', 'bubble', 'confusion', 'aurora-beam', 'gust', 'smog', 'ember'];
+  const pics = movePictures(names.map((n, i) => ({ name: n, type: 't' + i, power: 50, damage_class: i >= 7 ? 'special' : 'physical' })));
+  for (const p of pics) {
+    assert.ok(!typeGlyphs.has(p.glyph), 'type glyph reused: ' + p.glyph);
+    assert.ok(!/[\u2B50\u{1F31F}\u2728]/u.test(p.glyph), 'star glyph');
+  }
+  assert.equal(pics[1].glyph, '\u{1F9B6}');   // kick -> foot
+  assert.equal(pics[2].glyph, '\u{1F9B7}');   // bite -> tooth
+  assert.equal(pics[5].glyph, '\u270A');      // punch -> fist
+  assert.equal(pics[13].glyph, '\u{1F300}');  // plain special -> swirl
 });
