@@ -69,7 +69,8 @@ export function mount(root, ctx) {
   let place = back ? back.place : parsePlace(params.place ?? params.chapter);
   if (place != null && !placeOpen(p, place)) place = null;
 
-  const homeScene = pre ? 'garden' : 'road';
+  // batch 4: the roots' 🌿 button walks in with {home:'roots'}, so BACK goes back under the Tree.
+  const homeScene = !pre && params.home === 'roots' ? 'roots' : pre ? 'garden' : 'road';
   const scene = h('div', { class: ['wild', { 'wild-pre': pre }], dataset: { scene: 'wild' } });
   root.appendChild(scene);
 

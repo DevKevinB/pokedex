@@ -24,6 +24,12 @@ import {
   RIVAL_NAME, RIVAL_LOSE_LINES, rivalSpot, rivalParams, rivalTeam, rivalLine, roadReturn
 } from '../data/rival.js';
 import { leadOf } from './together.js';
+// ==== round2 BEGIN (import) ====
+import {
+  R2_CHAMP, r2Unlocked, r2Trainers, r2Ace, r2Next, r2Current, isR2Cleared, isR2ChapterOpen,
+  isR2ChapterDone, isR2TrainerOpen, r2BattleParams, gimmickFor, gimmickInfo, goldChapters, r2Return
+} from '../data/round2.js';
+// ==== round2 END (import) ====
 
 const N = CHAPTERS.length;
 const STEP = 150;          // px between chapter stops
@@ -229,6 +235,7 @@ export function mount(root, ctx) {
       if (spot >= 0) world.append(rivalNode(spot));
       if (blooming < 0 && wrappedGifts(p, store.giftCount()) > 0) world.append(giftNode(Math.min(cur, N - 1)));
     }
+    if (blooming < 0) { const door = rootsDoor(p); if (door) world.append(door); }   // roots: the Tree's door
 
     // Fog over everything beyond the next two chapters.
     const frontier = Math.min(cur + 2, N - 1);
@@ -240,6 +247,30 @@ export function mount(root, ctx) {
       }, h('div', { class: 'fog-cloud c1' }), h('div', { class: 'fog-cloud c2' }), h('div', { class: 'fog-cloud c3' })));
     }
   }
+
+  // ==== roots BEGIN ====
+  // THROUGH THE ROOTS (scenes/roots.js): once the Champion chapter has
+  // bloomed, a door glows in the Venusaur Tree's roots. Same rule as
+  // data/sanctums.js doorOpen (FARAWAY LAND's). It rides in the scrolling
+  // world, placed under the horizon Tree's roots as laid out at the top.
+  function rootsDoor(p) {
+    const road = (p && p.road) || {};
+    const open = isChapterDone(p, N - 1) || !!p.champion
+      || (Array.isArray(road.bloomed) && road.bloomed.includes(N - 1));
+    if (!open) return null;
+    const seen = !!(road.roots && road.roots.opened === true);
+    const tw = tree.offsetWidth || 230;
+    let y = Math.round(Math.max(120, Math.min(TOP + STEP * 1.5, (horizon.offsetTop || 22) + tw * 0.8)));
+    if (Math.abs(y - nodeY(N - 1)) < 80) y = nodeY(N - 1) - 80;   // never on top of THE BIG TREE stop
+    return h('button', {
+      class: ['road-roots-door', seen ? 'is-seen' : 'is-new'], type: 'button',
+      attrs: { 'aria-label': 'THE ROOTS' }, style: { top: y + 'px' },
+      on: { click: () => { play('tap'); ctx.go('roots'); } }
+    },
+    h('span', { class: 'roots-door-glow', attrs: { 'aria-hidden': 'true' } }),
+    h('span', { class: 'roots-door-arch', attrs: { 'aria-hidden': 'true' } }, h('span', { class: 'roots-door-light' })));
+  }
+  // ==== roots END ====
 
   function placed(i, extra = {}) {
     return { left: XS[i] + '%', top: nodeY(i) + 'px', ...extra };
@@ -647,6 +678,191 @@ export function mount(root, ctx) {
   catch (e) { /* music is a bonus */ }
   refreshChrome();
   drawWorld();
+  // ==== wildch BEGIN ====
+  // WILD CHAPTERS (data/wild-chapters.js): after the Champion, a signpost by
+  // the Tree opens a second, smaller winding path of postgame chapters. It is
+  // loaded lazily, so a broken chapter file can never take the Road down.
+  // Battles are the normal trainer flow; their onEnd 'wild:<i>:<j>' is
+  // applied here (the Road's own settle ignores it). Owner: wildch builder.
+  (function wildch() {
+    let W = null, wBloom = -1, wBusy = false, wAt = -1, sign = null;
+    const XW = [50, 30, 66, 36, 70, 46], WSTEP = 112, WPAD = 76;
+    const wy = (k, M) => WPAD + (M - 1 - k) * WSTEP;
+    const say = (cls, text) => (pre ? null : h('span', { class: [cls, 'wildch-words'] }, text));
+    const layer = h('div', { class: 'road-chapter wildch-layer', hidden: true });
+    scene.append(layer);
+    const pal = (el, c) => { for (const [k, v] of Object.entries(paletteVars(c))) el.style.setProperty(k, v); };
+    const wview = k => {
+      if (wBloom < 0) return W.wildView(player(), k);
+      return k < wBloom ? 'done' : k === wBloom ? 'current' : k <= wBloom + 2 ? 'soon' : 'fog';
+    };
+    function shut() { wAt = -1; layer.hidden = true; clear(layer); scene.classList.remove('wildch-open'); drawSign(); }
+    function show(cls, c) {
+      clear(layer); layer.className = 'road-chapter wildch-layer ' + cls; pal(layer, c);
+      layer.hidden = false; scene.classList.add('wildch-open');
+    }
+    function head(emoji, name, sub, onBack) {
+      return h('div', { class: 'chapter-head' },
+        h('button', { class: 'chapter-back', type: 'button', attrs: { 'aria-label': 'BACK' },
+          on: { click: () => { if (wBusy) return; play('tap'); onBack(); } } }, '◀︎'),
+        h('div', { class: 'chapter-titles' },
+          h('div', { class: 'chapter-name' }, h('span', { class: 'chapter-emoji' }, emoji), pre ? null : name),
+          pre ? null : h('div', { class: 'chapter-sub' }, sub)));
+    }
+    function nextBar() {
+      const nt = W.nextWildTrainer(player());
+      if (!nt || wBusy) return null;
+      return h('div', { class: 'road-bottom wildch-bottom' }, h('button', {
+        class: 'road-next wildch-next', type: 'button',
+        on: { click: () => { play('tap'); goBattle(W.wildBattleParams(nt.idx, nt.j)); } }
+      }, h('span', { class: 'road-next-label' }, pre ? '⚔️ ▶︎' : 'NEXT BATTLE ▶︎')));
+    }
+    function drawPath() {
+      wAt = -1;
+      const p = player(), CH = W.WILD_CHAPTERS, M = CH.length;
+      const cur = wBloom >= 0 ? wBloom : W.currentWild(p);
+      const c = CH[Math.min(cur, M - 1)];
+      show('is-done wildch-path', c);
+      const map = h('div', { class: 'wildch-map', style: { height: (2 * WPAD + (M - 1) * WSTEP) + 'px' } });
+      const lines = svg('svg', { class: 'road-svg', attrs: { viewBox: '0 0 100 ' + (2 * WPAD + (M - 1) * WSTEP), preserveAspectRatio: 'none', 'aria-hidden': 'true' } });
+      lines.append(svg('path', { class: 'road-seg seg-done', attrs: { d: `M ${XW[0]} ${2 * WPAD + (M - 1) * WSTEP} L ${XW[0]} ${wy(0, M)}` } }));
+      for (let k = 0; k < M - 1; k++) {
+        const v2 = wview(k + 1);
+        if (v2 === 'fog') break;
+        const xa = XW[k % 6], ya = wy(k, M), xb = XW[(k + 1) % 6], yb = wy(k + 1, M), ym = (ya + yb) / 2;
+        lines.append(svg('path', { class: ['road-seg', wview(k) === 'done' && v2 !== 'soon' ? 'seg-done' : 'seg-ahead'],
+          attrs: { d: `M ${xa} ${ya} C ${xa} ${ym}, ${xb} ${ym}, ${xb} ${yb}` } }));
+      }
+      map.append(lines);
+      if (cur + 2 < M - 1) map.append(h('div', { class: 'road-fog', attrs: { 'aria-hidden': 'true' },
+        style: { height: Math.max(0, wy(cur + 2, M) - WSTEP * 0.45) + 'px' } }, h('div', { class: 'fog-cloud c1' }), h('div', { class: 'fog-cloud c2' })));
+      CH.forEach((ch, k) => {
+        const v = wview(k);
+        if (v === 'fog') return;
+        const at = { left: XW[k % 6] + '%', top: wy(k, M) + 'px' };
+        const patch = h('div', { class: ['road-region', 'wildch-region', 'is-' + v], dataset: { wild: k }, attrs: { 'aria-hidden': 'true' }, style: { ...at, ...paletteVars(ch) } },
+          h('div', { class: 'region-dry' }), h('div', { class: 'region-lush' }));
+        if (v === 'done' || k === wBloom) {
+          const t = ch.trainers[W.WILD_LEADER].team;
+          [t[0].id, t[t.length - 1].id].forEach((id, n) => patch.lastChild.append(spriteImg(id, { class: ['region-mon', 'm' + n], lazy: true })));
+        }
+        const node = h('button', {
+          class: ['road-node', 'wildch-node', 'is-' + v, v === 'current' && k !== wBloom && 'is-current'], type: 'button',
+          dataset: { wild: k }, attrs: { 'aria-label': v === 'soon' ? 'LOCKED' : ch.name }, style: { ...at, ...paletteVars(ch) },
+          on: { click: () => {
+            if (wBusy) return;
+            play('tap');
+            if (v === 'soon') { node.classList.remove('nope'); void node.offsetWidth; node.classList.add('nope'); return; }
+            drawChapter(ch.idx);
+          } }
+        }, h('span', { class: 'node-emoji' }, ch.emoji), v === 'done' ? h('span', { class: 'node-tick' }, '★') : null);
+        map.append(patch, node);
+        if (v !== 'soon' && !pre) map.append(h('div', { class: ['road-label', 'wildch-label', 'is-' + v], style: at }, h('div', { class: 'label-name' }, ch.name)));
+      });
+      const box = h('div', { class: 'chapter-scroll wildch-scroll' }, map);
+      layer.append(head('\u{1FAA7}', 'WILD CHAPTERS', cur >= M ? 'ALL BACK IN BLOOM!' : c.flavour, shut), box, nextBar());
+      requestAnimationFrame(() => { box.scrollTop = Math.max(0, wy(Math.min(cur, M - 1), M) - box.clientHeight * 0.5); });
+    }
+    function drawChapter(idx, justWon = -1) {
+      const p = player(), c = W.wildByIdx(idx);
+      if (!c) { drawPath(); return; }
+      wAt = idx;
+      const done = W.isWildBloomed(p, idx);
+      show(done ? 'is-done' : 'is-dry', c);
+      const path = h('div', { class: 'chapter-path' });
+      const nt = W.nextWildTrainer(p);
+      c.trainers.forEach((t, j) => {
+        const beaten = W.isWildCleared(p, idx, j), open = W.isWildTrainerOpen(p, idx, j), leader = j === W.WILD_LEADER;
+        const isNext = !!nt && nt.idx === idx && nt.j === j;
+        path.append(h('button', {
+          class: ['trainer-card', leader && 'is-leader', beaten && 'is-beaten', !open && 'is-locked', isNext && 'is-next', j === justWon && 'just-won', j % 2 ? 'side-r' : 'side-l'],
+          type: 'button', disabled: !open, dataset: { wildTrainer: j },
+          on: { click: () => { if (!open) return; play('tap'); goBattle(W.wildBattleParams(idx, j)); } }
+        },
+        leader ? h('span', { class: 'card-crown', attrs: { 'aria-hidden': 'true' } }, '\u{1F451}') : null,
+        h('span', { class: 'card-sprite' }, spriteImg(t.team[0].id, { class: !open ? 'is-shadow' : '' })),
+        h('span', { class: 'card-text' }, h('span', { class: 'card-name' }, t.name), h('span', { class: 'card-level' }, 'LV ' + W.wildTrainerLevel(t))),
+        beaten ? h('span', { class: 'card-tick', attrs: { 'aria-label': 'BEATEN' } }, '✓')
+          : open ? h('span', { class: 'card-go', attrs: { 'aria-hidden': 'true' } }, '▶︎') : null));
+      });
+      layer.append(head(c.emoji, c.name, done ? 'BACK IN BLOOM!' : c.flavour, drawPath), h('div', { class: 'chapter-scroll' }, path), nextBar());
+    }
+    // The same bloom as a Road chapter: the region sweeps into colour, petals
+    // burst, its Pokemon hop home, then the badge. Every wait is tappable.
+    async function wildBloom(k) {
+      const c = W.WILD_CHAPTERS[k];
+      wBloom = k; wBusy = true;
+      drawPath();
+      scene.classList.add('is-blooming');
+      const catcher = h('div', { class: 'bloom-catcher', attrs: { 'aria-hidden': 'true' } });
+      scene.append(catcher);
+      await wait(400, { signal: ac.signal });
+      if (!alive) return;
+      play('bloom');
+      const map = layer.querySelector('.wildch-map');
+      layer.querySelectorAll(`[data-wild="${k}"]`).forEach(el => el.classList.add('bloom-go'));
+      const petals = h('div', { class: 'bloom-petals', style: { left: XW[k % 6] + '%', top: wy(k, W.WILD_CHAPTERS.length) + 'px' } });
+      if (!reduceMotion()) {
+        const colours = [c.palette.ground, c.palette.accent, '#ff9ecb', '#fff4a8', '#8fe07a'];
+        for (let n = 0; n < 22; n++) {
+          const ang = (n / 22) * Math.PI * 2 + (n % 3) * 0.3, dist = 80 + (n % 5) * 22;
+          petals.append(h('span', { class: 'petal', style: {
+            '--dx': Math.round(Math.cos(ang) * dist) + 'px', '--dy': Math.round(Math.sin(ang) * dist - 40) + 'px',
+            '--rot': (n * 47 % 360) + 'deg', '--delay': (n % 6) * 90 + 'ms', '--petal': colours[n % colours.length] } }));
+        }
+      }
+      if (map) map.append(petals);
+      await wait(3000, { signal: ac.signal });
+      if (!alive) return;
+      wBloom = -1;
+      drawPath();
+      const badge = h('div', { class: 'bloom-badge' },
+        h('div', { class: 'bloom-badge-icon' }, c.emoji), h('div', { class: 'bloom-badge-text' }, 'BACK IN BLOOM!'));
+      scene.append(badge);
+      play('win');
+      await wait(1800, { signal: ac.signal });
+      if (!alive) return;
+      badge.remove(); catcher.remove();
+      scene.classList.remove('is-blooming');
+      wBusy = false;
+      drawPath();
+    }
+    function drawSign() {
+      if (sign) { sign.remove(); sign = null; }
+      if (!W || blooming >= 0 || !W.wildUnlocked(player()) || !W.WILD_CHAPTERS.length) return;
+      const nt = W.nextWildTrainer(player());
+      const c = W.WILD_CHAPTERS[Math.min(W.currentWild(player()), W.WILD_CHAPTERS.length - 1)];
+      sign = h('button', {
+        // Across the road from the Old Venusaur (beside()), a little above the Champion's stop.
+        class: ['wildch-sign', nt && 'is-new'], type: 'button',
+        attrs: { 'aria-label': 'WILD CHAPTERS' }, style: { left: beside(N - 1, 128, true), top: (nodeY(N - 1) - 78) + 'px' },
+        on: { click: () => { if (wBusy) return; play('tap'); closeChapter(); drawPath(); } }
+      },
+      h('span', { class: 'wildch-sign-post', attrs: { 'aria-hidden': 'true' } }, '\u{1FAA7}'),
+      h('span', { class: 'wildch-sign-next', attrs: { 'aria-hidden': 'true' } }, c.emoji),
+      say('wildch-sign-words', 'WILD'));
+      scroller.append(sign);
+    }
+    import('../data/wild-chapters.js').then(mod => {
+      if (!alive) return;
+      W = mod;
+      const e = W.parseWildEnd(params.onEnd);
+      if (e && (params.result === 'win' || params.result === 'lose')) {
+        const o = params.result === 'win' ? W.applyWildWin(player(), params.onEnd) : null;
+        if (o) { try { store.commit(); } catch (err) { console.warn('road: commit failed', err); } }
+        // battle.js already saved this win (params.wildWon): its first-time bloom still plays here.
+        const ww = params.wildWon && typeof params.wildWon === 'object' ? params.wildWon : null;
+        if (o && ww && ww.idx === o.idx && ww.j === o.j && ww.bloom === true) o.bloom = o.leader;
+        if (o && o.bloom && o.pos >= 0) wildBloom(o.pos);
+        else drawChapter(e.idx, o ? o.j : -1);
+      }
+      drawSign();
+      try { window.__wildch = () => ({ open: !layer.hidden, at: wAt, blooming: wBloom, next: W.nextWildTrainer(player()),
+        views: W.WILD_CHAPTERS.map((_, k) => W.wildView(player(), k)), sign: !!sign }); } catch (err) { /* not a browser */ }
+    }).catch(err => console.warn('road: wild chapters failed to load', err));
+    ac.signal.addEventListener('abort', () => { try { delete window.__wildch; } catch (err) { /* ignore */ } });
+  })();
+  // ==== wildch END ====
   const cur = currentChapter(player());
   if (story) loadLeadTypes();
   requestAnimationFrame(async () => {
@@ -667,6 +883,8 @@ export function mount(root, ctx) {
     // interrupted): the egg hatches.
     if (story && readyToHatch(player())) runHatch();
   });
+
+  round2Road({ ctx, store, params, scene, scroller, world, bottombar, signal: ac.signal, pre, goBattle, closeChapter, scrollToChapter, placed, paletteVars, play });   // round2
 
   // Test hook, in the spirit of window.__scene: what is on the map right now.
   const debug = () => ({
@@ -689,3 +907,213 @@ export function mount(root, ctx) {
     scene.remove();
   };
 }
+
+// ==== round2 BEGIN ====
+// ROUND 2 on the Road (data/round2.js has the rules). After the Champion
+// chapter blooms, a reader gets a toggle in the bottom bar: two crossed swords
+// with a gold '2'. With it on, NEXT BATTLE becomes the Round 2 button, a tap
+// on a chapter stop opens that chapter's remixed Round 2 roster, and every
+// leader brings a phase-2 GIMMICK. A Round 2 leader win re-blooms the region
+// in gold (scene[data-r2gold] + CSS) and brings its ace home as a SHINY.
+// Everything is additive: the Round 1 map, NEXT BATTLE and chapter screen are
+// untouched while the toggle is off. A prereader never sees any of it.
+const r2Mode = { 1: false, 2: false };   // per player; lives across road -> battle -> road
+
+function round2Road({ ctx, store, params, scene, scroller, world, bottombar, signal, pre, goBattle, closeChapter, scrollToChapter, placed, paletteVars, play }) {
+  if (pre) return;
+  const player = () => store.player();
+  const who = () => (store.current === 2 ? 2 : 1);
+  const alive = () => !signal.aborted;
+
+  // A Round 2 battle coming back: battle.js already saved it (params.roundTwo);
+  // re-apply (idempotent) and rebuild the celebration from the marks.
+  let won = null;
+  if (typeof params.onEnd === 'string' && params.onEnd.startsWith('round2:')) {
+    r2Mode[who()] = true;
+    try {
+      won = r2Return(player(), params.onEnd, params.result, params.roundTwo);
+      if (won) store.commit();
+    } catch (e) { console.warn('road: round 2 result not applied', e); }
+  }
+  const markGold = () => { scene.dataset.r2gold = goldChapters(player()).join(' '); };
+  markGold();
+  if (!r2Unlocked(player())) { r2Mode[who()] = false; return; }
+
+  const toggle = h('button', {
+    class: 'r2-toggle', type: 'button', attrs: { 'aria-label': 'ROUND 2' },
+    on: { click: () => { play('tap'); r2Mode[who()] = !r2Mode[who()]; closePanel(); closeChapter(); sync(); } }
+  },
+  h('span', { class: 'r2-swords', attrs: { 'aria-hidden': 'true' } }, '⚔️'),
+  h('span', { class: 'r2-two', attrs: { 'aria-hidden': 'true' } }, '2'));
+  const nextR2 = h('button', { class: 'r2-next', type: 'button', on: { click: onNextR2 } });
+  bottombar.prepend(toggle);
+  bottombar.append(nextR2);
+  const panel = h('div', { class: 'road-chapter r2-chapter is-done', hidden: true });
+  scene.append(panel);
+
+  function sync() {
+    const on = r2Mode[who()];
+    const p = player();
+    scene.classList.toggle('r2-on', on);
+    toggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+    const cur = r2Current(p);
+    if (on && cur < CHAPTERS.length) scene.dataset.r2cur = String(cur); else delete scene.dataset.r2cur;
+    clear(nextR2);
+    const nt = r2Next(p);
+    nextR2.classList.toggle('is-done', !nt);
+    nextR2.append(h('span', { class: 'r2-next-ico', attrs: { 'aria-hidden': 'true' } }, '⚔️'),
+      nt ? 'ROUND 2 ▶︎' : 'REMATCH ▶︎');
+    markGold();
+  }
+
+  function onNextR2() {
+    play('tap');
+    const nt = r2Next(player());
+    if (nt) goBattle(r2BattleParams(nt.i, nt.j));
+    else openPanel(R2_CHAMP);
+  }
+
+  // With Round 2 on, a tap on a chapter stop opens its Round 2 roster.
+  scroller.addEventListener('click', ev => {
+    if (!r2Mode[who()]) return;
+    const node = ev.target && ev.target.closest && ev.target.closest('.road-node[data-chapter]');
+    if (!node || !world.contains(node) || node.classList.contains('wildch-node')) return;
+    ev.stopPropagation();
+    ev.preventDefault();
+    const i = Number(node.dataset.chapter);
+    play('tap');
+    if (isR2ChapterOpen(player(), i)) { closeChapter(); openPanel(i); return; }
+    node.classList.remove('nope'); void node.offsetWidth; node.classList.add('nope');
+  }, { capture: true, signal });
+
+  function closePanel() {
+    panel.hidden = true;
+    clear(panel);
+    scene.classList.remove('chapter-open', 'r2-panel-open');
+  }
+
+  function openPanel(i, justWon = -1) {
+    const ch = CHAPTERS[i];
+    if (!ch) return;
+    const p = player();
+    clear(panel);
+    for (const [k, val] of Object.entries(paletteVars(ch))) panel.style.setProperty(k, val);
+    const back = h('button', {
+      class: 'chapter-back', type: 'button', attrs: { 'aria-label': 'BACK' },
+      on: { click: () => { play('tap'); closePanel(); } }
+    }, '◀︎');
+    const head = h('div', { class: 'chapter-head' }, back,
+      h('div', { class: 'chapter-titles' },
+        h('div', { class: 'chapter-name' }, h('span', { class: 'chapter-emoji' }, ch.emoji), ch.region),
+        h('div', { class: 'chapter-sub r2-sub' },
+          h('span', { attrs: { 'aria-hidden': 'true' } }, '⚔️ '),
+          isR2ChapterDone(p, i) ? 'ROUND 2: GOLDEN!' : 'ROUND 2')));
+    const path = h('div', { class: 'chapter-path' });
+    const L = leaderIdx(i);
+    const nt = r2Next(p);
+    r2Trainers(i).forEach((t, j) => path.append(card(p, i, j, t, j === L, !!nt && nt.i === i && nt.j === j, j === justWon)));
+    panel.append(head, h('div', { class: 'chapter-scroll' }, path));
+    panel.hidden = false;
+    scene.classList.add('chapter-open', 'r2-panel-open');
+  }
+
+  function card(p, i, j, t, leader, isNext, justWon) {
+    const beaten = isR2Cleared(p, i, j);
+    const open = isR2TrainerOpen(p, i, j);
+    const g = leader ? gimmickInfo(gimmickFor(i)) : null;
+    const ace = leader ? r2Ace(i) : null;
+    return h('button', {
+      class: ['trainer-card', 'r2-card', leader && 'is-leader', beaten && 'is-beaten', !open && 'is-locked',
+        isNext && 'is-next', justWon && 'just-won', j % 2 ? 'side-r' : 'side-l'],
+      type: 'button', disabled: !open, dataset: { r2trainer: j },
+      on: { click: () => { if (!open) return; play('tap'); goBattle(r2BattleParams(i, j)); } }
+    },
+    leader ? h('span', { class: 'card-crown', attrs: { 'aria-hidden': 'true' } }, '\u{1F451}') : null,
+    h('span', { class: 'card-sprite' }, spriteImg(t.team[0].id, { class: !open ? 'is-shadow' : '' })),
+    h('span', { class: 'card-text' },
+      h('span', { class: 'card-name' }, t.name),
+      h('span', { class: 'card-level' }, 'LV ' + trainerLevel(t))),
+    g ? h('span', { class: 'r2-gimmick', attrs: { 'aria-hidden': 'true' } }, g.icon) : null,
+    ace ? h('span', { class: 'r2-prize', attrs: { 'aria-hidden': 'true' } },
+      spriteImg(ace.id, { class: 'r2-prize-sprite', shiny: true, lazy: true }), h('span', { class: 'r2-prize-spark' }, '✨')) : null,
+    beaten ? h('span', { class: 'card-tick', attrs: { 'aria-label': 'BEATEN' } }, '✓')
+      : open ? h('span', { class: 'card-go', attrs: { 'aria-hidden': 'true' } }, '▶︎') : null);
+  }
+
+  // The golden re-bloom, then the shiny ace comes home. Tap skips (wait()).
+  async function goldBloom(i) {
+    const ch = CHAPTERS[i];
+    scene.classList.add('is-blooming');
+    const catcher = h('div', { class: 'bloom-catcher', attrs: { 'aria-hidden': 'true' } });
+    scene.append(catcher);
+    scrollToChapter(i, false);
+    delete scene.dataset.r2gold;          // the moment BEFORE: not gold yet
+    await wait(300, { signal });
+    if (!alive()) return;
+    play('bloom');
+    const patch = world.querySelector('.road-region[data-chapter="' + i + '"]');
+    if (patch) patch.classList.add('r2-bloom-go');
+    const petals = h('div', { class: 'bloom-petals r2-petals', style: placed(i) });
+    const golds = ['#ffd23f', '#ffe98a', '#f0b000', '#fff4c0', ch.palette.accent];
+    for (let k = 0; k < 20; k++) {
+      const ang = (k / 20) * Math.PI * 2;
+      const dist = 80 + (k % 4) * 28;
+      petals.append(h('span', {
+        class: 'petal',
+        style: {
+          '--dx': Math.round(Math.cos(ang) * dist) + 'px', '--dy': Math.round(Math.sin(ang) * dist - 40) + 'px',
+          '--rot': (k * 53 % 360) + 'deg', '--delay': (k % 5) * 80 + 'ms', '--petal': golds[k % golds.length]
+        }
+      }));
+    }
+    world.append(petals);
+    await wait(2400, { signal });
+    petals.remove();
+    markGold();
+    catcher.remove();
+    scene.classList.remove('is-blooming');
+  }
+
+  async function shinyHome(aceId) {
+    if (!aceId || !alive()) return;
+    const layer = h('div', { class: 'r2-shiny', attrs: { role: 'dialog', 'aria-label': 'SHINY' } });
+    const ok = h('button', { class: 'r2-shiny-ok', type: 'button', attrs: { 'aria-label': 'OK' } }, '▶︎');
+    layer.append(h('div', { class: 'r2-shiny-card' },
+      h('div', { class: 'r2-shiny-stage' },
+        h('span', { class: 'r2-shiny-spark s1', attrs: { 'aria-hidden': 'true' } }, '✨'),
+        spriteImg(aceId, { class: 'r2-shiny-sprite', shiny: true, animated: true }),
+        h('span', { class: 'r2-shiny-spark s2', attrs: { 'aria-hidden': 'true' } }, '✨')),
+      h('div', { class: 'r2-shiny-words' }, 'A SHINY JOINED YOU!'),
+      ok));
+    scene.append(layer);
+    play('caught');
+    try { cry(aceId); } catch (e) { /* silent */ }
+    await new Promise(res => {
+      ok.addEventListener('click', res, { once: true });
+      signal.addEventListener('abort', res, { once: true });
+    });
+    play('tap');
+    layer.remove();
+  }
+
+  sync();
+  if (won) {
+    requestAnimationFrame(async () => {
+      if (!alive()) return;
+      if (won.bloom) await goldBloom(won.i);
+      if (!alive()) return;
+      if (won.leader && won.newShiny) await shinyHome(won.ace);
+      if (!alive()) return;
+      sync();
+      if (!won.leader) { scrollToChapter(won.i, false); openPanel(won.i, won.j); }
+    });
+  }
+
+  // Test hook alongside window.__road.
+  try {
+    window.__round2 = () => ({ on: r2Mode[who()], unlocked: r2Unlocked(player()), next: r2Next(player()),
+      current: r2Current(player()), gold: goldChapters(player()), panel: !panel.hidden });
+    signal.addEventListener('abort', () => { try { delete window.__round2; } catch (e) { /* ignore */ } }, { once: true });
+  } catch (e) { /* not a browser */ }
+}
+// ==== round2 END ====

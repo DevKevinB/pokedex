@@ -53,6 +53,8 @@ function commit() {
   return ok;
 }
 
+const playerN = n => (n === 1 || n === 2 ? store.save.players[n] : store.player());
+
 export const store = {
   get save() { return _save || init(); },
   set save(v) { _save = v; },
@@ -120,6 +122,30 @@ export const store = {
     commit();
     return p.lock;
   },
+  // Batch 4 per-player helpers. `n` defaults to the active player.
+  /** Art places a decoration (x, y are 0..1 fractions of the garden). -> {kind,x,y} or null (bad input / full at 40; nothing written). */
+  placeDecor(kind, x, y, n) { const v = V.placeDecor(playerN(n), kind, x, y); if (v) commit(); return v; },
+  /** Art moves decoration `i`. -> {kind,x,y} or null (nothing written). There is no remove. */
+  moveDecor(i, x, y, n) { const v = V.moveDecor(playerN(n), i, x, y); if (v) commit(); return v; },
+  /** Bulba wears `key` (a short safe key) or nothing (null). -> the stored accessory; junk changes nothing. */
+  setAccessory(key, n) {
+    const p = playerN(n);
+    const before = p.bulba && p.bulba.accessory;
+    const v = V.setAccessory(p, key);
+    if (v !== before) commit();
+    return v;
+  },
+  /** Through the Roots: open the door for good. */
+  openRoots(n) {
+    const p = playerN(n);
+    const was = !!(p.road && p.road.roots && p.road.roots.opened === true);
+    const ok = V.openRoots(p);
+    if (ok && !was) commit();
+    return ok;
+  },
+  /** Through the Roots: sanctum `key` visited. -> true when stored. */
+  addSanctum(key, n) { const ok = V.addSanctum(playerN(n), key); if (ok) commit(); return ok; },
+
   /** Does `pics` open player n's picture-lock? (true when he has none) */
   lockOpens(n, pics) { return V.lockOpens(store.save.players[Number(n) === 2 ? 2 : 1], pics); },
 };

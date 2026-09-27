@@ -122,8 +122,9 @@ test('freshPlayer carries every v3 field from the contract', () => {
   for (const k of ['name', 'profile', 'caught', 'team', 'mons', 'shinies', 'nicks', 'favorites', 'items', 'badges', 'gyms', 'champion', 'stats', 'bulba', 'garden', 'road', 'lock', 'legacy']) {
     assert.ok(Object.hasOwn(p, k), k);
   }
-  assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [] });
-  assert.deepEqual(p.road, { chapter: 0, cleared: {}, bloomed: [], seeds: 0, guardians: {}, hatched: false, rival: { wins: 0, losses: 0, last: -1 } });
+  assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [], accessory: null });
+  assert.deepEqual(p.garden, { plots: [], berries: 0, decor: [] });
+  assert.deepEqual(p.road, { chapter: 0, cleared: {}, bloomed: [], seeds: 0, guardians: {}, hatched: false, rival: { wins: 0, losses: 0, last: -1 }, r2bloomed: [], wildBloomed: [], roots: { opened: false, sanctums: {} } });
   assert.equal(p.lock, null);
   assert.deepEqual(V.freshSave('2026-01-01').family, { postcards: 0, lastPostcard: null, versus: { gabe: 0, dad: 0 }, challenge: { wins: [] } });
   assert.deepEqual(V.freshSave('2026-01-01').gifts, { toReader: 0 });
@@ -161,7 +162,7 @@ test('hostile: markup in every string and counter comes out clean', () => {
   assert.equal(p.champion, null);
   assert.equal(p.stats.catches, 0);
   assert.equal(p.stats.battlesWon, 0);
-  assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [1] });
+  assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [1], accessory: null });
   assert.deepEqual(p.garden.plots, [{ x: 3, y: 4, kind: 'berry', grown: 0 }]);
   assert.equal(p.garden.berries, 0);
   assert.deepEqual(p.road, { ...V.freshRoad(), cleared: { 'c0-t0': true }, bloomed: [0] });
@@ -295,7 +296,7 @@ test('fromV2 of junk gives a fresh save', () => {
 
 test('mergeV2: union of everything, v3-only data untouched', () => {
   const v3 = M.fromV2({ version: 2, players: { 1: { name: 'G', caught: [1, 2, 3], team: [3, 1], mons: { 1: { level: 40, xp: 5 }, 2: { level: 10, xp: 50 } }, nicks: { 1: 'BULBY' }, badges: ['gym-rock'], stats: { battlesWon: 100 }, items: { masterBalls: 0 }, gyms: { beaten: { 'rock:0': true } } }, 2: { caught: [9] } } });
-  v3.players[1].bulba = { petals: 50, stage: 2, stayStone: true, visitors: [4] };
+  v3.players[1].bulba = { petals: 50, stage: 2, stayStone: true, visitors: [4], accessory: null };
   v3.players[1].garden = { plots: [{ x: 1, y: 1, kind: 'flower', grown: true }], berries: 3 };
   v3.players[1].road.cleared['c0-t1'] = true;
   const v2 = { version: 2, players: { 1: { name: 'OTHER', caught: [2, 5], team: [5], mons: { 1: { level: 30, xp: 99 }, 2: { level: 10, xp: 60 }, 5: { level: 7, xp: 0 } }, nicks: { 1: 'NOPE', 5: 'FIVE' }, badges: ['gym-water'], stats: { battlesWon: 3, catches: 40 }, items: { masterBalls: 2 }, gyms: { beaten: { 'water:0': true } }, champion: { date: '2026-01-01', team: [5] }, settings: { junior: true } } } };
@@ -318,7 +319,7 @@ test('mergeV2: union of everything, v3-only data untouched', () => {
   assert.deepEqual(p.gyms.beaten, { 'rock:0': true, 'water:0': true });
   assert.deepEqual(p.champion, { date: '2026-01-01', team: [5], levels: {} });
   assert.ok(p.road.cleared['c0-t1'] && p.road.cleared['c0-t0'] && p.road.cleared['c1-t0']);
-  assert.deepEqual(p.bulba, { petals: 50, stage: 2, stayStone: true, visitors: [4] });
+  assert.deepEqual(p.bulba, { petals: 50, stage: 2, stayStone: true, visitors: [4], accessory: null });
   assert.equal(p.garden.berries, 3);
   assert.deepEqual(out.players[2].caught, [9], 'player 2 untouched when v2 has none');
 });
@@ -474,8 +475,13 @@ test('petals only go up: persist ratchets a lowered in-memory value', () => {
 test('codes: export -> import round-trip is exact', () => {
   reset();
   const save = M.fromV2(v2Fixture());
-  save.players[2].bulba = { petals: 12, stage: 2, stayStone: true, visitors: [4, 7] };
-  save.players[2].garden = { plots: [{ x: 1.5, y: 2, kind: 'flower', grown: 3 }], berries: 4 };
+  save.players[2].bulba = { petals: 12, stage: 2, stayStone: true, visitors: [4, 7], accessory: 'flower-crown' };
+  save.players[2].garden = { plots: [{ x: 1.5, y: 2, kind: 'flower', grown: 3 }], berries: 4, decor: [{ kind: 'pond', x: 0.25, y: 0.5 }] };
+  save.players[1].road.cleared['r2-c3-t1'] = true;
+  save.players[1].road.cleared['w23-t5'] = true;
+  save.players[1].road.r2bloomed = [3];
+  save.players[1].road.wildBloomed = [0, 23];
+  save.players[1].road.roots = { opened: true, sanctums: { 'deep-well': true } };
   const code = S.exportCode(save);
   assert.match(code, /^SR3\.[A-Za-z0-9_-]+\.[0-9a-f]{8}$/);
   const back = S.importCode(code, V.freshSave());
@@ -556,7 +562,8 @@ test('import snapshots _prev first; restore swaps and is itself undoable', () =>
   S.persist(a);
   const b = V.freshSave(); b.players[1].caught = [150];
   const out = S.importCode(S.exportCode(b), a);
-  assert.deepEqual(JSON.parse(ls.pokedexos_save_v3_prev), a);
+  assert.deepEqual(JSON.parse(ls.pokedexos_save_v3_prev), V.withRollbackMirror(a));
+  assert.deepEqual(V.cleanSave(JSON.parse(ls.pokedexos_save_v3_prev)), V.cleanSave(a), 'the mirror reads back as the same save');
   assert.ok(S.hasPrevious());
   const restored = S.restorePrevious(out);
   assert.deepEqual(restored.players[1].caught, a.players[1].caught);
@@ -718,7 +725,7 @@ test('api: buildFighter output drives createBattle when it is present', async ()
 // ============================================================ Road v3 fields, picture-lock, family, gifts
 
 test('road: seeds, guardians, hatched and rival are kept when legal', () => {
-  const road = { chapter: 3, cleared: { 'c0-t0': true }, bloomed: [0, 1], seeds: 7, guardians: { 0: true, 2: true }, hatched: true, rival: { wins: 4, losses: 2, last: 2 } };
+  const road = { chapter: 3, cleared: { 'c0-t0': true }, bloomed: [0, 1], seeds: 7, guardians: { 0: true, 2: true }, hatched: true, rival: { wins: 4, losses: 2, last: 2 }, r2bloomed: [], wildBloomed: [], roots: { opened: false, sanctums: {} } };
   const p = V.cleanPlayer({ road });
   assert.deepEqual(p.road, road);
   assert.deepEqual(V.cleanPlayer(clone(p)), p, 'idempotent');
@@ -984,4 +991,254 @@ test('save: a failed write leaves the classic save un-fingerprinted so the merge
   ls.pokedexos_save_v2 = JSON.stringify(v2Fixture());
   S.load();
   assert.equal(ls.getItem(S.KEYS.v2seen), null, 'nothing recorded until a v3 write succeeds');
+});
+
+// ------------------------------------------------------------ batch 4: ROUND 2, Wild Chapters, Roots, decor, accessory
+
+test('road: ROUND 2 and Wild Chapter cleared keys, r2bloomed, wildBloomed, roots', () => {
+  const road = {
+    cleared: {
+      'c0-t0': true, 'r2-c0-t0': true, 'r2-c11-t4': true, 'w0-t0': true, 'w23-t5': true,
+      // rejected:
+      'r2-c12-t0': true, 'r2-c01-t0': true, 'w24-t0': true, 'w0-t6': true, 'w01-t0': true, 'w3-t10': true,
+      'r2-c0-t0 ': true, 'x0-t0': true, 'r2-w0-t0': true, 'c12-t0': true, 'w5-t1': false, 'r2-c2-t2': 0,
+    },
+    r2bloomed: [11, '3', 3, 12, -1, 'x', 1.5, null],
+    wildBloomed: [23, 0, 24, '7', '<b>', 7],
+    roots: { opened: true, sanctums: { 'deep-well': true, 'moss_cave': 1, 'no': false, '<svg>': true, ['a'.repeat(25)]: true, 'a:b': true } },
+  };
+  const r = V.cleanRoad(JSON.parse(JSON.stringify(road)));
+  assert.deepEqual(Object.keys(r.cleared).sort(), ['c0-t0', 'r2-c0-t0', 'r2-c11-t4', 'w0-t0', 'w23-t5']);
+  assert.deepEqual(r.r2bloomed, [3, 11]);
+  assert.deepEqual(r.wildBloomed, [0, 7, 23]);
+  assert.deepEqual(r.roots, { opened: true, sanctums: { 'deep-well': true, moss_cave: true, 'a:b': true } });
+  assert.deepEqual(V.cleanRoad(clone(r)), r, 'idempotent');
+  assert.ok(V.isClearedKey('w12-t3') && V.isClearedKey('r2-c5-t0') && !V.isClearedKey('__proto__'));
+});
+
+test('road: hostile roots are cleaned, never thrown', () => {
+  for (const roots of [null, 7, 'open', [], { opened: 'true' }, { opened: 1, sanctums: [1, 2] }, { sanctums: 'x' }]) {
+    assert.deepEqual(V.cleanRoad({ roots }).roots, { opened: false, sanctums: {} });
+  }
+  const many = {};
+  for (let i = 0; i < 200; i++) many['s' + i] = true;
+  assert.equal(Object.keys(V.cleanRoad({ roots: { sanctums: many } }).roots.sanctums).length, V.MAX_SANCTUMS);
+  const poisoned = JSON.parse('{"sanctums":{"__proto__":true,"constructor":true,"ok":true}}');
+  const out = V.cleanRoad({ roots: poisoned }).roots;
+  assert.deepEqual(Object.keys(out.sanctums), ['ok']);
+  assert.equal(({}).polluted, undefined);
+});
+
+test('garden.decor: clamped, capped at 40, junk dropped; accessory is null or a safe key', () => {
+  const X = '<img src=x>';
+  const g = V.cleanGarden({ decor: [
+    { kind: 'pond', x: 0.5, y: 0.25 }, { kind: 'rock', x: -3, y: 9 }, { kind: 'bench', x: '0.1', y: 0.123456 },
+    { kind: X, x: 0.1, y: 0.1 }, { kind: 'a'.repeat(25), x: 0, y: 0 }, { kind: 'lamp', x: NaN, y: 0 },
+    { kind: 'lamp', x: null, y: 0 }, { kind: 'lamp', x: {}, y: 0 }, { kind: '__proto__', x: 0, y: 0 }, null, 'pond', [1, 2],
+  ] });
+  assert.deepEqual(g.decor, [{ kind: 'pond', x: 0.5, y: 0.25 }, { kind: 'rock', x: 0, y: 1 }, { kind: 'bench', x: 0.1, y: 0.1235 }]);
+  const lots = Array.from({ length: 100 }, (_, i) => ({ kind: 'flag', x: i / 100, y: 0 }));
+  const capped = V.cleanGarden({ decor: lots }).decor;
+  assert.equal(capped.length, V.MAX_DECOR);
+  assert.deepEqual(capped[0], { kind: 'flag', x: 0, y: 0 }, 'the first 40 are kept');
+  assert.deepEqual(V.cleanGarden({ decor: 'lots' }).decor, []);
+  for (const bad of [X, 42, true, {}, 'a'.repeat(25), '__proto__', '']) assert.equal(V.cleanBulba({ accessory: bad }).accessory, null);
+  assert.equal(V.cleanBulba({ accessory: 'flower-crown' }).accessory, 'flower-crown');
+  const p = V.cleanPlayer({ garden: { decor: [{ kind: 'pond', x: 0.5, y: 0.5 }] }, bulba: { accessory: 'bow' } });
+  assert.deepEqual(V.cleanPlayer(clone(p)), p, 'idempotent');
+  assert.ok(V.hasProgress(p), 'a garden with decor is worth protecting');
+});
+
+test('decor helpers: placeDecor / moveDecor / setAccessory clamp and never remove', () => {
+  const p = V.freshPlayer();
+  assert.deepEqual(V.placeDecor(p, 'pond', 0.3, 0.7), { kind: 'pond', x: 0.3, y: 0.7 });
+  assert.deepEqual(V.placeDecor(p, 'rock', 2, -1), { kind: 'rock', x: 1, y: 0 }, 'clamped into the garden');
+  for (const [k, x, y] of [['<b>', 0, 0], ['pond', NaN, 0], ['pond', '0.5', 0.5], [null, 0, 0]]) assert.equal(V.placeDecor(p, k, x, y), null);
+  assert.equal(p.garden.decor.length, 2);
+  assert.deepEqual(V.moveDecor(p, 0, 0.9, 0.1), { kind: 'pond', x: 0.9, y: 0.1 });
+  assert.deepEqual(p.garden.decor[0], { kind: 'pond', x: 0.9, y: 0.1 });
+  for (const i of [-1, 2, 1.5, '0', null]) assert.equal(V.moveDecor(p, i, 0.5, 0.5), null);
+  assert.equal(V.moveDecor(p, 0, Infinity, 0.5), null);
+  assert.equal(p.garden.decor.length, 2, 'nothing removed');
+  while (p.garden.decor.length < V.MAX_DECOR) V.placeDecor(p, 'flag', 0.5, 0.5);
+  assert.equal(V.placeDecor(p, 'flag', 0.5, 0.5), null, 'full garden: nothing placed, nothing pushed out');
+  assert.deepEqual(p.garden.decor[0], { kind: 'pond', x: 0.9, y: 0.1 });
+  assert.equal(V.setAccessory(p, 'bow'), 'bow');
+  assert.equal(V.setAccessory(p, '<svg>'), 'bow', 'junk changes nothing');
+  assert.equal(V.setAccessory(p, null), null);
+  assert.equal(p.bulba.accessory, null);
+  assert.equal(V.placeDecor(null, 'pond', 0, 0), null);
+  assert.equal(V.setAccessory(undefined, 'bow'), null);
+  const q = V.freshPlayer();
+  assert.equal(V.openRoots(q), true);
+  assert.equal(V.addSanctum(q, 'deep-well'), true);
+  assert.equal(V.addSanctum(q, '<x>'), false);
+  assert.deepEqual(q.road.roots, { opened: true, sanctums: { 'deep-well': true } });
+});
+
+test('unionDecor keeps every current decoration and adds only the extra copies per kind', () => {
+  const cur = [{ kind: 'pond', x: 0.5, y: 0.5 }, { kind: 'pond', x: 0.5, y: 0.5 }, { kind: 'rock', x: 0.1, y: 0.1 }];
+  const inc = [{ kind: 'pond', x: 0.5004, y: 0.4999 }, { kind: 'rock', x: 0.2, y: 0.1 }, { kind: 'bench', x: 0.1, y: 0.1 }];
+  // The rock at 0.2 is the same rock, moved since: never doubled.
+  assert.deepEqual(V.unionDecor(cur, inc), [...cur, { kind: 'bench', x: 0.1, y: 0.1 }]);
+  const two = [{ kind: 'rock', x: 0.7, y: 0.7 }, { kind: 'rock', x: 0.1, y: 0.1 }];
+  assert.deepEqual(V.unionDecor(cur, two), [...cur, { kind: 'rock', x: 0.7, y: 0.7 }], 'a real extra copy joins, the matching one does not');
+  const full = Array.from({ length: 40 }, (_, i) => ({ kind: 'flag', x: i / 40, y: 0 }));
+  assert.deepEqual(V.unionDecor(full, [{ kind: 'pond', x: 0, y: 0 }]), V.cleanDecor(full), 'a full garden keeps all of its own');
+});
+
+test('mergeV2 / fromV2: new road and garden fields default and carry through untouched', () => {
+  const fresh = M.fromV2(v2Fixture()).players[1];
+  assert.deepEqual(fresh.road.roots, { opened: false, sanctums: {} });
+  assert.deepEqual(fresh.road.r2bloomed, []);
+  assert.deepEqual(fresh.garden.decor, []);
+  assert.equal(fresh.bulba.accessory, null);
+  const v3 = M.fromV2(v2Fixture());
+  const p = v3.players[1];
+  Object.assign(p.road, { r2bloomed: [0, 4], wildBloomed: [9], roots: { opened: true, sanctums: { heart: true } } });
+  p.road.cleared['r2-c4-t2'] = true; p.road.cleared['w9-t5'] = true;
+  p.garden.decor = [{ kind: 'pond', x: 0.2, y: 0.8 }];
+  p.bulba.accessory = 'bow';
+  const before = clone(v3);
+  const out = M.mergeV2(deepFreeze(v3), v2Fixture()).players[1];
+  assert.deepEqual(clone(v3), before);
+  assert.deepEqual(out.road.r2bloomed, [0, 4]);
+  assert.deepEqual(out.road.wildBloomed, [9]);
+  assert.deepEqual(out.road.roots, { opened: true, sanctums: { heart: true } });
+  assert.ok(out.road.cleared['r2-c4-t2'] && out.road.cleared['w9-t5']);
+  assert.deepEqual(out.garden.decor, [{ kind: 'pond', x: 0.2, y: 0.8 }]);
+  assert.equal(out.bulba.accessory, 'bow');
+  const noV2 = M.mergeV2(before, null).players[1];
+  assert.deepEqual(noV2.garden.decor, [{ kind: 'pond', x: 0.2, y: 0.8 }]);
+  assert.deepEqual(M.applyV1(before, { p1: [1] }).players[1].road.roots, before.players[1].road.roots);
+  // An older v3 save with none of these fields loads with the defaults.
+  const old = clone(before);
+  delete old.players[1].road.roots; delete old.players[1].road.r2bloomed; delete old.players[1].garden.decor; delete old.players[1].bulba.accessory;
+  const o = V.cleanSave(old).players[1];
+  assert.deepEqual([o.road.roots, o.road.r2bloomed, o.garden.decor, o.bulba.accessory], [{ opened: false, sanctums: {} }, [], [], null]);
+});
+
+test('import: decorations are never removed; the incoming ones join; accessory stays when the code has none', () => {
+  reset();
+  const cur = V.freshSave();
+  cur.players[2].garden.decor = [{ kind: 'pond', x: 0.5, y: 0.5 }, { kind: 'rock', x: 0.1, y: 0.9 }];
+  cur.players[2].bulba.accessory = 'bow';
+  const older = V.freshSave();
+  older.players[2].garden.decor = [{ kind: 'pond', x: 0.5001, y: 0.5 }, { kind: 'bench', x: 0.3, y: 0.3 }];
+  older.players[1].caught = [1];
+  const out = S.importCode(S.exportCode(older), cur);
+  assert.deepEqual(out.players[2].garden.decor, [{ kind: 'pond', x: 0.5, y: 0.5 }, { kind: 'rock', x: 0.1, y: 0.9 }, { kind: 'bench', x: 0.3, y: 0.3 }]);
+  assert.equal(out.players[2].bulba.accessory, 'bow');
+  // A classic v2 code (no garden at all) cannot erase them either.
+  const classic = btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, save: v2Fixture() }))));
+  assert.equal(S.importCode(classic, out).players[2].garden.decor.length, 3);
+  // A code wearing something else wins the accessory (it is a costume, not a loss).
+  const other = V.freshSave(); other.players[2].bulba.accessory = 'hat'; other.players[1].caught = [1];
+  assert.equal(S.importCode(S.exportCode(other), out).players[2].bulba.accessory, 'hat');
+});
+
+test('import after Art moved every decoration: no copies, and a new kind still has room (regression)', async () => {
+  reset();
+  const D = await import('../data/decor.js');
+  const kinds = D.DECOR.map(d => d.key);
+  const old = V.freshSave(); old.players[1].caught = [1];
+  old.players[2].garden.decor = kinds.slice(0, 25).map((k, i) => ({ kind: k, x: i / 30, y: 0.1 }));
+  const code = S.exportCode(old);
+  const cur = clone(old);
+  cur.players[2].garden.decor = kinds.slice(0, 25).map((k, i) => ({ kind: k, x: i / 30, y: 0.9 }));   // all moved
+  const out = S.importCode(code, cur);
+  assert.equal(out.players[2].garden.decor.length, 25, 'nothing doubled');
+  assert.deepEqual(D.decorAction(out.players[2].garden.decor, kinds[26], V.MAX_DECOR), { op: 'place' });
+  // RESTORE takes the same path.
+  const back = S.restorePrevious(out);
+  assert.equal(back.players[2].garden.decor.length, 25);
+  // Extra copies from a code never eat the room kept for kinds not placed yet.
+  const dupes = V.freshSave(); dupes.players[1].caught = [1];
+  dupes.players[2].garden.decor = Array.from({ length: 40 }, (_, i) => ({ kind: kinds[0], x: i / 40, y: 0.5 }));
+  const cur2 = V.freshSave(); cur2.players[2].garden.decor = [{ kind: kinds[0], x: 0.5, y: 0.5 }];
+  const merged = S.importCode(S.exportCode(dupes), cur2).players[2].garden.decor;
+  assert.equal(merged.length, V.MAX_DECOR - (kinds.length - 1), 'room left for the 29 kinds not placed yet');
+  for (const k of kinds.slice(1)) assert.notEqual(D.decorAction(merged, k, V.MAX_DECOR).op, 'none');
+});
+
+test('rollback safety: unknown nested fields are parked in legacy, not dropped', () => {
+  const p = V.cleanPlayer({
+    road: { chapter: 2, cleared: { 'c0-t0': true, 'x9-t1': true }, futureThing: { a: 1 } },
+    garden: { decor: [], newPatch: [1, 2] },
+    bulba: { petals: 5, hat2: 'cap' },
+  });
+  assert.deepEqual(p.legacy.v3road, { futureThing: { a: 1 } });
+  assert.deepEqual(p.legacy.v3garden, { newPatch: [1, 2] });
+  assert.deepEqual(p.legacy.v3bulba, { hat2: 'cap' });
+  assert.deepEqual(p.legacy.v3cleared, { 'x9-t1': true });
+  assert.equal(p.road.cleared['x9-t1'], undefined);
+  const again = V.cleanPlayer(p);
+  assert.deepEqual(again.legacy, p.legacy, 'parking is stable');
+});
+
+test('rollback safety: the b4 mirror survives a v20.0.0-style strip and is absorbed back (regression)', () => {
+  const ls = reset();
+  const save = V.freshSave();
+  const g = save.players[1];
+  g.road.cleared = { 'c0-t0': true, 'r2-c3-t1': true, 'w5-t2': true };
+  g.road.r2bloomed = [3]; g.road.wildBloomed = [5];
+  g.road.roots = { opened: true, sanctums: { 'deep-well': true } };
+  const a = save.players[2];
+  a.garden.decor = [{ kind: 'pond', x: 0.2, y: 0.3 }];
+  a.bulba.accessory = 'bow';
+  assert.ok(S.persist(save));
+  const disk = JSON.parse(ls.pokedexos_save_v3);
+  assert.ok(disk.players[1].b4 && disk.players[1].b4.cleared.includes('r2-c3-t1'), 'disk carries the mirror');
+  // What v20.0.0 does: nested batch-4 fields dropped, the unknown top-level b4 parked in legacy.
+  const strip = p => ({
+    ...p, legacy: { ...p.legacy, b4: p.b4 }, b4: undefined,
+    road: { chapter: p.road.chapter, cleared: { 'c0-t0': true }, bloomed: [], seeds: 0, guardians: {}, hatched: false, rival: p.road.rival },
+    garden: { plots: [], berries: 0 },
+    bulba: { petals: p.bulba.petals, stage: p.bulba.stage, stayStone: false, visitors: [] },
+  });
+  const old = { ...disk, players: { 1: strip(disk.players[1]), 2: strip(disk.players[2]) } };
+  const back = V.cleanSave(JSON.parse(JSON.stringify(old)));
+  assert.deepEqual(back.players[1].road.cleared, { 'c0-t0': true, 'r2-c3-t1': true, 'w5-t2': true });
+  assert.deepEqual([back.players[1].road.r2bloomed, back.players[1].road.wildBloomed], [[3], [5]]);
+  assert.deepEqual(back.players[1].road.roots, { opened: true, sanctums: { 'deep-well': true } });
+  assert.deepEqual(back.players[2].garden.decor, [{ kind: 'pond', x: 0.2, y: 0.3 }]);
+  assert.equal(back.players[2].bulba.accessory, 'bow');
+  assert.equal(back.players[1].legacy.b4, undefined, 'the absorbed mirror is not kept twice');
+  assert.equal(back.players[1].b4, undefined);
+  // An export code carries it too (the AirDrop-to-an-old-phone path).
+  const code = S.decodeCode(S.exportCode(save));
+  assert.deepEqual(code.data.players[1].road.r2bloomed, [3]);
+});
+
+test('restore: decorations placed after the snapshot stay in the garden', () => {
+  reset();
+  const before = V.freshSave(); before.players[1].caught = [1];
+  const code = V.freshSave(); code.players[1].caught = [4];
+  const imported = S.importCode(S.exportCode(code), before);
+  imported.players[2].garden.decor = [{ kind: 'pond', x: 0.4, y: 0.4 }];
+  const restored = S.restorePrevious(imported);
+  assert.deepEqual(restored.players[1].caught, [1]);
+  assert.deepEqual(restored.players[2].garden.decor, [{ kind: 'pond', x: 0.4, y: 0.4 }]);
+});
+
+test('store: placeDecor / moveDecor / setAccessory / openRoots / addSanctum commit to disk', () => {
+  const ls = reset();
+  const disk = () => JSON.parse(ls.pokedexos_save_v3);
+  store.setPlayer(2);
+  assert.deepEqual(store.placeDecor('pond', 0.25, 0.75), { kind: 'pond', x: 0.25, y: 0.75 });
+  assert.deepEqual(disk().players[2].garden.decor, [{ kind: 'pond', x: 0.25, y: 0.75 }]);
+  const writes = ls._q.writes.length;
+  assert.equal(store.placeDecor('<b>', 0, 0), null);
+  assert.equal(store.moveDecor(5, 0, 0), null);
+  assert.equal(store.setAccessory('<b>'), null);
+  assert.equal(ls._q.writes.length, writes, 'junk writes nothing');
+  assert.deepEqual(store.moveDecor(0, 0.5, 0.5), { kind: 'pond', x: 0.5, y: 0.5 });
+  assert.equal(store.setAccessory('bow'), 'bow');
+  assert.equal(disk().players[2].bulba.accessory, 'bow');
+  assert.deepEqual(disk().players[2].garden.decor, [{ kind: 'pond', x: 0.5, y: 0.5 }]);
+  assert.equal(store.openRoots(1), true);
+  assert.equal(store.addSanctum('deep-well', 1), true);
+  assert.deepEqual(disk().players[1].road.roots, { opened: true, sanctums: { 'deep-well': true } });
+  assert.deepEqual(disk().players[2].road.roots, { opened: false, sanctums: {} });
+  store.setPlayer(1);
 });

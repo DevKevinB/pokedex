@@ -30,6 +30,12 @@ export const MAX_FAMILY_COUNT = 99999; // family.postcards and each family.versu
 export const MAX_CHALLENGE_WINS = 50;  // family.challenge.wins (newest kept)
 export const CHALLENGE_CODE_RE = /^[A-Z]{2,10}-\d{3}$/;   // DAD'S CHALLENGE seed code, e.g. MOSSY-714
 export const CHALLENGE_WHO = ['dad', 'reader'];
+export const WILD_COUNT = 24;          // Wild Chapters: road keys 'w<i>-t<j>', i 0..23
+export const WILD_TRAINERS = 6;        //   ... j 0..5
+export const MAX_DECOR = 40;           // garden.decor (Art's placed decorations)
+export const MAX_SANCTUMS = 64;        // road.roots.sanctums keys
+/** A short game-written id (a safe key of <=24 chars): decor kinds, accessories, sanctum ids. */
+export const isShortKey = k => isSafeKey(k) && k.length <= 24;
 
 // Input caps. Real saves are far below these (649 species, 58 trainers); a
 // payload above them is hostile or corrupt, and walking it would stall boot.
@@ -118,8 +124,8 @@ export function freshPlayer() {
     gyms: { beaten: {} },
     champion: null,
     stats: { catches: 0, battlesWon: 0, battlesLost: 0, versusWins: 0, explores: 0 },
-    bulba: { petals: 0, stage: 1, stayStone: false, visitors: [] },
-    garden: { plots: [], berries: 0 },
+    bulba: { petals: 0, stage: 1, stayStone: false, visitors: [], accessory: null },
+    garden: { plots: [], berries: 0, decor: [] },
     road: freshRoad(),
     lock: null,
     legacy: {},
@@ -131,7 +137,14 @@ export function freshRoad() {
     chapter: 0, cleared: {}, bloomed: [],
     seeds: 0, guardians: {}, hatched: false,
     rival: { wins: 0, losses: 0, last: -1 },
+    r2bloomed: [], wildBloomed: [],
+    roots: freshRoots(),
   };
+}
+
+/** Through the Roots (postgame): the door, and which sanctums he has visited. */
+export function freshRoots() {
+  return { opened: false, sanctums: {} };
 }
 
 /** Save-root fields shared by both players (the family, and gifts that cross from Art to Gabe). */
@@ -216,7 +229,83 @@ export function cleanBulba(raw) {
     stage: clampInt(b.stage, 1, 3, 1) || 1,
     stayStone: b.stayStone === true,
     visitors: cleanIds(b.visitors),
+    accessory: cleanAccessory(b.accessory),
   };
+}
+
+/** bulba.accessory: null, or a short safe key (the cosmetic he wears). */
+export function cleanAccessory(v) {
+  return isShortKey(v) ? v : null;
+}
+
+// garden.decor: Art's placed decorations, x/y as fractions of the garden.
+const DECOR_PLACES = 4;                 // stored precision
+export const DECOR_MATCH_PLACES = 2;    // union key precision (1% of the garden)
+const unit = n => Math.round(Math.max(0, Math.min(1, n)) * 10 ** DECOR_PLACES) / 10 ** DECOR_PLACES;
+export function cleanDecorItem(d) {
+  if (!isObj(d) || !isShortKey(d.kind)) return null;
+  if (typeof d.x !== 'number' && typeof d.x !== 'string') return null;
+  if (typeof d.y !== 'number' && typeof d.y !== 'string') return null;
+  const x = Number(d.x), y = Number(d.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { kind: d.kind, x: unit(x), y: unit(y) };
+}
+export function cleanDecor(raw) {
+  const out = [];
+  for (const d of arr(raw)) {
+    if (out.length >= MAX_DECOR) break;
+    const c = cleanDecorItem(d);
+    if (c) out.push(c);
+  }
+  return out;
+}
+/** The identity used to union decorations across saves: kind + rounded position. */
+export const decorKey = d => `${d.kind}@${d.x.toFixed(DECOR_MATCH_PLACES)},${d.y.toFixed(DECOR_MATCH_PLACES)}`;
+/**
+ * Union two decor lists BY COUNT PER KIND. Every entry in `keep` survives
+ * exactly as it is (Art's current garden is never trimmed). For each kind,
+ * `add` contributes only as many entries as it holds BEYOND what `keep`
+ * already has of that kind, so a decoration Art has since moved is never
+ * counted twice (an old code sees it at its old spot). Among a kind's
+ * incoming entries, ones already matching a current entry (kind + position
+ * rounded to DECOR_MATCH_PLACES, `decorKey`) are the "same" ones and are
+ * skipped first. The first entry of a kind `keep` lacks joins while room
+ * lasts; an extra copy of a kind joins only while the room reserved for the
+ * `kinds` not yet placed stays free (the same reserve rule as
+ * data/decor.js decorAction), so every kind always has room. <= MAX_DECOR.
+ */
+export function unionDecor(keep, add, kinds = []) {
+  const out = cleanDecor(keep);
+  const have = new Map();
+  for (const d of out) have.set(d.kind, (have.get(d.kind) || 0) + 1);
+  const curKeys = new Map();
+  for (const d of out) { const k = decorKey(d); curKeys.set(k, (curKeys.get(k) || 0) + 1); }
+  // Group the incoming ones by kind, same-spot matches first (they are "used up" first).
+  const byKind = new Map();
+  for (const d of cleanDecor(add)) {
+    if (!byKind.has(d.kind)) byKind.set(d.kind, { same: 0, rest: [] });
+    const g = byKind.get(d.kind), k = decorKey(d);
+    if (curKeys.get(k) > 0) { curKeys.set(k, curKeys.get(k) - 1); g.same++; } else g.rest.push(d);
+  }
+  const kindList = Array.isArray(kinds) ? kinds : [];
+  const known = k => !kindList.length || kindList.includes(k);
+  const firsts = [], extras = [];
+  for (const [kind, g] of byKind) {
+    const surplus = g.same + g.rest.length - (have.get(kind) || 0);
+    const joins = g.rest.slice(0, Math.max(0, surplus));
+    joins.forEach((d, i) => ((i === 0 && !have.has(kind) && known(kind)) ? firsts : extras).push(d));
+  }
+  const placed = new Set(out.map(d => d.kind));
+  for (const d of firsts) {
+    if (out.length >= MAX_DECOR) break;
+    out.push(d); placed.add(d.kind);
+  }
+  for (const d of extras) {
+    const reserve = kindList.filter(k => !placed.has(k)).length;
+    if (MAX_DECOR - out.length - reserve <= 0) break;
+    out.push(d);
+  }
+  return out;
 }
 
 const GROWN_MAX = 100;
@@ -241,19 +330,44 @@ export function cleanGarden(raw) {
     const c = cleanPlot(p);
     if (c) plots.push(c);
   }
-  return { plots, berries: count(g.berries) };
+  return { plots, berries: count(g.berries), decor: cleanDecor(g.decor) };
 }
 
 const CLEARED_KEY = /^c(\d{1,2})-t(\d{1,2})$/;
+const R2_KEY = /^r2-c(0|[1-9]\d?)-t(0|[1-9]\d?)$/;     // ROUND 2 remix: chapter i, trainer j
+const WILD_KEY = /^w(0|[1-9]\d?)-t(\d)$/;              // Wild Chapter i (0..23), trainer j (0..5)
+/** True for a legal road.cleared key: 'c<i>-t<j>', 'r2-c<i>-t<j>' or 'w<i>-t<j>'. */
+export function isClearedKey(k) {
+  if (typeof k !== 'string') return false;
+  let m = CLEARED_KEY.exec(k);
+  if (m) return Number(m[1]) < CHAPTER_COUNT;
+  m = R2_KEY.exec(k);
+  if (m) return Number(m[1]) < CHAPTER_COUNT;
+  m = WILD_KEY.exec(k);
+  if (m) return Number(m[1]) < WILD_COUNT && Number(m[2]) < WILD_TRAINERS;
+  return false;
+}
+const idxList = (raw, n) => [...new Set(arr(raw).map(toId)
+  .filter(i => Number.isInteger(i) && i >= 0 && i < n))].sort((a, b) => a - b);
+
+export function cleanRoots(raw) {
+  const r = isObj(raw) ? raw : {};
+  const sanctums = {};
+  let n = 0;
+  for (const [k, v] of entries(r.sanctums)) {
+    if (n >= MAX_SANCTUMS) break;
+    if (v && isShortKey(k)) { sanctums[k] = true; n++; }
+  }
+  return { opened: r.opened === true, sanctums };
+}
+
 export function cleanRoad(raw) {
   const r = isObj(raw) ? raw : {};
   const cleared = {};
   for (const [k, v] of entries(r.cleared)) {
-    const m = CLEARED_KEY.exec(k);
-    if (m && v && Number(m[1]) < CHAPTER_COUNT) cleared[k] = true;
+    if (v && isClearedKey(k)) cleared[k] = true;
   }
-  const bloomed = [...new Set(arr(r.bloomed).map(toId)
-    .filter(n => Number.isInteger(n) && n >= 0 && n < CHAPTER_COUNT))].sort((a, b) => a - b);
+  const bloomed = idxList(r.bloomed, CHAPTER_COUNT);
   const guardians = {};
   for (const [k, v] of entries(r.guardians)) {
     const i = toId(k);
@@ -272,6 +386,9 @@ export function cleanRoad(raw) {
       losses: clampInt(rv.losses, 0, MAX_FAMILY_COUNT, 0) || 0,
       last: clampInt(rv.last, -1, CHAPTER_COUNT - 1, -1),
     },
+    r2bloomed: idxList(r.r2bloomed, CHAPTER_COUNT),
+    wildBloomed: idxList(r.wildBloomed, WILD_COUNT),
+    roots: cleanRoots(r.roots),
   };
 }
 
@@ -359,6 +476,89 @@ export function cleanLegacy(raw) {
 
 // ---------------------------------------------------------------- player
 
+// ---------------------------------------------------------------- rollback safety
+//
+// NESTED PARKING. cleanRoad / cleanGarden / cleanBulba only keep the fields
+// this build knows. So that a LATER build's new nested fields survive a
+// rollback to this one, their unknown keys are parked (bounded, JSON-safe)
+// in legacy.v3road / legacy.v3garden / legacy.v3bulba, and unknown
+// road.cleared keys in legacy.v3cleared. A newer value replaces an older
+// parked one; parked keys are never deleted. A later build reads them back.
+//
+// THE B4 MIRROR. v20.0.0 (live before batch 4) keeps unknown TOP-LEVEL
+// player keys in legacy{} word for word but drops unknown nested ones. So
+// every write (persist, and every export code) also carries player.b4, a
+// copy of the batch-4 fields. An old build parks it as legacy.b4; this
+// build absorbs b4 / legacy.b4 back on load as a union that never lowers
+// anything (cleared keys, blooms, roots, decor by count, accessory if none).
+export const MIRROR_KEY = 'b4';
+const NESTED_PARK = [['road', 'v3road', () => freshRoad()], ['garden', 'v3garden', () => freshPlayer().garden], ['bulba', 'v3bulba', () => freshPlayer().bulba]];
+const MAX_PARKED_CLEARED = 512;
+function parkNested(legacy, raw) {
+  for (const [field, slot, fresh] of NESTED_PARK) {
+    const src = raw[field];
+    if (!isObj(src)) continue;
+    const known = new Set(Object.keys(fresh()));
+    const extras = {};
+    for (const [k, v] of entries(src)) if (!known.has(k)) extras[k] = v;
+    if (!Object.keys(extras).length) continue;
+    const had = isObj(legacy[slot]) ? legacy[slot] : {};
+    const merged = cleanLegacy({ [slot]: { ...had, ...extras } })[slot];
+    if (merged !== undefined) legacy[slot] = merged;
+  }
+  const cl = isObj(raw.road) ? raw.road.cleared : null;
+  if (isObj(cl)) {
+    const had = isObj(legacy.v3cleared) ? { ...legacy.v3cleared } : {};
+    let n = Object.keys(had).length, added = false;
+    for (const [k, v] of entries(cl)) {
+      if (n >= MAX_PARKED_CLEARED) break;
+      if (!v || isClearedKey(k) || !isSafeKey(k) || had[k] === true) continue;
+      had[k] = true; n++; added = true;
+    }
+    if (added) legacy.v3cleared = had;
+  }
+}
+
+/** player -> its batch-4 mirror {cleared:[r2/w keys], r2bloomed, wildBloomed, roots, decor, accessory}. */
+export function mirrorOf(player) {
+  const p = isObj(player) ? player : {};
+  const road = isObj(p.road) ? p.road : {};
+  const cleared = Object.keys(isObj(road.cleared) ? road.cleared : {})
+    .filter(k => road.cleared[k] && isClearedKey(k) && !CLEARED_KEY.test(k));
+  const r = cleanRoad(road);
+  return {
+    cleared,
+    r2bloomed: r.r2bloomed,
+    wildBloomed: r.wildBloomed,
+    roots: r.roots,
+    decor: cleanDecor(isObj(p.garden) ? p.garden.decor : null),
+    accessory: cleanAccessory(isObj(p.bulba) ? p.bulba.accessory : null),
+  };
+}
+
+/** A copy of `save` for writing to disk or a code: every player also carries its b4 mirror. */
+export function withRollbackMirror(save) {
+  if (!isObj(save) || !isObj(save.players)) return save;
+  const players = { ...save.players };
+  for (const n of [1, 2]) if (isObj(players[n])) players[n] = { ...players[n], [MIRROR_KEY]: mirrorOf(players[n]) };
+  return { ...save, players };
+}
+
+function absorbMirror(p, m) {
+  if (!isObj(m)) return;
+  for (const k of arr(m.cleared)) if (isClearedKey(k)) p.road.cleared[k] = true;
+  p.road.r2bloomed = idxList([...p.road.r2bloomed, ...arr(m.r2bloomed)], CHAPTER_COUNT);
+  p.road.wildBloomed = idxList([...p.road.wildBloomed, ...arr(m.wildBloomed)], WILD_COUNT);
+  const roots = cleanRoots(m.roots);
+  if (roots.opened) p.road.roots.opened = true;
+  for (const k of Object.keys(roots.sanctums)) {
+    if (Object.keys(p.road.roots.sanctums).length >= MAX_SANCTUMS) break;
+    p.road.roots.sanctums[k] = true;
+  }
+  p.garden.decor = unionDecor(p.garden.decor, m.decor);
+  if (!p.bulba.accessory) p.bulba.accessory = cleanAccessory(m.accessory);
+}
+
 /** The v3 fields cleanPlayer understands. Anything else goes to legacy{}. */
 export const V3_KEYS = new Set(Object.keys(freshPlayer()));
 
@@ -376,11 +576,15 @@ export function cleanPlayer(raw) {
   if (!isObj(raw.items) || !('masterBalls' in raw.items)) items.masterBalls = base.items.masterBalls;
 
   const legacy = cleanLegacy(raw.legacy);
+  // Our own rollback mirror (see withRollbackMirror) is absorbed below, never parked.
+  const mirrors = [raw[MIRROR_KEY], legacy[MIRROR_KEY]];
+  delete legacy[MIRROR_KEY];
   const extras = {};
-  for (const [k, v] of entries(raw)) if (!V3_KEYS.has(k) && !Object.hasOwn(legacy, k)) extras[k] = v;
+  for (const [k, v] of entries(raw)) if (!V3_KEYS.has(k) && k !== MIRROR_KEY && !Object.hasOwn(legacy, k)) extras[k] = v;
   Object.assign(legacy, cleanLegacy(extras));
+  parkNested(legacy, raw);
 
-  return {
+  const out = {
     name: cleanName(raw.name),
     profile: PROFILES.includes(raw.profile) ? raw.profile : 'reader',
     caught,
@@ -401,6 +605,8 @@ export function cleanPlayer(raw) {
     lock: cleanLock(raw.lock),
     legacy,
   };
+  for (const m of mirrors) absorbMirror(out, m);
+  return out;
 }
 
 /** raw (anything) -> a safe v3 save, or null when it is not a v3 save at all. */
@@ -480,11 +686,77 @@ export function lockOpens(player, pics) {
   return lock.pics.every((id, i) => toId(pics[i]) === id);
 }
 
+// ---------------------------------------------------------------- per-player helpers (batch 4)
+// Pure mutators on ONE player object (a live store.player()). Clamp, never throw.
+
+/**
+ * Art puts a decoration down. -> the stored {kind,x,y}, or null when the kind
+ * is not a safe key, x/y are not numbers, or the garden already holds MAX_DECOR.
+ */
+export function placeDecor(player, kind, x, y) {
+  if (!isObj(player)) return null;
+  const d = cleanDecorItem({ kind, x, y });
+  if (!d || typeof x !== 'number' || typeof y !== 'number') return null;
+  const g = isObj(player.garden) ? player.garden : (player.garden = { plots: [], berries: 0 });
+  const decor = cleanDecor(g.decor);
+  if (decor.length >= MAX_DECOR) return null;
+  decor.push(d);
+  g.decor = decor;
+  return { ...d };
+}
+
+/** Art drags decoration `i` somewhere else. -> the moved {kind,x,y}, or null (nothing changed). */
+export function moveDecor(player, i, x, y) {
+  if (!isObj(player) || !isObj(player.garden) || typeof x !== 'number' || typeof y !== 'number') return null;
+  const decor = cleanDecor(player.garden.decor);
+  if (!Number.isInteger(i) || i < 0 || i >= decor.length) return null;
+  const d = cleanDecorItem({ kind: decor[i].kind, x, y });
+  if (!d) return null;
+  decor[i] = d;
+  player.garden.decor = decor;
+  return { ...d };
+}
+
+/** What Bulba wears: a short safe key, or null for nothing. -> the stored value (junk changes nothing). */
+export function setAccessory(player, key) {
+  if (!isObj(player)) return null;
+  const b = isObj(player.bulba) ? player.bulba : (player.bulba = cleanBulba({}));
+  if (key !== null && !isShortKey(key)) return cleanAccessory(b.accessory);
+  b.accessory = key;
+  return key;
+}
+
+function roadOf(player) {
+  if (!isObj(player.road)) player.road = freshRoad();
+  return player.road;
+}
+
+/** Through the Roots: the door is open (it never closes again). -> true. */
+export function openRoots(player) {
+  if (!isObj(player)) return false;
+  const road = roadOf(player);
+  road.roots = cleanRoots(road.roots);
+  road.roots.opened = true;
+  return true;
+}
+
+/** Through the Roots: sanctum `key` visited. -> true when stored (a bad key or a full list changes nothing). */
+export function addSanctum(player, key) {
+  if (!isObj(player) || !isShortKey(key)) return false;
+  const road = roadOf(player);
+  const roots = cleanRoots(road.roots);
+  if (!roots.sanctums[key] && Object.keys(roots.sanctums).length >= MAX_SANCTUMS) { road.roots = roots; return false; }
+  roots.sanctums[key] = true;
+  road.roots = roots;
+  return true;
+}
+
 /** True when a player carries any progress worth protecting. */
 export function hasProgress(p) {
   if (!isObj(p)) return false;
   return (Array.isArray(p.caught) && p.caught.length > 0)
     || (isObj(p.bulba) && count(p.bulba.petals) > 0)
     || (isObj(p.gyms) && isObj(p.gyms.beaten) && Object.keys(p.gyms.beaten).length > 0)
-    || (isObj(p.road) && isObj(p.road.cleared) && Object.keys(p.road.cleared).length > 0);
+    || (isObj(p.road) && isObj(p.road.cleared) && Object.keys(p.road.cleared).length > 0)
+    || (isObj(p.garden) && Array.isArray(p.garden.decor) && p.garden.decor.length > 0);
 }

@@ -2,6 +2,45 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [20.1.0] - THE LONG ROAD
+
+Things to find over the coming weeks. Nothing is on a timer or a calendar:
+everything unlocks by playing.
+
+### What the boys will notice
+
+**Gabe, once he is Champion:**
+- **ROUND 2.** A ⚔️2 button on the Road re-runs all twelve chapters, remixed
+  and much tougher (Lv75 to 95). Every leader pulls a signature trick in the
+  second half of the fight: rain, sun, sandstorm, hail, a psychic barrier, a
+  ghost that vanishes for a turn, a dragon's roar. A small icon shows which one
+  is on. Beating a Round 2 leader gives Gabe that leader's best Pokémon, **shiny**.
+- **Through the Roots.** A glowing door opens in the Venusaur Tree's roots.
+  Behind it, a cosy tunnel full of glowing mushrooms leads to legendary
+  shrines. Legendaries never run away and nothing times out; a shrine simply
+  waits if he loses. The last shrine, Celebi's, only appears once all the
+  others are done, and it shows Art's Bulba there too.
+- **Six Wild Chapters** beyond the WILD signpost: Frost Peak, Sky Pillar,
+  Coral Reef, Iron Works, Moonlit Grove and Storm Cape, each with four
+  trainers and a leader. Each one opens when the one before it is beaten.
+
+**Art, whatever Gabe is doing:**
+- **Presents in the garden.** Every ten petals a gift box drops from the sky.
+  Tapping it opens it, and a new decoration flies into his new basket: a pond,
+  a swing, sunflowers, a rainbow arch, lanterns, a tiny house and more, 30 in
+  all. He taps one, then taps the grass to put it there, and can move it any
+  time. There's no way to throw one away.
+- **Bulba dresses up.** Eight things for Bulba to wear (a flower crown, a
+  bow, a scarf, sunglasses, a party hat and more) turn up as the petals grow.
+  Bulba sits by the pond, swings on the swing and splashes in the bird bath.
+- **More visitors.** 20 new Pokémon start wandering into the garden as his
+  petal count climbs.
+
+### What Kevin will notice
+
+- Nothing to set up. If a save code from an older build is ever imported,
+  decorations, Round 2 progress and shrines are all kept.
+
 ## [20.0.0] - SPROUT ROAD
 
 **The switch.** The icon the boys already tap now opens Sprout Road. The

@@ -10,7 +10,8 @@
 // badge, a beaten trainer or a level, and it never touches Bulba or the
 // Garden (Art's partner exists only in v3; the classic app cannot lower him).
 // The same goes for the v3-only Road fields (seeds, guardians, hatched,
-// rival), the picture-lock, and the save-root family{} and gifts{}: migration
+// rival, r2bloomed, wildBloomed, roots, and the r2-/w cleared keys), Art's
+// garden decor and Bulba's accessory, the picture-lock, and the save-root family{} and gifts{}: migration
 // only ever DEFAULTS them (fromV2) or carries them through untouched (merge).
 //
 // Every v2 player field maps across: caught, team, mons, badges, shinies,
@@ -61,7 +62,9 @@ export function roadFromBeaten(beaten) {
 }
 
 // The classic app knows chapters, trainers and blooms only. Every v3-only
-// Road field (seeds, guardians, hatched, rival) is taken from v3 untouched.
+// Road field (seeds, guardians, hatched, rival, r2bloomed, wildBloomed,
+// roots) is taken from v3 untouched, and v3's ROUND 2 / Wild cleared keys
+// survive the union because v3's cleared map is spread last.
 function mergeRoad(a, b) {
   return {
     ...a,
@@ -168,7 +171,7 @@ export function mergePlayer(v3p, v2raw) {
     stats: maxMap(a.stats, b.stats),
     road: mergeRoad(a.road, b.road),
     bulba: a.bulba,                                  // v3 only: never touched by the classic app
-    garden: a.garden,
+    garden: a.garden,                                // incl. Art's decor: never touched by the classic app
     legacy,
   });
 }

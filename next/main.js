@@ -7,7 +7,7 @@
 //
 // Scene contract: mod.mount(section, { go, store, params }) -> unmount().
 // Scenes: who, garden, road, battle, rest, hatch, together, family-table,
-// versus, lock, postcard, dex, team, wild, evolve, challenge, book
+// versus, lock, postcard, dex, team, wild, evolve, challenge, book, roots
 // (see ARCHITECTURE.md).
 // ============================================================
 
@@ -38,6 +38,8 @@ const SCENES = {
   evolve: () => import('./scenes/evolve.js'),
   challenge: () => import('./scenes/challenge.js'),
   book: () => import('./scenes/book.js'),
+  // batch 4
+  roots: () => import('./scenes/roots.js'),
 };
 // Scenes that belong to both boys at once (PLAY TOGETHER): never calm-gated
 // on whoever was picked last, and never redirected by profile.

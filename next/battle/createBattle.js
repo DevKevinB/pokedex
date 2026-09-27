@@ -131,7 +131,7 @@ export function movePictures(moves) {
   });
 }
 
-export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math.random, moveLookup = null, wild = false, leader = false, berries = Infinity } = {}) {
+export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math.random, moveLookup = null, wild = false, leader = false, berries = Infinity, gimmick = null } = {}) {
   if (!Array.isArray(myTeam) || !myTeam.length) throw new Error('createBattle: myTeam is empty');
   if (!Array.isArray(enemyTeam) || !enemyTeam.length) throw new Error('createBattle: enemyTeam is empty');
 
@@ -152,6 +152,60 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
   const xpById = new Map();
 
   const active = side => state[side].team[state[side].active];
+
+  // ==== round2 gimmick hook BEGIN ====
+  // opts.gimmick (optional, ROUND 2 leaders; data/round2.js makeGimmick):
+  //   { key, onPhase2(g), onTurnStart(g), onDamage(g) -> damage multiplier }
+  // Every callback is optional and wrapped: a throwing gimmick never breaks the
+  // fight. Gimmick chip/drain never takes anyone below 1 HP (weather never lands
+  // the final blow), and the prereader rules still run AFTER any multiplier.
+  // Events: { type:'gimmick', key, kind, side?, amount?, hpAfter?, stat? }.
+  const gm = gimmick && typeof gimmick === 'object' ? gimmick : null;
+  state.gimmick = gm && typeof gm.key === 'string' ? gm.key : null;
+  function gCall(name, events, extra = {}) {
+    const fn = gm && gm[name];
+    if (typeof fn !== 'function') return undefined;
+    const key = state.gimmick;
+    const note = (kind, data = {}) => { events.push({ ...data, type: 'gimmick', key, kind: String(kind) }); };
+    const hpMove = (side, amount, kind) => {
+      const f = active(side);
+      const n = Math.max(0, Math.round(num(amount, 0)));
+      if (!f || f.fainted || !n) return 0;
+      const hpAfter = kind === 'heal' ? Math.min(f.maxHp, f.hp + n) : Math.max(1, f.hp - n);
+      const moved = Math.abs(f.hp - hpAfter);
+      if (!moved) return 0;
+      f.hp = hpAfter;
+      note(kind, { side, amount: moved, hpAfter });
+      return moved;
+    };
+    const g = {
+      key, phase: state.phase, turn: state.turn, state, rng, junior, isAce: isAce(),
+      me: active('me'), foe: active('foe'),
+      note,
+      chip: (side, fraction) => { const f = active(side); return f ? hpMove(side, Math.max(1, f.maxHp * Math.min(0.5, Math.max(0, num(fraction, 0)))), 'chip') : 0; },
+      heal: (side, amount) => hpMove(side, amount, 'heal'),
+      boost: (side, mult, stat = 'atk') => {
+        const f = active(side);
+        const m = num(mult, 1);
+        if (!f || !(m > 0)) return;
+        if (stat === 'spe') f.spe = Math.max(1, Math.round(f.spe * Math.min(4, m)));
+        else f.atkMult = Math.min(3, f.atkMult * m);
+        note('boost', { side, stat: stat === 'spe' ? 'spe' : 'atk' });
+      },
+      ...extra
+    };
+    try { return fn(g); } catch (e) { return undefined; }
+  }
+  const gTurnStart = events => { if (gm && !state.over) gCall('onTurnStart', events); };
+  function gDamage(side, move, atkF, defF, dmg, eff, events) {
+    if (!gm) return dmg;
+    const m = num(gCall('onDamage', events, { side, move, attacker: atkF, defender: defF, dmg, eff }), 1);
+    const mult = Math.max(0, Math.min(4, m));
+    if (mult === 1) return dmg;
+    const out = Math.round(dmg * mult);
+    return mult > 0 && eff > 0 ? Math.max(1, out) : out;
+  }
+  // ==== round2 gimmick hook END ====
   const other = side => (side === 'me' ? 'foe' : 'me');
   const aliveIdx = side => state[side].team.map((f, i) => (f.fainted ? -1 : i)).filter(i => i >= 0);
 
@@ -197,6 +251,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     let eff = res.typeMult;
     let dmg = Math.max(0, Math.round(num(res.damage, 0)));
     if (eff > 0) dmg = Math.max(1, dmg);
+    dmg = gDamage(side, move, atkF, defF, dmg, eff, events);   // round2 gimmick hook
     if (junior && side === 'me') {
       // His hits always count, even into an immunity: a stalemate is a loss
       // he can feel. The eff reported stays honest for the reader UI only.
@@ -223,6 +278,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
       defF.hp = Math.min(defF.maxHp, defF.hp + Math.round(defF.maxHp * PHASE2_HEAL));
       defF.atkMult = PHASE2_ATK;
       events.push({ type: 'phase2', side: 'foe', hpAfter: defF.hp });
+      if (gm) gCall('onPhase2', events);                        // round2 gimmick hook
     }
 
     if (defF.hp <= 0) {
@@ -260,6 +316,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
 
   function doMove(index) {
     const events = [];
+    gTurnStart(events);                                         // round2 gimmick hook
     const me = active('me');
     const myMove = me.moves[index] || me.moves[0];
     const foe = active('foe');
@@ -283,6 +340,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     if (!Number.isInteger(index) || !t[index] || t[index].fainted || index === state.me.active) return [];
     const events = [{ type: 'switch', side: 'me', index }];
     state.me.active = index;
+    gTurnStart(events);                                         // round2 gimmick hook
     foeTurn(events);                 // the foe's committed move lands on the newcomer
     return finishTurn(events);
   }
@@ -328,6 +386,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     me.hp = hpAfter;
     berriesLeft--;
     state.me.berries = berriesLeft;
+    gTurnStart(events);                                         // round2 gimmick hook
     foeTurn(events);
     return finishTurn(events);
   }

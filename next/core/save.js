@@ -16,8 +16,11 @@
 // says, through import, restore, merge or bug.
 // ============================================================
 
-import { cleanSave, cleanPlayer, freshSave, isObj, hasProgress, today, cleanFamily, cleanGifts, cleanChallenge } from './validate.js';
+import { cleanSave, cleanPlayer, freshSave, isObj, hasProgress, today, cleanFamily, cleanGifts, cleanChallenge, unionDecor, cleanAccessory, withRollbackMirror } from './validate.js';
 import { fromV2, mergeV2, applyV1, isV2Save } from './migrate.js';
+import { DECOR } from '../data/decor.js';
+
+const DECOR_KINDS = DECOR.map(d => d.key);
 
 export const KEYS = {
   v3: 'pokedexos_save_v3',
@@ -175,7 +178,9 @@ export function persist(save) {
   raiseToHwm(save);
   ensureV2Backup();
   let json;
-  try { json = JSON.stringify(save); } catch (e) { return false; }
+  // withRollbackMirror: the on-disk copy also carries each player's b4 mirror,
+  // so an older build that drops nested batch-4 fields still keeps them.
+  try { json = JSON.stringify(withRollbackMirror(save)); } catch (e) { return false; }
   try {
     s.setItem(KEYS.v3, json);
   } catch (e) {
@@ -224,7 +229,7 @@ export function fromB64any(b64) {
 
 /** v3 save -> 'SR3.<base64url JSON>.<crc32 hex>'. Pure. */
 export function encodeSave(save) {
-  const json = JSON.stringify({ v: 3, save });
+  const json = JSON.stringify({ v: 3, save: withRollbackMirror(save) });
   return CODE_PREFIX + toB64url(json) + '.' + crc32(json);
 }
 
@@ -298,6 +303,26 @@ function keepBulba(next, current) {
   return next;
 }
 
+// Art's garden decorations are his: an import (or a restore) can ADD
+// decorations but never remove one. Every decoration in the current save
+// stays exactly where Art put it; the incoming ones join BY COUNT PER KIND
+// (only the copies the code has beyond what the garden already holds, so a
+// decoration he moved since the code was made is never doubled), keeping
+// room free for every kind he has not put down yet, up to MAX_DECOR. Bulba's accessory follows the incoming save when it has one,
+// and otherwise stays what he is wearing now.
+function keepDecor(next, current) {
+  for (const n of [1, 2]) {
+    const cp = current && current.players && current.players[n];
+    const np = next && next.players && next.players[n];
+    if (!isObj(cp) || !isObj(np)) continue;
+    if (!isObj(np.garden)) np.garden = cleanPlayer({}).garden;
+    np.garden.decor = unionDecor(isObj(cp.garden) ? cp.garden.decor : [], np.garden.decor, DECOR_KINDS);
+    if (!isObj(np.bulba)) np.bulba = cleanPlayer({}).bulba;
+    if (!cleanAccessory(np.bulba.accessory)) np.bulba.accessory = cleanAccessory(isObj(cp.bulba) ? cp.bulba.accessory : null);
+  }
+  return next;
+}
+
 // The save-root family{} and gifts{} belong to the whole household, not to
 // whoever made the code. An import (often an older code, or a classic v2 code
 // that has no family at all) can raise them but never lower them: postcards
@@ -321,7 +346,7 @@ function keepShared(next, current) {
 /** One-deep undo slot. Returns true when the snapshot was written. */
 export function snapshot(save) {
   let json;
-  try { json = JSON.stringify(save); } catch (e) { return false; }
+  try { json = JSON.stringify(withRollbackMirror(save)); } catch (e) { return false; }
   try { LS().setItem(KEYS.prev, json); return true; } catch (e) { /* try once more below */ }
   shedDisposable();
   try { LS().setItem(KEYS.prev, json); return true; } catch (e) { return false; }
@@ -332,8 +357,8 @@ export function snapshot(save) {
  * (a typo costs nothing, not even the undo slot), then the current save is
  * snapshotted to pokedexos_save_v3_prev, then the new save is written.
  * Returns the new save. Throws the decodeCode errors, 'SNAPSHOT_FAILED' or 'SAVE_FAILED'.
- *   v3 code -> replaces the save (Bulba, family{} and gifts{} ratcheted)
- *   v2 code -> fromV2, replaces the save (Bulba, family{} and gifts{} ratcheted)
+ *   v3 code -> replaces the save (Bulba, garden decor, family{} and gifts{} ratcheted)
+ *   v2 code -> fromV2, replaces the save (Bulba, garden decor, family{} and gifts{} ratcheted)
  *   v1 code -> caught ids unioned into the current save
  */
 export function importCode(code, currentSave) {
@@ -341,7 +366,7 @@ export function importCode(code, currentSave) {
   const current = cleanSave(currentSave) || freshSave();
   let next;
   if (kind === 'v1') next = applyV1(current, data);
-  else next = keepShared(keepBulba(data, current), current);
+  else next = keepShared(keepDecor(keepBulba(data, current), current), current);
   // No undo slot, no import: an overwrite that cannot be taken back is
   // exactly the loss this whole module exists to prevent.
   if (!snapshot(currentSave || current)) throw codeError('SNAPSHOT_FAILED');
@@ -354,8 +379,10 @@ export function hasPrevious() { return get(KEYS.prev) != null; }
 /** Swap the current save with the undo slot, so RESTORE is itself undoable. */
 export function restorePrevious(currentSave) {
   const prev = parse(get(KEYS.prev));
-  const save = prev ? (cleanSave(prev) || (isV2Save(prev) ? fromV2(prev) : null)) : null;
+  let save = prev ? (cleanSave(prev) || (isV2Save(prev) ? fromV2(prev) : null)) : null;
   if (!save) throw codeError('NO_SNAPSHOT');
+  // Decorations Art placed since the snapshot stay in his garden.
+  save = keepDecor(save, cleanSave(currentSave));
   const cur = JSON.stringify(currentSave);
   if (!persist(save)) throw codeError('SAVE_FAILED');
   try { LS().setItem(KEYS.prev, cur); } catch (e) { /* non-fatal */ }

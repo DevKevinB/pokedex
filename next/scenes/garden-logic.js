@@ -131,12 +131,39 @@ export function growPlot(plot) {
   return true;
 }
 
-/** A visitor for the garden: prefers species he hasn't caught, never one already on screen. */
-export function pickVisitor(caught, onScreen = [], rng = Math.random) {
+// Batch 4 (Art's trickle): 20 more friends who start dropping by as Bulba's
+// petals grow, one new species every LATE_VISITOR_STEP petals from
+// LATE_VISITOR_FROM on, so there is always someone new to meet. Still gentle,
+// all <= 649, never a legendary. Order = unlock order; never reorder.
+export const LATE_VISITOR_FROM = 40;
+export const LATE_VISITOR_STEP = 12;
+export const LATE_VISITORS = [
+  25, 133, 172, 427, 417,      // Pikachu, Eevee, Pichu, Buneary, Pachirisu
+  587, 572, 300, 216, 231,     // Emolga, Minccino, Skitty, Teddiursa, Phanpy
+  333, 363, 433, 446, 440,     // Swablu, Spheal, Chingling, Munchlax, Happiny
+  311, 312, 37, 79, 179,       // Plusle, Minun, Vulpix, Slowpoke, Mareep
+];
+/** Petals at which LATE_VISITORS[i] starts visiting. */
+export const lateVisitorAt = i => LATE_VISITOR_FROM + i * LATE_VISITOR_STEP;
+/** Every species that can visit at `petals` (the first 36 always; late friends as petals grow). */
+export function visitorPool(petals = 0) {
+  const n = Math.max(0, Math.floor(Number(petals) || 0));
+  return VISITORS.concat(LATE_VISITORS.filter((_, i) => lateVisitorAt(i) <= n));
+}
+
+/**
+ * A visitor for the garden: never one already on screen; prefers a late friend
+ * who just started visiting and he has not caught (the "someone new" moment),
+ * then any species he hasn't caught, then anyone. `petals` defaults to 0 (the
+ * original 36 friends only).
+ */
+export function pickVisitor(caught, onScreen = [], rng = Math.random, petals = 0) {
   const have = new Set((caught || []).map(Number));
   const busy = new Set(onScreen.map(Number));
-  const fresh = VISITORS.filter(id => !have.has(id) && !busy.has(id));
-  const pool = fresh.length ? fresh : VISITORS.filter(id => !busy.has(id));
+  const all = visitorPool(petals);
+  const lateNew = all.filter(id => LATE_VISITORS.includes(id) && !have.has(id) && !busy.has(id));
+  const fresh = all.filter(id => !have.has(id) && !busy.has(id));
+  const pool = lateNew.length ? lateNew : fresh.length ? fresh : all.filter(id => !busy.has(id));
   if (!pool.length) return VISITORS[0];
   return pool[Math.floor(rng() * pool.length) % pool.length];
 }

@@ -4,12 +4,14 @@
 // nothing here ever says so. Pure rules live in garden-logic.js (unit-tested).
 
 import { h, clear } from '../ui/h.js';
-import { spriteImg, ITEM } from '../ui/sprite.js';
+import { spriteImg, spriteUrl, ITEM } from '../ui/sprite.js';
 import * as audio from '../audio/audio.js';
 import * as music from '../audio/music.js';
 import { wait, PACE } from '../core/pace.js';
 import { rngFromUrl } from '../core/rng.js';
 import * as L from './garden-logic.js';
+import * as DC from '../data/decor.js';
+import { MAX_DECOR } from '../core/validate.js';
 
 const NAP_AFTER = 20000;
 const MAX_VISITORS_ON_SCREEN = 2;
@@ -17,8 +19,13 @@ const BALLS = ['poke-ball', 'great-ball', 'ultra-ball', 'master-ball'];
 const E = {                                      // emoji pictures (never words)
   sprout: '\u{1F331}', home: '\u{1F3E0}', sign: '\u{1FAA7}', basket: '\u{1F9FA}',
   heart: '\u{1F497}', leaf: '\u{1F343}', zzz: '\u{1F4A4}', spark: '\u{2728}',
-  gift: '\u{1F381}',
+  gift: '\u{1F381}', drop: '\u{1F4A7}', sunflower: '\u{1F33B}',
 };
+// Per-player UI memory for the decor drawer (which unlocks were already
+// announced with a gift box, which accessories he has tried on). A
+// convenience only: it is NOT the save, holds nothing he owns, and losing it
+// just means one more gift box / a little extra sparkle.
+const SEEN_KEY = 'pokedexos_next_garden_seen';
 
 const { sfx, cry, unlock } = audio;
 // A cry nobody asked for (Bulba's hello, a visitor arriving) waits for the
@@ -100,9 +107,22 @@ export function mount(root, ctx) {
   const ballImg = h('img', { attrs: { src: ITEM('poke-ball'), alt: '', draggable: 'false' } });
   const ballBtn = btn('gd-ballbtn', 'ball', () => openDrawer(), ballImg);
 
+  // Art's decorations (batch 4): a basket-with-sparkle button, a picture-only
+  // strip of what he has unlocked, and the things he put down on the ground.
+  const heldSlot = h('span', { class: 'gd-dbtn-held' });
+  const decorBtn = btn('gd-dbtn', 'decorations', () => tapDecorBtn(),
+    h('span', { class: 'gd-emo' }, E.basket), h('span', { class: 'gd-dbtn-flower' }, E.sunflower),
+    h('span', { class: 'gd-dbtn-spark' }, E.spark), heldSlot);
+  const dRowDecor = h('div', { class: 'gd-drow' });
+  const dRowAcc = h('div', { class: 'gd-drow gd-drow-acc' });
+  const dsheet = h('div', { class: 'gd-dsheet', attrs: { 'aria-hidden': 'true' } }, dRowDecor, dRowAcc);
+  const dshade = h('div', { class: 'gd-dshade', on: { pointerdown: e => { e.stopPropagation(); e.preventDefault(); onAnyInput(); play('tap'); closeDecor(); } } });
+  const decorLayer = h('div', { class: 'gd-decor' });
+  const giftLayer = h('div', { class: 'gd-giftlayer' });
+
   const plotsLayer = h('div', { class: 'gd-plots' });
   const actorsLayer = h('div', { class: 'gd-actors' });
-  const field = h('div', { class: 'gd-field' }, h('div', { class: 'gd-grass' }), plotsLayer, actorsLayer);
+  const field = h('div', { class: 'gd-field' }, h('div', { class: 'gd-grass' }), plotsLayer, decorLayer, actorsLayer, giftLayer);
   const hillsFar = h('div', { class: 'gd-hills gd-far' });
   const hillsNear = h('div', { class: 'gd-hills gd-near' });
   const sky = h('div', { class: 'gd-sky' },
@@ -120,8 +140,8 @@ export function mount(root, ctx) {
   const scene = h('div', { class: 'gd' },
     sky, hillsFar, hillsNear, field, fx,
     h('div', { class: 'gd-top' }, homeBtn, meter, roadBtn),
-    h('div', { class: 'gd-bottom' }, basketBtn, bookBtn, ballBtn),
-    drawerShade, drawer);
+    h('div', { class: 'gd-bottom' }, basketBtn, bookBtn, decorBtn, ballBtn),
+    drawerShade, drawer, dshade, dsheet);
   root.classList.add('garden-scene');
   root.appendChild(scene);
 
@@ -169,6 +189,7 @@ export function mount(root, ctx) {
   function moveTo(a, x, y, { speed = 2.4, min = 260, max = 950, done } = {}) {
     const { w, h: fh } = fs();
     const dist = Math.hypot((x - a.x) * w, (y - a.y) * fh);
+    if (a === B) endReact();
     if (Math.abs(x - a.x) > 0.01) setFace(a, x > a.x ? 1 : -1);
     const ms = dur(Math.max(min, Math.min(max, dist * speed)));
     a.el.classList.add('moving');
@@ -191,6 +212,9 @@ export function mount(root, ctx) {
   const stoneBtn = h('button', { class: 'gd-btn gd-stone', attrs: { type: 'button', 'aria-label': 'everstone' },
     on: { pointerdown: e => { e.stopPropagation(); e.preventDefault(); onAnyInput(); toggleStone(); } } },
     h('img', { attrs: { src: ITEM('everstone'), alt: '', draggable: 'false' } }));
+  // What Bulba is wearing (batch 4). Inside .gd-face, so it turns with him.
+  const accEl = h('div', { class: 'gd-acc', attrs: { 'aria-hidden': 'true' } });
+  B.faceEl.appendChild(accEl);
   B.body.append(bud, zzz, stoneOn);
   B.el.appendChild(stoneBtn);
   listen(B.body, 'pointerdown', e => { e.stopPropagation(); e.preventDefault(); onAnyInput(); tapBulba(); });
@@ -304,13 +328,16 @@ export function mount(root, ctx) {
     if (due) later(trySpawnVisitor, 900);
     updateBulbaLook();
     if (!wasReady && L.budReady(bulba)) { play('bloom'); later(lookAtBud, 1600); }
+    const ups = DC.unlocksBetween(before, bulba.petals);
+    if (ups.length) { giftQueue.push(...ups); later(dropGift, 1300); }
+    updateDecorBtn();
     save();
   }
   function trySpawnVisitor() {
     while (pendingVisitors > 0 && visitors.length < MAX_VISITORS_ON_SCREEN) { pendingVisitors--; spawnVisitor(); }
   }
   function spawnVisitor() {
-    const id = L.pickVisitor(p.caught, visitors.map(v => v.id), rng);
+    const id = L.pickVisitor(p.caught, visitors.map(v => v.id), rng, bulba.petals);
     const a = makeActor(id, { cls: 'gd-visitor' });
     a.fed = false;
     const fromLeft = rng() < 0.5;
@@ -364,7 +391,7 @@ export function mount(root, ctx) {
     basketBtn.classList.toggle('on', on);
     scene.classList.toggle('berry-mode', on);
   }
-  function toggleBerryMode() { play('tap'); if (drawerOpen) closeDrawer(); setBerryMode(!berryMode); }
+  function toggleBerryMode() { play('tap'); if (drawerOpen) closeDrawer(); if (decorOpen) closeDecor(); dropHeld(); setBerryMode(!berryMode); }
 
   // ---- the ball drawer: same look as battle, no odds, no counts ---------
   function markTarget(a) {
@@ -373,7 +400,7 @@ export function mount(root, ctx) {
   function openDrawer() {
     play('tap');
     if (busy || !visitors.length) return;
-    setBerryMode(false);
+    setBerryMode(false); if (decorOpen) closeDecor(); dropHeld();
     if (!focusVisitor || !visitors.includes(focusVisitor)) focusVisitor = visitors[0];
     markTarget(focusVisitor);
     drawerOpen = true;
@@ -446,16 +473,20 @@ export function mount(root, ctx) {
   }
 
   // ---- BULBA ---------------------------------------------------------------
+  let stonePref = null;      // 'right' | 'left' | null: keep the Everstone off a decoration he is playing by
   function bulbaMove(x, y, opts) {
-    if (busy === 'evolve') return;
-    moveTo(B, Math.max(0.12, Math.min(0.88, x)), Math.max(0.12, Math.min(0.84, y)), opts);
+    if (busy === 'evolve') return 0;
+    stonePref = null;
+    const ms = moveTo(B, Math.max(0.12, Math.min(0.88, x)), Math.max(0.12, Math.min(0.84, y)), opts);
     parallax();
     stoneSide();
+    return ms;
   }
   function stoneSide() {
     const half = parseFloat(B.el.style.getPropertyValue('--half')) || 44;
     const tap = stoneBtn.offsetWidth || 60;
-    B.el.classList.toggle('stone-right', B.x * fs().w < half + tap + 12);
+    const edge = B.x * fs().w < half + tap + 12;
+    B.el.classList.toggle('stone-right', edge || stonePref === 'right');
   }
   function parallax() {
     const off = (B.x - 0.5);
@@ -509,7 +540,7 @@ export function mount(root, ctx) {
     play('tap');
     if (busy || !L.budReady(bulba)) return;
     busy = 'evolve';
-    closeDrawer(); setBerryMode(false);
+    closeDrawer(); setBerryMode(false); closeDecor(); dropHeld();
     cancel(B.moveT); B.el.classList.remove('moving');
     play('evolve');
     B.el.classList.add('evolving');                  // slow, gentle glow (<1 pulse/s)
@@ -560,11 +591,17 @@ export function mount(root, ctx) {
     onAnyInput();
     play('tap');
     if (drawerOpen) { closeDrawer(); return; }
+    if (decorOpen) { closeDecor(); return; }
     if (berryMode) setBerryMode(false);
+    // A second finger while the first still holds a decoration: moving or
+    // placing now would rebuild the decor layer under that finger.
+    if (drag) return;
     const f = fs();
     const px = e.clientX - f.left, py = e.clientY - f.top;
     if (f.w <= 0 || f.h <= 0) return;
     const x = L.clamp01(px / f.w), y = L.clamp01(py / f.h);
+    if (held) { putHeld(x, y); return; }
+    if (sel != null) { moveSelected(x, y); return; }
     if (y < 0.05) { sparkle(px + f.left - scene.getBoundingClientRect().left, py + f.top - scene.getBoundingClientRect().top); return; }
     const near = L.findPlotNear(garden.plots, px, py, f.w, f.h, Math.max(30, f.w * 0.07));
     let spot;
@@ -578,9 +615,12 @@ export function mount(root, ctx) {
       renderAllPlots(); renderPlot(spot, true);
       play('grow'); gainPetals(1, spot.x, spot.y);
     }
-    // Bulba hops over to see (stopping just beside it)
+    // Bulba hops over to see (stopping just beside it); if one of Art's
+    // decorations is right there, he plays with it when he arrives.
     const side = spot.x >= B.x ? -1 : 1;
-    bulbaMove(spot.x + side * 0.1, spot.y + 0.02);
+    const ms = bulbaMove(spot.x + side * 0.1, spot.y + 0.02);
+    const nd = DC.nearestDecor(garden.decor, px, py, f.w, f.h, Math.max(50, f.w * 0.12));
+    if (nd >= 0 && ms) { cancel(reactT); reactT = later(() => doReact(nd), ms + 60); }
   }
   function pickBerries(pl) {
     const now = Date.now();
@@ -644,6 +684,416 @@ export function mount(root, ctx) {
     if (busy !== 'evolve') jump(B);
   });
 
+  // ==== ART'S DECORATIONS (batch 4) =========================================
+  // Unlocks come from petals only (data/decor.js): one decoration every 10,
+  // one accessory for Bulba every 25. Nothing here is on a clock. He can put
+  // things down and move them; there is no way to remove one (no bin, and a
+  // decoration dragged off the edge snaps back home).
+  if (!Array.isArray(garden.decor)) garden.decor = [];
+  // The scene is overflow:hidden but can still be scrolled by focus or
+  // scrollIntoView; a scrolled garden would put every tap in the wrong spot.
+  const unscroll = el => { if (el.scrollTop || el.scrollLeft) { el.scrollTop = 0; el.scrollLeft = 0; } };
+  listen(scene, 'scroll', () => unscroll(scene));
+  listen(field, 'scroll', () => unscroll(field));
+  listen(root, 'scroll', () => unscroll(root));
+  let decorOpen = false;
+  let held = null;          // a decoration kind in his hand, waiting for a tap on the ground
+  let sel = null;           // index of a placed decoration picked up by a tap (tap-then-tap move)
+  let drag = null;          // { i, el, pid, sx, sy, moved }
+  let reactT = null;
+  let giftEl = null, giftOpening = false;
+  const giftQueue = [];
+
+  // ---- the per-player "seen" memory (not the save; see SEEN_KEY) ----------
+  const seenPlayer = String(store.current === 2 ? 2 : 1);
+  function readSeen() {                 // undefined: storage unusable; null: nothing yet
+    try {
+      const all = JSON.parse(globalThis.localStorage.getItem(SEEN_KEY) || 'null');
+      const r = all && typeof all === 'object' ? all[seenPlayer] : null;
+      return r && typeof r === 'object' ? r : null;
+    } catch (e) { return undefined; }
+  }
+  function writeSeen() {
+    try {
+      let all = null;
+      try { all = JSON.parse(globalThis.localStorage.getItem(SEEN_KEY) || 'null'); } catch (e) { all = null; }
+      if (!all || typeof all !== 'object' || Array.isArray(all)) all = {};
+      all[seenPlayer] = { ann: seen.ann, worn: seen.worn.slice(0, 16) };
+      globalThis.localStorage.setItem(SEEN_KEY, JSON.stringify(all));
+    } catch (e) { /* a convenience only */ }
+  }
+  const unlockedNow = DC.unlocksAt(bulba.petals).length;
+  const seenRaw = readSeen();
+  const seen = { ann: unlockedNow, worn: [] };
+  if (seenRaw) {
+    const a = Math.floor(Number(seenRaw.ann));
+    seen.ann = Number.isFinite(a) ? Math.max(0, Math.min(unlockedNow, a)) : Math.max(0, unlockedNow - 1);
+    seen.worn = Array.isArray(seenRaw.worn) ? seenRaw.worn.filter(k => DC.accessoryInfo(k)) : [];
+  } else if (seenRaw === null) {
+    seen.ann = Math.max(0, unlockedNow - 1);    // first visit with unlocks waiting: one box, for the newest
+  }
+  // Waiting announcements from petals earned away from the garden (the
+  // Family Table gives petals too). At most one box on arrival; anything
+  // older is simply already in his drawer.
+  {
+    const pending = DC.unlocksAt(bulba.petals).slice(seen.ann);
+    if (pending.length > 1) { seen.ann += pending.length - 1; writeSeen(); }
+    if (pending.length) giftQueue.push(pending[pending.length - 1]);
+  }
+
+  // ---- drawing: every decoration and accessory is a picture ---------------
+  function artFor(info, base) {
+    const look = info.look || {};
+    const kids = [];
+    for (let i = 0; i < (look.parts | 0); i++) kids.push(h('i'));
+    if (look.item) kids.push(h('img', { class: 'gd-art-item', attrs: { src: ITEM(look.item), alt: '', draggable: 'false' } }));
+    for (const em of (look.emoji || [])) kids.push(h('span', { class: 'gd-art-emo' }, em));
+    return h('div', { class: `${base} ${base}-${info.key}` }, kids);
+  }
+  const decorArt = info => artFor(info, 'gd-dc-art');
+  const accArt = info => artFor(info, 'gd-acc-art');
+
+  function renderDecor(popIdx = -1) {
+    // The lifted element is about to be replaced: a drag cannot outlive it
+    // (its pointer capture goes with it and endDrag would never run).
+    drag = null;
+    clear(decorLayer);
+    garden.decor.forEach((d, i) => {
+      const info = DC.decorInfo(d.kind);
+      if (!info) return;              // a kind from a newer game: kept in the save, just not drawn
+      const el = h('div', {
+        class: 'gd-dc' + (info.wide ? ' wide' : '') + (info.tall ? ' tall' : '') + (sel === i ? ' sel' : '') + (i === popIdx ? ' pop' : ''),
+        attrs: { role: 'button', 'aria-label': 'decoration' }, dataset: { i: String(i), kind: d.kind },
+      }, decorArt(info));
+      el.style.left = (d.x * 100) + '%';
+      el.style.top = (d.y * 100) + '%';
+      el.style.zIndex = String(10 + Math.round(d.y * 100));
+      decorLayer.appendChild(el);
+    });
+    scene.dataset.decor = String(garden.decor.length);
+  }
+  const decorElAt = i => decorLayer.querySelector(`.gd-dc[data-i="${Number(i)}"]`);
+
+  function updateAccessory() {
+    clear(accEl);
+    const info = DC.accessoryInfo(bulba.accessory);
+    accEl.className = 'gd-acc' + (info ? ' slot-' + info.slot : '');
+    if (info) accEl.appendChild(accArt(info));
+  }
+
+  // ---- the decor button and its picture strip ------------------------------
+  function isFreshAcc(key) { return !seen.worn.includes(key) && bulba.accessory !== key; }
+  function updateDecorBtn() {
+    const any = DC.unlocksAt(bulba.petals).length > 0;
+    const revealed = seen.ann > 0 || !giftQueue.length;
+    decorBtn.hidden = !(any && revealed);
+    const fresh = DC.freshDecorKinds(bulba.petals, garden.decor).length > 0
+      || DC.unlockedAccessories(bulba.petals).some(a => isFreshAcc(a.key));
+    decorBtn.classList.toggle('fresh', fresh && !held);
+    decorBtn.classList.toggle('holding', !!held);
+    clear(heldSlot);
+    const hi = held && DC.decorInfo(held);
+    if (hi) heldSlot.appendChild(decorArt(hi));
+    scene.classList.toggle('decor-mode', !!held);
+  }
+  function stripItem(art, fresh, on, cls) {
+    return h('button', {
+      class: 'gd-dopt ' + cls + (fresh ? ' fresh' : ''), attrs: { type: 'button', 'aria-label': 'item' },
+      // pointerdown: no focus (focus would scroll the overflow-hidden scene on
+      // iOS); the tap itself is a click, so a sideways swipe still scrolls the strip.
+      on: { pointerdown: e => { e.stopPropagation(); e.preventDefault(); }, click: e => { e.stopPropagation(); onAnyInput(); on(); } },
+    }, art, fresh ? h('span', { class: 'gd-dopt-spark', attrs: { 'aria-hidden': 'true' } }, E.spark) : null);
+  }
+  function renderStrip() {
+    clear(dRowDecor); clear(dRowAcc);
+    const fresh = new Set(DC.freshDecorKinds(bulba.petals, garden.decor));
+    // Newest first, and anything he has never used at the very front.
+    const dec = DC.unlockedDecor(bulba.petals).slice().reverse();
+    dec.sort((a, b) => (fresh.has(b.key) ? 1 : 0) - (fresh.has(a.key) ? 1 : 0));
+    for (const d of dec) dRowDecor.appendChild(stripItem(decorArt(d), fresh.has(d.key), () => pickDecor(d.key), 'dec'));
+    const acc = DC.unlockedAccessories(bulba.petals).slice().reverse();
+    acc.sort((a, b) => (isFreshAcc(b.key) ? 1 : 0) - (isFreshAcc(a.key) ? 1 : 0));
+    dRowAcc.hidden = !acc.length;
+    if (acc.length) {
+      dRowAcc.appendChild(h('span', { class: 'gd-drow-lead', attrs: { 'aria-hidden': 'true' } },
+        h('img', { attrs: { src: spriteUrl(L.stageId(bulba.stage)), alt: '', draggable: 'false' } })));
+      for (const a of acc) {
+        const b = stripItem(accArt(a), isFreshAcc(a.key), () => pickAccessory(a.key), 'acc');
+        if (bulba.accessory === a.key) b.classList.add('worn');
+        dRowAcc.appendChild(b);
+      }
+    }
+    dRowDecor.scrollLeft = 0; dRowAcc.scrollLeft = 0;
+  }
+  function tapDecorBtn() {
+    play('tap');
+    if (busy === 'evolve') return;
+    if (decorOpen) { closeDecor(); return; }
+    if (held) { dropHeld(); }
+    openDecor();
+  }
+  function openDecor() {
+    if (busy === 'evolve') return;
+    closeDrawer(); setBerryMode(false); deselect();
+    renderStrip();
+    decorOpen = true;
+    dsheet.classList.add('open'); dshade.classList.add('open');
+    dsheet.setAttribute('aria-hidden', 'false');
+  }
+  function closeDecor() {
+    decorOpen = false;
+    dsheet.classList.remove('open'); dshade.classList.remove('open');
+    dsheet.setAttribute('aria-hidden', 'true');
+  }
+  function pickDecor(key) {
+    play('tap');
+    held = key;
+    closeDecor();
+    updateDecorBtn();
+    jump(B);
+  }
+  function dropHeld() { if (!held) return; held = null; updateDecorBtn(); }
+  function pickAccessory(key) {
+    const next = bulba.accessory === key ? null : key;     // tap the one he wears to take it off
+    try { store.setAccessory(next); } catch (e) { /* never breaks the garden */ }
+    if (next && !seen.worn.includes(next)) { seen.worn.push(next); writeSeen(); }
+    updateAccessory(); updateDecorBtn(); renderStrip();
+    play(next ? 'petal' : 'tap');
+    if (!asleep) { jump(B); if (next) hearts(B); }
+    const c = elCenter(B.body); sparkle(c.px, c.py - 40);
+  }
+
+  // ---- putting things down, moving them -------------------------------------
+  const fitX = x => Math.max(0.04, Math.min(0.96, x));
+  const fitY = y => Math.max(0.08, Math.min(0.97, y));
+  function putHeld(x, y) {
+    const kind = held;
+    dropHeld();
+    x = fitX(x); y = fitY(y);
+    const act = DC.decorAction(garden.decor, kind, MAX_DECOR);
+    let idx = -1;
+    try {
+      if (act.op === 'place') { if (store.placeDecor(kind, x, y)) idx = garden.decor.length - 1; }
+      else if (act.op === 'move') { if (store.moveDecor(act.i, x, y)) idx = act.i; }
+    } catch (e) { /* never breaks the garden */ }
+    const { px, py } = sceneXY(x, y);
+    if (idx < 0) { sparkle(px, py - 20); return; }
+    renderDecor(idx);
+    play('grow'); leafBurst(px, py - 20);
+    updateDecorBtn();
+    visitDecor(idx);
+  }
+  function deselect() {
+    if (sel == null) return;
+    const el = decorElAt(sel); if (el) el.classList.remove('sel');
+    sel = null;
+  }
+  function moveSelected(x, y) {
+    const i = sel;
+    deselect();
+    let ok = null;
+    try { ok = store.moveDecor(i, fitX(x), fitY(y)); } catch (e) { ok = null; }
+    if (!ok) return;
+    renderDecor(i);
+    play('grow');
+    visitDecor(i);
+  }
+  function fieldFrac(e) {
+    const f = fs();
+    return { x: (e.clientX - f.left) / (f.w || 1), y: (e.clientY - f.top) / (f.h || 1), f };
+  }
+  listen(decorLayer, 'pointerdown', e => {
+    const el = e.target && e.target.closest ? e.target.closest('.gd-dc') : null;
+    if (!el) return;
+    e.stopPropagation(); e.preventDefault(); onAnyInput();
+    if (busy === 'evolve' || drag) return;
+    if (drawerOpen) { closeDrawer(); return; }
+    if (held) { const q = fieldFrac(e); putHeld(q.x, q.y); return; }   // put it down right here
+    const i = Number(el.dataset.i);
+    if (!garden.decor[i]) return;
+    drag = { i, el, pid: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false };
+    try { el.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+    el.classList.add('lift');
+  });
+  listen(decorLayer, 'pointermove', e => {
+    if (!drag || e.pointerId !== drag.pid) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 10) return;
+    if (!drag.moved) { drag.moved = true; deselect(); drag.el.classList.add('dragging'); }
+    const q = fieldFrac(e);
+    const yb = q.y + 18 / (q.f.h || 1);           // his finger holds the middle; the base sits just below
+    drag.el.style.left = (q.x * 100) + '%';
+    drag.el.style.top = (yb * 100) + '%';
+    drag.el.style.zIndex = '130';
+    drag.el.classList.toggle('off', q.x < 0 || q.x > 1 || yb < 0.03 || yb > 1.02);
+  });
+  function endDrag(e, cancelled) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    const { i, el, moved } = drag;
+    drag = null;
+    el.classList.remove('lift', 'dragging', 'off');
+    try { el.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
+    const d = garden.decor[i];
+    if (!d) { renderDecor(); return; }
+    if (!moved) {                               // a tap: pick it up (tap the ground to move it), and Bulba comes to play
+      if (cancelled) return;
+      play('tap');
+      if (sel === i) { deselect(); return; }
+      deselect();
+      sel = i; el.classList.add('sel');
+      el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+      visitDecor(i);
+      return;
+    }
+    const q = fieldFrac(e);
+    const yb = q.y + 18 / (q.f.h || 1);
+    if (cancelled || q.x < 0 || q.x > 1 || yb < 0.03 || yb > 1.02) {
+      // off the edge: it hops back home. Nothing is ever lost.
+      el.classList.add('snap');
+      el.style.left = (d.x * 100) + '%'; el.style.top = (d.y * 100) + '%';
+      el.style.zIndex = String(10 + Math.round(d.y * 100));
+      later(() => { if (el.isConnected) el.classList.remove('snap'); }, 450);
+      play('tap');
+      return;
+    }
+    let ok = null;
+    try { ok = store.moveDecor(i, fitX(q.x), fitY(yb)); } catch (err) { ok = null; }
+    renderDecor(ok ? i : -1);
+    if (ok) { play('grow'); visitDecor(i); }
+  }
+  listen(decorLayer, 'pointerup', e => endDrag(e, false));
+  listen(decorLayer, 'pointercancel', e => endDrag(e, true));
+  // Safety net: if capture is lost (the element was detached, the OS took the
+  // touch), the drag still ends, so decorations never stop answering taps.
+  listen(decorLayer, 'lostpointercapture', e => { if (drag && e.pointerId === drag.pid) endDrag(e, true); });
+  listen(window, 'pointerup', e => { if (drag && e.pointerId === drag.pid) endDrag(e, true); });
+  listen(window, 'pointercancel', e => { if (drag && e.pointerId === drag.pid) endDrag(e, true); });
+
+  // ---- Bulba plays with Art's things ------------------------------------------
+  const REACTS = ['r-sit', 'r-swing', 'r-splash', 'r-hop', 'r-hug', 'r-dig', 'r-watch', 'sniff'];
+  function endReact() {
+    cancel(reactT); reactT = null;
+    if (B && B.hop) B.hop.classList.remove(...REACTS);
+    if (B && B.el) B.el.classList.remove('on-swing');
+    decorLayer.querySelectorAll('.gd-dc.play').forEach(el => el.classList.remove('play'));
+  }
+  function visitDecor(i) {
+    const d = garden.decor[i], info = d && DC.decorInfo(d.kind);
+    if (!info || busy === 'evolve' || asleep) return;
+    let tx, ty;
+    if (info.react === 'swing') { tx = d.x; ty = d.y + 0.005; }
+    else { [tx, ty] = besideDecor(i); }
+    const ms = bulbaMove(tx, ty, { speed: 3 });
+    stonePref = tx > d.x ? 'right' : 'left'; stoneSide();
+    reactT = later(() => doReact(i), (ms || 0) + 60);
+  }
+  // A spot right next to decoration i where Bulba does not cover it (so Art
+  // can still grab it): half of Bulba + half of the thing, in pixels.
+  function besideDecor(i) {
+    const d = garden.decor[i];
+    const f = fs();
+    const el = decorElAt(i);
+    const half = parseFloat(B.el.style.getPropertyValue('--half')) || 44;
+    const dw = el ? el.offsetWidth / 2 : 40;
+    const off = (half + dw + 6) / (f.w || 1);
+    const side = d.x >= B.x ? -1 : 1;
+    let tx = d.x + side * off;
+    if (tx < 0.12 || tx > 0.88) tx = d.x - side * off;
+    return [tx, d.y + 0.01];
+  }
+  function doReact(i) {
+    const d = garden.decor[i], info = d && DC.decorInfo(d.kind);
+    if (!info || asleep || busy) return;
+    endReact();
+    if (info.react !== 'swing') setFace(B, d.x > B.x ? 1 : -1);
+    const el = decorElAt(i);
+    if (el) { el.classList.remove('play'); void el.offsetWidth; el.classList.add('play'); }
+    const r = info.react === 'sniff' ? 'sniff' : 'r-' + info.react;
+    B.hop.classList.remove(r); void B.hop.offsetWidth; B.hop.classList.add(r);
+    if (info.react === 'swing') B.el.classList.add('on-swing');
+    const at = sceneXY(d.x, d.y);
+    if (info.react === 'splash') {
+      for (let k = 0; k < 4; k++) {
+        const p2 = fxEl('gd-drop', at.px + (k - 1.5) * 16, at.py - 50, E.drop, 1100);
+        p2.style.animationDelay = (k * 110) + 'ms';
+      }
+      play('petal');
+    } else if (info.react === 'hug') { hearts(B); }
+    else if (info.react === 'dig') {
+      for (let k = 0; k < 5; k++) { const p2 = fxEl('gd-dust', at.px + rand(-30, 30), at.py - rand(4, 20), null, 900); p2.style.animationDelay = (k * 90) + 'ms'; }
+    } else if (info.react === 'watch') { sparkle(at.px, at.py - 70); }
+    if (rng() < 0.35) ambientCry(L.stageId(bulba.stage));
+    reactT = later(() => {
+      B.hop.classList.remove(r); B.el.classList.remove('on-swing'); if (el) el.classList.remove('play');
+      if (info.react === 'swing' && !asleep && !busy && garden.decor[i]) {
+        const [tx, ty] = besideDecor(i); bulbaMove(tx, ty, { speed: 3 });
+        stonePref = tx > garden.decor[i].x ? 'right' : 'left'; stoneSide();
+      }   // hop off, so the swing is his to grab again
+    }, info.react === 'swing' ? 2600 : 2000);
+  }
+
+  // ---- a new unlock: a gift box drops from the sky; tap it to open --------
+  function dropGift() {
+    if (!alive || giftEl || !giftQueue.length) return;
+    if (busy === 'evolve') { later(dropGift, 2500); return; }
+    const x = rng() < 0.5 ? rand(0.12, 0.3) : rand(0.7, 0.88);
+    const y = rand(0.1, 0.2);
+    giftOpening = false;
+    giftEl = h('button', {
+      class: 'gd-gbox', attrs: { type: 'button', 'aria-label': 'gift' },
+      on: { pointerdown: e => { e.stopPropagation(); e.preventDefault(); onAnyInput(); openGift(); } },
+    }, h('span', { class: 'gd-gbox-emo' }, E.gift), h('span', { class: 'gd-gbox-leaf' }, E.leaf));
+    giftEl.style.left = (x * 100) + '%';
+    giftEl.style.top = (y * 100) + '%';
+    giftEl.dataset.x = String(x); giftEl.dataset.y = String(y);
+    giftLayer.appendChild(giftEl);
+    later(() => {
+      if (!giftEl) return;
+      giftEl.classList.add('landed');
+      play('caught');                           // the jingle
+      const at = sceneXY(x, y); sparkle(at.px, at.py - 30);
+      if (!asleep && busy !== 'evolve') { const side = x >= B.x ? -1 : 1; bulbaMove(x + side * 0.12, y + 0.03, { speed: 3, done: () => jump(B) }); }
+    }, 750);
+  }
+  function openGift() {
+    if (!giftEl || giftOpening) return;
+    giftOpening = true;
+    const box = giftEl;
+    const u = giftQueue.shift();
+    const idx = u ? DC.ALL_UNLOCKS.findIndex(a => a.type === u.type && a.key === u.key) : -1;
+    if (idx >= 0 && idx + 1 > seen.ann) { seen.ann = idx + 1; writeSeen(); }
+    play('bloom');
+    box.classList.add('open');
+    const at = sceneXY(Number(box.dataset.x), Number(box.dataset.y));
+    leafBurst(at.px, at.py - 20);
+    const info = u && (u.type === 'acc' ? DC.accessoryInfo(u.key) : DC.decorInfo(u.key));
+    decorBtn.hidden = false;
+    let fly = null;
+    if (info) {
+      fly = h('div', { class: 'gd-gfly', style: { left: at.px + 'px', top: (at.py - 30) + 'px' } }, u.type === 'acc' ? accArt(info) : decorArt(info));
+      fx.appendChild(fly);
+    }
+    later(() => {
+      box.remove(); if (giftEl === box) giftEl = null;
+      if (!fly) { updateDecorBtn(); later(dropGift, 1200); return; }
+      const to = elCenter(decorBtn);
+      const ms = dur(700);
+      try {
+        fly.animate([
+          { transform: 'translate(-50%,-50%) scale(1.3)' },
+          { transform: `translate(calc(-50% + ${(to.px - at.px) / 2}px), calc(-50% + ${(to.py - at.py) / 2 - 80}px)) scale(1)` },
+          { transform: `translate(calc(-50% + ${to.px - at.px}px), calc(-50% + ${to.py - at.py + 30}px)) scale(.4)` },
+        ], { duration: ms, easing: 'ease-in-out', fill: 'forwards' });
+      } catch (e) { /* old WebKit: it just vanishes */ }
+      later(() => {
+        fly.remove();
+        play('petal');
+        updateDecorBtn();
+        decorBtn.classList.remove('pop'); void decorBtn.offsetWidth; decorBtn.classList.add('pop');
+        later(dropGift, 1200);
+      }, ms);
+    }, 900);
+  }
+
   // ---- idle life: bob (CSS), wander, sniff flowers, nap ----------------------
   function idleTick() {
     const now = Date.now();
@@ -652,6 +1102,11 @@ export function mount(root, ctx) {
     if (asleep || now < nextIdleAt) return;
     nextIdleAt = now + rand(4500, 8000);
     if (L.budReady(bulba) && rng() < 0.5) { lookAtBud(); return; }
+    if (garden.decor.length && drag == null && rng() < 0.4) {
+      visitDecor(Math.floor(rng() * garden.decor.length));
+      if (baby && rng() < 0.6) moveTo(baby, rand(0.15, 0.85), rand(0.45, 0.8), { speed: 3.2 });
+      return;
+    }
     const flowers = garden.plots.filter(pl => L.plotLook(pl.grown) !== 'sprout');
     if (flowers.length && rng() < 0.55) {
       const fl = flowers[Math.floor(rng() * flowers.length)];
@@ -686,6 +1141,8 @@ export function mount(root, ctx) {
 
   // ---- first paint -----------------------------------------------------------
   renderAllPlots();
+  renderDecor(); updateAccessory(); updateDecorBtn();
+  if (giftQueue.length) later(dropGift, 1800);
   updateMeter(); updateBerries(); updateBallBtn();
   place(B, 0.86, 0.9);
   setFace(B, -1);

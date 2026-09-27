@@ -24,6 +24,7 @@ import { applyXp, xpProgress, moveSeed, catchProbability } from '../data/engine.
 import { typeEmoji, typeColors, inkFor } from '../data/config.js';
 import { evolveRoute } from '../core/evo.js';
 import { settleRoadEnd, roadMarks } from '../data/rival.js';
+import { makeGimmick, applyR2Win, r2Marks } from '../data/round2.js';   // round2
 import { bulbaIdOf } from './together.js';
 
 const BALLS = [
@@ -102,6 +103,18 @@ export function mount(root, ctx) {
   let busy = true;
   let battle = null;
   let applied = false;
+  // batch 4 (integrator): Wild Chapter ('wild:<i>:<j>', back to the Road)
+  // and sanctum ('sanctum:<key>') results are saved in the battle's OWN
+  // commit too, so a closed app on the win card or the evolve screen never
+  // loses one. The data modules load lazily (as the Road loads them), so a
+  // broken data file can only skip the early save, never break the fight.
+  // The Road / roots scenes re-apply on return (both helpers are idempotent)
+  // and celebrate from the marks handed back (letters-only keys: evolve.js).
+  const earlyMod = coop || typeof onEnd !== 'string' ? null
+    : /^wild:\d+:\d$/.test(onEnd) && returnTo === 'road' ? import('../data/wild-chapters.js').catch(() => null)
+    : onEnd.startsWith('sanctum:') ? import('../data/sanctums.js').catch(() => null)
+    : null;
+  let earlyApplied = null;  // {key:'wildWon'|'sanctumWon', marks}
   let roadApplied = null;   // {bloom, seed, rival} when applyResult already saved a Road result
   const rafs = new Set();
   const shown = { me: 0, foe: 0 };      // which fighter each side is DISPLAYING
@@ -348,6 +361,7 @@ export function mount(root, ctx) {
 
   // ---------- event playback ----------
   async function play(e) {
+    if (e.type === 'gimmick') { await r2PlayGimmick(e); return; }   // round2
     if (e.type === 'move') {
       const atk = e.side, def = e.side === 'me' ? 'foe' : 'me';
       if (reader) {
@@ -478,8 +492,72 @@ export function mount(root, ctx) {
     root: el,
   };
 
+  // ==== round2 BEGIN ====
+  // A ROUND 2 leader's gimmick (data/round2.js): an icon badge by the foe's
+  // HUD plus a weather overlay over the field. Pictures carry it; Gabe also
+  // gets one short word. Calm keeps the overlay still (see style.css).
+  const r2Gimmick = trainer && trainer.leader && !coop && typeof params.gimmick === 'string'
+    ? makeGimmick(params.gimmick) : null;
+  let r2Applied = null;     // {bloom, shiny} when applyResult saved a Round 2 win
+  let r2Badge = null, r2Weather = null;
+  function r2Ensure() {
+    if (!r2Gimmick) return false;
+    const field = el.querySelector('.bt-field');
+    if (!r2Weather && field) {
+      r2Weather = h('div', { class: ['bt-r2-weather', r2Gimmick.overlay && 'w-' + r2Gimmick.overlay], attrs: { 'aria-hidden': 'true' } },
+        Array.from({ length: 14 }, (_, i) => h('span', { class: 'bt-r2-drop', style: { '--i': i } })));
+      field.insertBefore(r2Weather, field.firstChild);
+    }
+    if (!r2Badge && field) {
+      r2Badge = h('div', { class: 'bt-r2-badge', attrs: { 'aria-hidden': 'true' } }, h('span', { class: 'bt-r2-ico' }, r2Gimmick.icon));
+      field.appendChild(r2Badge);
+    }
+    return !!(r2Badge && r2Weather);
+  }
+  async function r2PlayGimmick(e) {
+    if (!r2Ensure()) return;
+    if (e.kind === 'start') {
+      sfx.phase2?.();
+      el.classList.add('r2-on');
+      r2Badge.classList.add('on');
+      if (r2Gimmick.overlay) r2Weather.classList.add('on');
+      restart(r2Badge, 'pop');
+      put(clear(ui.banner), h('div', { class: 'bt-banner-name bt-r2-banner' },
+        h('span', { class: 'bt-r2-banner-ico', attrs: { 'aria-hidden': 'true' } }, r2Gimmick.icon),
+        reader ? r2Gimmick.word : null));
+      ui.banner.hidden = false;
+      restart(ui.banner, 'open');
+      if (!await pause(900)) return;
+      ui.banner.hidden = true;
+      return;
+    }
+    if (e.kind === 'chip' || e.kind === 'heal') {
+      restart(r2Badge, 'pop');
+      if (e.side && shown[e.side] === battle.state[e.side].active) {
+        if (e.kind === 'chip') {
+          restart(ui[e.side + 'Sprite'], calm ? 'hit-soft' : 'hit');
+          setHp(e.side, e.hpAfter);
+          await damageNumber(e.side, { dmg: e.amount, eff: 1, crit: false });
+        } else {
+          restart(ui[e.side + 'Sprite'], 'healed');
+          setHp(e.side, e.hpAfter);
+        }
+      }
+      await pause(350);
+      return;
+    }
+    if (e.kind === 'charge') { r2Badge.classList.add('charged'); restart(r2Badge, 'pop'); sfx.type?.electric?.(); await pause(350); return; }
+    if (e.kind === 'spend') { r2Badge.classList.remove('charged'); restart(r2Badge, 'pop'); return; }
+    if (e.kind === 'break') { r2Badge.classList.add('spent'); r2Weather.classList.add('broken'); restart(r2Badge, 'pop'); return; }
+    if (e.kind === 'hide') { ui.foeSprite.classList.add('r2-vanish'); restart(r2Badge, 'pop'); await pause(500); return; }
+    if (e.kind === 'show') { ui.foeSprite.classList.remove('r2-vanish'); await pause(300); return; }
+    if (e.kind === 'miss') { restart(r2Badge, 'pop'); return; }
+    if (e.kind === 'boost') { restart(r2Badge, 'pop'); restart(ui[(e.side || 'foe') + 'Sprite'], 'lunge'); await pause(400); }
+  }
+  // ==== round2 END ====
+
   // ---------- the result ----------
-  function applyResult(ev, result) {
+  function applyResult(ev, result, early = null) {
     if (applied) return null;
     applied = true;
     const p = store.player();
@@ -524,18 +602,38 @@ export function mount(root, ctx) {
         if (o.outcome || o.gOutcome || o.rOutcome) roadApplied = roadMarks(o);
       } catch (e) { console.warn('battle: road result not applied early', e); }
     }
+    // round2: a ROUND 2 win (and a leader's shiny ace) is saved in this same commit.
+    if (!coop && typeof onEnd === 'string' && result === 'win' && onEnd.startsWith('round2:')) {
+      try { const o = applyR2Win(p, onEnd); if (o) r2Applied = r2Marks(o); }
+      catch (e) { console.warn('battle: round 2 result not applied early', e); }
+    }
+    if (early && typeof onEnd === 'string') {
+      try {
+        if (typeof early.applyWildWin === 'function' && result === 'win') {
+          const o = early.applyWildWin(p, onEnd);
+          if (o) earlyApplied = { key: 'wildWon', marks: { idx: o.idx, j: o.j, bloom: !!o.bloom } };
+        } else if (typeof early.applySanctumEnd === 'function') {
+          const o = early.applySanctumEnd(p, onEnd, result);
+          if (o) earlyApplied = { key: 'sanctumWon', marks: { key: o.key, fresh: !!o.fresh, finale: !!o.finale } };
+        }
+      } catch (e) { console.warn('battle: batch 4 result not applied early', e); }
+    }
     try { store.commit(); } catch (e) { /* the store reports its own save failures */ }
     return rows;
   }
 
   async function finish(ev) {
     const result = ev.fled ? 'fled' : ev.caught ? 'caught' : ev.winner === 'me' ? 'win' : 'lose';
-    const rows = applyResult(ev, result) || [];
+    let early = null;
+    if (earlyMod) { try { early = await earlyMod; } catch (e) { early = null; } }
+    const rows = applyResult(ev, result, early) || [];
     // Something that levelled up may evolve: core/evo.js decides (never for a
     // prereader, never for a coop ride-along) and gives up after 4s. It starts
     // NOW, while the win card plays, so the ▶ tap rarely waits on it.
     const levelled = rows.filter(r => r.ups > 0).map(r => r.id);
     const back = roadApplied ? { result, onEnd, applied: roadApplied } : { result, onEnd };
+    if (r2Applied) back.roundTwo = r2Applied;   // round2 (letters only: evolve keeps [a-zA-Z] keys)
+    if (earlyApplied) back[earlyApplied.key] = earlyApplied.marks;   // batch 4: wildWon / sanctumWon
     const route = coop || !levelled.length || result === 'fled' ? null
       : evolveRoute(store.player(), levelled, returnTo, back).catch(() => null);
     let ok = null;
@@ -638,7 +736,8 @@ export function mount(root, ctx) {
         rng: rngFromUrl(),
         moveLookup: moveInfo,
         wild,
-        leader: !!(trainer && trainer.leader)
+        leader: !!(trainer && trainer.leader),
+        gimmick: r2Gimmick                        // round2: null unless a ROUND 2 leader
       });
     } catch (err) {
       if (!alive) return;

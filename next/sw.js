@@ -10,7 +10,7 @@
 // the root sw.js and are never touched from here.
 // ============================================================
 
-const NEXT_CACHE = 'sprout-20.0.0';
+const NEXT_CACHE = 'sprout-20.1.0';
 const ASSET_CACHE = 'sprout-assets';
 const ASSET_MAX = 800;
 const SHELL_TIMEOUT_MS = 2500;
@@ -29,6 +29,9 @@ const SHELL_FILES = [
   './scenes/postcard.js', './ui/postcard.js', './data/rival.js',
   './scenes/dex.js', './scenes/dex-logic.js', './scenes/team.js', './scenes/wild.js', './scenes/evolve.js',
   './scenes/challenge.js', './scenes/book.js', './battle/rules-pro.js', './core/evo.js', './data/habitats.js',
+  // batch 4
+  './data/round2.js', './data/wild-chapters.js', './data/validate-chapter.js', './data/sanctums.js',
+  './data/decor.js', './scenes/roots.js',
   '../fonts/press-start-2p-latin.woff2', '../fonts/press-start-2p-latin-ext.woff2',
   './manifest.webmanifest'
 ];

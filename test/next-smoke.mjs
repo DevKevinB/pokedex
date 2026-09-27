@@ -11,6 +11,9 @@
 // berries, the picture lock, Family Table, Couch Versus and the postcard.
 // Batch 3: the Pokedex + team editor, tall grass, evolution, DAD'S CHALLENGE
 // (Pro Rules + seed replay) and Art's Sticker Book.
+// Batch 4 (post-Champion save): ROUND 2 (toggle, gimmick, shiny ace), THROUGH
+// THE ROOTS (door, sanctum catch and loss), WILD CHAPTERS (unlock order, the
+// validator) and the Garden's gift boxes, decorations and Bulba's accessories.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, statSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -1483,10 +1486,359 @@ function b3SaveMons() {
   await finishPage('versus -> challenge', P);
 }
 
+// ============================================================ batch 4 helpers
+// A Gabe who has beaten the Champion: every Road chapter cleared and bloomed.
+const ALL12 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const champSave = ({ level = 100, road = {}, gabe = {}, art = {} } = {}) => ({ version: 3, created: '2026-09-01', players: {
+  1: { name: 'GABE', profile: 'reader', caught: [1, 6, 25, 133], team: [6, 25, 133],
+    mons: { 6: { level, xp: 0 }, 25: { level, xp: 0 }, 133: { level, xp: 0 } }, items: { masterBalls: 3 },
+    ...gabe,
+    road: { chapter: 11, cleared: clearedThrough(12), bloomed: ALL12.slice(), hatched: true, seeds: 0, ...road } },
+  2: { name: 'ART', profile: 'prereader', caught: [1], bulba: { petals: 3, stage: 1, stayStone: false, visitors: [] }, ...art },
+} });
+// Fight until we leave the battle, noting whether the ROUND 2 gimmick badge ever lit up.
+// onWinCard(page) runs once, on the result card, before its ▶ is tapped.
+async function fightWatching(page, maxTurns = 120, { ball = null, onWinCard = null } = {}) {
+  await page.waitForSelector('.bt[data-ready="1"]', { timeout: 10000 });
+  let badge = false, threw = false;
+  for (let i = 0; i < maxTurns; i++) {
+    if ((await scene(page)) !== 'battle') break;
+    badge = badge || (await page.locator('.bt-r2-badge.on').count()) > 0;
+    const ok = page.locator('.bt-ok:visible');
+    if (await ok.count()) {
+      if (onWinCard) { const f = onWinCard; onWinCard = null; await f(page); }
+      await ok.first().click({ force: true }).catch(() => {}); await page.waitForTimeout(120); continue;
+    }
+    if (ball && !threw && (await page.locator('.bt-act-ball:not([disabled])').count())) {
+      await page.locator('.bt-act-ball').click({ force: true }).catch(() => {});
+      await page.waitForTimeout(150);
+      if (await page.locator(`.bt-ballbtn.ball-${ball}:visible`).count()) {
+        await page.locator(`.bt-ballbtn.ball-${ball}`).click({ force: true }).catch(() => {});
+        threw = true;
+      }
+      await page.waitForTimeout(150);
+      continue;
+    }
+    const mv = page.locator('.bt-moves button:not([disabled]):visible');
+    if (await mv.count()) await mv.first().click({ force: true }).catch(() => {});
+    await page.waitForTimeout(120);
+  }
+  return { badge, threw };
+}
+const PRE_CHAMP = () => {   // everything up to (not including) the Champion's leader
+  const c = clearedThrough(11, ['c11-t0', 'c11-t1', 'c11-t2', 'c11-t3']);
+  return { cleared: c, bloomed: ALL12.slice(0, 11), chapter: 11 };
+};
+
+// ============================================================ 19. ROUND 2
+{
+  // Before the Champion: no toggle, no signpost, no door.
+  const P0 = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(champSave({ road: PRE_CHAMP() })) });
+  await P0.page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(P0.page, 'who');
+  await P0.page.locator('.who-card.p1').click();
+  await waitScene(P0.page, 'road');
+  await P0.page.waitForTimeout(600);
+  check('round2: no toggle before the Champion', (await P0.page.locator('.r2-toggle').count()) === 0);
+  check('wildch: no signpost before the Champion', (await P0.page.locator('.wildch-sign').count()) === 0);
+  check('roots: no door before the Champion', (await P0.page.locator('.road-roots-door').count()) === 0);
+  await finishPage('post-champion (before)', P0);
+
+  const save = champSave({ level: 100, road: { cleared: clearedThrough(12, ['r2-c0-t0', 'r2-c0-t1', 'r2-c0-t2', 'r2-c0-t3']) } });
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  await page.waitForSelector('.wildch-sign', { timeout: 5000 }).catch(() => {});
+  check('round2: toggle appears after the Champion', await page.locator('.r2-toggle').isVisible());
+  check('post-champion: the roots door, the WILD signpost and the toggle all show',
+    (await page.locator('.road-roots-door').count()) === 1 && (await page.locator('.wildch-sign').count()) === 1);
+  // The three post-Champion things never sit on top of each other.
+  const overlaps = await page.evaluate(() => {
+    const els = ['.road-roots-door', '.wildch-sign', '.r2-toggle', '.road-next'].map(s => [s, document.querySelector(s)]).filter(([, e]) => e);
+    const out = [];
+    for (let a = 0; a < els.length; a++) for (let b = a + 1; b < els.length; b++) {
+      const r1 = els[a][1].getBoundingClientRect(), r2 = els[b][1].getBoundingClientRect();
+      if (r1.left < r2.right - 2 && r2.left < r1.right - 2 && r1.top < r2.bottom - 2 && r2.top < r1.bottom - 2) out.push(els[a][0] + ' x ' + els[b][0]);
+    }
+    return out;
+  });
+  check('post-champion: door, signpost and toggle never overlap', overlaps.length === 0, overlaps.join(', '));
+  await fitAll(page, 'post-champion road', { shotName: 'b4-road-postgame' });
+  await page.locator('.r2-toggle').click();
+  await page.waitForTimeout(250);
+  check('round2: toggle turns Round 2 on', (await page.evaluate(() => window.__round2().on)) === true);
+  await fitAll(page, 'round2 road', { shotName: 'b4-road-r2' });
+  await page.locator('.road-node[data-chapter="0"]').click({ force: true });
+  await page.waitForSelector('.r2-chapter:not([hidden])', { timeout: 5000 });
+  check('round2: the leader card shows its gimmick', (await page.locator('.r2-card.is-leader .r2-gimmick').count()) === 1);
+  check('round2: the leader card shows the shiny prize', (await page.locator('.r2-card.is-leader .r2-prize').count()) === 1);
+  await fitAll(page, 'round2 chapter', { shotName: 'b4-r2-chapter' });
+  await page.locator('.r2-card.is-leader').click();
+  await waitScene(page, 'battle', 10000);
+  const fought = await fightWatching(page);
+  await waitScene(page, 'road', 10000).catch(() => {});
+  check('round2: the leader\'s gimmick shows in the fight', fought.badge);
+  await page.waitForSelector('.r2-shiny', { timeout: 10000 }).catch(() => {});
+  check('round2: a leader win brings the shiny ace home', await page.locator('.r2-shiny').isVisible());
+  await fitAll(page, 'round2 shiny card', { shotName: 'b4-r2-shiny' });
+  const s1 = (await v3(page))?.players?.[1] || {};
+  check('round2: the win is saved', s1.road?.cleared?.['r2-c0-t4'] === true && (s1.road?.r2bloomed || []).includes(0), JSON.stringify(s1.road?.r2bloomed));
+  check('round2: the ace is caught AND shiny', (s1.caught || []).includes(76) && (s1.shinies || []).includes(76));
+  await page.locator('.r2-shiny-ok').click();
+  await page.waitForTimeout(300);
+  check('round2: Round 2 stays on after the fight', (await page.evaluate(() => window.__round2().on)) === true);
+  await finishPage('round2', P);
+}
+
+// ============================================================ 20. THROUGH THE ROOTS
+{
+  const save = champSave({ level: 100 });
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  await page.waitForSelector('.road-roots-door', { timeout: 5000 });
+  await page.locator('.road-roots-door').click({ force: true });
+  await waitScene(page, 'roots');
+  check('roots: the Tree\'s door opens the roots scene', (await scene(page)) === 'roots');
+  check('roots: stepping in opens the door for good', (await v3(page))?.players?.[1]?.road?.roots?.opened === true);
+  await fitAll(page, 'roots tunnel', { shotName: 'b4-roots-tunnel' });
+  await page.locator('.rt-light').click();
+  await page.waitForSelector('.rt-grid', { timeout: 5000 });
+  check('roots: 8 shrines under the Tree', (await page.locator('.rt-shrine').count()) === 8);
+  await fitAll(page, 'roots grid', { shotName: 'b4-roots-grid' });
+  await page.locator('.rt-shrine[data-shrine="sky"]').click();
+  await page.waitForSelector('.rt-ped[data-legend="articuno"]', { timeout: 5000 });
+  await fitAll(page, 'roots shrine', { shotName: 'b4-roots-shrine' });
+  await page.locator('.rt-ped[data-legend="articuno"]').click();
+  await waitScene(page, 'battle', 10000);
+  let onCard = null;
+  const f = await fightWatching(page, 60, { ball: 'master', onWinCard: async pg => { onCard = (await v3(pg))?.players?.[1]?.road?.roots?.sanctums || null; } });
+  check('roots: the sanctum is saved already on the result card (app may close there)', !!onCard && onCard.articuno === true, JSON.stringify(onCard));
+  check('roots: a ball is thrown at the legendary', f.threw);
+  await waitScene(page, 'roots', 10000).catch(() => {});
+  check('roots: back under the Tree after the sanctum battle', (await scene(page)) === 'roots');
+  const r1 = (await v3(page))?.players?.[1] || {};
+  check('roots: the catch marks the sanctum', r1.road?.roots?.sanctums?.articuno === true && (r1.caught || []).includes(144), JSON.stringify(r1.road?.roots));
+  await page.waitForTimeout(600);
+  await fitAll(page, 'roots after catch', { shotName: 'b4-roots-after' });
+  await finishPage('roots (catch)', P);
+
+  // A loss changes nothing: the legendary just waits.
+  const weak = champSave({ level: 2, road: { roots: { opened: true, sanctums: {} } } });
+  const Q2 = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(weak) });
+  await Q2.page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(Q2.page, 'who');
+  await Q2.page.locator('.who-card.p1').click();
+  await waitScene(Q2.page, 'road');
+  await Q2.page.evaluate(() => window.__go('roots', { view: 'sanctums' }));
+  await waitScene(Q2.page, 'roots');
+  await Q2.page.waitForSelector('.rt-grid', { timeout: 5000 });
+  await Q2.page.locator('.rt-shrine[data-shrine="sky"]').click();
+  await Q2.page.locator('.rt-ped[data-legend="zapdos"]').click();
+  await waitScene(Q2.page, 'battle', 10000);
+  const before = (await v3(Q2.page))?.players?.[1]?.road?.roots;
+  await fightWatching(Q2.page, 80);
+  await waitScene(Q2.page, 'roots', 10000).catch(() => {});
+  const after = (await v3(Q2.page))?.players?.[1] || {};
+  check('roots: after a loss, back under the Tree', (await scene(Q2.page)) === 'roots');
+  check('roots: a loss changes nothing (the sanctum waits)', JSON.stringify(after.road?.roots) === JSON.stringify(before) && !after.road?.roots?.sanctums?.zapdos, JSON.stringify(after.road?.roots));
+  check('roots: after a loss the legendary can be fought again', (await Q2.page.locator('.rt-ped[data-legend="zapdos"].is-waiting').count()) === 1);
+  await finishPage('roots (loss)', Q2);
+}
+
+// ============================================================ 21. WILD CHAPTERS
+{
+  // Leader of Wild Chapter 1 is up next.
+  const save = champSave({ level: 100, road: { cleared: clearedThrough(12, ['w0-t0', 'w0-t1', 'w0-t2', 'w0-t3']) } });
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  await page.waitForSelector('.wildch-sign', { timeout: 5000 });
+  const w0 = await page.evaluate(() => window.__wildch());
+  check('wildch: chapter 1 is open after the Champion', w0.views[0] === 'current', JSON.stringify(w0.views));
+  check('wildch: chapter 2 waits for chapter 1\'s leader', w0.views[1] !== 'current' && w0.views[1] !== 'done');
+  // The validator skips a bad chapter and keeps the good one, without throwing.
+  const vr = await page.evaluate(async () => {
+    const V = await import('./data/validate-chapter.js');
+    const W = await import('./data/wild-chapters.js');
+    const warns = [];
+    let out = null, threw = false;
+    try { out = V.loadChapters([{ idx: 'x', trainers: 'nope' }, null, 42, W.WILD_AUTHORED[0]], m => warns.push(m)); } catch (e) { threw = true; }
+    return { threw, n: out ? out.length : -1, warns: warns.length, key: out && out[0] && out[0].key };
+  });
+  check('wildch: a bad chapter object is skipped without crashing', !vr.threw && vr.n === 1 && vr.warns === 3, JSON.stringify(vr));
+  const kept = await page.evaluate(async () => {
+    const E = await import('./scenes/evolve.js');
+    const back = [
+      { result: 'win', onEnd: 'round2:0:4', roundTwo: { bloom: true, shiny: true } },
+      { result: 'win', onEnd: 'wild:0:4', wildWon: { idx: 0, j: 4, bloom: true } },
+      { result: 'caught', onEnd: 'sanctum:articuno', sanctumWon: { key: 'articuno', fresh: true, finale: false } },
+    ];
+    return back.map(b => JSON.stringify(E.cleanReturnParams(b)) === JSON.stringify(b));
+  });
+  check('evolve: cleanReturnParams keeps the round2:, wild: and sanctum: results', kept.every(Boolean), JSON.stringify(kept));
+  await page.locator('.wildch-sign').click({ force: true });
+  await page.waitForSelector('.wildch-path', { timeout: 5000 });
+  await fitAll(page, 'wild chapters path', { shotName: 'b4-wild-path' });
+  await page.locator('.wildch-node[data-wild="0"]').click({ force: true });
+  await page.waitForSelector('[data-wild-trainer="4"]', { timeout: 5000 });
+  await fitAll(page, 'wild chapter', { shotName: 'b4-wild-chapter' });
+  await page.locator('[data-wild-trainer="4"]').click({ force: true });
+  await waitScene(page, 'battle', 10000);
+  let onCard = null;
+  await fightWatching(page, 120, { onWinCard: async pg => { onCard = (await v3(pg))?.players?.[1]?.road || null; } });
+  check('wildch: the win is saved already on the result card (app may close there)', !!onCard && onCard.cleared?.['w0-t4'] === true && (onCard.wildBloomed || []).includes(0));
+  await waitScene(page, 'road', 10000).catch(() => {});
+  const s = (await v3(page))?.players?.[1] || {};
+  check('wildch: the leader win is saved', s.road?.cleared?.['w0-t4'] === true && (s.road?.wildBloomed || []).includes(0), JSON.stringify(s.road?.wildBloomed));
+  await page.waitForFunction(() => window.__wildch && window.__wildch().blooming < 0, null, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(300);
+  const w1 = await page.evaluate(() => window.__wildch());
+  check('wildch: chapter 2 opens after chapter 1\'s leader', w1.views[0] === 'done' && w1.views[1] === 'current', JSON.stringify(w1.views));
+  await fitAll(page, 'wild path after bloom', { shotName: 'b4-wild-bloomed' });
+  await finishPage('wild chapters', P);
+}
+
+// ============================================================ 22. GARDEN: gifts, decorations, accessories
+{
+  const save = champSave({ art: { bulba: { petals: 9, stage: 1, stayStone: false, visitors: [] } } });
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save), pokedexos_next_lastplayer: '2' });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  await page.waitForTimeout(400);
+  check('garden: no gift box below 10 petals', (await page.locator('.gd-gbox').count()) === 0);
+  check('garden: no decor button below 10 petals', !(await page.locator('.gd-dbtn').isVisible()));
+  const field = await page.locator('.gd-field').boundingBox();
+  const petals = () => page.evaluate(() => Number(document.querySelector('.gd').dataset.petals));
+  async function tapGround(target) {
+    for (let t = 0; t < 60 && (await petals()) < target; t++) {
+      const px = field.x + field.width * (0.1 + (t % 5) * 0.2), py = field.y + field.height * (0.35 + (Math.floor(t / 5) % 4) * 0.12);
+      const onGround = await page.evaluate(([x, y]) => /gd-(field|grass|plots)/.test(document.elementFromPoint(x, y)?.className || ''), [px, py]);
+      if (!onGround) continue;
+      await page.mouse.click(px, py);
+      await page.waitForTimeout(80);
+    }
+  }
+  // A spot of bare ground (Bulba and his visitors wander about).
+  async function bareSpot(cands) {
+    for (const [fx, fy] of cands) {
+      const px = field.x + field.width * fx, py = field.y + field.height * fy;
+      if (await page.evaluate(([x, y]) => /gd-(field|grass|plots)/.test(document.elementFromPoint(x, y)?.className || ''), [px, py])) return { px, py };
+    }
+    return { px: field.x + field.width * cands[0][0], py: field.y + field.height * cands[0][1] };
+  }
+  const LEFT = [[0.3, 0.55], [0.2, 0.6], [0.35, 0.45], [0.25, 0.7], [0.15, 0.5], [0.4, 0.62]];
+  const RIGHT = [[0.7, 0.7], [0.75, 0.6], [0.65, 0.78], [0.8, 0.5], [0.6, 0.65]];
+  await tapGround(10);
+  await page.waitForSelector('.gd-gbox', { timeout: 8000 }).catch(() => {});
+  check('garden: a gift box drops at 10 petals', (await page.locator('.gd-gbox').count()) === 1, 'petals ' + (await petals()));
+  await page.waitForTimeout(900);
+  await fitAll(page, 'garden gift box', { words: true, shotName: 'b4-garden-gift' });
+  await page.locator('.gd-gbox').dispatchEvent('pointerdown');
+  await page.waitForTimeout(2500);
+  check('garden: opening the box shows the decor button', await page.locator('.gd-dbtn').isVisible());
+  await page.locator('.gd-dbtn').click();
+  await page.waitForTimeout(500);
+  await fitAll(page, 'garden decor drawer', { words: true, shotName: 'b4-garden-drawer' });
+  await page.locator('.gd-dopt.dec').first().click();
+  await page.waitForTimeout(300);
+  const spot1 = await bareSpot(LEFT);
+  await page.mouse.click(spot1.px, spot1.py);
+  await page.waitForTimeout(600);
+  const d1 = (await v3(page))?.players?.[2]?.garden?.decor || [];
+  check('garden: the drawer places a decoration', d1.length === 1 && (await page.locator('.gd-dc').count()) === 1, JSON.stringify(d1));
+  await page.reload({ waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  await page.waitForTimeout(400);
+  check('garden: the decoration is still there after a reload', (await page.locator('.gd-dc').count()) === 1);
+  // Move it (drag), then drag it off the edge: it snaps back and is never removed.
+  const dc = await page.locator('.gd-dc').first().boundingBox();
+  const drag = async (x, y) => {
+    await page.mouse.move(dc.x + dc.width / 2, dc.y + dc.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(x, y, { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+  };
+  const spot2 = await bareSpot(RIGHT);
+  await drag(spot2.px, spot2.py);
+  const d2 = (await v3(page))?.players?.[2]?.garden?.decor || [];
+  check('garden: a decoration can be moved', d2.length === 1 && Math.abs(d2[0].x - d1[0].x) > 0.1, JSON.stringify(d2));
+  const dc2 = await page.locator('.gd-dc').first().boundingBox();
+  await page.mouse.move(dc2.x + dc2.width / 2, dc2.y + dc2.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(-40, field.y + 20, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(600);
+  const d3 = (await v3(page))?.players?.[2]?.garden?.decor || [];
+  check('garden: a decoration is never removed (dragged off the edge)', d3.length === 1 && (await page.locator('.gd-dc').count()) === 1, JSON.stringify(d3));
+  // Two fingers (regression): select it, hold it with one finger, tap the grass
+  // with another, lift the first finger over the grass. The drag must end, so
+  // the decoration can still be dragged afterwards.
+  {
+    const far = await bareSpot(LEFT);
+    await page.evaluate(([fx, fy]) => {
+      const dc = document.querySelector('.gd-dc'), fieldEl = document.querySelector('.gd-field');
+      const r = dc.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const fire = (el, type, pointerId, x, y) => el.dispatchEvent(new PointerEvent(type, { pointerId, clientX: x, clientY: y, bubbles: true, cancelable: true, isPrimary: pointerId === 7 }));
+      fire(dc, 'pointerdown', 7, cx, cy); fire(dc, 'pointerup', 7, cx, cy);           // tap: selected
+      fire(dc, 'pointerdown', 9, cx, cy);                                               // finger 1 holds it
+      fire(fieldEl, 'pointerdown', 10, fx, fy); fire(fieldEl, 'pointerup', 10, fx, fy); // finger 2 taps the grass
+      fire(document.body, 'pointerup', 9, fx, fy);                                      // finger 1 lifts over the grass
+    }, [far.px, far.py]);
+    await page.waitForTimeout(500);
+    const before = (await v3(page))?.players?.[2]?.garden?.decor || [];
+    const b = await page.locator('.gd-dc').first().boundingBox();
+    const to = await bareSpot(before[0] && before[0].x > 0.5 ? LEFT : RIGHT);
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(to.px, to.py, { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(600);
+    const after = (await v3(page))?.players?.[2]?.garden?.decor || [];
+    check('garden: a two-finger hold never leaves decorations stuck', after.length === 1 && before.length === 1 && Math.abs(after[0].x - before[0].x) > 0.1, JSON.stringify([before, after]));
+  }
+  // Bulba's things arrive at 25 petals.
+  await tapGround(25);
+  for (let k = 0; k < 4; k++) {
+    await page.waitForSelector('.gd-gbox', { timeout: 4000 }).catch(() => {});
+    if (!(await page.locator('.gd-gbox').count())) break;
+    await page.waitForTimeout(900);
+    await page.locator('.gd-gbox').dispatchEvent('pointerdown');
+    await page.waitForTimeout(2500);
+  }
+  await page.locator('.gd-dbtn').click();
+  await page.waitForTimeout(500);
+  check('garden: an accessory is in the drawer at 25 petals', (await page.locator('.gd-dopt.acc').count()) >= 1, 'petals ' + (await petals()));
+  await page.locator('.gd-dopt.acc').first().click();
+  await page.waitForTimeout(600);
+  const acc = (await v3(page))?.players?.[2]?.bulba?.accessory;
+  check('garden: Bulba wears an accessory (saved)', typeof acc === 'string' && acc.length > 0, String(acc));
+  check('garden: the accessory shows on Bulba', /slot-/.test(await page.locator('.gd-acc').getAttribute('class') || ''));
+  await page.mouse.click(field.x + field.width * 0.5, field.y + field.height * 0.3);
+  await page.waitForTimeout(400);
+  await fitAll(page, 'garden with decor', { words: true, shotName: 'b4-garden-decor' });
+  await finishPage('garden decor', P);
+}
+
 // ============================================================ 12. offline shell + manifest
 {
   const sw = readFileSync(join(NEXT, 'sw.js'), 'utf8');
-  const missing = ['hatch', 'together', 'family-table', 'versus', 'lock', 'postcard', 'dex', 'team', 'wild', 'evolve', 'challenge', 'book']
+  const missing = ['hatch', 'together', 'family-table', 'versus', 'lock', 'postcard', 'dex', 'team', 'wild', 'evolve', 'challenge', 'book', 'roots']
     .filter(n => !sw.includes(`'./scenes/${n}.js'`));
   check('sw: every new scene is in the offline list', missing.length === 0, missing.join(','));
   // Same rule tools/release.mjs enforces: every module under next/ (not tests) is listed.

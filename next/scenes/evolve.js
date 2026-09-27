@@ -28,7 +28,7 @@ import { wait } from '../core/pace.js';
 import { cachedMon, getMon, MAX_ID } from '../core/api.js';
 import { evolveMonIn } from '../core/evo.js';
 
-const RETURNS = new Set(['road', 'wild', 'garden', 'rest', 'who', 'together', 'family-table', 'versus', 'postcard', 'dex', 'team']);
+const RETURNS = new Set(['road', 'wild', 'garden', 'rest', 'who', 'together', 'family-table', 'versus', 'postcard', 'dex', 'team', 'roots']);
 const KEY_RE = /^[a-zA-Z]{1,20}$/;
 const isPrim = v => v == null || ['string', 'number', 'boolean'].includes(typeof v);
 /** Plain params to hand back: primitives, plus ONE level of nested primitives
