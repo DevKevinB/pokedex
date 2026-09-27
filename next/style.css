@@ -4009,3 +4009,13 @@ body.calm .gd-dc.play .gd-dc-art-pinwheel i:nth-child(2) { animation-duration: 3
 .gd .gd-dshade { z-index: 145; }
 .gd .gd-dsheet { z-index: 150; }
 /* == /garden == */
+
+/* == who: the grown-up gear, v20.1.1 == */
+/* iPad Safari starts a text selection / callout on a long press over text,
+   which cancels the hold. The gear holds nothing selectable. */
+.who-gear, .who-gear * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.who-gear-hint {
+  position: absolute; z-index: 31; top: calc(var(--s2) + var(--tap) + 6px); right: var(--s2);
+  padding: 6px 8px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink);
+  border-radius: var(--radius); font-family: var(--pixel-font); font-size: 10px; pointer-events: none;
+}

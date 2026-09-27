@@ -115,9 +115,23 @@ export function mount(root, ctx) {
     if (holdT) { clearTimeout(holdT); timers.delete(holdT); holdT = null; }
     gear.classList.remove('holding');
   };
+  // A quick tap does nothing on purpose (the boys tap everything), but a
+  // grown-up who taps needs to know why: show a small HOLD hint.
+  let downAt = 0;
+  const hint = h('span', { class: 'who-gear-hint', hidden: true, attrs: { 'aria-hidden': 'true' } }, 'HOLD ⚙');
+  let hintT = null;
+  const showHint = () => {
+    hint.hidden = false;
+    if (hintT) { clearTimeout(hintT); timers.delete(hintT); }
+    hintT = setTimeout(() => { timers.delete(hintT); hintT = null; hint.hidden = true; }, 1600);
+    timers.add(hintT);
+  };
+  scene.appendChild(hint);
+  gear.addEventListener('pointerup', () => { if (downAt && performance.now() - downAt < 600) showHint(); downAt = 0; });
   const startHold = e => {
     e.preventDefault();
     cancelHold();
+    downAt = performance.now();
     gear.classList.add('holding');
     holdT = setTimeout(() => { timers.delete(holdT); holdT = null; gear.classList.remove('holding'); openGrownUps(); }, HOLD_MS);
     timers.add(holdT);
@@ -252,7 +266,15 @@ export function mount(root, ctx) {
 
     drawPanel();
 
-    overlay = h('div', { class: 'overlay gu-overlay', on: { click: e => { if (e.target === overlay) closeGrownUps(); } } },
+    // Close on a tap on the dark backdrop, but ONLY a tap that also STARTED
+    // there. The panel opens while the grown-up's finger is still on the gear,
+    // and lifting that finger lands a click on this backdrop; before v20.1.1
+    // that click closed the panel the instant it opened.
+    let downOnBackdrop = false;
+    overlay = h('div', { class: 'overlay gu-overlay', on: {
+      pointerdown: e => { downOnBackdrop = e.target === overlay; },
+      click: e => { if (e.target === overlay && downOnBackdrop) closeGrownUps(); downOnBackdrop = false; },
+    } },
       h('div', { class: 'panel gu-panel', attrs: { role: 'dialog', 'aria-label': 'GROWN-UPS' } },
         h('h2', { class: 'dialog-title' }, 'GROWN-UPS'),
         rows,

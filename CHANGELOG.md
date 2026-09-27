@@ -2,6 +2,16 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [20.1.1] - THE GEAR WORKS
+
+### What Kevin will notice
+
+- **The ⚙ on the WHO'S PLAYING screen opens again.** It still needs a
+  two-second hold so the boys can't get in. On the iPad, though, the grown-up
+  menu opened under your finger, and lifting that finger counted as a tap
+  outside the menu, which closed it instantly. Now it stays open after you let
+  go. A quick tap on ⚙ shows a small "HOLD ⚙" hint instead of doing nothing.
+
 ## [20.1.0] - THE LONG ROAD
 
 Things to find over the coming weeks. Nothing is on a timer or a calendar:

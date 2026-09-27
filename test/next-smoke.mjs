@@ -1486,6 +1486,37 @@ function b3SaveMons() {
   await finishPage('versus -> challenge', P);
 }
 
+// ============================================================ v20.1.1: the gear on a real touch screen
+// On the iPad the grown-up panel opened under the finger, and LIFTING that
+// finger landed a click on the backdrop, which closed it instantly. Mouse
+// tests could never see it. This drives real touch events through CDP, with
+// the small wobble a real thumb makes.
+{
+  const context = await browser.newContext({ viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
+  await mockRoutes(context);
+  const page = await context.newPage();
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  const cdp = await context.newCDPSession(page);
+  const g = await page.locator('.who-gear').boundingBox();
+  const pt = { x: g.x + g.width / 2, y: g.y + g.height / 2 };
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [pt] });
+  await page.waitForTimeout(120);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(300);
+  check('gear (touch): a quick tap shows the HOLD hint and no panel',
+    await page.locator('.who-gear-hint').isVisible() && (await page.locator('.gu-panel').count()) === 0);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [pt] });
+  for (let i = 0; i < 10; i++) {
+    await page.waitForTimeout(250);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: pt.x + (i % 2 ? 3 : -3), y: pt.y + 2 }] });
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(500);
+  check('gear (touch): the panel stays open after the finger lifts', (await page.locator('.gu-panel').count()) === 1);
+  await context.close();
+}
+
 // ============================================================ batch 4 helpers
 // A Gabe who has beaten the Champion: every Road chapter cleared and bloomed.
 const ALL12 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
