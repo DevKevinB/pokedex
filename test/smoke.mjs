@@ -2,7 +2,7 @@
 // PokeAPI + sprite CDN fully mocked (sandbox has no egress to them).
 import { chromium } from 'playwright';
 
-const BASE = 'http://127.0.0.1:8321';
+const BASE = 'http://127.0.0.1:8321/classic/';   // v20: the classic app moved to /classic/
 const NAMES = { 1: 'bulbasaur', 25: 'pikachu', 26: 'raichu', 172: 'pichu' };
 
 const TINY_PNG = Buffer.from(
@@ -212,7 +212,7 @@ for (let ti = 0; ti < TYPE_PROBE.length; ti++) {
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
   const row = await page.evaluate(async ([pid, wantType]) => {
-    const D = await import('/js/dex.js');
+    const D = await import('/classic/js/dex.js');
     await D.loadPoke(pid);
     const lum = css => {
       const [r, g, b] = (css.match(/\d+(\.\d+)?/g) || ['0', '0', '0']).slice(0, 3)
@@ -234,7 +234,7 @@ for (let ti = 0; ti < TYPE_PROBE.length; ti++) {
   if (row.ratio < chip.worst) { chip.worst = row.ratio; chip.worstType = row.type || '(none rendered)'; }
   await context.unroute(`https://pokeapi.co/api/v2/pokemon/${id}`);
 }
-await page.evaluate(async () => { const D = await import('/js/dex.js'); await D.loadPoke(25); });
+await page.evaluate(async () => { const D = await import('/classic/js/dex.js'); await D.loadPoke(25); });
 await page.waitForTimeout(300);
 
 // Verified red before the fix: electric came back at 1.48:1 with no glyph,
@@ -363,14 +363,14 @@ await page.evaluate(() => { window.__realRandom = Math.random; Math.random = () 
 // audio.js's own emitCry -- past the mute check and past the 400ms anti-stack
 // floor -- because an ES module's exported binding cannot be spied on.
 const cryBefore = await page.evaluate(async () => {
-  const A = await import('/js/audio.js');
+  const A = await import('/classic/js/audio.js');
   return { n: A.criesEmitted(), unlocked: A.audioUnlocked(), muted: A.isMuted() };
 });
 await page.click('#variant-sparkle');
 await page.waitForFunction(() => document.getElementById('battle-container').classList.contains('active'), null, { timeout: 10000 });
 check('battle screen active', true);
 await page.waitForTimeout(500);
-const cryAfter = await page.evaluate(async () => (await import('/js/audio.js')).criesEmitted());
+const cryAfter = await page.evaluate(async () => (await import('/classic/js/audio.js')).criesEmitted());
 // Reported rather than assumed: if the AudioContext were still locked the
 // encounter would be CORRECTLY silent, and asserting a cry would be a false
 // pass rather than a real guard.
@@ -406,7 +406,7 @@ check(`the four balls carry four different captions (${ballCaps.map(b => b.cap).
 // Re-rendered through the real openBallPick, in the real battle, then flipped
 // straight back so nothing downstream sees a junior profile.
 const juniorBalls = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   const was = S.player().settings.junior;
   S.player().settings.junior = true;
   document.getElementById('ballpick-modal').style.display = 'none';
@@ -427,13 +427,13 @@ const juniorBalls = await page.evaluate(async () => {
 check(`ART still picks from four balls (${juniorBalls.rows})`, juniorBalls.rows === 4);
 check('...and his drawer says nothing about odds or counts',
   juniorBalls.captions.length === 0 && juniorBalls.counts === 0);
-const cryBeforeCatch = await page.evaluate(async () => (await import('/js/audio.js')).criesEmitted());
+const cryBeforeCatch = await page.evaluate(async () => (await import('/classic/js/audio.js')).criesEmitted());
 await page.locator('.ballpick[data-ball="ultra-ball"]').evaluate(el => el.click());
 await page.waitForFunction(() => document.getElementById('victory-modal').style.display === 'flex', null, { timeout: 20000 });
 check('ball catch → gotcha screen', (await page.locator('#victory-lines').innerText()).includes('GOTCHA'));
 // ...and the thing he just won says its own name. Same reason as the encounter:
 // "GOTCHA!" is a word, and words do not exist for ART.
-const cryAfterCatch = await page.evaluate(async () => (await import('/js/audio.js')).criesEmitted());
+const cryAfterCatch = await page.evaluate(async () => (await import('/classic/js/audio.js')).criesEmitted());
 check(`the catch says what he just got (+${cryAfterCatch - cryBeforeCatch})`,
   cryAfterCatch - cryBeforeCatch === 1);
 check('shiny recorded on capture', await page.evaluate(() => JSON.parse(localStorage.getItem('pokedexos_save_v2')).players[1].shinies.length > 0));
@@ -488,7 +488,7 @@ check('wild level inside the habitat leash', await page.evaluate(() => {
 // make the outcome deterministic. Balance itself is covered by the engine's
 // unit tests, which is where it belongs.
 await page.evaluate(async () => {
-  const B = await import('/js/battle.js');
+  const B = await import('/classic/js/battle.js');
   const f = B.battleState.loaded[B.battleState.teamIds[B.battleState.activeIdx]];
   if (f) { f.maxHp = 9999; f.hp = 9999; f.atk = 9999; f.spatk = 9999; }
 });
@@ -554,8 +554,8 @@ await page.waitForTimeout(300);
 // WORLD COVERAGE: with the backfill merged, every one of the 649 species must
 // be findable somewhere — a habitat pool or a gym roster. 336 were nowhere.
 const unhomed = await page.evaluate(async () => {
-  const E = await import('/js/explore.js');
-  const G = await import('/js/gymdata.js');
+  const E = await import('/classic/js/explore.js');
+  const G = await import('/classic/js/gymdata.js');
   const world = new Set();
   E.HABITATS.forEach(h => ['c', 'u', 'r', 'L'].forEach(k => h[k].forEach(id => world.add(id))));
   G.GYMS.forEach(g => g.trainers.forEach(t => t.team.forEach(m => world.add(m.id))));
@@ -569,8 +569,8 @@ check('all 649 species reachable in the world', unhomed === 0);
 // keys — the old count saturated every band at the leash cap, flattening the
 // world's shape.
 const bandGuard = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
-  const E = await import('/js/explore.js');
+  const S = await import('/classic/js/state.js');
+  const E = await import('/classic/js/explore.js');
   const p = S.player();
   const forest = E.HABITATS[0];
   const before = E.habitatLevel(forest);            // deterministic (rng pinned at 0.5)
@@ -654,8 +654,8 @@ await page.waitForTimeout(300);
 // v18.11: an earned legacy badge counts in the BADGES stat and renders with
 // its ★ — a boy who had 8/8 must never see his number drop to 0.
 const legacyCount = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
-  const P = await import('/js/progression.js');
+  const S = await import('/classic/js/state.js');
+  const P = await import('/classic/js/progression.js');
   const p = S.player();
   p.badges.push('boulder');
   P.openTrainerCard();
@@ -811,7 +811,7 @@ check('backing out leaves the player alone',
 // calls clearGymRun -- that is the quiet half of B-043, and without this the
 // guard could be deleted with the suite still fully green.
 const gymRunKept = await page.evaluate(async () => {
-  const G = await import('/js/gym.js');
+  const G = await import('/classic/js/gym.js');
   // A half-finished run: one stop, one damaged Pokemon. This is exactly what
   // the old one-tap chip threw away without asking.
   G.gymRun.gymKey = 'rock'; G.gymRun.hp = { 25: 7 }; G.gymRun.max = { 25: 30 };
@@ -982,7 +982,7 @@ await page.locator('#set-import-paste').evaluate(el => el.click());
 await page.waitForTimeout(300);
 await page.locator('#pin-forgot').dispatchEvent('pointerdown');
 await page.waitForTimeout(2400);
-const D = await page.evaluate(async () => (await import('/js/devtools.js')).PIN_RESET_CODE);
+const D = await page.evaluate(async () => (await import('/classic/js/devtools.js')).PIN_RESET_CODE);
 await tapPin(D);
 await page.waitForTimeout(400);
 // The OLD PIN must still be standing at this point. v19.11.0 removed it here,
@@ -1066,9 +1066,9 @@ await page.waitForTimeout(300);
 // ---- B-014: quest rewards Art can aim at ----
 // The reward must be IDENTICAL in both modes; only the telling changes.
 const questXp = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
-  const Pg = await import('/js/progression.js');
-  const C = await import('/js/config.js');
+  const S = await import('/classic/js/state.js');
+  const Pg = await import('/classic/js/progression.js');
+  const C = await import('/classic/js/config.js');
   const p = S.player();
   const lead = p.team[0] || p.caught[0];
   const run = junior => {
@@ -1100,7 +1100,7 @@ check(`the same quest pays the same in both modes (${questXp.normal.level}/${que
 check('ART\'s ceremony shows the picture he aimed at', questXp.shown && questXp.picsShown && questXp.hasGlyph);
 check(`...and no sentence longer than six words (${questXp.longest})`, questXp.longest <= 6);
 await dismissCelebrations(page);
-await page.evaluate(async () => { const S = await import('/js/state.js'); S.player().settings.junior = true; });
+await page.evaluate(async () => { const S = await import('/classic/js/state.js'); S.player().settings.junior = true; });
 await openSettingsPanel(page);
 
 // turn junior back off for the remaining checks
@@ -1282,7 +1282,7 @@ await dismissCelebrations(page);
 // what the victory screen claims (never lowers it). Old code silently no-oped
 // on 24 of the 164 awards.
 const honesty = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   S.ensureMon(60, 5);
   S.ensureMonAtLeast(60, 40);
   const raised = S.player().mons[60].level === 40;
@@ -1295,8 +1295,8 @@ check('spoils raise an owned mon to the claimed level, never lower', honesty);
 
 // BADGE REBASE: beating a gym leader awards that leader's badge + master ball.
 const badgeUnit = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
-  const P = await import('/js/progression.js');
+  const S = await import('/classic/js/state.js');
+  const P = await import('/classic/js/progression.js');
   const p = S.player();
   const ballsBefore = p.items.masterBalls;
   ['rock:1', 'rock:2', 'rock:3', 'rock:4'].forEach(k => { p.gyms.beaten[k] = true; });
@@ -1310,7 +1310,7 @@ await dismissCelebrations(page);
 // QUEST HONESTY: gym spoils dispatch 'gymCatch', which must not tick
 // "Catch N Pokémon" quests — no ball was thrown.
 const questGuard = await page.evaluate(async () => {
-  const P = await import('/js/progression.js');
+  const P = await import('/classic/js/progression.js');
   const snap = () => JSON.stringify(P.ensureDailyQuests().list.filter(q => q.key.startsWith('catch')));
   const before = snap();
   document.dispatchEvent(new CustomEvent('game-progress', { detail: { kind: 'gymCatch', types: [] } }));
@@ -1323,7 +1323,7 @@ await dismissCelebrations(page);
 // spoils favorite must not silently bench anyone (v18.11; team[5] used to be
 // overwritten on one invited tap).
 const originalTeam = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   const saved = [...S.player().team];
   [10, 16, 13].forEach(id => S.recordCatch(id));
   S.player().team = [25, 1, 26, 10, 16, 13];   // full six, none is #74
@@ -1356,7 +1356,7 @@ check('full team: favorite stays in the box, nobody gets benched', fullTeamKept)
 await page.locator('#victory-continue').evaluate(el => el.click());
 await page.waitForTimeout(1200);
 await page.evaluate(async team => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   S.player().team = team;
   S.persist();
 }, originalTeam);
@@ -1389,8 +1389,8 @@ check('VS button on gym screen', await page.locator('#vs-btn').isVisible());
 // ---- B-016: PASS TO shows the boy, not a controller ----
 check('the VS button carries both leads as pictures', await page.locator('#vs-btn img').count() === 2);
 const vsUnnamed = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
-  const G = await import('/js/gym.js');
+  const S = await import('/classic/js/state.js');
+  const G = await import('/classic/js/gym.js');
   const was = S.state.save.players[2].name;
   S.state.save.players[2].name = '';
   G.closeGyms(); G.openGyms();
@@ -1501,7 +1501,7 @@ await page.waitForTimeout(500);
 // mutate the save on purpose — nothing downstream may depend on them.
 // ============================================================
 const teardown = await page.evaluate(async () => {
-  const B = await import('/js/battle.js');
+  const B = await import('/classic/js/battle.js');
   // Simulate the exact CRITICAL bug: one ESCAPE tap during a versus match used
   // to leave versusActive true, which silently stripped ART's no-faint shield
   // for the rest of the session.
@@ -1527,8 +1527,8 @@ check('exit clears busy, pendingEvolution and bankedCatch',
 // v18.11: teardown must SETTLE an open nickname prompt, not just hide it —
 // the leaked listeners used to rename the previously caught Pokémon too.
 const nickLeak = await page.evaluate(async () => {
-  const N = await import('/js/nickname.js');
-  const B = await import('/js/battle.js');
+  const N = await import('/classic/js/nickname.js');
+  const B = await import('/classic/js/battle.js');
   let settled = 'pending';
   N.askNickname(25, 'PIKACHU').then(v => { settled = v === null ? 'null' : 'value'; });
   await new Promise(r => setTimeout(r, 30));
@@ -1540,7 +1540,7 @@ check('teardown settles an open nickname prompt (no listener leak)',
   nickLeak.settled === 'null' && nickLeak.hidden);
 
 const fences = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   const out = {};
   const before = S.state.save.players[1].caught.length;
 
@@ -1587,7 +1587,7 @@ check('UNDO IMPORT restores the previous save', fences.undoRestored);
 // no field for it: Gabe could become Champion and by morning there'd be no
 // evidence it ever happened.
 const champ = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   const before = S.isChampion();
   S.recordChampion([25, 26, 1]);
   const rec = S.championRecord();
@@ -1616,7 +1616,7 @@ check('champion survives to the save file', champ.persisted);
 // A pasted import code is untrusted — junk here would crash the proudest
 // screen in the game.
 const champGuard = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   const bad = ['{"v":2,"save":{"players":{"1":{"champion":{"date":"nope","team":[1]}}}}}',
                '{"v":2,"save":{"players":{"1":{"champion":{"date":"2026-01-02","team":[99999,null]}}}}}',
                '{"v":2,"save":{"players":{"1":{"champion":"yes"}}}}'];
@@ -1627,9 +1627,9 @@ check('malformed champion records are rejected, not rendered',
 
 // The crown renders on the trainer card and nowhere else until earned.
 const crown = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   S.recordChampion([25]);
-  const P = await import('/js/progression.js');
+  const P = await import('/classic/js/progression.js');
   P.openTrainerCard();
   const html = document.getElementById('card-title')?.innerHTML || '';
   P.closeTrainerCard();
@@ -1655,7 +1655,7 @@ await page.waitForTimeout(400);
 
 // ---- B-011 / B-013: the sound switch still means what it says ----
 const soundGuards = await page.evaluate(async () => {
-  const A = await import('/js/audio.js');
+  const A = await import('/classic/js/audio.js');
   const out = {};
   // Muting must silence the NEW channel completely. A cry that survives the
   // mute button is worse than no cry: it is the one control Kevin uses in a
@@ -1739,9 +1739,9 @@ check('and the sound is left on afterwards', soundGuards.finallyMuted === false)
   await page.waitForTimeout(2400);
 
     const oneWrite = await page.evaluate(async () => {
-    const S = await import('/js/state.js');
-    const C = await import('/js/catch.js');
-    const D = await import('/js/dex.js');
+    const S = await import('/classic/js/state.js');
+    const C = await import('/classic/js/catch.js');
+    const D = await import('/classic/js/dex.js');
     await D.loadPoke(133);
     await new Promise(r => setTimeout(r, 900));
   
@@ -1764,9 +1764,9 @@ check('and the sound is left on afterwards', soundGuards.finallyMuted === false)
   // (which falls through to DEFAULT_LEVEL and hands back a Lv5), and never a
   // spent Master Ball with nothing to show for it.
   const torn = await page.evaluate(async () => {
-    const S = await import('/js/state.js');
-    const C = await import('/js/catch.js');
-    const D = await import('/js/dex.js');
+    const S = await import('/classic/js/state.js');
+    const C = await import('/classic/js/catch.js');
+    const D = await import('/classic/js/dex.js');
     await D.loadPoke(143);
     await new Promise(r => setTimeout(r, 900));
     const realSet = localStorage.setItem.bind(localStorage);
@@ -1809,7 +1809,7 @@ check('and the sound is left on afterwards', soundGuards.finallyMuted === false)
   // most important screen in the app and it used to be 26 words of sans-serif
   // with NO way to get the save off the device.
   await page.evaluate(async () => {
-    const S = await import('/js/state.js');
+    const S = await import('/classic/js/state.js');
     const realSet = localStorage.setItem.bind(localStorage);
     localStorage.setItem = (k, v) => { if (k === 'pokedexos_save_v2') throw new DOMException('QuotaExceededError'); return realSet(k, v); };
     S.persist();                      // fails, retries after evicting the cache, fails again
@@ -1872,7 +1872,7 @@ await context.route(/\/api\/v2\/pokemon\/(\d+)$/, async route => {
   await new Promise(r => setTimeout(r, [420, 40, 240, 90][id % 4]));
   await route.fallback();
 });
-await page.evaluate(async () => { const D = await import('/js/dex.js'); await D.loadPoke(25); });
+await page.evaluate(async () => { const D = await import('/classic/js/dex.js'); await D.loadPoke(25); });
 await page.waitForTimeout(1600);
 for (let i = 0; i < 20; i++) {
   await page.evaluate(() => document.getElementById('nav-next')?.click());
@@ -1880,7 +1880,7 @@ for (let i = 0; i < 20; i++) {
 }
 await page.waitForTimeout(4500);
 const mashed = await page.evaluate(async () => {
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   const txt = id => (document.getElementById(id)?.innerText || '').trim();
   return {
     tags: document.querySelectorAll('#types .tag').length,
@@ -1913,7 +1913,7 @@ await context.unroute(/\/api\/v2\/pokemon\/(\d+)$/);
 // A request that FAILS after a newer navigation has started must not wipe the
 // screen the newer one already painted.
 const staleFail = await page.evaluate(async () => {
-  const D = await import('/js/dex.js');
+  const D = await import('/classic/js/dex.js');
   const before = {
     tags: document.querySelectorAll('#types .tag').length,
     stats: document.querySelectorAll('#stats-area .stat-row').length,
@@ -1968,7 +1968,7 @@ check(`an abandoned request cannot wipe the screen (${staleFail.after.name})`,
   // Navigate to one he does NOT own first -- on a caught Pokemon #catch-btn
   // reads OWNED and never opens the drawer, which would silently measure a
   // closed panel sitting below the fold.
-  await pg.evaluate(async () => { const D = await import('/js/dex.js'); await D.loadPoke(300); });
+  await pg.evaluate(async () => { const D = await import('/classic/js/dex.js'); await D.loadPoke(300); });
   await pg.waitForTimeout(1200);
   await pg.evaluate(() => document.getElementById('catch-btn')?.click());
   await pg.waitForTimeout(900);
@@ -2088,8 +2088,8 @@ check(`an abandoned request cannot wipe the screen (${staleFail.after.name})`,
 // ART cannot read. These assert that the wordless channel actually exists,
 // because if it silently regresses nothing else replaces it for him.
 const visual = await page.evaluate(async () => {
-  const B = await import('/js/battle.js');
-  const C = await import('/js/config.js');
+  const B = await import('/classic/js/battle.js');
+  const C = await import('/classic/js/config.js');
   // Every type in the game must have a picture, or a move tile falls back to
   // being a word-only button for the child who can't read words.
   const missing = Object.keys(C.typeColors).filter(t => !C.typeEmoji[t]);
@@ -2117,7 +2117,7 @@ check(`inkFor picks readable ink for every type colour — helper maths, not the
 // checks exist so a future change cannot quietly take the floor away from him.
 // ============================================================
 check('pacing seam exists and honours its floor', await page.evaluate(async () => {
-  const C = await import('/js/config.js');
+  const C = await import('/classic/js/config.js');
   if (typeof C.awaitOrTap !== 'function') return false;
   const wasFast = C.PACE.fast;
   C.PACE.fast = true;
@@ -2130,7 +2130,7 @@ check('pacing seam exists and honours its floor', await page.evaluate(async () =
 }));
 
 check('a wait can never resolve faster than the floor', await page.evaluate(async () => {
-  const C = await import('/js/config.js');
+  const C = await import('/classic/js/config.js');
   const wasFast = C.PACE.fast; C.PACE.fast = false;
   const t0 = performance.now();
   const pending = C.awaitOrTap(900);
@@ -2144,7 +2144,7 @@ check('a wait can never resolve faster than the floor', await page.evaluate(asyn
 
 // Art's Pokémon do not faint. Six turns against a maximum-level attacker.
 check('junior: six hits from a Lv100 attacker never drop Art below 1 HP', await page.evaluate(async () => {
-  const E = await import('/js/engine.js');
+  const E = await import('/classic/js/engine.js');
   const atk = { level: 100, name: 'BOSS', types: [{ type: { name: 'dragon' } }],
     atk: 250, def: 200, spatk: 250, spdef: 200 };
   const move = { name: 'outrage', power: 120, type: 'dragon', damage_class: 'physical' };
@@ -2160,7 +2160,7 @@ check('junior: six hits from a Lv100 attacker never drop Art below 1 HP', await 
 
 // ...and his attacks always land somewhere meaningful, so a fight can be won.
 check('junior: Art always does real damage, even into a wall', await page.evaluate(async () => {
-  const E = await import('/js/engine.js');
+  const E = await import('/classic/js/engine.js');
   const art = { level: 5, name: 'ART', types: [{ type: { name: 'normal' } }],
     atk: 20, def: 20, spatk: 20, spdef: 20 };
   const wall = { level: 100, name: 'WALL', types: [{ type: { name: 'steel' } }],
@@ -2245,7 +2245,7 @@ check('at most one AudioContext for the whole app',
 // fix compounding scrims; taking turns can.
 check('a quest card waits its turn behind the win card', await page.evaluate(async () => {
   const vis = id => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display !== 'none'; };
-  const S = await import('/js/state.js');
+  const S = await import('/classic/js/state.js');
   const wasMode = S.state.appMode;
   S.state.appMode = 'battle';
   document.getElementById('victory-modal').style.display = 'flex';
@@ -2267,8 +2267,8 @@ check('a quest card waits its turn behind the win card', await page.evaluate(asy
 // READ as well as at the entry point: a player switch with the hub already
 // open must not leave the other boy on a board he has not earned.
 check('the ROUND tabs are hidden until you are champion', await page.evaluate(async () => {
-  const S = await import('/js/state.js');
-  const G = await import('/js/gym.js');
+  const S = await import('/classic/js/state.js');
+  const G = await import('/classic/js/gym.js');
   const p = S.player();
   const wasChampion = p.champion;
   p.champion = null;
@@ -2284,7 +2284,7 @@ check('the ROUND tabs are hidden until you are champion', await page.evaluate(as
 }));
 
 check('round 2 raises every trainer by 15 and keeps round 1 untouched', await page.evaluate(async () => {
-  const D = await import('/js/gymdata.js');
+  const D = await import('/classic/js/gymdata.js');
   const gym = D.GYMS[0];
   const r1 = D.roundTrainers(gym, 1);
   const r2 = D.roundTrainers(gym, 2);
@@ -2305,14 +2305,14 @@ check('round 2 raises every trainer by 15 and keeps round 1 untouched', await pa
 // twice from v19.4 to v19.8 — five releases with no offline mode and no symptom
 // anyone could see. Two cheap assertions make that unrepeatable.
 check('the offline file list has no duplicates', await page.evaluate(async () => {
-  const src = await (await fetch('/sw.js')).text();
+  const src = await (await fetch('/classic/sw.js')).text();
   const block = /const SHELL_FILES = \[([\s\S]*?)\]/.exec(src)?.[1] || '';
   const files = [...block.matchAll(/'([^']+)'/g)].map(m => m[1]);
   return files.length > 0 && files.length === new Set(files).size;
 }));
 
 check('every app module is in the offline file list', await page.evaluate(async () => {
-  const src = await (await fetch('/sw.js')).text();
+  const src = await (await fetch('/classic/sw.js')).text();
   const block = /const SHELL_FILES = \[([\s\S]*?)\]/.exec(src)?.[1] || '';
   const listed = new Set([...block.matchAll(/'([^']+)'/g)].map(m => m[1].replace(/^\.\//, '')));
   // Every module index.html's graph can reach must be cached, or the offline
@@ -2330,7 +2330,7 @@ check('every app module is in the offline file list', await page.evaluate(async 
       queue.push(new URL(m[1], location.origin + '/' + path).href);
     }
   }
-  return [...seen].every(p => listed.has(p));
+  return [...seen].every(p => listed.has(p.replace(/^classic\//, '')));
 }));
 
 // ---- v19.8.2: the API cache lives inside a budget ----
@@ -2359,7 +2359,7 @@ check('every app module is in the offline file list', await page.evaluate(async 
   const p2 = await ctx2.newPage();
   await p2.goto(BASE, { waitUntil: 'networkidle' });
   const r = await p2.evaluate(async () => {
-    const A = await import('/js/api.js');
+    const A = await import('/classic/js/api.js');
     const read = () => localStorage.getItem('pokedexos_apicache_v2') || '{}';
     const seeded = obj => Object.keys(obj).map(k => /^pkmn:(1\d\d\d)$/.exec(k))
       .filter(Boolean).map(m => Number(m[1])).sort((a, b) => a - b);
@@ -2419,12 +2419,12 @@ check('every app module is in the offline file list', await page.evaluate(async 
   const p3 = await ctx3.newPage();
   await p3.goto(BASE, { waitUntil: 'networkidle' });
   const r = await p3.evaluate(async () => {
-    const S = await import('/js/state.js');
+    const S = await import('/classic/js/state.js');
     const p = S.state.save.players[1];
     return { stats: p.stats, items: p.items, badges: p.badges, beaten: Object.keys(p.gyms.beaten) };
   });
   await p3.evaluate(async () => {
-    const P = await import('/js/progression.js');
+    const P = await import('/classic/js/progression.js');
     P.openTrainerCard();
   });
   await p3.waitForTimeout(300);

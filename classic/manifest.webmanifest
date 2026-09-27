@@ -1,13 +1,13 @@
 {
-  "name": "Sprout Road",
-  "short_name": "Sprout Road",
-  "description": "A Pokémon adventure for two brothers: Bulba's garden, the Verdant Road, and playing together.",
+  "name": "Pokédex OS",
+  "short_name": "Pokédex",
+  "description": "A Pokédex, catch and battle game for the original 151 Pokémon.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1d3b1f",
-  "theme_color": "#2e7d32",
+  "background_color": "#121212",
+  "theme_color": "#d32f2f",
   "icons": [
     {
       "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png",

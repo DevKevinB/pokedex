@@ -256,10 +256,15 @@ export function mount(root, ctx) {
       h('div', { class: 'panel gu-panel', attrs: { role: 'dialog', 'aria-label': 'GROWN-UPS' } },
         h('h2', { class: 'dialog-title' }, 'GROWN-UPS'),
         rows,
+        // Batch 3: the grown-up's own game (Pro Rules rematches, seed codes).
+        h('button', {
+          class: 'btn gu-challenge', type: 'button',
+          on: { click: () => { play('tap'); closeGrownUps(); ctx.go('challenge', { returnTo: 'who' }); } },
+        }, "🏆 DAD'S CHALLENGE"),
         h('div', { class: 'dialog-actions' }, muteBtn, close),
         // The classic game stays one tap away until the cutover. Same site,
         // same saves: anything caught there shows up here on the next visit.
-        h('a', { class: 'btn gu-classic', attrs: { href: '../' } }, '📟 OLD POKÉDEX')));
+        h('a', { class: 'btn gu-classic', attrs: { href: '../classic/' } }, '📟 OLD POKÉDEX')));
     scene.appendChild(overlay);
   }
 

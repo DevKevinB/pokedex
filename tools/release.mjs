@@ -45,7 +45,7 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) {
       'Use three numbers separated by dots, with no "v" in front — for example 19.0.0');
 }
 
-const configSrc = readFileSync(p('js/config.js'), 'utf8');
+const configSrc = readFileSync(p('classic/js/config.js'), 'utf8');
 const currentMatch = configSrc.match(/export const APP_VERSION = '([^']+)'/);
 if (!currentMatch) {
   die('Could not find APP_VERSION in js/config.js.',
@@ -61,10 +61,10 @@ const current = currentMatch[1];
 // as well as on the way out.
 {
   const seen = {
-    'sw.js': readFileSync(p('sw.js'), 'utf8').match(/CACHE_VERSION = 'pokedexos-v([^']+)'/)?.[1],
+    'sw.js': readFileSync(p('classic/sw.js'), 'utf8').match(/CACHE_VERSION = 'pokedexos-v([^']+)'/)?.[1],
     'package.json': JSON.parse(readFileSync(p('package.json'), 'utf8')).version,
   };
-  const htmlV = [...readFileSync(p('index.html'), 'utf8').matchAll(/\?v=([\d.]+)/g)].map(m => m[1]);
+  const htmlV = [...readFileSync(p('classic/index.html'), 'utf8').matchAll(/\?v=([\d.]+)/g)].map(m => m[1]);
   const bad = Object.entries(seen).filter(([, v]) => v !== current)
     .concat(htmlV.every(v => v === current) ? [] : [['index.html', htmlV.join(', ')]]);
   if (bad.length) {
@@ -101,13 +101,13 @@ const planEdit = (file, find, replace, expected) => {
   edits.push({ file, src, out: src.split(find).join(replace), hits });
 };
 
-planEdit('js/config.js',
+planEdit('classic/js/config.js',
   `export const APP_VERSION = '${current}'`,
   `export const APP_VERSION = '${version}'`, 1);
-planEdit('sw.js',
+planEdit('classic/sw.js',
   `const CACHE_VERSION = 'pokedexos-v${current}'`,
   `const CACHE_VERSION = 'pokedexos-v${version}'`, 1);
-planEdit('index.html', `?v=${current}`, `?v=${version}`, 3);
+planEdit('classic/index.html', `?v=${current}`, `?v=${version}`, 3);
 planEdit('package.json', `"version": "${current}"`, `"version": "${version}"`, 1);
 
 for (const e of edits) say(`  ${DRY ? 'would update' : 'updated'}  ${e.file}  (${e.hits} place${e.hits > 1 ? 's' : ''})`);
@@ -116,11 +116,11 @@ if (!DRY) for (const e of edits) writeFileSync(p(e.file), e.out);
 // ---- 3. confirm all four now agree --------------------------------------
 if (!DRY) {
   const found = {
-    'js/config.js': readFileSync(p('js/config.js'), 'utf8').match(/APP_VERSION = '([^']+)'/)?.[1],
-    'sw.js': readFileSync(p('sw.js'), 'utf8').match(/CACHE_VERSION = 'pokedexos-v([^']+)'/)?.[1],
+    'js/config.js': readFileSync(p('classic/js/config.js'), 'utf8').match(/APP_VERSION = '([^']+)'/)?.[1],
+    'sw.js': readFileSync(p('classic/sw.js'), 'utf8').match(/CACHE_VERSION = 'pokedexos-v([^']+)'/)?.[1],
     'package.json': JSON.parse(readFileSync(p('package.json'), 'utf8')).version,
   };
-  const html = readFileSync(p('index.html'), 'utf8');
+  const html = readFileSync(p('classic/index.html'), 'utf8');
   const htmlVersions = [...html.matchAll(/\?v=([\d.]+)/g)].map(m => m[1]);
   const disagree = Object.entries(found).filter(([, v]) => v !== version)
     .concat(htmlVersions.every(v => v === version) ? [] : [['index.html', htmlVersions.join(', ')]]);
@@ -151,13 +151,13 @@ if (existsSync(p('next/sw.js'))) {
 // ---- 4. the service worker must list every file -------------------------
 // A file missing from SHELL_FILES means the boys get a stale copy of it when
 // the tablet is offline — the hardest kind of bug to notice or explain.
-const swSrc = readFileSync(p('sw.js'), 'utf8');
+const swSrc = readFileSync(p('classic/sw.js'), 'utf8');
 const shellBlock = swSrc.match(/const SHELL_FILES = \[([\s\S]*?)\]/)?.[1] ?? '';
 const listed = new Set([...shellBlock.matchAll(/'([^']+)'/g)].map(m => m[1].replace(/^\.\//, '').split('?')[0]));
 const onDisk = [];
 for (const dir of ['js', 'data', 'fonts']) {
-  if (!existsSync(p(dir))) continue;
-  for (const f of readdirSync(p(dir))) if (!f.startsWith('.')) onDisk.push(`${dir}/${f}`);
+  if (!existsSync(p('classic/' + dir))) continue;
+  for (const f of readdirSync(p('classic/' + dir))) if (!f.startsWith('.')) onDisk.push(`${dir}/${f}`);
 }
 const missing = onDisk.filter(f => !listed.has(f));
 if (missing.length) {

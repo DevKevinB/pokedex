@@ -244,6 +244,11 @@ export function mount(root, ctx) {
       results,
       h('div', { class: 'vs-dad-actions' },
         h('button', { class: 'btn vs-dad-back', type: 'button', on: { click: () => { play('tap'); leave('together', seats); } } }, '\u25C0\uFE0E'),
+        // Batch 3: DAD'S CHALLENGE (Pro Rules rematch of a beaten leader) on the same team.
+        pre ? null : h('button', {
+          class: 'btn vs-challenge', type: 'button', attrs: { 'aria-label': "DAD'S CHALLENGE" },
+          on: { click: guard(() => { play('tap'); leave('challenge', { battler: gabeN, returnTo: 'versus', returnParams: { battler: seats.battler, helper: seats.helper } }); }) }
+        }, '🏆 PRO'),
         go)));
     ui.layer.classList.add('vs-layer-setup');
     drawSlots();

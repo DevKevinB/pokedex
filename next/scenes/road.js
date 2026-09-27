@@ -15,14 +15,15 @@ import { wait } from '../core/pace.js';
 import { getMon, cachedMon } from '../core/api.js';
 import {
   CHAPTERS, leaderIdx, isCleared, isChapterDone, isTrainerOpen, currentChapter,
-  nextTrainer, chapterView, battleParams, applyWin, trainerLevel,
+  nextTrainer, chapterView, battleParams, trainerLevel,
   GUARDIAN_ID, GUARDIAN_NAME, HATCH_SEEDS, hasGuardian, guardianBeaten, guardianLevel,
-  guardianParams, applyGuardianWin, seedCount, isHatched, readyToHatch,
+  guardianParams, seedCount, isHatched, readyToHatch,
   BERRY_KEY, berryCount, wrappedGifts, openGift, settleBerries, withBerries
 } from '../data/chapters.js';
 import {
-  RIVAL_NAME, RIVAL_LOSE_LINES, rivalSpot, rivalParams, rivalTeam, rivalLine, applyRivalResult
+  RIVAL_NAME, RIVAL_LOSE_LINES, rivalSpot, rivalParams, rivalTeam, rivalLine, roadReturn
 } from '../data/rival.js';
+import { leadOf } from './together.js';
 
 const N = CHAPTERS.length;
 const STEP = 150;          // px between chapter stops
@@ -53,14 +54,11 @@ export function mount(root, ctx) {
 
   // --- a Road win coming back from battle ------------------------------
   let outcome = null, gOutcome = null, rOutcome = null, dirty = false;
-  if (params.result === 'win' && params.onEnd) {
-    outcome = applyWin(player(), params.onEnd);
-    gOutcome = applyGuardianWin(player(), params.onEnd);
-    if (outcome || gOutcome) dirty = true;
-  }
+  // battle.js already saved it (params.applied); roadReturn re-applies the
+  // idempotent parts and rebuilds the celebration without double counting.
   if (params.onEnd && (params.result === 'win' || params.result === 'lose')) {
-    rOutcome = applyRivalResult(player(), params.onEnd, params.result);
-    if (rOutcome) dirty = true;
+    ({ outcome, gOutcome, rOutcome } = roadReturn(player(), params.onEnd, params.result, params.applied));
+    if (outcome || gOutcome || rOutcome) dirty = true;
   }
   // Berries eaten in that battle leave the pouch (the battle already took
   // their gifts). The pouch is also re-clamped to the gifts waiting.
@@ -92,7 +90,20 @@ export function mount(root, ctx) {
     on: { click: () => { play('tap'); ctx.go('who'); } }
   }, '⌂');
   const pouch = h('div', { class: 'road-pouch', hidden: true });
-  const topbar = h('div', { class: 'road-top' }, homeBtn, title, pouch);
+  // Batch 3: his Pokédex and his team, one tap from the Road (pictures only:
+  // a book, and his lead Pokemon's face).
+  const dexBtn = h('button', {
+    class: 'road-tool road-dex', type: 'button', attrs: { 'aria-label': 'POKÉDEX' },
+    // A prereader's book is his Sticker Book: only what he caught, never a
+    // wall of silhouettes.
+    on: { click: () => { play('tap'); ctx.go(pre ? 'book' : 'dex', { returnTo: 'road' }); } }
+  }, h('span', { class: 'road-tool-emoji', attrs: { 'aria-hidden': 'true' } }, '📖'));
+  // His BULBA always leads a prereader's fights, so there is no team to edit.
+  const teamBtn = h('button', {
+    class: 'road-tool road-team', type: 'button', attrs: { 'aria-label': 'TEAM' }, hidden: pre,
+    on: { click: () => { play('tap'); ctx.go('team', { returnTo: 'road' }); } }
+  });
+  const topbar = h('div', { class: 'road-top' }, homeBtn, title, pouch, dexBtn, teamBtn);
   const nextBtn = h('button', { class: 'road-next', type: 'button', on: { click: onNext } });
   const bottombar = h('div', { class: 'road-bottom' }, nextBtn);
   const chapterLayer = h('div', { class: 'road-chapter', hidden: true });
@@ -118,6 +129,17 @@ export function mount(root, ctx) {
       nextBtn.classList.add('is-done');
     }
     drawPouch();
+    drawTeamBtn();
+  }
+
+  function drawTeamBtn() {
+    const p = player();
+    // A prereader's lead is his BULBA (battle.js puts him first).
+    const lead = pre ? leadOf(p).id : ((Array.isArray(p.team) && p.team[0]) || (Array.isArray(p.caught) && p.caught[0]) || 0);
+    const shiny = !pre && (p.shinies || []).includes(lead);
+    clear(teamBtn);
+    if (lead) teamBtn.append(spriteImg(lead, { class: 'road-tool-sprite', shiny }));
+    else teamBtn.append(h('img', { class: 'road-tool-ball', src: ITEM('poke-ball'), attrs: { alt: '' } }));
   }
 
   // Seeds (and Oran Berries) in the header, as pictures plus a number.
@@ -504,11 +526,19 @@ export function mount(root, ctx) {
         h('div', { class: 'chapter-name' }, h('span', { class: 'chapter-emoji' }, ch.emoji), pre ? null : ch.region),
         h('div', { class: 'chapter-sub' }, done ? 'BACK IN BLOOM!' : ch.drought)));
 
+    // A bloomed region grows tall grass: wild Pokemon from its habitat.
+    const grass = done ? h('button', {
+      class: 'chapter-grass', type: 'button', dataset: { place: i }, attrs: { 'aria-label': 'TALL GRASS' },
+      on: { click: () => { play('tap'); ctx.go('wild', { place: i }); } }
+    },
+    h('span', { class: 'chapter-grass-emoji', attrs: { 'aria-hidden': 'true' } }, '🌿'),
+    pre ? null : h('span', { class: 'chapter-grass-words' }, 'TALL GRASS'),
+    h('span', { class: 'chapter-grass-go', attrs: { 'aria-hidden': 'true' } }, '\u25B6\uFE0E')) : null;
     const path = h('div', { class: 'chapter-path' });
     const L = leaderIdx(i);
     for (let j = 0; j <= L; j++) path.append(trainerCard(p, i, j, L, j === justWon));
     if (story && hasGuardian(p, i)) path.append(guardianCard(i));
-    chapterLayer.append(head, h('div', { class: 'chapter-scroll' }, path));
+    chapterLayer.append(...[head, grass, h('div', { class: 'chapter-scroll' }, path)].filter(Boolean));
     chapterLayer.hidden = false;
     scene.classList.add('chapter-open');
   }

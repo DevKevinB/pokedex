@@ -125,7 +125,7 @@ test('freshPlayer carries every v3 field from the contract', () => {
   assert.deepEqual(p.bulba, { petals: 0, stage: 1, stayStone: false, visitors: [] });
   assert.deepEqual(p.road, { chapter: 0, cleared: {}, bloomed: [], seeds: 0, guardians: {}, hatched: false, rival: { wins: 0, losses: 0, last: -1 } });
   assert.equal(p.lock, null);
-  assert.deepEqual(V.freshSave('2026-01-01').family, { postcards: 0, lastPostcard: null, versus: { gabe: 0, dad: 0 } });
+  assert.deepEqual(V.freshSave('2026-01-01').family, { postcards: 0, lastPostcard: null, versus: { gabe: 0, dad: 0 }, challenge: { wins: [] } });
   assert.deepEqual(V.freshSave('2026-01-01').gifts, { toReader: 0 });
   assert.deepEqual(Object.keys(p.stats).sort(), ['battlesLost', 'battlesWon', 'catches', 'explores', 'versusWins']);
 });
@@ -766,7 +766,7 @@ test('family and gifts live on the save root and are cleaned', () => {
     "family":{"postcards":1e12,"lastPostcard":"<b>","versus":{"gabe":-2,"dad":"7","art":9,"__proto__":{"polluted":1}},"extra":1},
     "gifts":{"toReader":500,"toArt":3}}`;
   const s = V.cleanSave(JSON.parse(json));
-  assert.deepEqual(s.family, { postcards: V.MAX_FAMILY_COUNT, lastPostcard: null, versus: { gabe: 0, dad: 7 } });
+  assert.deepEqual(s.family, { postcards: V.MAX_FAMILY_COUNT, lastPostcard: null, versus: { gabe: 0, dad: 7 }, challenge: { wins: [] } });
   assert.deepEqual(s.gifts, { toReader: 99 });
   assert.equal(({}).polluted, undefined);
   const missing = V.cleanSave({ version: 3, players: { 1: {} } });
@@ -774,7 +774,7 @@ test('family and gifts live on the save root and are cleaned', () => {
   assert.deepEqual(missing.gifts, V.freshGifts());
   for (const [v, want] of [[-1, 0], ['x', 0], [3.9, 3], [99, 99], [100, 99]]) assert.equal(V.cleanGifts({ toReader: v }).toReader, want);
   const good = { version: 3, created: '2026-01-01', players: { 1: V.freshPlayer(), 2: V.freshPlayer() },
-    family: { postcards: 3, lastPostcard: '2026-09-20', versus: { gabe: 5, dad: 4 } }, gifts: { toReader: 2 } };
+    family: { postcards: 3, lastPostcard: '2026-09-20', versus: { gabe: 5, dad: 4 }, challenge: { wins: [{ code: 'MOSSY-714', who: 'dad', date: '2026-09-20' }] } }, gifts: { toReader: 2 } };
   assert.deepEqual(V.cleanSave(clone(good)), good, 'legal values kept exactly');
 });
 
@@ -798,7 +798,7 @@ test('mergeV2 / applyV1 carry the new fields through untouched', () => {
   const v3 = M.fromV2(v2Fixture());
   v3.players[1].road = { ...v3.players[1].road, seeds: 3, guardians: { 0: true }, hatched: true, rival: { wins: 2, losses: 1, last: 0 } };
   v3.players[1].lock = { pics: [1, 25, 6] };
-  v3.family = { postcards: 4, lastPostcard: '2026-09-01', versus: { gabe: 3, dad: 5 } };
+  v3.family = { postcards: 4, lastPostcard: '2026-09-01', versus: { gabe: 3, dad: 5 }, challenge: { wins: [{ code: 'ZAPPY-001', who: 'reader', date: '2026-09-02' }] } };
   v3.gifts = { toReader: 6 };
   const before = clone(v3);
   const v2 = v2Fixture();
@@ -857,15 +857,17 @@ test('codes: new fields round-trip; an import can raise family/gifts but never l
   save.players[1].road.seeds = 5; save.players[1].road.guardians = { 1: true }; save.players[1].road.hatched = true;
   save.players[1].road.rival = { wins: 1, losses: 3, last: 1 };
   save.players[1].lock = { pics: [6, 6, 25] };
-  save.family = { postcards: 2, lastPostcard: '2026-08-01', versus: { gabe: 1, dad: 2 } };
+  save.family = { postcards: 2, lastPostcard: '2026-08-01', versus: { gabe: 1, dad: 2 }, challenge: { wins: [{ code: 'MOSSY-714', who: 'dad', date: '2026-08-01' }] } };
   save.gifts = { toReader: 3 };
   assert.deepEqual(S.importCode(S.exportCode(save), V.freshSave()), save, 'exact round trip');
 
   const cur = clone(save);
-  cur.family = { postcards: 9, lastPostcard: '2026-09-20', versus: { gabe: 0, dad: 8 } };
+  cur.family = { postcards: 9, lastPostcard: '2026-09-20', versus: { gabe: 0, dad: 8 }, challenge: { wins: [{ code: 'MOSSY-714', who: 'reader', date: '2026-09-20' }] } };
   cur.gifts = { toReader: 1 };
   const out = S.importCode(S.exportCode(save), cur);
-  assert.deepEqual(out.family, { postcards: 9, lastPostcard: '2026-09-20', versus: { gabe: 1, dad: 8 } });
+  assert.deepEqual(out.family, { postcards: 9, lastPostcard: '2026-09-20', versus: { gabe: 1, dad: 8 },
+    challenge: { wins: [{ code: 'MOSSY-714', who: 'dad', date: '2026-08-01' }, { code: 'MOSSY-714', who: 'reader', date: '2026-09-20' }] } },
+    'challenge wins from both sides are kept');
   assert.deepEqual(out.gifts, { toReader: 3 });
   const classic = btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, save: v2Fixture() }))));
   const out2 = S.importCode(classic, cur);
@@ -901,4 +903,85 @@ test('store: gift, postcard, versus and lock helpers commit to disk', () => {
   assert.equal(store.giftCount(), 2);
   assert.equal(store.save.family.postcards, 2);
   assert.deepEqual(store.save.family.versus, { gabe: 0, dad: 1 });
+});
+
+// ============================================================ batch 3: DAD'S CHALLENGE wins (family.challenge)
+test('challenge wins: validated, de-duplicated, capped, never thrown', () => {
+  const junk = { wins: [
+    { code: 'MOSSY-714', who: 'dad', date: '2026-09-02' },
+    { code: 'MOSSY-714', who: 'dad', date: '2026-09-01' },        // same code+who: earliest date kept
+    { code: 'mossy-714', who: 'dad', date: '2026-09-01' },        // not canonical
+    { code: 'MOSSY-7140', who: 'dad', date: '2026-09-01' },
+    { code: '<img>-123', who: 'dad', date: '2026-09-01' },
+    { code: 'ZAPPY-003', who: 'art', date: '2026-09-01' },        // unknown side
+    { code: 'ZAPPY-003', who: 'reader', date: 'yesterday' },      // bad date
+    { code: 'ZAPPY-003', who: 'reader', date: '2026-08-30' },
+    null, 5, 'x', { __proto__: { code: 'X' } },
+  ] };
+  assert.deepEqual(V.cleanChallenge(junk).wins, [
+    { code: 'ZAPPY-003', who: 'reader', date: '2026-08-30' },
+    { code: 'MOSSY-714', who: 'dad', date: '2026-09-01' },
+  ]);
+  for (const j of [null, 1, 'x', [], { wins: 'x' }, { wins: { 0: 1 } }]) assert.deepEqual(V.cleanChallenge(j), { wins: [] });
+  const many = { wins: Array.from({ length: 80 }, (_, i) => ({ code: 'MOSSY-' + String(i).padStart(3, '0'), who: 'dad', date: '2026-09-' + String(1 + (i % 28)).padStart(2, '0') })) };
+  const kept = V.cleanChallenge(many).wins;
+  assert.equal(kept.length, V.MAX_CHALLENGE_WINS);
+  assert.equal(kept[kept.length - 1].date, '2026-09-28', 'the newest are kept');
+});
+
+test('challenge wins: addChallengeWin + store wrapper; carried by mergeV2', () => {
+  const s = V.freshSave('2026-01-01');
+  assert.deepEqual(V.addChallengeWin(s, 'MOSSY-714', 'dad', '2026-09-01'), [{ code: 'MOSSY-714', who: 'dad', date: '2026-09-01' }]);
+  assert.equal(V.addChallengeWin(s, 'MOSSY-714', 'dad', '2026-09-05').length, 1, 'a repeat win is not doubled');
+  assert.equal(V.addChallengeWin(s, 'MOSSY-714', 'reader', '2026-09-05').length, 2);
+  assert.equal(V.addChallengeWin(s, 'bad', 'dad'), null);
+  assert.equal(V.addChallengeWin(s, 'MOSSY-714', '__proto__'), null);
+  for (const j of [null, 5, 'x']) assert.equal(V.addChallengeWin(j, 'MOSSY-714', 'dad'), null);
+  delete s.family;
+  assert.equal(V.addChallengeWin(s, 'SCALY-100', 'dad').length, 1, 'works on an older save with no family{}');
+  const v3 = M.fromV2(v2Fixture());
+  V.addChallengeWin(v3, 'PEBBLY-001', 'reader', '2026-09-03');
+  const out = M.mergeV2(v3, v2Fixture());
+  assert.deepEqual(out.family.challenge.wins, [{ code: 'PEBBLY-001', who: 'reader', date: '2026-09-03' }]);
+  reset();
+  assert.equal(store.addChallengeWin('nope', 'dad'), null);
+  assert.equal(store.addChallengeWin('CROWN-042', 'dad').length, 1);
+  assert.deepEqual(store.challengeWins().map(w => w.code), ['CROWN-042']);
+});
+
+// ---- the classic save is merged only when it changes ----
+// mergeV2 is union-only. Re-merging an UNCHANGED classic save on every boot
+// resurrected a favourite removed here, because after the switchover nothing
+// edits v2 any more.
+test('save: an unchanged classic save is not re-merged (a removed favourite stays removed)', () => {
+  const ls = reset();
+  const v2 = v2Fixture();
+  v2.players[1].favorites = [v2.players[1].caught[0]];
+  ls.pokedexos_save_v2 = JSON.stringify(v2);   // seeded directly: the guard forbids setItem on v2
+  let save = S.load();
+  assert.ok(S.persist(save));
+  const fav = v2.players[1].caught[0];
+  assert.ok(save.players[1].favorites.includes(fav));
+  save.players[1].favorites = [];
+  assert.ok(S.persist(save));
+  S._resetForTests();
+  save = S.load();
+  assert.deepEqual(save.players[1].favorites, [], 'the removed star must not come back');
+  assert.equal(S.getLoadInfo().mergedV2, false);
+  // ...but new progress in the classic app still arrives.
+  v2.players[1].caught.push(151);
+  ls.pokedexos_save_v2 = JSON.stringify(v2);   // seeded directly: the guard forbids setItem on v2
+  S._resetForTests();
+  save = S.load();
+  assert.ok(save.players[1].caught.includes(151), 'a new classic catch merges in');
+  assert.equal(S.getLoadInfo().mergedV2, true);
+  // and v2 itself is still never written
+  assert.equal(ls.getItem(S.KEYS.v2), JSON.stringify(v2));
+});
+
+test('save: a failed write leaves the classic save un-fingerprinted so the merge retries', () => {
+  const ls = reset();
+  ls.pokedexos_save_v2 = JSON.stringify(v2Fixture());
+  S.load();
+  assert.equal(ls.getItem(S.KEYS.v2seen), null, 'nothing recorded until a v3 write succeeds');
 });

@@ -40,6 +40,7 @@ import { CHAPTERS, nextTrainer, battleParams, applyWin, leaderIdx, isCleared } f
 import { addPetals } from './garden-logic.js';
 import { seatsFrom, teamSpec, bulbaIdOf, battleProfile } from './together.js';
 import { moveButton, movePictures } from './battle.js';
+import { evolveRoute } from '../core/evo.js';
 
 export const BERRY_HEAL = 0.20;       // of the active mon's max HP
 export const BERRY_TURNS = 3;         // turns for a new berry to grow
@@ -423,6 +424,7 @@ export function mount(root, ctx) {
     r.stats = r.stats || {};
     r.mons = r.mons || {};
     let road = null;
+    const levelled = [];
     if (win) {
       road = applyWin(r, opp.onEnd);
       r.stats.battlesWon = (r.stats.battlesWon | 0) + 1;
@@ -431,6 +433,7 @@ export function mount(root, ctx) {
         const had = r.mons[x.id] || { level: f ? f.level : 5, xp: 0 };
         const res = applyXp({ level: had.level ?? 5, xp: had.xp ?? 0 }, x.gained);
         r.mons[x.id] = { ...had, level: res.level, xp: res.xp };
+        if (res.ups > 0) levelled.push(x.id);
       }
     } else {
       r.stats.battlesLost = (r.stats.battlesLost | 0) + 1;
@@ -438,12 +441,16 @@ export function mount(root, ctx) {
     const petals = win ? WIN_PETALS : REST_PETALS;
     if (a && a.bulba && typeof a.bulba === 'object') addPetals(a.bulba, petals);
     try { store.commit(); } catch (e) { /* the store reports its own failures */ }
-    return { win, petals, road };
+    return { win, petals, road, levelled };
   }
 
   async function finish(ev) {
     done = true;
     const res = applyResult(ev);
+    // The battler's Pokemon that levelled up may evolve (core/evo.js; never
+    // for a prereader). Started now, while the card plays; whichever card
+    // button he taps goes through the evolve screen first.
+    evoRoute = res.levelled.length ? evolveRoute(R(), res.levelled, '_', {}).catch(() => null) : null;
     if (res.win) play('win');
     await pause(300);
     if (!alive) return;
@@ -475,9 +482,16 @@ export function mount(root, ctx) {
     for (const p of petals.children) { if (!await pause(260)) return; p.classList.add('on'); play('petal'); }
   }
 
-  function leave(name, params) {
+  let evoRoute = null;
+  async function leave(name, params) {
     if (!alive) return;
     alive = false;
+    let next = null;
+    try { next = evoRoute ? await evoRoute : null; } catch (e) { next = null; }
+    if (Array.isArray(next) && next[0] === 'evolve') {
+      ctx.go('evolve', { queue: next[1].queue, player: seats.battler, returnTo: name, returnParams: params || {} });
+      return;
+    }
     ctx.go(name, params || {});
   }
 

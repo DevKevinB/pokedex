@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const JS = join(ROOT, 'js');
+const JS = join(ROOT, 'classic', 'js');   // v20: the classic app moved to /classic/
 
 // Strip comments and strings so a name mentioned inside one is never mistaken
 // for real code. Crude on purpose: it only has to be right about export and
@@ -93,7 +93,7 @@ function walk(dir, rel) {
     d.isDirectory() ? (d.name === 'test' ? [] : walk(join(dir, d.name), `${rel}/${d.name}`))
       : d.name.endsWith('.js') ? [`${rel}/${d.name}`] : []);
 }
-const files = [...walk(JS, 'js'), ...walk(join(ROOT, 'next'), 'next')];
+const files = [...walk(JS, 'classic/js'), ...walk(join(ROOT, 'next'), 'next')];
 if (!files.length) {
   console.error('✗ No modules found in js/ — is this the right directory?');
   process.exit(1);

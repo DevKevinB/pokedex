@@ -22,6 +22,9 @@ import { buildFighter, moveInfo, movesReady } from '../core/api.js';
 import { createBattle, BALL_MODS, BERRY_HEAL, movePictures, powerDots } from '../battle/createBattle.js';
 import { applyXp, xpProgress, moveSeed, catchProbability } from '../data/engine.js';
 import { typeEmoji, typeColors, inkFor } from '../data/config.js';
+import { evolveRoute } from '../core/evo.js';
+import { settleRoadEnd, roadMarks } from '../data/rival.js';
+import { bulbaIdOf } from './together.js';
 
 const BALLS = [
   { key: 'poke', item: 'poke-ball', label: 'POKE' },
@@ -99,6 +102,7 @@ export function mount(root, ctx) {
   let busy = true;
   let battle = null;
   let applied = false;
+  let roadApplied = null;   // {bloom, seed, rival} when applyResult already saved a Road result
   const rafs = new Set();
   const shown = { me: 0, foe: 0 };      // which fighter each side is DISPLAYING
   const hpShown = { me: [], foe: [] };  // what the HP bars currently show
@@ -174,7 +178,8 @@ export function mount(root, ctx) {
   function showFighter(side, idx) {
     shown[side] = idx;
     const f = fighter(side);
-    const shiny = side === 'me' && (store.player().shinies || []).includes(f.id);
+    // A shiny wild encounter (params.shiny, from the tall grass) glitters in the fight too.
+    const shiny = side === 'me' ? (store.player().shinies || []).includes(f.id) : (wild && params.shiny === true && idx === 0);
     ui[side + 'Sprite'].classList.remove('faint', 'absorbed', 'leave', 'lunge', 'hit', 'hit-soft');
     clear(ui[side + 'Sprite']);
     const img = spriteImg(f.id, { back: side === 'me', animated: true, shiny, class: `bt-sprite bt-sprite-${side}` });
@@ -502,6 +507,22 @@ export function mount(root, ctx) {
       const had = p.mons[id];
       if (!had || (had.level ?? 0) < foe.level) p.mons[id] = { ...(had || {}), level: foe.level, xp: had && had.level === foe.level ? had.xp : 0 };
       if (p.team.length < 6 && !p.team.includes(id)) p.team.push(id);
+      // A shiny from the tall grass is saved in the SAME commit as the catch,
+      // so a closed app on the win card never leaves it a plain one.
+      if (wild && params.shiny === true) {
+        if (!Array.isArray(p.shinies)) p.shinies = [];
+        if (!p.shinies.includes(id)) p.shinies.push(id);
+      }
+    }
+    // A Road win (trainer, leader, Old Venusaur, rival) is saved NOW too, not
+    // only when road.js mounts: the evolve screen can sit in between, and the
+    // app can close there. road.js re-applies (idempotent) and celebrates
+    // from these marks. A coop ride-along settles its own road.
+    if (!coop && typeof onEnd === 'string' && (result === 'win' || result === 'lose')) {
+      try {
+        const o = settleRoadEnd(p, onEnd, result);
+        if (o.outcome || o.gOutcome || o.rOutcome) roadApplied = roadMarks(o);
+      } catch (e) { console.warn('battle: road result not applied early', e); }
     }
     try { store.commit(); } catch (e) { /* the store reports its own save failures */ }
     return rows;
@@ -510,7 +531,25 @@ export function mount(root, ctx) {
   async function finish(ev) {
     const result = ev.fled ? 'fled' : ev.caught ? 'caught' : ev.winner === 'me' ? 'win' : 'lose';
     const rows = applyResult(ev, result) || [];
-    const leave = () => { if (!alive) return; sfx.tap(); alive = false; ctx.go(returnTo, { result, onEnd }); };
+    // Something that levelled up may evolve: core/evo.js decides (never for a
+    // prereader, never for a coop ride-along) and gives up after 4s. It starts
+    // NOW, while the win card plays, so the ▶ tap rarely waits on it.
+    const levelled = rows.filter(r => r.ups > 0).map(r => r.id);
+    const back = roadApplied ? { result, onEnd, applied: roadApplied } : { result, onEnd };
+    const route = coop || !levelled.length || result === 'fled' ? null
+      : evolveRoute(store.player(), levelled, returnTo, back).catch(() => null);
+    let ok = null;
+    const leave = async () => {
+      if (!alive) return;
+      sfx.tap();
+      alive = false;
+      // Still asking PokeAPI about evolutions: the ▶ answers at once anyway.
+      if (ok) { ok.disabled = true; ok.classList.add('bt-ok-wait'); }
+      let next = null;
+      try { next = route ? await route : null; } catch (e) { next = null; }
+      if (Array.isArray(next) && next[0] === 'evolve') ctx.go('evolve', next[1]);
+      else ctx.go(returnTo, back);
+    };
     if (result === 'fled') { leave(); return; }
     if (result !== 'lose') sfx.win();
     await pause(result === 'lose' ? 400 : 250);
@@ -518,7 +557,7 @@ export function mount(root, ctx) {
 
     const stars = result === 'lose' ? [] : [0, 1, 2].map(i => h('span', { class: 'bt-star', style: { '--i': i } }, '⭐'));
     const hero = result === 'caught'
-      ? h('div', { class: 'bt-card-hero caught' }, spriteImg(ev.caughtId ?? fighter('foe').id, { animated: true, class: 'bt-card-sprite' }), h('img', { class: 'bt-card-ball', src: ITEM('poke-ball'), alt: '' }))
+      ? h('div', { class: 'bt-card-hero caught' }, spriteImg(ev.caughtId ?? fighter('foe').id, { animated: true, shiny: wild && params.shiny === true, class: 'bt-card-sprite' }), h('img', { class: 'bt-card-ball', src: ITEM('poke-ball'), alt: '' }))
       : result === 'lose'
         ? h('div', { class: 'bt-card-hero lose' }, spriteImg(battle.state.me.team[0].id, { class: 'bt-card-sprite' }), h('span', { class: 'bt-zzz' }, '💤'))
         : null;
@@ -528,7 +567,7 @@ export function mount(root, ctx) {
       return { r, fill, lv, node: h('div', { class: 'bt-xp-row' }, spriteImg(r.id, { class: 'bt-xp-sprite' }), lv, h('span', { class: 'bt-xp-bar' }, fill)) };
     });
     let cardAt = Infinity;
-    const ok = h('button', { class: 'bt-ok', type: 'button', attrs: { 'aria-label': 'OK' }, on: { click: e => { if (fresh(e, cardAt)) leave(); } } }, '▶');
+    ok = h('button', { class: 'bt-ok', type: 'button', attrs: { 'aria-label': 'OK' }, on: { click: e => { if (fresh(e, cardAt)) leave(); } } }, '▶');
     clear(ui.card).append(h('div', { class: ['bt-card-box', result] },
       stars.length ? h('div', { class: 'bt-stars' }, stars) : null,
       hero,
@@ -570,8 +609,12 @@ export function mount(root, ctx) {
     }
     let ids = (p.team || []).filter(n => Number.isInteger(n) && n > 0).slice(0, 6);
     if (!ids.length) {
-      const stage = Math.max(1, Math.min(3, (p.bulba && p.bulba.stage) || 1));
-      ids = reader ? [(p.caught || [])[0] || 1] : [stage];
+      ids = reader ? [(p.caught || [])[0] || 1] : [bulbaIdOf(p)];
+    } else if (!reader) {
+      // Art's BULBA is never drafted out: he always leads, whatever else
+      // joined the team (a wild catch, an old team from the classic app).
+      const b = bulbaIdOf(p);
+      ids = [b, ...ids.filter(id => id !== b)].slice(0, 6);
     }
     return ids.map(id => ({ id, level: lvl(id) }));
   }

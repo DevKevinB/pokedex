@@ -9,6 +9,8 @@
 // and a layout net at 375x667, 390x844 and 1024x1366 (iPad) with screenshots.
 // Batch 2: guardians + seeds + the egg, the rival, Art's gifts as battle
 // berries, the picture lock, Family Table, Couch Versus and the postcard.
+// Batch 3: the Pokedex + team editor, tall grass, evolution, DAD'S CHALLENGE
+// (Pro Rules + seed replay) and Art's Sticker Book.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, statSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -70,7 +72,7 @@ const TINY_PNG = Buffer.from(
 let SPRITE_PNG = TINY_PNG;
 try { SPRITE_PNG = readFileSync(join(ROOT, 'test', 'fake-sprite.png')); } catch (e) { /* tiny fallback */ }
 
-const NAMES = { 1: 'bulbasaur', 2: 'ivysaur', 3: 'venusaur', 25: 'pikachu', 6: 'charizard', 7: 'squirtle' };
+const NAMES = { 1: 'bulbasaur', 2: 'ivysaur', 3: 'venusaur', 25: 'pikachu', 6: 'charizard', 7: 'squirtle', 10: 'caterpie', 11: 'metapod', 12: 'butterfree' };
 function pokemonFixture(id) {
   return {
     id, name: NAMES[id] || `mon-${id}`, height: 7, weight: 69, base_experience: 64,
@@ -81,11 +83,20 @@ function pokemonFixture(id) {
       { base_stat: 50, stat: { name: 'special-defense' } }, { base_stat: 60, stat: { name: 'speed' } },
     ],
     sprites: { front_default: null },
-    moves: ['tackle', 'quick-attack', 'body-slam', 'headbutt', 'growl']
+    // thunder-wave: a status move only Pro Rules deal in (seedMoveset skips status moves).
+    moves: ['tackle', 'quick-attack', 'body-slam', 'headbutt', 'growl', 'thunder-wave']
       .map(n => ({ move: { name: n, url: '' } })),
   };
 }
-const speciesFixture = id => ({ id, name: NAMES[id] || `mon-${id}`, capture_rate: 190, is_legendary: false });
+// Only the Caterpie line has an evolution chain, so no other smoke battle
+// can wander into the evolve screen.
+const CATERPIE_CHAIN = 'https://pokeapi.co/api/v2/evolution-chain/4/';
+const spUrl = id => `https://pokeapi.co/api/v2/pokemon-species/${id}/`;
+const speciesFixture = id => ({ id, name: NAMES[id] || `mon-${id}`, capture_rate: 190, is_legendary: false,
+  ...([10, 11, 12].includes(id) ? { evolution_chain: { url: CATERPIE_CHAIN } } : {}) });
+const caterpieChain = () => ({ id: 4, chain: { species: { name: 'caterpie', url: spUrl(10) }, evolution_details: [], evolves_to: [
+  { species: { name: 'metapod', url: spUrl(11) }, evolution_details: [{ min_level: 7 }], evolves_to: [
+    { species: { name: 'butterfree', url: spUrl(12) }, evolution_details: [{ min_level: 10 }], evolves_to: [] }] }] } });
 
 const OFFSITE = [];
 async function mockRoutes(context) {
@@ -94,7 +105,8 @@ async function mockRoutes(context) {
     const s = url.match(/pokemon-species\/(\d+)/);
     const p = url.match(/\/pokemon\/(\d+)\/?$/);
     let body = null;
-    if (s) body = speciesFixture(+s[1]);
+    if (/evolution-chain\/4\/?$/.test(url)) body = caterpieChain();
+    else if (s) body = speciesFixture(+s[1]);
     else if (p) body = pokemonFixture(+p[1]);
     if (!body) return route.fulfill({ status: 404, body: 'Not Found', headers: { 'Access-Control-Allow-Origin': '*' } });
     return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(body) });
@@ -233,7 +245,13 @@ async function layout(page) {
       const fs = parseFloat(getComputedStyle(el).fontSize);
       if (fs < 8) tiny.push(`${el.className || el.tagName} ${fs}px`);
     }
-    return { outside, tiny };
+    // A native append(null) prints the word "null": catch leaked junk words.
+    const junk = [];
+    const tw = document.createTreeWalker(document.getElementById('app') || document.body, NodeFilter.SHOW_TEXT);
+    for (let n = tw.nextNode(); n; n = tw.nextNode()) {
+      if (/\b(null|undefined|NaN|\[object Object\])\b/.test(n.textContent) && n.parentElement && visible(n.parentElement)) junk.push(n.textContent.trim().slice(0, 40));
+    }
+    return { outside, tiny, junk };
   });
 }
 // Words a prereader would see: visible text, minus numbers, emoji,
@@ -264,6 +282,7 @@ async function layoutCheck(page, label, size) {
   const r = await layout(page);
   check(`${label} ${size}: no button outside the viewport`, r.outside.length === 0, r.outside.slice(0, 4).join(' ; '));
   check(`${label} ${size}: all visible text >= 8px`, r.tiny.length === 0, r.tiny.slice(0, 4).join(' ; '));
+  check(`${label} ${size}: no null/undefined/NaN on screen`, r.junk.length === 0, r.junk.slice(0, 4).join(' ; '));
 }
 async function shot(page, name) {
   await page.screenshot({ path: join(SHOTS, name + '.png') });
@@ -1081,13 +1100,402 @@ const clickEl = (page, sel) => page.evaluate(s => { const el = document.querySel
   await finishPage('play together', P);
 }
 
+// ============================================================ batch 3 helpers
+// A trail of every scene shown, so a test can prove one was NEVER visited.
+async function startTrail(page) {
+  await page.evaluate(() => {
+    window.__trail = [];
+    clearInterval(window.__trailT);
+    window.__trailT = setInterval(() => { const s = window.__scene; if (s && window.__trail[window.__trail.length - 1] !== s) window.__trail.push(s); }, 30);
+  });
+}
+const trail = page => page.evaluate(() => window.__trail || []);
+const b3Save = () => ({ version: 3, created: '2026-09-01', players: {
+  1: { name: 'GABE', profile: 'reader', caught: [1, 4, 6, 7, 10, 25, 133, 150], team: [6, 25, 133],
+    mons: { 6: { level: 60, xp: 0 }, 25: { level: 58, xp: 0 }, 133: { level: 55, xp: 0 }, 10: { level: 6, xp: 84 } },
+    favorites: [1, 4, 6, 7, 25, 133], shinies: [25], nicks: { 6: 'BLAZE' }, items: { masterBalls: 3 },
+    road: { chapter: 1, cleared: clearedThrough(1), bloomed: [0] } },
+  2: { name: 'ART', profile: 'prereader', caught: [1, 7, 10, 16, 19, 25, 133, 129, 74], team: [10],
+    mons: { 10: { level: 6, xp: 84 } }, shinies: [133], nicks: { 25: 'PIKA' },
+    bulba: { petals: 14, stage: 1, stayStone: false, visitors: [16, 19] } },
+}, family: { postcards: 2, lastPostcard: '2026-09-20', versus: { gabe: 1, dad: 1 } } });
+
+// ============================================================ 13. Pokedex + team editor
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(b3Save()) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  check('road: header has the Pokédex and team buttons', (await page.locator('.road-dex').count()) === 1 && (await page.locator('.road-team .road-tool-sprite').count()) === 1);
+  await fitAll(page, 'road (batch 3 header)', { shotName: 'b3-road' });
+  await page.locator('.road-dex').click();
+  await waitScene(page, 'dex');
+  check('dex: the grid holds all 649', (await page.locator('.dex-cell').count()) === 649);
+  check('dex: caught ones are lit', (await page.locator('.dex-cell.is-caught').count()) === 8);
+  await fitAll(page, 'dex grid', { shotName: 'b3-dex' });
+  await page.locator('.dex-cell[data-id="25"]').click();
+  await page.waitForSelector('.dex-card', { timeout: 5000 });
+  check('dex: the detail card opens', await page.locator('.dex-card.is-caught').isVisible());
+  await fitAll(page, 'dex card', { shotName: 'b3-dex-card' });
+  // NAME ME: the keypad only types A-Z and space, and caps at 10.
+  await page.locator('.dex-nameme').click();
+  await page.waitForSelector('.dex-kp', { timeout: 5000 });
+  await fitAll(page, 'dex keypad', { shotName: 'b3-dex-keypad' });
+  await page.locator('.dex-kp-clr').click();
+  await page.keyboard.type('sp<a>&rky"99 thunderbolt');
+  await page.locator('.dex-kp-ok').click();
+  const nick = (await v3(page))?.players?.[1]?.nicks?.[25];
+  check('dex: nickname saved, cleaned and capped at 10', typeof nick === 'string' && /^[A-Z ]{1,10}$/.test(nick) && nick.startsWith('SPARKY'), JSON.stringify(nick));
+  await page.locator('.dex-close').click();
+  // Favourites: six stars is the cap; a seventh offers a swap, never a "no".
+  await page.locator('.dex-cell[data-id="150"]').click();
+  await page.waitForSelector('.dex-card', { timeout: 5000 });
+  await page.locator('.dex-fav').click();
+  check('dex: a 7th star shows the swap row', await page.locator('.dex-favswap:not([hidden])').isVisible());
+  check('dex: the cap holds at 6', ((await v3(page))?.players?.[1]?.favorites || []).length === 6);
+  await page.locator('.dex-favswap-b').first().click({ force: true });
+  const favs = (await v3(page))?.players?.[1]?.favorites || [];
+  check('dex: a swap moves a star (still 6)', favs.length === 6 && favs.includes(150) && !favs.includes(1), JSON.stringify(favs));
+  await page.locator('.dex-close').click();
+  // Team editor: tap two filled slots to swap them; that changes the LEAD.
+  await page.locator('.dex-teambtn').click();
+  await waitScene(page, 'team');
+  await fitAll(page, 'team editor', { shotName: 'b3-team' });
+  await page.locator('.team-slot[data-slot="0"]').click();
+  await page.locator('.team-slot[data-slot="1"]').click();
+  const team = (await v3(page))?.players?.[1]?.team || [];
+  check('team: swapping slots 1 and 2 changes the lead', team[0] === 25 && team[1] === 6, JSON.stringify(team));
+  await page.locator('.team-back').click();
+  await waitScene(page, 'dex');
+  await page.locator('.dex-back').click();
+  await waitScene(page, 'road');
+  check('dex: BACK returns to the road', (await scene(page)) === 'road');
+  // Art's Pokedex: pictures and numbers only.
+  await page.evaluate(() => { localStorage.setItem('pokedexos_next_lastplayer', '2'); window.__go('who'); });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  await page.evaluate(() => window.__go('dex', { returnTo: 'garden' }));
+  await waitScene(page, 'dex');
+  await fitAll(page, 'dex (prereader)', { words: true, shotName: 'b3-dex-pre' });
+  await page.locator('.dex-cell.is-caught').first().click();
+  await page.waitForSelector('.dex-card', { timeout: 5000 });
+  await fitAll(page, 'dex card (prereader)', { words: true, shotName: 'b3-dex-card-pre' });
+  check('dex (prereader): only his own Pokemon, never a silhouette', (await page.locator('.dex-cell.is-shadow').count()) === 0 && (await page.locator('.dex-cell.is-caught').count()) > 0);
+  // Fixer: Art's BULBA is never drafted out. His save has team [10] (Caterpie),
+  // but Bulba still leads his fights; the Road header has no team editor for
+  // him, and its book opens his Sticker Book.
+  await page.evaluate(() => window.__go('road'));
+  await waitScene(page, 'road');
+  check('road (prereader): no team editor button', !(await page.locator('.road-team').isVisible()));
+  await page.locator('.road-dex').click();
+  await waitScene(page, 'book');
+  check('road (prereader): the book button opens his Sticker Book', (await scene(page)) === 'book');
+  await page.evaluate(() => window.__go('battle', { enemyTeam: [{ id: 16, level: 3 }], returnTo: 'garden' }));
+  await page.waitForSelector('.bt[data-ready="1"] .bt-sprite-me', { timeout: 10000 });
+  const artLead = await page.locator('.bt-sprite-me').first().getAttribute('src');
+  check('battle (prereader): BULBA leads even with a team of his own', /\/back\/1\.(gif|png)$/.test(artLead || ''), artLead);
+  await finishPage('dex + team', P);
+}
+
+// ============================================================ 14. tall grass -> wild battle -> catch
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(b3Save()) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  await page.locator('.road-node[data-chapter="0"]').click({ force: true });
+  await page.waitForSelector('.chapter-grass', { timeout: 5000 });
+  check('road: a bloomed chapter shows TALL GRASS', await page.locator('.chapter-grass').isVisible());
+  await fitAll(page, 'chapter with tall grass', { shotName: 'b3-chapter-grass' });
+  await page.locator('.chapter-grass').click();
+  await waitScene(page, 'wild');
+  check('wild: straight into chapter 1\'s grass', await page.locator('.wild[data-view="grass"][data-place="0"]').count() === 1);
+  await fitAll(page, 'wild grass', { shotName: 'b3-wild' });
+  const hot = await page.locator('.wild').getAttribute('data-hot');
+  const enc = await page.locator('.wild').getAttribute('data-encounter');
+  const encId = Number(String(enc).split(':')[0]);
+  const caughtBefore = (await v3(page))?.players?.[1]?.caught || [];
+  await page.locator(`.wild-tuft[data-i="${hot}"]`).click();
+  await waitScene(page, 'battle', 10000);
+  await page.waitForSelector('.bt[data-ready="1"]', { timeout: 10000 });
+  check('wild: the battle is a wild one (a ball button)', (await page.locator('.bt-act-ball').count()) === 1);
+  await page.locator('.bt-act-ball').click();
+  await page.locator('.bt-ballbtn.ball-master').click();
+  for (let i = 0; i < 40 && (await scene(page)) === 'battle'; i++) {
+    const ok = page.locator('.bt-ok:visible');
+    if (await ok.count()) await ok.first().click({ force: true }).catch(() => {});
+    await page.waitForTimeout(150);
+  }
+  await waitScene(page, 'wild', 10000).catch(() => {});
+  const after = await v3(page);
+  check('wild: back in the grass after the catch', (await scene(page)) === 'wild');
+  check('wild: the catch is added to caught', (after?.players?.[1]?.caught || []).includes(encId), `${enc} ${JSON.stringify(caughtBefore)}`);
+  check('wild: explores counted', (after?.players?.[1]?.stats?.explores | 0) >= 1);
+  await fitAll(page, 'wild (after catch)', { shotName: 'b3-wild-after' });
+  await page.evaluate(() => window.__go('wild'));
+  await waitScene(page, 'wild');
+  await fitAll(page, 'wild picker', { shotName: 'b3-wild-picker' });
+  await finishPage('wild', P);
+}
+
+// ============================================================ 15. evolution (reader asks; WAIT keeps it; Art never sees it)
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(b3Save()) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  const fight = () => page.evaluate(() => window.__go('battle', { enemyTeam: [{ id: 19, level: 2 }], trainer: null, wild: true, returnTo: 'wild', onEnd: 'wild:0:19:0', myTeam: [{ id: 10 }] }));
+  await fight();
+  await waitScene(page, 'battle');
+  await fightToEnd(page, 'evolve', 80);
+  await waitScene(page, 'evolve', 10000).catch(() => {});
+  check('evolve: a Pokemon at its level gets the evolve screen', (await scene(page)) === 'evolve' && (await page.locator('.evo-stage[data-step="ask"][data-id="10"]').count()) === 1);
+  await fitAll(page, 'evolve (ask)', { shotName: 'b3-evolve-ask' });
+  await page.locator('.evo-wait').click();
+  await waitScene(page, 'wild', 10000).catch(() => {});
+  let sv = await v3(page);
+  check('evolve: WAIT keeps it as it is and goes back', (await scene(page)) === 'wild' && !(sv?.players?.[1]?.caught || []).includes(11) && sv?.players?.[1]?.mons?.[10]?.level === 7);
+  // The question comes back: EVOLVE this time (straight through the route).
+  await page.evaluate(() => window.__go('evolve', { queue: [{ id: 10, options: [{ id: 11, name: 'metapod' }] }], returnTo: 'road' }));
+  await waitScene(page, 'evolve');
+  await page.locator('.evo-go').click();
+  await page.waitForSelector('.evo-stage[data-step="evolving"]', { timeout: 5000 });
+  await fitAll(page, 'evolve (glow)', { shotName: 'b3-evolve-glow' });
+  await page.waitForSelector('.evo-ok', { timeout: 10000 });
+  sv = await v3(page);
+  const g = sv?.players?.[1] || {};
+  check('evolve: EVOLVE adds the new one and keeps the old one in caught', (g.caught || []).includes(10) && (g.caught || []).includes(11), JSON.stringify(g.caught));
+  check('evolve: the new one carries the level', (g.mons?.[11]?.level | 0) >= 7);
+  await page.locator('.evo-ok').click();
+  await waitScene(page, 'road');
+  // Art: his Caterpie levels up too, but he never meets the evolve screen.
+  await page.evaluate(() => { localStorage.setItem('pokedexos_next_lastplayer', '2'); window.__go('who'); });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  await startTrail(page);
+  await page.evaluate(() => window.__go('battle', { enemyTeam: [{ id: 19, level: 2 }], trainer: null, wild: true, returnTo: 'garden', onEnd: null, myTeam: [{ id: 10 }] }));
+  await waitScene(page, 'battle');
+  await fightToEnd(page, 'garden', 80);
+  await waitScene(page, 'garden', 10000).catch(() => {});
+  await page.evaluate(() => window.__go('evolve', { queue: [{ id: 10, options: [{ id: 11 }] }], returnTo: 'garden' }));
+  await page.waitForTimeout(600);
+  const art = (await v3(page))?.players?.[2] || {};
+  const t = await trail(page);
+  check('evolve: a prereader never sees the evolve screen', !t.includes('evolve') && (await scene(page)) === 'garden', JSON.stringify(t));
+  check('evolve: Art\'s Caterpie did level up (and did not change)', (art.mons?.[10]?.level | 0) >= 7 && !(art.caught || []).includes(11));
+  await finishPage('evolve', P);
+}
+
+// ============================================================ 16. DAD'S CHALLENGE: Pro Rules + seed replay
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(b3Save()) });
+  const { page } = P;
+  const tap = async sel => { await page.waitForTimeout(300); await page.locator(sel).first().click(); };
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  const g = await page.locator('.who-gear').boundingBox();
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(2200);
+  await page.mouse.up();
+  await page.locator('.gu-challenge').click();
+  await waitScene(page, 'challenge');
+  check('challenge: the grown-up panel opens DAD\'S CHALLENGE', (await scene(page)) === 'challenge');
+  check('challenge: never calm-gated', await page.evaluate(() => !document.body.classList.contains('calm')));
+  check('challenge: only beaten leaders are open', (await page.locator('.ch-leader:not(.locked)').count()) === 1);
+  await fitAll(page, 'challenge picker', { shotName: 'b3-challenge-pick' });
+  await tap('.ch-leader[data-chapter="0"]');
+  await page.waitForSelector('.ch-code', { timeout: 5000 });
+  const code = (await page.locator('.ch-code').innerText()).trim();
+  check('challenge: a seed code like MOSSY-714', /^[A-Z]{2,10}-\d{3}$/.test(code), code);
+  await fitAll(page, 'challenge preview', { shotName: 'b3-challenge-preview' });
+
+  // Play N turns with a fixed script, recording what the screen shows after each.
+  async function playScript(first) {
+    await page.waitForSelector('.ch[data-ready="1"] .ch-moves .bt-move:not([disabled])', { timeout: 20000 });
+    const log = [];
+    let status = false;
+    for (let k = 0; k < 5; k++) {
+      if (await page.locator('.ch-card').count()) break;
+      const st = page.locator('.ch-moves .ch-move-status:not([disabled])');
+      const mv = k === 0 && await st.count() ? st.first() : page.locator('.ch-moves .bt-move:not([disabled])').first();
+      await page.waitForTimeout(300);   // a tap within 250ms of a new screen is ignored by design
+      await mv.click();
+      await page.waitForFunction(() => document.querySelector('.ch-card') || document.querySelector('.ch-moves .bt-move:not([disabled])'), null, { timeout: 20000 });
+      await page.waitForTimeout(100);
+      const snap = await page.evaluate(() => ({
+        hp: [...document.querySelectorAll('.ch .fs-hp-fill')].map(e => e.style.width),
+        mons: [...document.querySelectorAll('.ch .fs-mon')].map(e => e.textContent),
+        st: [...document.querySelectorAll('.ch .ch-chip-st')].map(e => e.dataset.status),
+        stage: [...document.querySelectorAll('.ch .ch-chip-stage')].map(e => e.dataset.stat + e.textContent),
+        intent: (document.querySelector('.ch-intent') || {}).dataset?.intent || null,
+      }));
+      if (snap.st.length) status = true;
+      log.push(snap);
+      if (k === 0 && first) await fitAll(page, 'challenge fight', { shotName: 'b3-challenge-fight' });
+    }
+    return { log, status };
+  }
+  await tap('.ch-fight');
+  const a = await playScript(true);
+  // Back out, then type the same code in.
+  if (await page.locator('.ch-card').count()) await tap('.ch-card-back');
+  else await tap('.ch-home');
+  await page.waitForSelector('.ch-seed-in', { timeout: 5000 });
+  await page.locator('.ch-seed-in').fill(code.toLowerCase().replace('-', ' '));
+  await tap('.ch-seed-go');
+  await page.waitForSelector('.ch-fight', { timeout: 5000 });
+  check('challenge: a typed code opens the same code', (await page.locator('.ch-code').innerText()).trim() === code);
+  await tap('.ch-fight');
+  const b = await playScript(false);
+  check('challenge: a status effect lands under Pro Rules', a.status, JSON.stringify(a.log[0]));
+  const firstDiff = a.log.findIndex((x, k) => JSON.stringify(x) !== JSON.stringify(b.log[k]));
+  check('challenge: the same seed code replays identically (' + a.log.length + ' turns)', a.log.length > 1 && a.log.length === b.log.length && firstDiff < 0,
+    `turn ${firstDiff}: ${JSON.stringify(a.log[firstDiff])} vs ${JSON.stringify(b.log[firstDiff])}`);
+  // Finish the fight (give up is two taps) and see the card.
+  if (!(await page.locator('.ch-card').count())) {
+    await tap('.ch-act-quit');
+    await tap('.ch-act-quit');
+  }
+  await page.waitForSelector('.ch-card', { timeout: 10000 });
+  await fitAll(page, 'challenge card', { shotName: 'b3-challenge-card' });
+  // A won fight writes a ribbon to family.challenge; win one to check.
+  await tap('.ch-card-back');
+  await tap('.ch-leader[data-chapter="0"]');
+  await tap('.ch-fight');
+  await page.waitForSelector('.ch[data-ready="1"] .ch-moves .bt-move:not([disabled])', { timeout: 20000 });
+  for (let k = 0; k < 60 && !(await page.locator('.ch-card').count()); k++) {
+    const mv = page.locator('.ch-moves .bt-move:not(.ch-move-status):not([disabled])');
+    if (await mv.count()) await mv.first().click().catch(() => {});
+    else { const sw = page.locator('.ch-team-pick button:not([disabled])'); if (await sw.count()) await sw.first().click().catch(() => {}); }
+    await page.waitForTimeout(150);
+  }
+  const won = (await page.locator('.ch-card[data-result="win"]').count()) === 1;
+  const wins = (await v3(page))?.family?.challenge?.wins || [];
+  check('challenge: a win is saved as a ribbon (family.challenge)', won && (wins.length === 1 && wins[0].who === 'dad' && /^[A-Z]{2,10}-\d{3}$/.test(wins[0].code)), JSON.stringify({ won, wins }));
+  check('challenge: the Pro fight wrote no XP', JSON.stringify((await v3(page))?.players?.[1]?.mons) === JSON.stringify(b3SaveMons()));
+  await tap('.ch-card-back');
+  await tap('.ch-back');
+  await waitScene(page, 'who');
+  await finishPage('challenge', P);
+}
+
+// ============================================================ 17b. challenge: BACK in the middle of a turn
+// Real pacing (no ?fast=1), so the turn is still playing when BACK is tapped.
+// The old turn loop must stop: no OH NO, no ribbon for a fight never won.
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(b3Save()) });
+  const { page } = P;
+  const tap = async sel => { await page.waitForTimeout(300); await page.locator(sel).first().click(); };
+  await page.goto(BASE + '?seed=1', { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  const g = await page.locator('.who-gear').boundingBox();
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(2200);
+  await page.mouse.up();
+  await page.locator('.gu-challenge').click();
+  await waitScene(page, 'challenge');
+  let midTurn = 0;
+  for (let round = 0; round < 3; round++) {
+    await tap('.ch-leader[data-chapter="0"]');
+    await tap('.ch-fight');
+    await page.waitForSelector('.ch[data-ready="1"] .ch-moves .bt-move:not([disabled])', { timeout: 20000 });
+    await tap('.ch-moves .bt-move:not(.ch-move-status):not([disabled])');
+    await page.waitForTimeout(320 + round * 250);
+    if (await page.locator('.ch-moves .bt-move[disabled]').count()) midTurn++;
+    await page.locator('.ch-home').first().click();
+    await page.waitForSelector('.ch-seed-in', { timeout: 5000 });
+    await page.waitForTimeout(3500);   // let the old turn's waits run out
+  }
+  check('challenge: BACK was tapped while a turn was playing', midTurn > 0, String(midTurn));
+  check('challenge: BACK mid-turn never ends on OH NO', !(await page.locator('.oops-card').count()) && (await scene(page)) === 'challenge');
+  check('challenge: BACK mid-turn writes no ribbon', ((await v3(page))?.family?.challenge?.wins || []).length === 0);
+  await finishPage('challenge back mid-turn', P);
+}
+function b3SaveMons() {
+  // What cleanMons makes of b3Save().players[1].mons (keys as strings, same order)
+  return JSON.parse(JSON.stringify(b3Save().players[1].mons));
+}
+
+// ============================================================ 17. Art's Sticker Book
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(b3Save()) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  check('garden: has a book button', (await page.locator('.gd-book').count()) === 1);
+  await fitAll(page, 'garden (book button)', { words: true, shotName: 'b3-garden' });
+  const before = await page.evaluate(() => localStorage.getItem('pokedexos_save_v3'));
+  await tapCenter(page, '.gd-book');
+  await waitScene(page, 'book');
+  check('book: calm-gated like the garden', await page.evaluate(() => document.body.classList.contains('calm')));
+  await fitAll(page, 'book cover', { words: true, shotName: 'b3-book-cover' });
+  const pages = Number(await page.locator('.bk').getAttribute('data-pages'));
+  // Swipe left once: page 2.
+  const vb = await page.locator('.bk-view').boundingBox();
+  await page.mouse.move(vb.x + vb.width * 0.8, vb.y + vb.height / 2);
+  await page.mouse.down();
+  for (let k = 1; k <= 8; k++) await page.mouse.move(vb.x + vb.width * 0.8 - k * 25, vb.y + vb.height / 2);
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  check('book: a swipe turns the page', (await page.locator('.bk').getAttribute('data-page')) === '1');
+  await fitAll(page, 'book page', { words: true, shotName: 'b3-book-page' });
+  for (let k = 1; k < pages; k++) { await page.locator('.bk-next').click(); await page.waitForTimeout(80); }
+  const stickers = await page.locator('.bk-page[data-kind="habitat"] .bk-sticker').count();
+  const caught = new Set(b3Save().players[2].caught).size;
+  check('book: one sticker per caught Pokemon', stickers === caught, `${stickers} vs ${caught}`);
+  if ((await page.locator('.bk').getAttribute('data-kind')) === 'post') await fitAll(page, 'book postcards', { words: true, shotName: 'b3-book-post' });
+  const words = await visibleWords(page, NAMES_OK);
+  check('book: no words anywhere in the book', words.length === 0, words.slice(0, 4).join(' | '));
+  await page.locator('.bk-back').click();
+  await waitScene(page, 'garden');
+  check('book: never writes the save', (await page.evaluate(() => localStorage.getItem('pokedexos_save_v3'))) === before);
+  await finishPage('book', P);
+}
+
+// ============================================================ 18. versus menu -> challenge -> back
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(b3Save()) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.evaluate(() => window.__go('versus', { battler: 1 }));
+  await waitScene(page, 'versus');
+  await page.waitForSelector('.vs-challenge', { timeout: 5000 });
+  await fitAll(page, 'versus setup (challenge button)', { shotName: 'b3-versus-setup' });
+  await page.locator('.vs-challenge').click();
+  await waitScene(page, 'challenge');
+  await page.waitForTimeout(300);
+  await page.locator('.ch-back').click();
+  await waitScene(page, 'versus');
+  check('versus: DAD\'S CHALLENGE and back', (await scene(page)) === 'versus');
+  await finishPage('versus -> challenge', P);
+}
+
 // ============================================================ 12. offline shell + manifest
 {
   const sw = readFileSync(join(NEXT, 'sw.js'), 'utf8');
-  const missing = ['hatch', 'together', 'family-table', 'versus', 'lock', 'postcard']
+  const missing = ['hatch', 'together', 'family-table', 'versus', 'lock', 'postcard', 'dex', 'team', 'wild', 'evolve', 'challenge', 'book']
     .filter(n => !sw.includes(`'./scenes/${n}.js'`));
   check('sw: every new scene is in the offline list', missing.length === 0, missing.join(','));
-  check('sw: cache bumped to alpha.2', sw.includes("'sprout-20.0.0-alpha.2'"));
+  // Same rule tools/release.mjs enforces: every module under next/ (not tests) is listed.
+  const walkMods = (dir, rel) => readdirSync(dir, { withFileTypes: true }).flatMap(d =>
+    d.isDirectory() ? (d.name === 'test' ? [] : walkMods(join(dir, d.name), `${rel}${d.name}/`))
+      : d.name.endsWith('.js') && !(rel === '' && d.name === 'sw.js') ? [`${rel}${d.name}`] : []);
+  const unlisted = walkMods(NEXT, '').filter(f => !sw.includes(`'./${f}'`));
+  check('sw: every Sprout Road module is in the offline list', unlisted.length === 0, unlisted.join(','));
+  check('sw: has a sprout- cache name (release.mjs bumps it)', /const NEXT_CACHE = 'sprout-[0-9A-Za-z.-]+'/.test(sw));
   const man = JSON.parse(readFileSync(join(NEXT, 'manifest.webmanifest'), 'utf8'));
   check('manifest: Sprout Road, own scope, standalone portrait',
     man.name === 'Sprout Road' && man.start_url === './' && man.scope === './' && man.display === 'standalone' && man.orientation === 'portrait');

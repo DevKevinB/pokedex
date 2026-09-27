@@ -91,6 +91,8 @@ export function mount(root, ctx) {
 
   const homeBtn = btn('gd-home', 'home', () => { play('tap'); flush(); ctx.go('who'); }, h('span', { class: 'gd-emo' }, E.home));
   const roadBtn = btn('gd-road', 'road', () => { play('tap'); flush(); ctx.go('road', { peek: true, from: 'garden' }); }, h('span', { class: 'gd-emo' }, E.sign));
+  // His Sticker Book (batch 3): every Pokemon he caught, as stickers.
+  const bookBtn = btn('gd-book', 'book', () => { play('tap'); flush(); ctx.go('book', { returnTo: 'garden' }); }, h('span', { class: 'gd-emo' }, '\u{1F4D6}'));
 
   const berryNum = h('span', { class: 'gd-badge' });
   const basketBtn = btn('gd-basket', 'berries', () => toggleBerryMode(),
@@ -118,7 +120,7 @@ export function mount(root, ctx) {
   const scene = h('div', { class: 'gd' },
     sky, hillsFar, hillsNear, field, fx,
     h('div', { class: 'gd-top' }, homeBtn, meter, roadBtn),
-    h('div', { class: 'gd-bottom' }, basketBtn, ballBtn),
+    h('div', { class: 'gd-bottom' }, basketBtn, bookBtn, ballBtn),
     drawerShade, drawer);
   root.classList.add('garden-scene');
   root.appendChild(scene);

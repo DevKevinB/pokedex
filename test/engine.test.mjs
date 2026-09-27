@@ -6,7 +6,7 @@ import {
   computeStats, computeDamage, catchProbability, xpThreshold, xpForKO,
   applyXp, xpProgress, pickMove, usableMoves, clampPower, shuffle, wildLevel,
   MAX_HIT_FRACTION, JUNIOR_MIN_HIT, JUNIOR_MAX_TAKE
-} from '../js/engine.js';
+} from '../classic/js/engine.js';
 
 // A fixed rng so every assertion below is deterministic.
 const rngOf = (...vals) => { let i = 0; return () => vals[Math.min(i++, vals.length - 1)]; };

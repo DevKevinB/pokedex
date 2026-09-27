@@ -107,6 +107,10 @@ export const store = {
   addPostcard(date) { const v = V.addPostcard(store.save, date); commit(); return v; },
   /** Couch Versus: 'gabe' | 'dad' won. -> {gabe, dad} or null for anything else. */
   addVersusWin(winner) { const v = V.addVersusWin(store.save, winner); if (v) commit(); return v; },
+  /** DAD'S CHALLENGE: 'dad' | 'reader' beat seed `code` (e.g. 'MOSSY-714'). -> the wins, or null (nothing written) for a bad code/who. */
+  addChallengeWin(code, who, date) { const v = V.addChallengeWin(store.save, code, who, date); if (v) commit(); return v; },
+  /** DAD'S CHALLENGE wins, oldest first: [{code, who, date}]. */
+  challengeWins() { return V.cleanChallenge(store.save.family && store.save.family.challenge).wins; },
   /** Set (exactly 3 dex ids) or clear (null) player n's picture-lock. Invalid pics change nothing. -> the stored lock. */
   setLock(n, pics) {
     const p = store.save.players[Number(n) === 2 ? 2 : 1];

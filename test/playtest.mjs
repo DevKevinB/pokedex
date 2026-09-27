@@ -23,7 +23,7 @@ import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BASE = 'http://127.0.0.1:8321';
+const BASE = 'http://127.0.0.1:8321/classic';   // v20: the classic app moved to /classic/
 const HERE = new URL('.', import.meta.url).pathname;
 const MODE = process.env.MODE === 'junior' ? 'junior' : 'normal';
 const ONLY = process.env.SCRIPT || '';

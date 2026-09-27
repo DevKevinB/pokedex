@@ -10,7 +10,10 @@
 // ============================================================
 
 import { typeChart } from './config.js';
-import { CHAPTERS, isChapterDone, currentChapter } from './chapters.js';
+import {
+  CHAPTERS, isChapterDone, currentChapter,
+  applyWin, applyGuardianWin, parseGuardianEnd, seedCount, readyToHatch
+} from './chapters.js';
 
 export const RIVAL_NAME = 'RIVAL THORN';
 
@@ -191,4 +194,55 @@ export function applyRivalResult(p, onEnd, result) {
     rv.losses = Math.min(99999, rv.losses + 1);
   }
   return { i, result };
+}
+
+// ============================================================
+// A ROAD RESULT, SAVED EARLY (batch 3 fixer)
+// battle.js saves a Road win/lose in the same commit as the XP, because the
+// evolve screen can sit between the battle and road.js. road.js then calls
+// roadReturn() with the marks the battle handed back: the save is re-applied
+// (idempotent) and the celebration (bloom, seed, rival bye) still plays.
+// ============================================================
+
+/** Apply every Road outcome of one battle. Mutates p (caller commits). */
+export function settleRoadEnd(p, onEnd, result) {
+  let outcome = null, gOutcome = null, rOutcome = null;
+  if (result === 'win' && onEnd) {
+    outcome = applyWin(p, onEnd);
+    gOutcome = applyGuardianWin(p, onEnd);
+  }
+  if (onEnd && (result === 'win' || result === 'lose')) rOutcome = applyRivalResult(p, onEnd, result);
+  return { outcome, gOutcome, rOutcome };
+}
+
+/** Plain primitives for route params: what the early apply changed. */
+export const roadMarks = o => ({
+  bloom: !!(o && o.outcome && o.outcome.bloom),
+  seed: !!(o && o.gOutcome),
+  rival: o && o.rOutcome ? o.rOutcome.result : ''
+});
+
+/**
+ * road.js on the way back from a battle. With no marks (an older route, or
+ * the battle could not apply early) this is settleRoadEnd. With marks, the
+ * win is re-applied (a no-op normally, a repair if the early write was lost)
+ * and the outcomes are rebuilt from the marks so the celebration still plays;
+ * the rival is NOT counted twice.
+ */
+export function roadReturn(p, onEnd, result, applied) {
+  const early = applied && typeof applied === 'object' && !Array.isArray(applied) ? applied : null;
+  if (!early) return settleRoadEnd(p, onEnd, result);
+  let outcome = null, gOutcome = null, rOutcome = null;
+  if (result === 'win' && onEnd) {
+    outcome = applyWin(p, onEnd);
+    if (outcome && early.bloom === true) outcome = { ...outcome, bloom: true };
+    gOutcome = applyGuardianWin(p, onEnd);
+    if (!gOutcome && early.seed === true) {
+      const i = parseGuardianEnd(onEnd);
+      if (i >= 0) gOutcome = { i, seeds: seedCount(p), hatch: readyToHatch(p) };
+    }
+  }
+  const ri = parseRivalEnd(onEnd);
+  if (ri >= 0 && early.rival === result && (result === 'win' || result === 'lose')) rOutcome = { i: ri, result };
+  return { outcome, gOutcome, rOutcome };
 }

@@ -7,7 +7,8 @@
 //
 // Scene contract: mod.mount(section, { go, store, params }) -> unmount().
 // Scenes: who, garden, road, battle, rest, hatch, together, family-table,
-// versus, lock, postcard (see ARCHITECTURE.md).
+// versus, lock, postcard, dex, team, wild, evolve, challenge, book
+// (see ARCHITECTURE.md).
 // ============================================================
 
 import { initPace, PACE } from './core/pace.js';
@@ -30,10 +31,18 @@ const SCENES = {
   versus: () => import('./scenes/versus.js'),
   lock: () => import('./scenes/lock.js'),
   postcard: () => import('./scenes/postcard.js'),
+  // batch 3
+  dex: () => import('./scenes/dex.js'),
+  team: () => import('./scenes/team.js'),
+  wild: () => import('./scenes/wild.js'),
+  evolve: () => import('./scenes/evolve.js'),
+  challenge: () => import('./scenes/challenge.js'),
+  book: () => import('./scenes/book.js'),
 };
 // Scenes that belong to both boys at once (PLAY TOGETHER): never calm-gated
 // on whoever was picked last, and never redirected by profile.
-const SHARED = new Set(['who', 'together', 'family-table', 'versus', 'lock']);
+// DAD'S CHALLENGE is a grown-up's screen, whoever was picked last.
+const SHARED = new Set(['who', 'together', 'family-table', 'versus', 'lock', 'challenge']);
 
 // ---------------------------------------------------------------- error net
 // A child never sees a stack trace. One icon-led card, one big ⟳ button.

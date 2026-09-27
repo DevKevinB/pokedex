@@ -1,0 +1,4 @@
+html, body { margin: 0; height: 100%; background: #1d3b1f; }
+.door { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; height: 100%; text-decoration: none; }
+.door img { width: 96px; height: 96px; image-rendering: pixelated; }
+.go { display: inline-flex; align-items: center; justify-content: center; width: 88px; height: 88px; border-radius: 50%; background: #5cbf5c; color: #fff; font-size: 40px; box-shadow: 0 4px 0 #2e7d32; }

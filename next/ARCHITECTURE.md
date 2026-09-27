@@ -62,6 +62,16 @@ next/scenes/versus.js      Couch Versus (reader vs DAD, curtain between picks)  
 next/scenes/lock.js        picture lock (overlay via openLock, or a route)      [together]
 next/scenes/postcard.js    FAMILY POSTCARD scene                                [postcard]
 next/ui/postcard.js        makePostcard() -> PNG Blob (canvas, CORS sprites)    [postcard]
+next/scenes/dex.js         the Pokédex grid + detail card + NAME ME keypad      [dex]
+next/scenes/dex-logic.js   pure: names, search, nicknames, favourites, team rules [dex]
+next/scenes/team.js        the team editor (slot 1 = LEAD)                      [dex]
+next/scenes/wild.js        TALL GRASS in bloomed regions (+ FARAWAY LAND)       [wild]
+next/data/habitats.js      habitats, chapter->habitat, encounter rolls          [wild]
+next/core/evo.js           evolution chains (memory-cached), evolveRoute, evolveMonIn [wild]
+next/scenes/evolve.js      the evolve screen (EVOLVE / WAIT, branch picker)     [wild]
+next/battle/rules-pro.js   createProBattle: Pro Rules (status, stages, abilities) [pro]
+next/scenes/challenge.js   DAD'S CHALLENGE: Pro rematches with seed codes       [pro]
+next/scenes/book.js        Art's Sticker Book (read-only, no words)             [book]
 next/manifest.webmanifest  'Sprout Road' PWA manifest, scope ./                 [integrator]
 next/test/*.test.mjs       node --test unit tests (pure modules)                [each owner]
 test/next-smoke.mjs        playwright smoke for /next/                          [integrator]
@@ -73,11 +83,12 @@ Every scene module exports **`mount(root, ctx)`**, which returns an
 **`unmount()`** function. `root` is an empty `<section>` the router owns.
 `ctx = { go(sceneName, params), store, params }`. Scene names are `who`,
 `garden`, `road`, `battle`, `rest`, `hatch`, `together`, `family-table`,
-`versus`, `lock`, `postcard`. An unknown name goes to `who`; `garden` for a
+`versus`, `lock`, `postcard`, and (batch 3) `dex`, `team`, `wild`, `evolve`,
+`challenge`, `book`. An unknown name goes to `who`; `garden` for a
 reader goes to `road`; `hatch` for a prereader goes to `garden`. A scene must
 clean up all of its timers, listeners and rAF in `unmount`.
 `body.calm` follows the current player's profile, except on the shared scenes
-(`who`, `together`, `family-table`, `versus`, `lock`), which are never calm-gated.
+(`who`, `together`, `family-table`, `versus`, `lock`, `challenge`), which are never calm-gated.
 
 Batch 2 params:
 - `together` / `family-table`: `{ battler:1|2, helper:1|2 }` (sanitised by `together.seatsFrom`). `versus`: `{ battler }`.
@@ -87,6 +98,27 @@ Batch 2 params:
   `chapter`/`battler`/`helper` survive in `returnParams`. Entry points: the rest scene's 📮 button
   (`returnTo:'rest'`, `returnParams:{chapter}`) and the ▶ on the Family Table / Couch Versus result card
   (`returnTo:'together'`, `returnParams:{battler, helper}`).
+
+Batch 3 params and entry points:
+- `dex` / `team`: `{ returnTo?, returnParams? }` (only a plain scene name survives; default `garden` for a
+  prereader, `road` for a reader). Entry: the Road header 📖 (dex) and lead-sprite (team) buttons; the dex
+  top bar's TEAM button goes to `team` with `{returnTo:'dex', returnParams:{returnTo}}`.
+- `wild`: `{ place:<chapterIdx>|'faraway' }` walks into that grass; `{}` is the picker; back from battle it
+  gets `{ result, onEnd:'wild:<place>:<id>:<0|1>' }`. Entry: the TALL GRASS button on a bloomed chapter screen.
+  Its battles pass `shiny:true` for a shiny encounter (the battle view shows the foe shiny).
+- `evolve`: `{ queue:[{id, options:[{id,name}]}], returnTo, returnParams, player?:1|2 }`. Reached only through
+  `core/evo.js evolveRoute()`. `returnParams` keeps primitives plus one nested level (`cleanReturnParams`).
+  **A prereader never reaches it** (`evolutionsDue` returns `[]` for him; Bulba's bud is his evolution).
+- `challenge`: `{ battler?, returnTo?:'who'|'together'|'versus', returnParams?, code? }`. Entry: the grown-up
+  panel's 🏆 DAD'S CHALLENGE (`returnTo:'who'`) and the 🏆 PRO button on Couch Versus's DAD'S TEAM panel.
+- `book`: `{ returnTo? }` (garden, road, who or together; default garden). Entry: the 📖 button in the Garden.
+  Read-only: it never writes the save.
+
+**After a battle** (`scenes/battle.js` finish, and the Family Table result card): the ids that levelled up go
+through `evolveRoute(player, ids, returnTo, {result, onEnd})`, started as the win card opens and capped at 4s.
+When something can evolve the route is `['evolve', {queue, returnTo, returnParams}]`, and the evolve screen
+then calls `go(returnTo, returnParams)`, so the Road and the grass still get `result` and `onEnd`. A
+`params.coop` ride-along (and a flee) always returns directly. The Family Table passes `player: battler`.
 
 Battle end codes (`params.onEnd`) handled by the Road: `'chapter:<i>:<j>'`, `'guardian:<i>'`
 (Old Venusaur, a win gives a seed) and `'rival:<i>'` (Rival Thorn, win or lose recorded).
@@ -118,7 +150,8 @@ export const store = {
 ```js
 { version: 3, created: 'YYYY-MM-DD',
   players: { 1: Player, 2: Player },
-  family: { postcards:0..99999, lastPostcard:'YYYY-MM-DD'|null, versus:{ gabe:0..99999, dad:0..99999 } },  // shared
+  family: { postcards:0..99999, lastPostcard:'YYYY-MM-DD'|null, versus:{ gabe:0..99999, dad:0..99999 },  // shared
+            challenge:{ wins:[{ code:'MOSSY-714', who:'dad'|'reader', date:'YYYY-MM-DD' }] (<=50) } },   // batch 3
   gifts:  { toReader:0..99 } }   // berries Art grew, waiting on the reader's Road as leaf-stamped gifts
 Player = {
   name, profile: 'reader'|'prereader',          // from v2 settings.junior
@@ -157,6 +190,16 @@ loads with the defaults above (`freshRoad()`, `lock:null`, `freshFamily()`,
   can never erase them. Per-player Road fields follow the code, like the
   rest of the player.
 - Petals / stage and caught rules are unchanged.
+
+**Batch 3 field: `family.challenge.wins`** (DAD'S CHALLENGE ribbons). Optional on disk; an older save loads
+with `{wins:[]}`. `cleanChallenge` keeps only `code` matching `/^[A-Z]{2,10}-\d{3}$/`, `who` of `dad|reader`
+and a real date; one entry per code+who (earliest date), oldest first, the newest 50 kept. `mergeV2` carries it
+through untouched (via `cleanFamily`); an import keeps BOTH sides' wins (union by code+who), like the other
+`family` ratchets. Helpers: `V.addChallengeWin(save, code, who, date?)` -> wins | null,
+`store.addChallengeWin(code, who, date?)` (commits only on a valid win), `store.challengeWins()`.
+Nothing else in batch 3 added a save field: evolution uses `caught`/`mons`/`nicks`/`shinies`/`favorites`/`team`
+(`evolveMonIn` never removes the old id), the Pokédex writes `nicks`/`favorites`, the team editor `team`,
+and the grass `stats.explores` plus `caught`/`shinies`.
 
 Helpers (pure, in `core/validate.js`; mutate the given save, clamp, never throw):
 

@@ -2,6 +2,47 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [20.0.0] - SPROUT ROAD
+
+**The switch.** The icon the boys already tap now opens Sprout Road. The
+old Pokédex is still there, one tap away, and both games share the same
+collections.
+
+### What the boys will notice
+
+- **The game they open is Sprout Road.** Art lands in Bulba's garden and
+  Gabe on the Verdant Road. Nothing they caught, levelled or won is missing.
+- **A Pokédex again, in the new game.** All 649 Pokémon, with caught ones in
+  colour. Tap one for its cry, its level and a shiny toggle if he owns the
+  shiny. Gabe can name his Pokémon with an on-screen keyboard and star up to
+  six favourites.
+- **A team editor.** Six slots with the lead wearing a crown; tap a slot,
+  then a Pokémon. Art's Bulba always leads his team and can't be benched.
+- **Tall grass.** Every region Gabe brings back to life has wild Pokémon
+  hiding in the grass. Tap the rustling grass, fight, catch. Sometimes one
+  sparkles: that's a shiny.
+- **Evolution.** When one of Gabe's Pokémon is ready, he chooses EVOLVE or
+  WAIT, and if it can become more than one thing he picks which. The old
+  form stays in his collection, so nothing is lost. For Art, evolution is
+  still only Bulba's bud, which waits for his tap.
+- **Art's Sticker Book.** A picture book where every Pokémon Art has caught
+  is a sticker that cries and bounces when he taps it. There are no empty
+  gaps or "missing" spots, just what he has.
+
+### What Kevin will notice
+
+- **Dad's Challenge** (hold ⚙ for two seconds, then 🏆). Rematch any gym leader
+  Gabe has beaten under **Pro Rules**: status effects, stat boosts, priority
+  moves, abilities, and a smarter opponent. Each fight has a code like
+  MOSSY-714 you can text Gabe so he can try the exact same fight.
+- **The old Pokédex** is at devkevinb.github.io/pokedex/classic/, and the ⚙
+  menu has a 📟 OLD POKÉDEX link. Anything caught there shows up in Sprout
+  Road the next time it opens.
+- If you ever want the old game back as the main one, tell Claude: it is one
+  undo.
+- Removing a favourite star or a nickname in the new game now sticks. It no
+  longer comes back from the old save on the next launch.
+
 ## [19.15.0] - PLAY TOGETHER
 
 Batch two of Sprout Road (still at **devkevinb.github.io/pokedex/next/**).

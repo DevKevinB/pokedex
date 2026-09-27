@@ -363,3 +363,37 @@ test('gifts: unwrap into the pouch, pouch never exceeds gifts, eaten berries lea
   p.items[BERRY_KEY] = 3;
   assert.equal(cleanPlayer(p).items[BERRY_KEY], 3);
 });
+
+// Fixer, batch 3: battle.js saves a Road result BEFORE the evolve screen;
+// road.js then re-applies it without counting anything twice.
+import { settleRoadEnd, roadMarks, roadReturn } from '../data/rival.js';
+
+test('a Road win saved early by the battle: re-applied safely, still celebrated', () => {
+  const p = fresh();
+  for (let j = 0; j < leaderIdx(0); j++) p.road.cleared[chapterKey(0, j)] = true;
+  const onEnd = 'chapter:0:' + leaderIdx(0);
+  const o = settleRoadEnd(p, onEnd, 'win');
+  const marks = roadMarks(o);
+  assert.deepEqual(marks, { bloom: true, seed: false, rival: '' });
+  assert.ok(isChapterDone(p, 0) && p.road.bloomed.includes(0), 'saved before road.js ever mounts');
+  const back = roadReturn(p, onEnd, 'win', marks);
+  assert.equal(back.outcome.bloom, true, 'the bloom still plays on the Road');
+  assert.equal(p.road.bloomed.filter(i => i === 0).length, 1);
+  // no marks at all (older route): the plain apply, still idempotent
+  assert.equal(roadReturn(p, onEnd, 'win').outcome.bloom, false);
+});
+
+test('an early Old Venusaur win keeps its seed moment; a rival loss is counted once', () => {
+  const p = fresh();
+  clearChapter(p, 0); p.road.bloomed = [0];
+  const g = settleRoadEnd(p, 'guardian:0', 'win');
+  assert.equal(p.road.seeds, 1);
+  const gb = roadReturn(p, 'guardian:0', 'win', roadMarks(g));
+  assert.equal(gb.gOutcome.i, 0, 'seed moment still plays');
+  assert.equal(p.road.seeds, 1, 'no second seed');
+  const r = settleRoadEnd(p, 'rival:0', 'lose');
+  assert.equal(p.road.rival.losses, 1);
+  const rb = roadReturn(p, 'rival:0', 'lose', roadMarks(r));
+  assert.equal(p.road.rival.losses, 1, 'the road does not count the loss again');
+  assert.deepEqual(rb.rOutcome, { i: 0, result: 'lose' });
+});

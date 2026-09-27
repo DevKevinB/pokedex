@@ -1,15 +1,16 @@
 # Pokédex OS — project brief for Claude
 
 Read this first. It is the fastest way to be useful in this repo without breaking
-something a seven-year-old is emotionally invested in.
+something an eight-year-old is emotionally invested in.
 
 ## Who this is for
 
 Two brothers. Everything in this codebase serves them.
 
-- **GABE, 7.** Reads well. Plays the full game: dex, catching, battles, the 58-trainer
-  Gym Circuit, versus mode. He is the one chasing Champion.
-- **ART, 4.** **Pre-reader.** Plays in **Junior Mode** (`player().settings.junior`).
+- **GABE, 8.** Reads well. Plays the full game: the Verdant Road (12 chapters on the
+  58-trainer circuit), rival, guardians, tall grass, dex, versus. He is chasing Champion.
+- **ART, 4.** **Pre-reader.** Plays as profile `prereader` in Sprout Road
+  (`settings.junior` in the classic app). He is REALLY into Bulbasaur: BULBA is his partner.
   He cannot read the battle log, the move names, or any modal text. If a piece of
   information only exists as words, it does not exist for Art.
 
@@ -51,6 +52,18 @@ plays on a phone too). Consequences that decide real code:
 4. **Saves are sacred.** Two boys' entire collections live in one localStorage
    key. Any change touching `state.js` persistence needs extreme care — data loss
    here is a real-world crisis, not a bug report.
+
+## v20 LAYOUT: READ THIS FIRST (switchover 2026-09-27)
+
+The site root is now a **doorway** (`index.html`, `doorway.js`, `doorway.css`,
+`sw.js`) that forwards to **Sprout Road in `next/`**, the clean rewrite. Its
+binding contract is **`next/ARCHITECTURE.md`**, and the plan and Kevin's
+rulings are in **`ROADMAP-v20.md`**. The classic app below moved unchanged to
+**`classic/`**, which is why every path in the table below now lives under
+`classic/`. Saves: Sprout Road writes `pokedexos_save_v3` and only ever READS
+`pokedexos_save_v2`, merging it in whenever the classic app changes it.
+`npm test` runs every suite: classic, next unit tests, next smoke, and the
+doorway. `release.mjs` bumps the classic anchors plus `next/sw.js`'s `NEXT_CACHE`.
 
 ## Architecture
 

@@ -43,7 +43,7 @@ const RETRIES = 3;
 const TIMEOUT_MS = 15000;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const OUT = join(HERE, '..', 'data', 'moves.json');
+const OUT = join(HERE, '..', 'classic', 'data', 'moves.json');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const idFromUrl = u => Number(String(u).split('/').filter(Boolean).pop());

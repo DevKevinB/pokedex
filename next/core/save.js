@@ -16,7 +16,7 @@
 // says, through import, restore, merge or bug.
 // ============================================================
 
-import { cleanSave, cleanPlayer, freshSave, isObj, hasProgress, today, cleanFamily, cleanGifts } from './validate.js';
+import { cleanSave, cleanPlayer, freshSave, isObj, hasProgress, today, cleanFamily, cleanGifts, cleanChallenge } from './validate.js';
 import { fromV2, mergeV2, applyV1, isV2Save } from './migrate.js';
 
 export const KEYS = {
@@ -25,6 +25,9 @@ export const KEYS = {
   v2Backup: 'pokedexos_v2_backup_',
   prev: 'pokedexos_save_v3_prev',
   corrupt: 'pokedexos_save_v3_corrupt_',
+  // Fingerprint (crc32) of the classic save as it was last merged in. Kept in
+  // its own key, outside the save shape, so no schema change is involved.
+  v2seen: 'pokedexos_v2_seen',
   v1: { 1: 'pokedex_caught_p1', 2: 'pokedex_caught_p2' },
 };
 const DISPOSABLE_PREFIXES = ['pokedexos_apicache'];
@@ -90,6 +93,8 @@ function parse(text) {
  * No v3 -> migrate from v2, else from the v15 keys, else a fresh save.
  * Never writes the v2 key. May write a quarantine key; writes nothing else.
  */
+let pendingV2Seen = null;
+
 export function load() {
   info = { source: 'fresh', quarantinedKey: null, blocked: false, mergedV2: false };
   const v3Text = get(KEYS.v3);
@@ -104,8 +109,16 @@ export function load() {
     if (!save) quarantine(v3Text);
     else info.source = 'v3';
   }
+  // The classic save is merged in only when it has CHANGED since the last
+  // merge. mergeV2 is union-only, so re-merging an unchanged classic save on
+  // every boot would resurrect a favourite star Gabe removed or a nickname he
+  // cleared here, forever, because after the switchover nothing edits v2.
+  // The fingerprint is recorded only after a successful v3 write (persist),
+  // so a failed write means the merge simply runs again next boot.
+  const v2print = v2ok ? crc32(v2Text) : null;
+  pendingV2Seen = v2print;
   if (save) {
-    if (v2ok) { save = mergeV2(save, v2); info.mergedV2 = true; }
+    if (v2ok && get(KEYS.v2seen) !== v2print) { save = mergeV2(save, v2); info.mergedV2 = true; }
   } else if (v2ok) {
     save = fromV2(v2);
     info.source = 'v2';
@@ -170,6 +183,7 @@ export function persist(save) {
     try { s.setItem(KEYS.v3, json); } catch (e2) { return false; }
   }
   noteHwm(save);
+  if (pendingV2Seen) { try { s.setItem(KEYS.v2seen, pendingV2Seen); pendingV2Seen = null; } catch (e) { /* merge again next boot: harmless */ } }
   return true;
 }
 
@@ -289,6 +303,7 @@ function keepBulba(next, current) {
 // that has no family at all) can raise them but never lower them: postcards
 // and versus tallies take the max, the newest postcard date wins, and waiting
 // gifts take the max (a gift re-appearing is a bonus; one vanishing is not).
+// DAD'S CHALLENGE wins are a union by code+who (newest 50 kept).
 function keepShared(next, current) {
   const a = cleanFamily(current && current.family);
   const b = cleanFamily(next.family);
@@ -296,6 +311,8 @@ function keepShared(next, current) {
     postcards: Math.max(a.postcards, b.postcards),
     lastPostcard: [a.lastPostcard, b.lastPostcard].filter(Boolean).sort().pop() || null,
     versus: { gabe: Math.max(a.versus.gabe, b.versus.gabe), dad: Math.max(a.versus.dad, b.versus.dad) },
+    // DAD'S CHALLENGE ribbons: both sides' wins, one per code+who.
+    challenge: cleanChallenge({ wins: [...a.challenge.wins, ...b.challenge.wins] }),
   };
   next.gifts = { toReader: Math.max(cleanGifts(current && current.gifts).toReader, cleanGifts(next.gifts).toReader) };
   return next;
@@ -364,5 +381,6 @@ export async function requestPersistence() {
 export function _resetForTests() {
   info = { source: 'fresh', quarantinedKey: null, blocked: false, mergedV2: false };
   backupDone = false;
+  pendingV2Seen = null;
   for (const n of [1, 2]) hwm[n] = { petals: 0, stage: 1 };
 }

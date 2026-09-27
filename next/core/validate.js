@@ -27,6 +27,9 @@ export const MAX_SEEDS = 99;        // road.seeds (Old Venusaur seeds)
 export const MAX_GIFTS = 99;        // save.gifts.toReader (Art's leaf-stamped berries)
 export const LOCK_PICS = 3;         // player.lock.pics length
 export const MAX_FAMILY_COUNT = 99999; // family.postcards and each family.versus tally
+export const MAX_CHALLENGE_WINS = 50;  // family.challenge.wins (newest kept)
+export const CHALLENGE_CODE_RE = /^[A-Z]{2,10}-\d{3}$/;   // DAD'S CHALLENGE seed code, e.g. MOSSY-714
+export const CHALLENGE_WHO = ['dad', 'reader'];
 
 // Input caps. Real saves are far below these (649 species, 58 trainers); a
 // payload above them is hostile or corrupt, and walking it would stall boot.
@@ -133,7 +136,7 @@ export function freshRoad() {
 
 /** Save-root fields shared by both players (the family, and gifts that cross from Art to Gabe). */
 export function freshFamily() {
-  return { postcards: 0, lastPostcard: null, versus: { gabe: 0, dad: 0 } };
+  return { postcards: 0, lastPostcard: null, versus: { gabe: 0, dad: 0 }, challenge: { wins: [] } };
 }
 export function freshGifts() {
   return { toReader: 0 };
@@ -283,7 +286,27 @@ export function cleanLock(raw) {
   return pics.every(isDexId) ? { pics } : null;
 }
 
-/** save.family: shared postcards and couch-versus tallies. */
+/**
+ * family.challenge: DAD'S CHALLENGE wins, [{code:'MOSSY-714', who:'dad'|'reader', date}].
+ * One entry per code+who (the earliest date wins), oldest first, the newest
+ * MAX_CHALLENGE_WINS kept. Junk entries are dropped, never thrown.
+ */
+export function cleanChallenge(raw) {
+  const c = isObj(raw) ? raw : {};
+  const byKey = new Map();
+  for (const w of arr(c.wins)) {
+    if (!isObj(w)) continue;
+    const code = typeof w.code === 'string' ? w.code : '';
+    if (!CHALLENGE_CODE_RE.test(code) || !CHALLENGE_WHO.includes(w.who) || !isDate(w.date)) continue;
+    const key = code + '|' + w.who;
+    const had = byKey.get(key);
+    if (!had || w.date < had.date) byKey.set(key, { code, who: w.who, date: w.date });
+  }
+  const wins = [...byKey.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return { wins: wins.slice(-MAX_CHALLENGE_WINS) };
+}
+
+/** save.family: shared postcards, couch-versus tallies and DAD'S CHALLENGE wins. */
 export function cleanFamily(raw) {
   const f = isObj(raw) ? raw : {};
   const vs = isObj(f.versus) ? f.versus : {};
@@ -292,6 +315,7 @@ export function cleanFamily(raw) {
     postcards: c(f.postcards),
     lastPostcard: isDate(f.lastPostcard) ? f.lastPostcard : null,
     versus: { gabe: c(vs.gabe), dad: c(vs.dad) },
+    challenge: cleanChallenge(f.challenge),
   };
 }
 
@@ -433,6 +457,19 @@ export function addVersusWin(save, winner) {
   f.versus[winner] = Math.min(MAX_FAMILY_COUNT, f.versus[winner] + 1);
   save.family = f;
   return { ...f.versus };
+}
+
+/**
+ * DAD'S CHALLENGE: `who` ('dad' | 'reader') beat seed `code` on `date`.
+ * Returns the stored wins, or null when the code/who is not valid. A repeat
+ * win of the same code by the same side changes nothing (it is still a win).
+ */
+export function addChallengeWin(save, code, who, date = today()) {
+  if (!isObj(save) || typeof code !== 'string' || !CHALLENGE_CODE_RE.test(code) || !CHALLENGE_WHO.includes(who)) return null;
+  const f = cleanFamily(save.family);
+  f.challenge = cleanChallenge({ wins: [...f.challenge.wins, { code, who, date: isDate(date) ? date : today() }] });
+  save.family = f;
+  return f.challenge.wins.map(w => ({ ...w }));
 }
 
 /** True when `pics` opens `player`'s picture-lock (always true when there is no lock). */
