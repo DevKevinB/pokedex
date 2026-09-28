@@ -349,7 +349,7 @@ reader → `road`.
 ## Battle factory (`battle/createBattle.js`, DOM-free and unit-tested)
 
 ```js
-export function createBattle({ myTeam, enemyTeam, profile, rng, moveLookup, wild, leader, berries = Infinity })
+export function createBattle({ myTeam, enemyTeam, profile, rng, moveLookup, wild, leader, berries = Infinity, chooseOnFaint = false })
 // myTeam/enemyTeam: [{ id, level, name, types:[..], stats:{hp,atk,def,spatk,spdef,spe}, moves:[{name,type,power,damage_class}] }]
 // returns battle = {
 //   state: { me:{active, team:[{...,hp,maxHp}]}, foe:{...}, turn, over:false, winner:null, phase:1 },
@@ -358,8 +358,19 @@ export function createBattle({ myTeam, enemyTeam, profile, rng, moveLookup, wild
 //   foeIntent()   // the move index the foe will use next (committed before the player acts)
 // }
 // events: [{type:'move', side, move, dmg, crit, eff, hpAfter} | {type:'faint', side} | {type:'phase2', side}
-//          | {type:'catch', shakes, success} | {type:'heal', side:'me', index, amount, hpAfter} | {type:'end', winner}]
+//          | {type:'catch', shakes, success} | {type:'heal', side:'me', index, amount, hpAfter} | {type:'end', winner}
+//          | {type:'choose', side:'me', options:[index..]}]
 ```
+
+**Choose after a faint** (`chooseOnFaint`, reader only; the battle screen
+passes it): when his Pokemon faints and more than one is left, the factory
+emits `choose` and sets `state.me.mustChoose`; the next `choose({kind:'switch',
+index})` sends that one in for free (no foe turn), and any other action
+returns `[]`. A prereader and every other caller keep auto-send.
+
+**Party XP:** the Pokemon that lands the KO (or the catch) gets full XP;
+every other Pokemon of mine that stood in against that foe and is still
+standing gets half (at least 1).
 
 **Berry:** heals my active mon by `fraction` of maxHp (at least 1, capped at
 maxHp) and **is a turn**: the foe's committed move then lands. It returns `[]`
@@ -373,7 +384,7 @@ Also exported (pure): `BERRY_HEAL = 0.3`, `powerDots(power) -> 1..4`
 shape:'physical'|'special'}]`: a shape per move (fist, bang, paw, pin,
 boomerang, foot, tooth / swirl, beam, bubbles, dizzy, rainbow, tornado,
 puff), picked from the move name and damage class, never a type emoji or a
-star, and **never the same glyph twice for one type in one moveset**.
+star, and **never the same glyph twice in one moveset**.
 
 Use `engine.computeDamage` / `catchProbability` / `applyXp`. For a
 prereader: enemy damage is capped by `JUNIOR_MAX_TAKE` and HP floors at 1

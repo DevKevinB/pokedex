@@ -93,7 +93,8 @@ export function mount(root, ctx) {
   const title = h('div', { class: 'road-title' });
   const homeBtn = h('button', {
     class: 'road-home', type: 'button', attrs: { 'aria-label': 'HOME' },
-    on: { click: () => { play('tap'); ctx.go('who'); } }
+    // Opened from Art's garden signpost, the house goes back to his garden.
+    on: { click: () => { play('tap'); ctx.go(params.from === 'garden' ? 'garden' : 'who'); } }
   }, '⌂');
   const pouch = h('div', { class: 'road-pouch', hidden: true });
   // Batch 3: his Pokédex and his team, one tap from the Road (pictures only:
@@ -123,9 +124,11 @@ export function mount(root, ctx) {
     const done = cur >= N;
     tree.classList.toggle('tree-alive', done && blooming !== N - 1);
     clear(title);
+    title.classList.toggle('is-saved', done);
     const ch = CHAPTERS[Math.min(cur, N - 1)];
     title.append(h('span', { class: 'road-title-emoji' }, done ? '🏆' : ch.emoji));
-    if (!pre) title.append(done ? 'THE TREE IS SAVED!' : ch.region);
+    if (!pre) title.append(h('span', { class: 'road-title-long' }, done ? 'THE TREE IS SAVED!' : ch.region));
+    if (!pre && done) title.append(h('span', { class: 'road-title-short' }, 'SAVED!'));
     clear(nextBtn);
     if (nextTrainer(p)) {
       nextBtn.append(h('span', { class: 'road-next-label' }, pre ? '⚔️ \u25B6\uFE0E' : 'NEXT BATTLE \u25B6\uFE0E'));
@@ -262,6 +265,11 @@ export function mount(root, ctx) {
     const tw = tree.offsetWidth || 230;
     let y = Math.round(Math.max(120, Math.min(TOP + STEP * 1.5, (horizon.offsetTop || 22) + tw * 0.8)));
     if (Math.abs(y - nodeY(N - 1)) < 80) y = nodeY(N - 1) - 80;   // never on top of THE BIG TREE stop
+    // ...nor on the guardian beside the stop below it (centred at
+    // nodeY(N - 2) - 6, 84px tall, its LV label hanging ~12px under it): the
+    // door (72px tall) steps down past the label.
+    const g = nodeY(N - 2);
+    if (hasGuardian(p, N - 2) && y > g - 84 && y < g + 90) y = g + 90;
     return h('button', {
       class: ['road-roots-door', seen ? 'is-seen' : 'is-new'], type: 'button',
       attrs: { 'aria-label': 'THE ROOTS' }, style: { top: y + 'px' },
@@ -381,8 +389,11 @@ export function mount(root, ctx) {
   }
 
   // The rival stands on the road between chapter i and i + 1.
+  // When the Old Venusaur of chapter i sleeps below, he steps up the road a
+  // little so his card never sits on the guardian.
   function rivalPos(i) {
-    return { left: ((XS[i] + XS[i + 1]) / 2) + '%', top: ((nodeY(i) + nodeY(i + 1)) / 2 + 4) + 'px' };
+    const lift = hasGuardian(player(), i) ? 34 : 0;
+    return { left: ((XS[i] + XS[i + 1]) / 2) + '%', top: ((nodeY(i) + nodeY(i + 1)) / 2 + 4 - lift) + 'px' };
   }
 
   // His lead's types decide the rival's team (he brings what beats it).

@@ -181,6 +181,7 @@ export function wildBattleParams(idx, j) {
     enemyTeam: t.team.map(m => ({ id: m.id, level: m.level })),
     trainer: { name: t.name, taunt: t.taunt, leader: j === WILD_LEADER },
     wild: false,
+    postgame: true,                 // battle.js lifts foes toward a strong team's level
     returnTo: 'road',
     onEnd: 'wild:' + idx + ':' + j
   };

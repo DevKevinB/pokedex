@@ -124,7 +124,9 @@ export function mount(root, ctx) {
   let battle = null;
   let busy = true;
   let code = null;
-  let player = 'dad';                // who is holding the device: 'dad' | 'kid'
+  // Who is holding the device: 'dad' | 'kid'. No default: a grown-up picks
+  // before FIGHT, so a win is never credited to the wrong one.
+  let player = null;
   let giveUpArmed = false;
   const timers = new Set();
   const ac = typeof AbortController === 'function' ? new AbortController() : null;
@@ -206,12 +208,7 @@ export function mount(root, ctx) {
       h('span', { class: 'ch-leader-lv' }, 'Lv' + ace.level));
     }));
 
-    const chips = h('div', { class: 'ch-who' },
-      h('span', { class: 'ch-who-label' }, 'PLAYER'),
-      ['dad', 'kid'].map(k => h('button', {
-        class: ['ch-chip', { on: player === k }], type: 'button', dataset: { who: k },
-        on: { click: guard(() => { play('tap'); player = k; pickScreen(); }) }
-      }, k === 'dad' ? 'DAD' : readerName)));
+    const chips = chipRow(() => pickScreen());
 
     const wins = savedWins().slice(-3).reverse().map(w => ({ code: w.code, who: ribbonWho(w) }));
     clear(ui.main).append(h('div', { class: 'ch-pick' },
@@ -230,12 +227,26 @@ export function mount(root, ctx) {
     shownAt = performance.now();
   }
 
+  function chipRow(after) {
+    return h('div', { class: ['ch-who', { 'ch-who-need': !player }] },
+      h('span', { class: 'ch-who-label' }, 'PLAYER'),
+      ['dad', 'kid'].map(k => h('button', {
+        class: ['ch-chip', { on: player === k }], type: 'button', dataset: { who: k },
+        on: { click: guard(() => { play('tap'); player = k; after(); }) }
+      }, k === 'dad' ? 'DAD' : readerName)));
+  }
+
   // ---------------------------------------------------------- preview
   function preview(i, theCode) {
     const c = CHAPTERS[i];
     const t = leaderTeam(i);
     const codeEl = h('div', { class: 'ch-code' }, theCode);
     let cur = theCode;
+    const fight = btn('btn btn-go ch-fight', 'FIGHT', () => { if (player) start(cur); }, 'FIGHT ▶︎');
+    fight.disabled = !player;
+    const whoSlot = h('div', { class: 'ch-pre-who' });
+    const drawWho = () => { clear(whoSlot).append(chipRow(() => { fight.disabled = !player; drawWho(); })); };
+    drawWho();
     layer(h('div', { class: 'ch-pre panel', attrs: { role: 'dialog', 'aria-label': c.trainers[leaderIdx(i)].name } },
       h('div', { class: 'ch-pre-name' }, c.emoji + ' ' + c.trainers[leaderIdx(i)].name),
       h('div', { class: 'ch-pre-team' }, t.map(m => h('span', { class: 'ch-pre-mon' },
@@ -244,9 +255,10 @@ export function mount(root, ctx) {
       h('div', { class: 'ch-code-row' },
         codeEl,
         btn('btn ch-reroll', 'NEW CODE', () => { cur = codeFor(i, dice); codeEl.textContent = cur; restart(codeEl, 'pop'); }, h('span', { class: 'ch-emo', attrs: { 'aria-hidden': 'true' } }, '🎲'))),
+      whoSlot,
       h('div', { class: 'ch-pre-actions' },
         btn('btn ch-pre-back', 'BACK', () => hideLayer(), '◀︎'),
-        btn('btn btn-go ch-fight', 'FIGHT', () => start(cur), 'FIGHT ▶︎'))));
+        fight)));
   }
 
   // ---------------------------------------------------------- the fight

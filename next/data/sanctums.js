@@ -119,6 +119,7 @@ export function sanctumParams(key) {
     trainer: null,
     wild: true,
     legendary: true,
+    postgame: true,                 // battle.js lifts it toward a strong team's level
     returnTo: 'roots',
     onEnd: sanctumOnEnd(key)
   };

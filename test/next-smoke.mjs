@@ -298,6 +298,9 @@ async function fightToEnd(page, returnTo, maxTurns = 80) {
     if ((await scene(page)) !== 'battle') return true;
     const ok = page.locator('.bt-ok:visible');
     if (await ok.count()) { await ok.first().click({ force: true }).catch(() => {}); await page.waitForTimeout(120); continue; }
+    // v20.1.2: after a faint Gabe picks who comes in (the team drawer).
+    const pick = page.locator('.bt-drawer:not([hidden]) .bt-slot:not([disabled])');
+    if (await pick.count() && !(await page.locator('.bt-moves button:not([disabled])').count())) { await pick.first().click({ force: true }).catch(() => {}); await page.waitForTimeout(120); continue; }
     const mv = page.locator('.bt-moves button:not([disabled]):visible');
     if (await mv.count()) { await mv.first().click({ force: true }).catch(() => {}); }
     await page.waitForTimeout(120);
@@ -825,6 +828,9 @@ const clickEl = (page, sel) => page.evaluate(s => { const el = document.querySel
     if ((await page.locator('.bt-card:not([hidden])').count())) break;
     const berry = page.locator('.bt-act-berry:not([disabled])');
     if (await berry.count()) { await berry.click({ force: true }); ate = true; break; }
+    // v20.1.2: after a faint Gabe picks who comes in (the team drawer).
+    const pick = page.locator('.bt-drawer:not([hidden]) .bt-slot:not([disabled])');
+    if (await pick.count() && !(await page.locator('.bt-moves button:not([disabled])').count())) { await pick.first().click({ force: true }).catch(() => {}); await page.waitForTimeout(120); continue; }
     const mv = page.locator('.bt-moves button:not([disabled]):visible');
     if (await mv.count()) await mv.first().click({ force: true });
     await page.waitForTimeout(150);
@@ -1142,7 +1148,7 @@ const b3Save = () => ({ version: 3, created: '2026-09-01', players: {
   await page.waitForSelector('.dex-card', { timeout: 5000 });
   check('dex: the detail card opens', await page.locator('.dex-card.is-caught').isVisible());
   await fitAll(page, 'dex card', { shotName: 'b3-dex-card' });
-  // NAME ME: the keypad only types A-Z and space, and caps at 10.
+  // NAME ME: the keypad only types A-Z and space, and caps at 12.
   await page.locator('.dex-nameme').click();
   await page.waitForSelector('.dex-kp', { timeout: 5000 });
   await fitAll(page, 'dex keypad', { shotName: 'b3-dex-keypad' });
@@ -1150,7 +1156,7 @@ const b3Save = () => ({ version: 3, created: '2026-09-01', players: {
   await page.keyboard.type('sp<a>&rky"99 thunderbolt');
   await page.locator('.dex-kp-ok').click();
   const nick = (await v3(page))?.players?.[1]?.nicks?.[25];
-  check('dex: nickname saved, cleaned and capped at 10', typeof nick === 'string' && /^[A-Z ]{1,10}$/.test(nick) && nick.startsWith('SPARKY'), JSON.stringify(nick));
+  check('dex: nickname saved, cleaned and capped at 12', typeof nick === 'string' && /^[A-Z ]{1,12}$/.test(nick) && nick.startsWith('SPARKY'), JSON.stringify(nick));
   await page.locator('.dex-close').click();
   // Favourites: six stars is the cap; a seventh offers a swap, never a "no".
   await page.locator('.dex-cell[data-id="150"]').click();
@@ -1347,6 +1353,11 @@ const b3Save = () => ({ version: 3, created: '2026-09-01', players: {
     }
     return { log, status };
   }
+  // v20.1.2: no default player. FIGHT waits until a grown-up picks who plays.
+  check('challenge: FIGHT waits for a PLAYER pick (no default DAD)',
+    await page.locator('.ch-fight').isDisabled() && (await page.locator('.ch-pre .ch-chip.on').count()) === 0);
+  await tap('.ch-pre .ch-chip[data-who="dad"]');
+  check('challenge: picking DAD arms FIGHT', !(await page.locator('.ch-fight').isDisabled()));
   await tap('.ch-fight');
   const a = await playScript(true);
   // Back out, then type the same code in.
@@ -1410,6 +1421,7 @@ const b3Save = () => ({ version: 3, created: '2026-09-01', players: {
   let midTurn = 0;
   for (let round = 0; round < 3; round++) {
     await tap('.ch-leader[data-chapter="0"]');
+    if (await page.locator('.ch-fight').isDisabled()) await tap('.ch-pre .ch-chip[data-who="dad"]');
     await tap('.ch-fight');
     await page.waitForSelector('.ch[data-ready="1"] .ch-moves .bt-move:not([disabled])', { timeout: 20000 });
     await tap('.ch-moves .bt-move:not(.ch-move-status):not([disabled])');
@@ -1550,6 +1562,9 @@ async function fightWatching(page, maxTurns = 120, { ball = null, onWinCard = nu
       await page.waitForTimeout(150);
       continue;
     }
+    // v20.1.2: after a faint Gabe picks who comes in (the team drawer).
+    const pick = page.locator('.bt-drawer:not([hidden]) .bt-slot:not([disabled])');
+    if (await pick.count() && !(await page.locator('.bt-moves button:not([disabled])').count())) { await pick.first().click({ force: true }).catch(() => {}); await page.waitForTimeout(120); continue; }
     const mv = page.locator('.bt-moves button:not([disabled]):visible');
     if (await mv.count()) await mv.first().click({ force: true }).catch(() => {});
     await page.waitForTimeout(120);
@@ -1686,7 +1701,10 @@ const PRE_CHAMP = () => {   // everything up to (not including) the Champion's l
 // ============================================================ 21. WILD CHAPTERS
 {
   // Leader of Wild Chapter 1 is up next.
-  const save = champSave({ level: 100, road: { cleared: clearedThrough(12, ['w0-t0', 'w0-t1', 'w0-t2', 'w0-t3']) } });
+  // v20.1.2: postgame foes rise toward his team's level, so he brings a full team.
+  const six = [6, 25, 133, 1, 4, 7];
+  const save = champSave({ level: 100, road: { cleared: clearedThrough(12, ['w0-t0', 'w0-t1', 'w0-t2', 'w0-t3']) },
+    gabe: { caught: six, team: six, mons: Object.fromEntries(six.map(id => [id, { level: 100, xp: 0 }])) } });
   const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
   const { page } = P;
   await page.goto(BASE + Q, { waitUntil: 'networkidle' });
@@ -1864,6 +1882,268 @@ const PRE_CHAMP = () => {   // everything up to (not including) the Champion's l
   await page.waitForTimeout(400);
   await fitAll(page, 'garden with decor', { words: true, shotName: 'b4-garden-decor' });
   await finishPage('garden decor', P);
+}
+
+// ============================================================ v20.1.2 fixer regressions
+// A touch page (CDP touch works only with hasTouch) with a seeded save.
+async function touchPage(viewport, seed = {}) {
+  const context = await browser.newContext({ viewport, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
+  await mockRoutes(context);
+  const page = await context.newPage();
+  page.errors = [];
+  page.on('pageerror', e => page.errors.push('pageerror: ' + e.message));
+  page.on('console', msg => { if (msg.type() === 'error') page.errors.push(msg.text()); });
+  await page.addInitScript(seedData => {
+    if (!sessionStorage.getItem('__seeded')) {
+      sessionStorage.setItem('__seeded', '1');
+      for (const [k, v] of Object.entries(seedData)) localStorage.setItem(k, v);
+    }
+  }, seed);
+  const cdp = await context.newCDPSession(page);
+  const touch = async (pt, ms, wobble = 0) => {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [pt] });
+    const steps = Math.max(1, Math.round(ms / 200));
+    for (let i = 0; i < steps; i++) {
+      await page.waitForTimeout(ms / steps);
+      if (wobble) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: pt.x + (i % 2 ? wobble : -wobble), y: pt.y + 1 }] });
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  };
+  return { context, page, cdp, touch };
+}
+
+// ---- the Everstone: a tap never switches it on; a hold does; a tap switches it off
+{
+  const save = champSave({ art: { bulba: { petals: 52, stage: 1, stayStone: false, visitors: [] } } });
+  const T = await touchPage({ width: 834, height: 1194 }, { pokedexos_save_v3: JSON.stringify(save), pokedexos_next_lastplayer: '2' });
+  const { page, touch } = T;
+  await page.goto(BASE + '?seed=1', { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  await page.waitForTimeout(1600);                       // Bulba runs up to say hello
+  const stonePt = async () => {
+    const b = await page.locator('.gd-stone').boundingBox();
+    const pt = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+    const onStone = await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest('.gd-stone'), [pt.x, pt.y]);
+    return { pt, onStone };
+  };
+  const stay = async () => (await v3(page))?.players?.[2]?.bulba?.stayStone;
+  check('everstone: the bud glows at 52 petals', await page.locator('.gd-bud').isVisible());
+  let s0 = await stonePt();
+  check('everstone: the stone is reachable (nothing on top)', s0.onStone);
+  await touch(s0.pt, 120);
+  await page.waitForTimeout(600);
+  check('everstone (touch): a quick tap does NOT switch it on', (await stay()) === false && await page.locator('.gd-bud').isVisible(), String(await stay()));
+  s0 = await stonePt();
+  await touch(s0.pt, 1900, 2);
+  await page.waitForTimeout(600);
+  check('everstone (touch): a 1.5s hold switches it on (saved, bud hides)', (await stay()) === true && !(await page.locator('.gd-bud').isVisible()), String(await stay()));
+  s0 = await stonePt();
+  await touch(s0.pt, 120);
+  await page.waitForTimeout(800);
+  check('everstone (touch): one tap switches it off and the bud comes straight back',
+    (await stay()) === false && await page.locator('.gd-bud').isVisible(), String(await stay()));
+  check('everstone: no console errors', page.errors.length === 0, page.errors.slice(0, 3).join(' | '));
+  await T.context.close();
+}
+
+// ---- the gear: a finger that drifts off the small button during the hold still opens it
+{
+  const T = await touchPage({ width: 375, height: 667 });
+  const { page, cdp } = T;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  const g = await page.locator('.who-gear').boundingBox();
+  const pt = { x: g.x + g.width / 2, y: g.y + g.height / 2 };
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [pt] });
+  for (let i = 0; i < 9; i++) {
+    await page.waitForTimeout(260);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: pt.x - 30, y: pt.y + 30 }] });
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(500);
+  check('gear (touch): a hold that drifts 30px off the gear still opens the panel', (await page.locator('.gu-panel').count()) === 1);
+  await T.context.close();
+}
+
+// ---- GROWN-UPS: SAVE CODE, LOAD CODE (two taps), UNDO LOAD
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(champSave()) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  const g = await page.locator('.who-gear').boundingBox();
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+  await page.mouse.down(); await page.waitForTimeout(2300); await page.mouse.up();
+  await page.waitForSelector('.gu-panel', { timeout: 3000 });
+  await page.locator('.gu-save').click();
+  const code = await page.locator('.gu-code').inputValue();
+  check('save code: the panel shows a real save code', /^SR3\./.test(code), code.slice(0, 12));
+  await fitAll(page, 'grown-ups save code', { shotName: 'fix-save-code' });
+  // change the live save, then bring the code back
+  await page.locator('.gu-lock-back').click();
+  await page.locator('.gu-profile[data-player="2"]').click();
+  check('save code: (setup) ART flipped to READER', (await v3(page))?.players?.[2]?.profile === 'reader');
+  await page.locator('.gu-save').click();
+  await page.locator('.gu-load').click();
+  await page.locator('.gu-code-in').fill('NOT A CODE');
+  await page.locator('.gu-load-go').click();
+  await page.locator('.gu-load-go').click();
+  check('load code: a bad code says so and changes nothing',
+    /NOT RIGHT/.test(await page.locator('.gu-save-note').innerText()) && (await v3(page))?.players?.[2]?.profile === 'reader');
+  await page.locator('.gu-code-in').fill(code);
+  await page.locator('.gu-load-go').click();
+  check('load code: the first tap only asks', (await v3(page))?.players?.[2]?.profile === 'reader');
+  await page.locator('.gu-load-go').click();
+  await page.waitForTimeout(200);
+  check('load code: the second tap loads it (ART is LITTLE ONE again)', (await v3(page))?.players?.[2]?.profile === 'prereader');
+  check('load code: the cards follow the loaded save', (await page.locator('.who-card.p2.who-pre').count()) === 1);
+  await page.locator('.gu-undo-load').click();
+  await page.waitForTimeout(200);
+  check('undo load: puts the save from before the load back', (await v3(page))?.players?.[2]?.profile === 'reader');
+  check('undo load: Gabe\'s collection is intact throughout', ((await v3(page))?.players?.[1]?.caught || []).length === 4);
+  await finishPage('grown-ups save code', P);
+}
+
+// ---- the times-table check shakes on a wrong answer
+{
+  const save = champSave({ gabe: { lock: { pics: [6, 25, 133] } } });
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save) });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  const g = await page.locator('.who-gear').boundingBox();
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+  await page.mouse.down(); await page.waitForTimeout(2300); await page.mouse.up();
+  await page.waitForSelector('.gu-panel', { timeout: 3000 });
+  await page.locator('.gu-profile[data-player="1"]').click();
+  const { a, b } = await page.locator('.gu-check-q').evaluate(el => ({ a: +el.dataset.a, b: +el.dataset.b }));
+  const right = String(a * b);
+  const wrong = right.slice(0, -1) + String((Number(right.slice(-1)) + 1) % 10);
+  for (const d of wrong) await page.locator(`.gu-check-key[data-key="${d}"]`).click();
+  check('grown-up check: a wrong answer shakes', (await page.locator('.gu-check-q.shake').count()) === 1);
+  await finishPage('grown-up check shake', P);
+}
+
+// ---- NAME ME: OK with nothing typed never cuts a classic 12-letter name
+{
+  const save = champSave({ gabe: { nicks: { 25: "MISTER ZAP'S" } } });
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save), pokedexos_next_lastplayer: '1' });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  await page.evaluate(() => window.__go('dex', { returnTo: 'road' }));
+  await waitScene(page, 'dex');
+  await page.locator('.dex-cell[data-id="25"]').click();
+  await page.waitForSelector('.dex-nameme', { timeout: 5000 });
+  await page.locator('.dex-nameme').click();
+  await page.locator('.dex-kp-ok').click();
+  await page.waitForTimeout(200);
+  check('NAME ME: OK with no typing keeps "MISTER ZAP\'S" whole', (await v3(page))?.players?.[1]?.nicks?.[25] === "MISTER ZAP'S", JSON.stringify((await v3(page))?.players?.[1]?.nicks));
+  await page.locator('.dex-close').click().catch(() => {});
+  await finishPage('NAME ME keeps a classic name', P);
+}
+
+// ---- battle: Master Ball not lost mid-throw; shiny sparkle; card ball; stars; choose after faint; legendary hold; postgame lift
+{
+  const save = champSave({ gabe: { items: { masterBalls: 5 } } });
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(save), pokedexos_next_lastplayer: '1' });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  const wildFight = extra => page.evaluate(x => window.__go('battle', { enemyTeam: [{ id: 19, level: 5 }], trainer: null, wild: true, returnTo: 'road', onEnd: null, ...x }), extra);
+  await wildFight({});
+  await page.waitForSelector('.bt[data-ready="1"] .bt-act-ball:not([disabled])', { timeout: 10000 });
+  await page.evaluate(async () => { const m = await import('/next/core/pace.js'); m.PACE.fast = false; });
+  await page.locator('.bt-act-ball').click();
+  await page.locator('.bt-ballbtn.ball-master').click();
+  await page.waitForTimeout(300);
+  check('master ball: not taken while the ball is still in the air', (await v3(page))?.players?.[1]?.items?.masterBalls === 5);
+  await page.reload({ waitUntil: 'networkidle' });
+  const after = (await v3(page))?.players?.[1];
+  check('master ball: closing the app mid-throw keeps the ball (5 balls, no half catch)',
+    after?.items?.masterBalls === 5 && !after?.caught?.includes(19), JSON.stringify({ m: after?.items, c: after?.caught }));
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p1').click();
+  await waitScene(page, 'road');
+  await wildFight({ shiny: true });
+  await page.waitForSelector('.bt[data-ready="1"] .bt-act-ball:not([disabled])', { timeout: 10000 });
+  check('shiny: the wild shiny sparkles in the fight', (await page.locator('.bt-sprite-foe.is-shiny').count()) === 1 && (await page.locator('.bt-spot-foe .bt-shiny').count()) === 1);
+  await page.locator('.bt-act-ball').click();
+  await page.locator('.bt-ballbtn.ball-master').click();
+  await page.waitForSelector('.bt-card-hero.caught', { timeout: 10000 });
+  check('catch card: shows the Master Ball that caught it', /master-ball/.test(await page.locator('.bt-card-ball').getAttribute('src') || ''));
+  check('catch card: a shiny catch wears a ✨ badge', (await page.locator('.bt-card-hero.is-shiny .bt-card-shiny').count()) === 1);
+  check('catch card: a win with nobody fainted is 3 stars', (await page.locator('.bt-star').count()) === 3);
+  const caughtNow = (await v3(page))?.players?.[1];
+  check('master ball: taken in the same save as the catch', caughtNow?.items?.masterBalls === 4 && caughtNow?.caught?.includes(19), JSON.stringify(caughtNow?.items));
+  await page.locator('.bt-ok').click({ force: true });
+  await waitScene(page, 'road');
+
+  // choose after a faint: a weak team against a strong foe
+  await page.evaluate(() => window.__go('battle', { enemyTeam: [{ id: 6, level: 100 }], trainer: { name: 'ACE', leader: false }, wild: false, returnTo: 'road', onEnd: null,
+    myTeam: [{ id: 25, level: 2 }, { id: 133, level: 2 }, { id: 6, level: 2 }] }));
+  await page.waitForSelector('.bt[data-ready="1"] .bt-moves button:not([disabled])', { timeout: 10000 });
+  let chose = false;
+  for (let i = 0; i < 12 && !chose; i++) {
+    if (await page.locator('.bt-drawer:not([hidden]) .bt-slot:not([disabled])').count()) { chose = true; break; }
+    const mv = page.locator('.bt-moves button:not([disabled])');
+    if (await mv.count()) await mv.first().click({ force: true }).catch(() => {});
+    await page.waitForTimeout(250);
+  }
+  check('faint: the team picker opens for Gabe to choose who comes in', chose);
+  check('faint: moves wait while he chooses', (await page.locator('.bt-moves button:not([disabled])').count()) === 0);
+  await page.locator('.bt-drawer .bt-slot:not([disabled])').last().click();
+  await page.waitForTimeout(600);
+  const meSrc = await page.locator('.bt-sprite-me').first().getAttribute('src');
+  check('faint: the one he picked comes in', /\/back\/6\.(gif|png)$/.test(meSrc || ''), meSrc);
+  await page.evaluate(() => window.__go('road'));
+  await waitScene(page, 'road');
+
+  // a legendary: postgame level lift, then it sways on 1 HP and the ball glows
+  await page.evaluate(() => window.__go('battle', { enemyTeam: [{ id: 150, level: 70 }], trainer: null, wild: true, legendary: true, postgame: true, returnTo: 'road', onEnd: null }));
+  await page.waitForSelector('.bt[data-ready="1"] .bt-moves button:not([disabled])', { timeout: 10000 });
+  const foeLv = await page.evaluate(() => document.querySelector('.bt-hud-foe')?.textContent || '');
+  const gp = (await v3(page))?.players?.[1] || {};
+  const avgLv = Math.round(gp.team.reduce((a, id) => a + (gp.mons[id]?.level || 5), 0) / gp.team.length);
+  check('postgame: a Lv70 shrine legendary rises to his team\'s average level', avgLv > 70 && foeLv.includes('Lv' + avgLv), foeLv + ' vs avg ' + avgLv);
+  let glow = false;
+  for (let i = 0; i < 40 && !glow; i++) {
+    if ((await scene(page)) !== 'battle' || (await page.locator('.bt-ok:visible').count())) break;
+    glow = (await page.locator('.bt-act-ball.bt-act-glow').count()) > 0;
+    if (glow) break;
+    const slot = page.locator('.bt-drawer:not([hidden]) .bt-slot:not([disabled])');
+    if (await slot.count()) { await slot.first().click({ force: true }).catch(() => {}); await page.waitForTimeout(300); continue; }
+    const mv = page.locator('.bt-moves button:not([disabled])');
+    if (await mv.count()) await mv.first().click({ force: true }).catch(() => {});
+    await page.waitForTimeout(250);
+  }
+  check('legendary: beaten down, it stays on 1 HP and the ball button glows (catch it!)', glow);
+  check('legendary: the fight is still on after the knockout blow', (await scene(page)) === 'battle' && !(await page.locator('.bt-ok:visible').count()));
+  await finishPage('battle fixes', P);
+}
+
+// ---- Art's road peek: the house goes back to his garden
+{
+  const P = await newPage(SIZES[0], { pokedexos_save_v3: JSON.stringify(champSave()), pokedexos_next_lastplayer: '2' });
+  const { page } = P;
+  await page.goto(BASE + Q, { waitUntil: 'networkidle' });
+  await waitScene(page, 'who');
+  await page.locator('.who-card.p2').click();
+  await waitScene(page, 'garden');
+  await page.locator('.gd-road').dispatchEvent('pointerdown');
+  await waitScene(page, 'road');
+  const hb = await page.locator('.road-home').boundingBox();
+  check('road peek: Art\'s house button is prereader-sized (>= 60px)', hb && hb.width >= 60 && hb.height >= 60, JSON.stringify(hb));
+  await page.locator('.road-home').click();
+  await waitScene(page, 'garden');
+  check('road peek: ⌂ goes back to his garden, not WHO\'S PLAYING', (await scene(page)) === 'garden');
+  await finishPage('road peek home', P);
 }
 
 // ============================================================ 12. offline shell + manifest

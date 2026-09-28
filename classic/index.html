@@ -16,8 +16,8 @@
          attributes; styles cannot run code. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https://raw.githubusercontent.com data: blob:; media-src 'self' https://raw.githubusercontent.com blob:; connect-src 'self' https://pokeapi.co https://raw.githubusercontent.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
     <meta name="referrer" content="no-referrer">
-    <link rel="stylesheet" href="css/main.css?v=20.1.1">
-    <link rel="stylesheet" href="css/gba.css?v=20.1.1">
+    <link rel="stylesheet" href="css/main.css?v=20.2.0">
+    <link rel="stylesheet" href="css/gba.css?v=20.2.0">
 </head>
 <body>
 
@@ -29,6 +29,9 @@
          opening a console. Filled in by main.js from the one APP_VERSION. -->
     <div class="boot-version" id="boot-version">v…</div>
     <div class="tap-start" id="tap-msg">TAP TO START</div>
+    <!-- v20.1.2: the way back. The OLD POKEDEX is opened from Sprout Road's
+         grown-up panel; in a home-screen app there is no browser Back. -->
+    <a class="boot-sprout" id="boot-sprout" href="../next/" style="position:absolute; bottom:calc(env(safe-area-inset-bottom) + 24px); left:50%; transform:translateX(-50%); padding:10px 14px; border:3px solid #0f380f; border-radius:8px; color:#0f380f; background:#9bbc0f; text-decoration:none; font-size:10px; white-space:nowrap;">🌱 BACK TO SPROUT ROAD</a>
 </div>
 
 <div class="app-container" id="app-body">
@@ -552,6 +555,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=20.1.1"></script>
+<script type="module" src="js/main.js?v=20.2.0"></script>
 </body>
 </html>

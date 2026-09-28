@@ -147,10 +147,23 @@ function mergeMons(a, b) {
 }
 
 /** Union-merge one classic player into one v3 player. Never removes anything. */
-export function mergePlayer(v3p, v2raw) {
+export function mergePlayer(v3p, v2raw, last = null) {
   const a = cleanPlayer(v3p);
   if (!isObj(v2raw)) return a;
   const b = playerFromV2(v2raw);
+  // `last`: the classic favourites and nicks as they were at the previous
+  // merge ({favorites, nicks}, see v2Marks). Only what is NEW in the classic
+  // save since then comes across, so a star Gabe removed or a nickname he
+  // cleared in Sprout Road stays gone. Without it: plain union, as before.
+  const lastFav = new Set(isObj(last) && Array.isArray(last.favorites) ? last.favorites : []);
+  const lastNick = isObj(last) && isObj(last.nicks) ? last.nicks : {};
+  const newFav = isObj(last) ? b.favorites.filter(id => !lastFav.has(id)) : b.favorites;
+  const nicks = { ...a.nicks };                      // v3 wins
+  for (const [id, nk] of Object.entries(b.nicks)) {
+    if (id in nicks) continue;
+    if (isObj(last) && lastNick[id] === nk) continue;  // was there last time and he cleared it here
+    nicks[id] = nk;
+  }
   const caught = unionIds(a.caught, b.caught);
   const owned = new Set(caught);
   const legacy = { ...b.legacy, ...a.legacy };
@@ -162,8 +175,8 @@ export function mergePlayer(v3p, v2raw) {
     team: (a.team.length ? a.team : b.team).filter(id => owned.has(id)).slice(0, MAX_TEAM),
     mons: mergeMons(a.mons, b.mons),
     shinies: unionIds(a.shinies, b.shinies),
-    nicks: { ...b.nicks, ...a.nicks },              // v3 wins, else v2
-    favorites: union(a.favorites, b.favorites).filter(id => owned.has(id)).slice(0, MAX_FAVORITES),
+    nicks,                                           // v3 wins, else what is new in v2
+    favorites: union(a.favorites, newFav).filter(id => owned.has(id)).slice(0, MAX_FAVORITES),
     items: maxMap(a.items, b.items),
     badges: union(a.badges, b.badges),
     gyms: { beaten: { ...b.gyms.beaten, ...a.gyms.beaten } },
@@ -176,12 +189,20 @@ export function mergePlayer(v3p, v2raw) {
   });
 }
 
+/** The classic save's favourites and nicks per player ({1:{favorites,nicks},2:...}),
+ *  recorded at each merge so the next merge takes only what changed. */
+export function v2Marks(v2) {
+  if (!isV2Save(v2)) return null;
+  const one = raw => { if (!isObj(raw)) return { favorites: [], nicks: {} }; const b = playerFromV2(raw); return { favorites: b.favorites, nicks: b.nicks }; };
+  return { 1: one(v2.players[1]), 2: one(v2.players[2]) };
+}
+
 /**
  * Pull classic progress into a v3 save. Union only: every id, level, badge,
  * beaten trainer, nick and champion record already in v3 survives. A v2 value
  * that is not a classic save leaves v3 exactly as it was (cleaned).
  */
-export function mergeV2(v3, v2) {
+export function mergeV2(v3, v2, marks = null) {
   const base = isObj(v3) && isObj(v3.players) ? v3 : freshSave();
   const created = typeof base.created === 'string' ? base.created : today();
   if (!isV2Save(v2)) {
@@ -190,8 +211,8 @@ export function mergeV2(v3, v2) {
   return {
     version: 3, created,
     players: {
-      1: mergePlayer(base.players[1], v2.players[1]),
-      2: mergePlayer(base.players[2], v2.players[2]),
+      1: mergePlayer(base.players[1], v2.players[1], isObj(marks) ? marks[1] : null),
+      2: mergePlayer(base.players[2], v2.players[2], isObj(marks) ? marks[2] : null),
     },
     ...rootOf(base),
   };

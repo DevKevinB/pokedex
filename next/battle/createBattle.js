@@ -110,28 +110,28 @@ export function powerDots(power) {
 
 /**
  * [{ glyph, dots, type, shape:'physical'|'special' }] for a moveset, same
- * order. Same-type moves never share a glyph (a later one takes the next free
- * glyph of its own class, then of the other class).
+ * order. No two moves in one moveset share a glyph (a later one takes the
+ * next free glyph of its own class, then of the other class).
  */
 export function movePictures(moves) {
-  const used = new Map();              // type -> Set(glyph)
+  // One set for the whole moveset: a grass move and a poison move that both
+  // fall back to the swirl used to share it, told apart only by colour.
+  const taken = new Set();
   return (moves || []).map(m => {
     const name = String((m && m.name) || '').toLowerCase();
     const type = (m && m.type) || 'normal';
     const special = m && m.damage_class === 'special';
     const own = special ? SPEC_SHAPES : PHYS_SHAPES;
     const rest = special ? PHYS_SHAPES : SPEC_SHAPES;
-    const taken = used.get(type) || new Set();
     const match = own.find(([, re]) => re && re.test(name));
     const order = [match, ...own, ...rest].filter(Boolean).map(([g]) => g);
     const glyph = order.find(g => !taken.has(g)) || order[0];
     taken.add(glyph);
-    used.set(type, taken);
     return { glyph, dots: powerDots(m && m.power), type, shape: special ? 'special' : 'physical' };
   });
 }
 
-export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math.random, moveLookup = null, wild = false, leader = false, berries = Infinity, gimmick = null } = {}) {
+export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math.random, moveLookup = null, wild = false, leader = false, berries = Infinity, gimmick = null, chooseOnFaint = false, legendary = false } = {}) {
   if (!Array.isArray(myTeam) || !myTeam.length) throw new Error('createBattle: myTeam is empty');
   if (!Array.isArray(enemyTeam) || !enemyTeam.length) throw new Error('createBattle: enemyTeam is empty');
 
@@ -150,8 +150,24 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
   let intent = 0;
   let busy = false;
   const xpById = new Map();
+  // chooseOnFaint (a reader's own screen only): when his Pokemon faints and
+  // more than one is left, he picks who comes in (state.me.mustChoose) and
+  // that send is free. A prereader, and every other caller, keeps auto-send.
+  const letChoose = !!chooseOnFaint && !junior;
+  state.me.mustChoose = false;
+  // legendary (a wild sanctum fight): the first blow that would knock it out
+  // leaves it on 1 HP instead ('hold' event) and balls then catch at least
+  // half the time, so beating it is his chance to catch it, not the end.
+  const legend = !!legendary && !!wild;
+  let held = false;
+  const HELD_CATCH = 0.5;
 
   const active = side => state[side].team[state[side].active];
+
+  // Party XP: every Pokemon of mine that stood in against the current foe.
+  const fought = new Set();
+  const markFought = () => { const m = active('me'); if (m && !m.fainted) fought.add(m.id); };
+  markFought();
 
   // ==== round2 gimmick hook BEGIN ====
   // opts.gimmick (optional, ROUND 2 leaders; data/round2.js makeGimmick):
@@ -217,10 +233,19 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     intent = i >= 0 ? i : 0;
   }
 
+  // The one that lands the KO (or the catch) gets full XP; every other
+  // Pokemon that fought this foe and is still standing gets half.
   function addXp(defeated) {
     const me = active('me');
     const gained = xpForKO({ base_experience: defeated.base_experience ?? defeated.baseExperience, level: defeated.level });
-    xpById.set(me.id, (xpById.get(me.id) || 0) + gained);
+    const give = (id, n) => xpById.set(id, (xpById.get(id) || 0) + n);
+    give(me.id, gained);
+    const half = Math.max(1, Math.floor(gained / 2));
+    for (const id of fought) {
+      if (id === me.id) continue;
+      const f = state.me.team.find(m => m.id === id);
+      if (f && !f.fainted) give(id, half);
+    }
   }
 
   function xpReport() {
@@ -262,6 +287,9 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     let hpAfter = defF.hp - dmg;
     if (junior && defSide === 'me') hpAfter = Math.max(1, hpAfter);
 
+    let holdNow = false;
+    if (legend && defSide === 'foe' && !held && hpAfter <= 0) { hpAfter = 1; held = true; holdNow = true; }
+
     // The leader's ace never skips its big moment: a hit that would take it
     // from above half straight to zero leaves it on 1 so phase 2 can fire.
     const triggerPhase2 = defSide === 'foe' && isAce() && !phase2Done && hpAfter <= defF.maxHp * PHASE2_AT;
@@ -271,6 +299,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     dmg = defF.hp - hpAfter;
     defF.hp = hpAfter;
     events.push({ type: 'move', side, move: { ...move }, dmg, crit: !!res.crit, eff, hpAfter });
+    if (holdNow) events.push({ type: 'hold', side: 'foe' });
 
     if (triggerPhase2) {
       phase2Done = true;
@@ -298,8 +327,27 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
       end(events, other(side));
       return;
     }
+    if (side === 'me' && letChoose && next.length > 1) {
+      state.me.mustChoose = true;
+      events.push({ type: 'choose', side, options: next });
+      return;
+    }
     state[side].active = next[0];
     events.push({ type: 'send', side, index: next[0] });
+    if (side === 'foe') fought.clear();
+    markFought();
+  }
+
+  // His pick after a faint: the newcomer comes in for free (no foe turn).
+  function doSend(index) {
+    const t = state.me.team;
+    if (!Number.isInteger(index) || !t[index] || t[index].fainted) return [];
+    state.me.mustChoose = false;
+    state.me.active = index;
+    markFought();
+    const events = [{ type: 'send', side: 'me', index }];
+    commitIntent();
+    return events;
   }
 
   function foeTurn(events) {
@@ -340,6 +388,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     if (!Number.isInteger(index) || !t[index] || t[index].fainted || index === state.me.active) return [];
     const events = [{ type: 'switch', side: 'me', index }];
     state.me.active = index;
+    markFought();
     gTurnStart(events);                                         // round2 gimmick hook
     foeTurn(events);                 // the foe's committed move lands on the newcomer
     return finishTurn(events);
@@ -350,10 +399,11 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
     const mod = BALL_MODS[ball];
     if (!mod) return [];
     const foe = active('foe');
-    const p = catchProbability({
+    let p = catchProbability({
       captureRate: num(foe.captureRate, 45), ballMod: mod,
       hp: foe.hp, maxHp: foe.maxHp, junior, master: ball === 'master'
     });
+    if (legend && held && foe.hp <= 1) p = Math.max(p, HELD_CATCH);
     const roll = rng();
     const success = p >= 1 || roll < p;
     let shakes = 3;
@@ -409,6 +459,7 @@ export function createBattle({ myTeam, enemyTeam, profile = 'reader', rng = Math
       if (state.over || busy) return [];
       busy = true;
       try {
+        if (state.me.mustChoose) return action.kind === 'switch' ? doSend(action.index) : [];
         if (action.kind === 'move') return doMove(action.index | 0);
         if (action.kind === 'switch') return doSwitch(action.index);
         if (action.kind === 'ball') return doBall(action.ball);

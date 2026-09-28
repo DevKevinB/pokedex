@@ -113,6 +113,13 @@ export function topLevel(p) {
   return teamSpec(p).reduce((a, m) => Math.max(a, m.level), 1);
 }
 
+/** The middle level of his team (the lower middle for an even count): Dad's
+ *  Couch Versus Pokemon fight at this, so the same team is a fair fight. */
+export function medianLevel(p) {
+  const ls = teamSpec(p).map(m => m.level).sort((a, b) => a - b);
+  return ls[Math.floor((ls.length - 1) / 2)] || 1;
+}
+
 // ---------------------------------------------------------------- scene
 
 export function mount(root, ctx) {
@@ -146,7 +153,7 @@ export function mount(root, ctx) {
       h('span', { class: 'tg-pair tg-facing' },
         leadPic(seats.battler, 'tg-mode-sprite'),
         h('span', { class: 'tg-swords', attrs: { 'aria-hidden': 'true' } }, '⚔'),
-        spriteImg(BULBA_ID, { class: ['tg-mode-sprite', 'tg-face-left'] })))));
+        spriteImg(BULBA_ID, { animated: true, class: ['tg-mode-sprite', 'tg-face-left'] })))));
   root.appendChild(scene);
 
   // The ⚔ seat plays on (and writes to) that player's save, so his picture

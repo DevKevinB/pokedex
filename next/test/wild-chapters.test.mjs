@@ -289,6 +289,7 @@ test('battle params use the normal trainer flow and a wild:<i>:<j> onEnd', () =>
   assert.equal(bp.onEnd, 'wild:2:' + WILD_LEADER);
   assert.equal(bp.wild, false);
   assert.equal(bp.trainer.leader, true);
+  assert.equal(bp.postgame, true, 'battle.js lifts postgame foes toward a strong team');
   assert.deepEqual(bp.enemyTeam, wildByIdx(2).trainers[WILD_LEADER].team.map(m => ({ ...m })));
   assert.equal(wildBattleParams(2, 0).trainer.leader, false);
   assert.equal(wildBattleParams(99, 0), null);

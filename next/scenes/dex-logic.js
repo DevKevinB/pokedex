@@ -16,7 +16,7 @@ import { xpProgress, DEFAULT_LEVEL } from '../data/engine.js';
 export const MAX_ID = 649;
 export const MAX_TEAM = 6;
 export const MAX_FAVORITES = 6;
-export const NICK_MAX = 10;
+export const NICK_MAX = 12;                 // the classic app's limit too, so its names fit
 
 // prettier-ignore
 const NAME_TEXT =
@@ -118,7 +118,7 @@ const squash = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
  * A pure number matches that id first, then ids that start with it.
  * Returns dex ids in a stable order (exact, then prefix, then contains).
  */
-export function searchIds(query) {
+export function searchIds(query, nicks = null) {
   const raw = String(query == null ? '' : query).trim().slice(0, 30);
   if (!raw) return [];
   const digits = raw.replace(/^#/, '');
@@ -133,6 +133,15 @@ export function searchIds(query) {
   }
   const q = squash(raw);
   if (!q) return [];
+  // His own nicknames first: 'blaze' finds the Charizard he named BLAZE.
+  const named = [];
+  if (nicks && typeof nicks === 'object') {
+    for (const [k, v] of Object.entries(nicks)) {
+      const id = Number(k);
+      if (isDexId(id) && squash(v).includes(q)) named.push(id);
+    }
+    named.sort((a, b) => a - b);
+  }
   const exact = [], prefix = [], inner = [];
   for (let id = 1; id <= MAX_ID; id++) {
     const nm = squash(API_NAMES[id]);
@@ -140,7 +149,8 @@ export function searchIds(query) {
     else if (nm.startsWith(q)) prefix.push(id);
     else if (nm.includes(q)) inner.push(id);
   }
-  return [...exact, ...prefix, ...inner];
+  const byName = [...exact, ...prefix, ...inner];
+  return named.length ? [...named, ...byName.filter(id => !named.includes(id))] : byName;
 }
 
 const idSet = a => new Set(Array.isArray(a) ? a.map(Number).filter(isDexId) : []);
@@ -152,10 +162,10 @@ const idSet = a => new Set(Array.isArray(a) ? a.map(Number).filter(isDexId) : []
  *   caught     the player's caught ids
  *   prereader  his caught ones go first (then the rest, in dex order)
  */
-export function gridIds({ gen = 0, query = '', caught = [], prereader = false } = {}) {
+export function gridIds({ gen = 0, query = '', caught = [], prereader = false, nicks = null } = {}) {
   const g = GENS.find(x => x.key === gen) || GENS[0];
   let ids;
-  if (!prereader && String(query || '').trim()) ids = searchIds(query);
+  if (!prereader && String(query || '').trim()) ids = searchIds(query, nicks);
   else {
     ids = [];
     for (let id = g.from; id <= g.to; id++) ids.push(id);
@@ -203,7 +213,7 @@ export function cleanNick(s) {
   return cleanName(s).slice(0, NICK_MAX).trim();
 }
 
-/** Keypad state machine: returns the next draft (never longer than 10, no leading/double spaces). */
+/** Keypad state machine: returns the next draft (never longer than NICK_MAX, no leading/double spaces). */
 export function typeKey(draft, key) {
   const d = String(draft || '').slice(0, NICK_MAX);
   if (key === 'DEL') return d.slice(0, -1);

@@ -17,7 +17,7 @@
 // ============================================================
 
 import { cleanSave, cleanPlayer, freshSave, isObj, hasProgress, today, cleanFamily, cleanGifts, cleanChallenge, unionDecor, cleanAccessory, withRollbackMirror } from './validate.js';
-import { fromV2, mergeV2, applyV1, isV2Save } from './migrate.js';
+import { fromV2, mergeV2, applyV1, isV2Save, v2Marks } from './migrate.js';
 import { DECOR } from '../data/decor.js';
 
 const DECOR_KINDS = DECOR.map(d => d.key);
@@ -31,6 +31,9 @@ export const KEYS = {
   // Fingerprint (crc32) of the classic save as it was last merged in. Kept in
   // its own key, outside the save shape, so no schema change is involved.
   v2seen: 'pokedexos_v2_seen',
+  // The classic favourites + nicks as last merged ({1:{favorites,nicks},2:..}),
+  // also outside the save shape: the next merge brings over only what is new.
+  v2marks: 'pokedexos_v2_marks',
   v1: { 1: 'pokedex_caught_p1', 2: 'pokedex_caught_p2' },
 };
 const DISPOSABLE_PREFIXES = ['pokedexos_apicache'];
@@ -97,6 +100,7 @@ function parse(text) {
  * Never writes the v2 key. May write a quarantine key; writes nothing else.
  */
 let pendingV2Seen = null;
+let pendingV2Marks = null;
 
 export function load() {
   info = { source: 'fresh', quarantinedKey: null, blocked: false, mergedV2: false };
@@ -120,8 +124,9 @@ export function load() {
   // so a failed write means the merge simply runs again next boot.
   const v2print = v2ok ? crc32(v2Text) : null;
   pendingV2Seen = v2print;
+  pendingV2Marks = v2ok ? v2Marks(v2) : null;
   if (save) {
-    if (v2ok && get(KEYS.v2seen) !== v2print) { save = mergeV2(save, v2); info.mergedV2 = true; }
+    if (v2ok && get(KEYS.v2seen) !== v2print) { save = mergeV2(save, v2, lastV2Marks()); info.mergedV2 = true; }
   } else if (v2ok) {
     save = fromV2(v2);
     info.source = 'v2';
@@ -142,6 +147,19 @@ export function load() {
   noteHwm(save);
   raiseToHwm(save);
   return save;
+}
+
+// What the classic favourites/nicks were at the last merge. Before v20.1.2
+// nothing recorded them: the first classic backup (the classic save as it
+// was at the switchover, when it was first merged) stands in; with neither,
+// null means a plain union (the old behaviour).
+function lastV2Marks() {
+  const m = parse(get(KEYS.v2marks));
+  if (isObj(m) && isObj(m[1]) && isObj(m[2])) return m;
+  try {
+    const k = keys().filter(x => x.startsWith(KEYS.v2Backup)).sort()[0];
+    return k ? v2Marks(parse(get(k))) : null;
+  } catch (e) { return null; }
 }
 
 // ---------------------------------------------------------------- persist
@@ -188,7 +206,13 @@ export function persist(save) {
     try { s.setItem(KEYS.v3, json); } catch (e2) { return false; }
   }
   noteHwm(save);
-  if (pendingV2Seen) { try { s.setItem(KEYS.v2seen, pendingV2Seen); pendingV2Seen = null; } catch (e) { /* merge again next boot: harmless */ } }
+  if (pendingV2Seen) {
+    try {
+      if (pendingV2Marks) s.setItem(KEYS.v2marks, JSON.stringify(pendingV2Marks));
+      s.setItem(KEYS.v2seen, pendingV2Seen);
+      pendingV2Seen = null; pendingV2Marks = null;
+    } catch (e) { /* merge again next boot: harmless */ }
+  }
   return true;
 }
 
@@ -275,9 +299,10 @@ export function decodeCode(code, depth = 0) {
   }
   if (obj.v === 2 && isObj(obj.save) && isObj(obj.save.players)) {
     // `{"v":2,"save":{"players":{}}}` must not wipe both boys: a real v2 code
-    // carries at least one player with a caught list.
+    // carries at least one player who caught something (an empty caught
+    // list is no better than none: the v2 path replaces the whole save).
     const ps = obj.save.players;
-    if (![1, 2].some(n => isObj(ps[n]) && Array.isArray(ps[n].caught))) throw codeError('EMPTY_SAVE');
+    if (![1, 2].some(n => isObj(ps[n]) && Array.isArray(ps[n].caught) && ps[n].caught.length > 0)) throw codeError('EMPTY_SAVE');
     return { kind: 'v2', data: fromV2({ ...obj.save, version: 2 }) };
   }
   if (Array.isArray(obj.p1) || Array.isArray(obj.p2)) {
@@ -409,5 +434,6 @@ export function _resetForTests() {
   info = { source: 'fresh', quarantinedKey: null, blocked: false, mergedV2: false };
   backupDone = false;
   pendingV2Seen = null;
+  pendingV2Marks = null;
   for (const n of [1, 2]) hwm[n] = { petals: 0, stage: 1 };
 }

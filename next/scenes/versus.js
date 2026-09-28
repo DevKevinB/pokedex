@@ -2,7 +2,7 @@
 // SPROUT ROAD — COUCH VERSUS (one device, pass-and-play).
 //
 // The reader (his own team) against DAD (a grown-up picks 3 of all 649
-// with a search box; they fight at the reader's top level). Each turn:
+// with a search box; they fight at the middle level of the reader's team). Each turn:
 //   Bulbasaur CURTAIN (peeking) + the next player's sprite + PASS ▶
 //   -> that player picks a move in secret -> curtain -> the other picks
 //   -> both picks resolve together, in the open.
@@ -28,13 +28,15 @@ import { buildFighter, moveInfo, movesReady } from '../core/api.js';
 import { createBattle } from '../battle/createBattle.js';
 import { moveSeed } from '../data/engine.js';
 import { typeEmoji, typeColors, inkFor } from '../data/config.js';
-import { seatsFrom, teamSpec, topLevel, nameOf, battleProfile, BULBA_ID } from './together.js';
+import { seatsFrom, teamSpec, medianLevel, nameOf, battleProfile, BULBA_ID } from './together.js';
 import { makeStage } from './family-table.js';
 
 export const DAD_TEAM = 3;
 const MAX_ID = 649;
 const DAD_KEY = 'pokedexos_next_dadteam';     // a per-device convenience, NOT the save
-const SUGGEST = [6, 9, 3, 25, 150, 149, 130, 94, 143, 248, 445, 448];
+// First picks for Dad: first- and middle-stage Pokemon, never a legendary
+// (a fair fight with a kid, not a wall).
+const SUGGEST = [5, 8, 2, 25, 133, 148, 58, 66, 93, 446, 247, 444];
 
 // All 649 species (PokeAPI names, dex order) for DAD's search box.
 const NAMES_RAW = [
@@ -140,7 +142,7 @@ export function mount(root, ctx) {
   const gabeN = seats.battler;
   const R = () => store.save.players[gabeN];
   const gabeName = nameOf(store.save, gabeN);
-  const level = topLevel(R());
+  const level = medianLevel(R());
   // seatsFrom never seats a prereader over a reader; if BOTH are prereaders
   // he still battles under Junior rules (never faints, calm, no words).
   const profile = battleProfile(store.save, gabeN);

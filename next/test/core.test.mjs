@@ -525,6 +525,8 @@ test('codes: an empty v2 code cannot wipe both boys', () => {
   assert.throws(() => S.importCode(empty, V.freshSave()), /EMPTY_SAVE/);
   const noCaught = btoa(JSON.stringify({ v: 2, save: { players: { 1: { name: 'X' } } } }));
   assert.throws(() => S.importCode(noCaught, V.freshSave()), /EMPTY_SAVE/);
+  const emptyCaught = btoa(JSON.stringify({ v: 2, save: { players: { 1: { name: 'X', caught: [] }, 2: { caught: [] } } } }));
+  assert.throws(() => S.importCode(emptyCaught, V.freshSave()), /EMPTY_SAVE/);
 });
 
 test('codes: v1 {p1,p2} codes union into the current save', () => {
@@ -984,6 +986,54 @@ test('save: an unchanged classic save is not re-merged (a removed favourite stay
   assert.equal(S.getLoadInfo().mergedV2, true);
   // and v2 itself is still never written
   assert.equal(ls.getItem(S.KEYS.v2), JSON.stringify(v2));
+});
+
+test('save: a CHANGED classic save still does not bring back a removed star or a cleared nickname', () => {
+  const ls = reset();
+  const v2 = v2Fixture();
+  const [a, b] = v2.players[1].caught;
+  v2.players[1].favorites = [a, b];
+  v2.players[1].nicks = { [a]: 'DRAGGY', [b]: 'KEEPME' };
+  ls.pokedexos_save_v2 = JSON.stringify(v2);
+  let save = S.load();
+  assert.ok(S.persist(save));
+  assert.ok(save.players[1].favorites.includes(a) && save.players[1].nicks[a] === 'DRAGGY');
+  save.players[1].favorites = save.players[1].favorites.filter(id => id !== a);
+  delete save.players[1].nicks[a];
+  assert.ok(S.persist(save));
+  // a classic catch changes v2 (new fingerprint): the merge runs again...
+  v2.players[1].caught.push(151);
+  v2.players[1].favorites.push(151);
+  v2.players[1].nicks[151] = 'MEWMEW';
+  ls.pokedexos_save_v2 = JSON.stringify(v2);
+  S._resetForTests();
+  save = S.load();
+  assert.equal(S.getLoadInfo().mergedV2, true);
+  assert.ok(save.players[1].caught.includes(151));
+  assert.ok(!save.players[1].favorites.includes(a), 'the removed star stays removed');
+  assert.equal(save.players[1].nicks[a], undefined, 'the cleared nickname stays cleared');
+  assert.ok(save.players[1].favorites.includes(b) && save.players[1].nicks[b] === 'KEEPME');
+  // ...and what is NEW in the classic app still comes across
+  assert.ok(save.players[1].favorites.includes(151), 'a new classic star arrives');
+  assert.equal(save.players[1].nicks[151], 'MEWMEW', 'a new classic nickname arrives');
+});
+
+test('save: before v20.1.2 recorded marks, the first classic backup stands in', () => {
+  const ls = reset();
+  const v2 = v2Fixture();
+  const [a] = v2.players[1].caught;
+  v2.players[1].favorites = [a];
+  ls.pokedexos_save_v2 = JSON.stringify(v2);
+  let save = S.load();
+  assert.ok(S.persist(save));
+  save.players[1].favorites = [];
+  assert.ok(S.persist(save));
+  ls.removeItem(S.KEYS.v2marks);                 // a device that ran v20.1.1
+  v2.players[1].caught.push(151);
+  ls.pokedexos_save_v2 = JSON.stringify(v2);
+  S._resetForTests();
+  save = S.load();
+  assert.ok(!save.players[1].favorites.includes(a), 'the backup knew the star: not new, not resurrected');
 });
 
 test('save: a failed write leaves the classic save un-fingerprinted so the merge retries', () => {

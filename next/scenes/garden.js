@@ -56,7 +56,8 @@ export function mount(root, ctx) {
   const offs = [];
   const listen = (el, evt, fn, opts) => { el.addEventListener(evt, fn, opts); offs.push(() => el.removeEventListener(evt, fn, opts)); };
 
-  // ---- persistence: at most one store.commit() per second --------------
+  // ---- persistence: at most one store.commit() per 250ms ----------------
+  const COMMIT_EVERY = 250;
   let lastCommit = 0, commitT = null, dirty = false;
   function flush() {
     cancel(commitT); commitT = null;
@@ -67,9 +68,9 @@ export function mount(root, ctx) {
   function save() {
     dirty = true;
     const since = Date.now() - lastCommit;
-    if (since >= 1000) flush();
+    if (since >= COMMIT_EVERY) flush();
     else if (!commitT) {
-      commitT = setTimeout(() => { timers.delete(commitT); commitT = null; flush(); }, 1000 - since);
+      commitT = setTimeout(() => { timers.delete(commitT); commitT = null; flush(); }, COMMIT_EVERY - since);
       timers.add(commitT);
     }
   }
@@ -120,6 +121,7 @@ export function mount(root, ctx) {
   const decorLayer = h('div', { class: 'gd-decor' });
   const giftLayer = h('div', { class: 'gd-giftlayer' });
 
+  let bottomBar = null;
   const plotsLayer = h('div', { class: 'gd-plots' });
   const actorsLayer = h('div', { class: 'gd-actors' });
   const field = h('div', { class: 'gd-field' }, h('div', { class: 'gd-grass' }), plotsLayer, decorLayer, actorsLayer, giftLayer);
@@ -140,7 +142,7 @@ export function mount(root, ctx) {
   const scene = h('div', { class: 'gd' },
     sky, hillsFar, hillsNear, field, fx,
     h('div', { class: 'gd-top' }, homeBtn, meter, roadBtn),
-    h('div', { class: 'gd-bottom' }, basketBtn, bookBtn, decorBtn, ballBtn),
+    (bottomBar = h('div', { class: 'gd-bottom' }, basketBtn, bookBtn, decorBtn, ballBtn)),
     drawerShade, drawer, dshade, dsheet);
   root.classList.add('garden-scene');
   root.appendChild(scene);
@@ -209,9 +211,18 @@ export function mount(root, ctx) {
     on: { pointerdown: e => { e.stopPropagation(); e.preventDefault(); onAnyInput(); tapBud(); } } }, h('span', { class: 'gd-bud-dot' }));
   const zzz = h('div', { class: 'gd-zzz' }, E.zzz);
   const stoneOn = h('img', { class: 'gd-stone-on', attrs: { src: ITEM('everstone'), alt: '', draggable: 'false' } });
+  // The Everstone switches ON only after a hold (a ring fills round it), so
+  // a stray tap next to Bulba, or on a visitor it happens to sit by, never
+  // quietly stops him evolving. Switching it OFF is a single tap.
+  const stoneRing = h('span', { class: 'gd-stone-ring', attrs: { 'aria-hidden': 'true' } });
   const stoneBtn = h('button', { class: 'gd-btn gd-stone', attrs: { type: 'button', 'aria-label': 'everstone' },
-    on: { pointerdown: e => { e.stopPropagation(); e.preventDefault(); onAnyInput(); toggleStone(); } } },
-    h('img', { attrs: { src: ITEM('everstone'), alt: '', draggable: 'false' } }));
+    on: {
+      pointerdown: e => { e.stopPropagation(); e.preventDefault(); onAnyInput(); stoneDown(e); },
+      pointerup: e => { e.stopPropagation(); stoneUp(); },
+      pointercancel: () => stoneUp(),
+      contextmenu: e => e.preventDefault(),
+    } },
+    stoneRing, h('img', { attrs: { src: ITEM('everstone'), alt: '', draggable: 'false' } }));
   // What Bulba is wearing (batch 4). Inside .gd-face, so it turns with him.
   const accEl = h('div', { class: 'gd-acc', attrs: { 'aria-hidden': 'true' } });
   B.faceEl.appendChild(accEl);
@@ -344,7 +355,11 @@ export function mount(root, ctx) {
     const y = rand(0.35, 0.8);
     place(a, fromLeft ? -0.18 : 1.18, y);
     let tx = fromLeft ? rand(0.18, 0.4) : rand(0.6, 0.82);
-    if (Math.abs(tx - B.x) < 0.15 && Math.abs(y - B.y) < 0.2) tx = fromLeft ? 0.15 : 0.85;
+    // Keep clear of Bulba AND of the Everstone beside him (about 0.2 of the
+    // width to one side), so a tap on a visitor never lands on the stone.
+    const stoneX = B.x + (B.el.classList.contains('stone-right') ? 0.21 : -0.21);
+    const nearB = Math.abs(y - B.y) < 0.2 && (Math.abs(tx - B.x) < 0.15 || Math.abs(tx - stoneX) < 0.15);
+    if (nearB) tx = fromLeft ? 0.15 : 0.85;
     visitors.push(a);
     listen(a.body, 'pointerdown', e => { e.stopPropagation(); e.preventDefault(); onAnyInput(); tapVisitor(a); });
     requestAnimationFrame(() => { if (!alive) return; moveTo(a, tx, y, { speed: 5, min: 1400, max: 2600, done: () => { ambientCry(id); jump(a); } }); });
@@ -500,6 +515,27 @@ export function mount(root, ctx) {
     jump(B);
     hearts(B);
   }
+  const STONE_HOLD_MS = 1500;
+  let stoneT = null;
+  function stoneDown(e) {
+    if (busy === 'evolve' || bulba.stage >= 3) return;
+    if (bulba.stayStone) { toggleStone(); return; }            // OFF: one tap
+    try { if (e && e.pointerId != null) stoneBtn.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
+    cancel(stoneT);
+    stoneBtn.classList.add('holding');
+    // A real-time hold even under ?fast=1: it is a grown-up-style gesture.
+    stoneT = setTimeout(() => {
+      timers.delete(stoneT); stoneT = null; stoneBtn.classList.remove('holding');
+      if (alive && !bulba.stayStone) toggleStone();
+    }, STONE_HOLD_MS);
+    timers.add(stoneT);
+  }
+  function stoneUp() {
+    if (!stoneT) return;
+    cancel(stoneT); stoneT = null;
+    stoneBtn.classList.remove('holding');
+    play('tap'); jump(B);                                       // a tap just says hello
+  }
   function toggleStone() {
     play('tap');
     if (busy === 'evolve' || bulba.stage >= 3) return;
@@ -507,6 +543,7 @@ export function mount(root, ctx) {
     updateBulbaLook();
     jump(B);
     save();
+    if (L.budReady(bulba)) later(lookAtBud, 400);
   }
   // The bud is glowing: Bulba stops, peeks up at it and wiggles, and the bud
   // twinkles, so Art's eye goes to it. No words; slow and calm-safe.
@@ -765,9 +802,10 @@ export function mount(root, ctx) {
         class: 'gd-dc' + (info.wide ? ' wide' : '') + (info.tall ? ' tall' : '') + (sel === i ? ' sel' : '') + (i === popIdx ? ' pop' : ''),
         attrs: { role: 'button', 'aria-label': 'decoration' }, dataset: { i: String(i), kind: d.kind },
       }, decorArt(info));
+      const y = Math.min(d.y, decorMaxY());      // drawn above the buttons; the save keeps its own y
       el.style.left = (d.x * 100) + '%';
-      el.style.top = (d.y * 100) + '%';
-      el.style.zIndex = String(10 + Math.round(d.y * 100));
+      el.style.top = (y * 100) + '%';
+      el.style.zIndex = String(10 + Math.round(y * 100));
       decorLayer.appendChild(el);
     });
     scene.dataset.decor = String(garden.decor.length);
@@ -865,7 +903,16 @@ export function mount(root, ctx) {
 
   // ---- putting things down, moving them -------------------------------------
   const fitX = x => Math.max(0.04, Math.min(0.96, x));
-  const fitY = y => Math.max(0.08, Math.min(0.97, y));
+  // A decoration's foot stays above the bottom buttons (on a phone they
+  // cover the lowest part of the field), so nothing he puts down hides.
+  function decorMaxY() {
+    try {
+      const f = fs(), b = bottomBar && bottomBar.getBoundingClientRect();
+      if (!b || !f.h || !b.height) return 0.97;
+      return Math.max(0.5, Math.min(0.97, (b.top + 8 - f.top) / f.h));
+    } catch (e) { return 0.97; }
+  }
+  const fitY = y => Math.max(0.08, Math.min(decorMaxY(), y));
   function putHeld(x, y) {
     const kind = held;
     dropHeld();
@@ -1153,8 +1200,12 @@ export function mount(root, ctx) {
   requestAnimationFrame(() => {
     if (!alive) return;
     relayout();
+    if (!drag) renderDecor();       // now the field has a size: clamp above the buttons
     bulbaMove(0.5, 0.58, { speed: 3, done: () => { ambientCry(L.stageId(bulba.stage)); jump(B); } });
   });
+  // On purpose: every visit to the garden brings a friend once he has a few
+  // petals, even if he just came back. It never takes anything away, and a
+  // four-year-old coming home to a visitor is the point (Kevin's fun rule).
   if (bulba.petals >= L.PETALS_PER_VISITOR) { pendingVisitors++; later(trySpawnVisitor, 2600); }
   if (L.budReady(bulba)) later(lookAtBud, 3200);
 

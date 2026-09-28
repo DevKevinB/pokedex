@@ -74,7 +74,7 @@ test('battle params: one Lv70+ wild legendary, returns to roots, onEnd sanctum:<
   const bp = sanctumParams('mewtwo');
   assert.deepEqual(bp, {
     enemyTeam: [{ id: 150, level: legendByKey('mewtwo').level }], trainer: null,
-    wild: true, legendary: true, returnTo: 'roots', onEnd: 'sanctum:mewtwo'
+    wild: true, legendary: true, postgame: true, returnTo: 'roots', onEnd: 'sanctum:mewtwo'
   });
   assert.equal(sanctumParams('pikachu'), null);
   assert.equal(sanctumOnEnd('lugia'), 'sanctum:lugia');

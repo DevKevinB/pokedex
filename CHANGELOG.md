@@ -2,6 +2,51 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [20.2.0] - PLAYTESTED
+
+Six pretend players (Art on the iPad and on a phone, Gabe mid-game and as
+Champion, you, and a save-safety tester) played the real game with real
+fingers. They found 40 things. Each one was checked by someone else before
+being fixed.
+
+### What the boys will notice
+
+**Art**
+- **Bulba always gets to evolve.** A single tap on the little Everstone next
+  to Bulba used to stop him evolving without any sign why. Keeping Bulba small
+  now takes a deliberate hold on the stone (a gold ring fills), and one tap
+  turns it back off.
+- Bigger buttons wherever Art can reach, on phone and iPad. His Bulba is as
+  big as Gabe's Pokémon on the PLAY TOGETHER cards. In a fight, no two of his
+  moves share the same picture. Decorations are never hidden behind his
+  buttons, and the ⌂ on his road peek takes him back to his garden.
+
+**Gabe**
+- **The whole team earns XP,** not just the Pokémon that lands the last hit:
+  teammates who fought get half.
+- **He chooses who comes in** after one of his Pokémon faints.
+- **Shiny Pokémon sparkle** in battle and on the catch card, which also shows
+  the ball he actually used.
+- **Legendaries can be caught.** Knocking one out now leaves it swaying on
+  1 HP with the ball button glowing, so he can catch it rather than just win.
+- **The endgame fights back.** Wild Chapters and legendaries now rise to meet
+  a Lv90-100 team.
+- Stars on the win card mean something: 3 if nobody fainted. Pokédex search
+  finds his nicknames, and nicknames can be up to 12 letters as before.
+- **Couch Versus is fair.** Dad's Pokémon no longer get Gabe's top level.
+
+### What Kevin will notice
+
+- **💾 SAVE CODE** in the grown-up menu: share it (AirDrop), copy it, load one,
+  or undo a load. This is the backup for both boys.
+- The ⚙ hold is sturdier on iPhone and iPad, and a quick tap shows how to open
+  it. A wrong times-table answer now shakes.
+- **The old Pokédex has a 🌱 BACK TO SPROUT ROAD link.**
+- **Dad's Challenge asks who's playing,** so a win by Gabe is Gabe's.
+- A Master Ball is never lost if the app closes mid-throw. A favourite or
+  nickname removed in Sprout Road stays removed even after playing the old
+  game.
+
 ## [20.1.1] - THE GEAR WORKS
 
 ### What Kevin will notice

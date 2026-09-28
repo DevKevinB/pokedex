@@ -153,7 +153,7 @@ export function mount(root, ctx) {
   function render() {
     lazy.reset();
     clear(grid);
-    shown = L.gridIds({ gen, query, caught: p.caught, prereader: pre });
+    shown = L.gridIds({ gen, query, caught: p.caught, prereader: pre, nicks: p.nicks });
     const frag = document.createDocumentFragment();
     const cells = shown.map(cellFor);
     cells.forEach(c => frag.appendChild(c));
@@ -327,8 +327,12 @@ export function mount(root, ctx) {
 
   // ---------------------------------------------------------- NAME ME keypad (reader)
   function openKeypad(id, done) {
+    // The draft starts from the stored name; OK with nothing typed leaves the
+    // stored name exactly as it is (a classic name can hold an apostrophe
+    // the keypad cannot type).
     let draft = (p.nicks && p.nicks[id]) || '';
     draft = L.cleanNick(draft);
+    let edited = false;
     const out = h('div', { class: 'dex-kp-out' });
     const drawOut = () => {
       clear(out);
@@ -336,7 +340,7 @@ export function mount(root, ctx) {
       out.appendChild(h('span', { class: 'dex-kp-left' }, String(L.NICK_MAX - draft.length)));
     };
     drawOut();
-    const key = k => { const nx = L.typeKey(draft, k); if (nx !== draft) { play('tap'); draft = nx; drawOut(); } };
+    const key = k => { const nx = L.typeKey(draft, k); if (nx !== draft) { play('tap'); draft = nx; edited = true; drawOut(); } };
     const keys = h('div', { class: 'dex-kp-keys' },
       L.KEYPAD.map(k => h('button', {
         class: ['dex-kp-key', k === ' ' && 'dex-kp-space'], type: 'button',
@@ -346,6 +350,7 @@ export function mount(root, ctx) {
     let ov = null;
     const shut = () => { if (ov) { ov.remove(); ov = null; } document.removeEventListener('keydown', onKey, true); };
     const ok = () => {
+      if (!edited) { play('tap'); shut(); done(); return; }
       L.setNick(p, id, draft);
       store.commit();
       play('levelUp');

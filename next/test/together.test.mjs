@@ -118,3 +118,10 @@ test('picture lock grid: 9 distinct pictures, always including his three', () =>
   const g = lockGrid([1, 2, 3], [10, 11, 12, 13, 14, 15], seededRng(3));
   for (const id of [10, 11, 12, 13, 14, 15]) assert.ok(g.includes(id));
 });
+
+test('medianLevel: Couch Versus Dad fights at the middle of his team, not the top', async () => {
+  const { medianLevel } = await import('../scenes/together.js');
+  const p = { team: [4, 25, 7], caught: [4, 25, 7], mons: { 4: { level: 14 }, 25: { level: 12 }, 7: { level: 11 } } };
+  assert.equal(medianLevel(p), 12);
+  assert.equal(medianLevel({ team: [4, 25], mons: { 4: { level: 20 }, 25: { level: 10 } } }), 10);
+});

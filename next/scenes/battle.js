@@ -118,6 +118,7 @@ export function mount(root, ctx) {
   let roadApplied = null;   // {bloom, seed, rival} when applyResult already saved a Road result
   const rafs = new Set();
   const shown = { me: 0, foe: 0 };      // which fighter each side is DISPLAYING
+  let foeHeld = false;                  // a legendary swaying on 1 HP (catch it now)
   const hpShown = { me: [], foe: [] };  // what the HP bars currently show
 
   // ---------- skeleton ----------
@@ -195,9 +196,10 @@ export function mount(root, ctx) {
     const shiny = side === 'me' ? (store.player().shinies || []).includes(f.id) : (wild && params.shiny === true && idx === 0);
     ui[side + 'Sprite'].classList.remove('faint', 'absorbed', 'leave', 'lunge', 'hit', 'hit-soft');
     clear(ui[side + 'Sprite']);
-    const img = spriteImg(f.id, { back: side === 'me', animated: true, shiny, class: `bt-sprite bt-sprite-${side}` });
+    const img = spriteImg(f.id, { back: side === 'me', animated: true, shiny, class: ['bt-sprite', `bt-sprite-${side}`, { 'is-shiny': shiny }] });
     if (side === 'foe' && battle.state.phase === 2 && idx === battle.state.foe.team.length - 1) img.classList.add('phase2');
     ui[side + 'Sprite'].appendChild(img);
+    if (shiny) ui[side + 'Sprite'].appendChild(h('span', { class: 'bt-shiny', attrs: { 'aria-hidden': 'true' } }, '✨'));
     restart(ui[side + 'Sprite'], 'enter');
     const nick = side === 'me' ? (store.player().nicks || {})[f.id] : null;
     put(clear(ui[side + 'Name']),
@@ -225,6 +227,8 @@ export function mount(root, ctx) {
     f.moves.forEach((m, i) => {
       ui.moves.appendChild(moveButton(m, pics[i], { reader, onClick: guarded(() => act({ kind: 'move', index: i })) }));
     });
+    // His Pokemon fainted and he is picking who comes in: moves wait.
+    if (battle && battle.state.me.mustChoose) for (const b of ui.moves.querySelectorAll('button')) b.disabled = true;
   }
 
   function renderActions() {
@@ -257,6 +261,12 @@ export function mount(root, ctx) {
         on: { click: guarded(() => act({ kind: 'run' })) }
       }, h('span', { attrs: { 'aria-hidden': 'true' } }, '🏃'), h('span', { class: 'bt-act-label' }, 'RUN')) : null
     );
+    if (battle.state.me.mustChoose) {
+      for (const b of ui.actions.querySelectorAll('.bt-act:not(.bt-act-switch)')) b.disabled = true;
+    }
+    // A worn-out legendary on 1 HP: the ball button glows (throw now!).
+    const ballBtn = ui.actions.querySelector('.bt-act-ball');
+    if (ballBtn) ballBtn.classList.toggle('bt-act-glow', foeHeld);
   }
 
   function setControls(on) {
@@ -314,15 +324,18 @@ export function mount(root, ctx) {
     }));
   }
 
+  // A Master Ball is only taken off him in the SAME commit as the catch
+  // (applyResult): a Master Ball always catches, and an app closed during
+  // the throw animation must never cost him the ball and the Pokemon.
+  let lastBall = null;
   function throwBall(key) {
     if (busy) return;
+    if (battle && battle.state.me.mustChoose) return;
     if (reader && key === 'master') {
       const p = store.player();
-      p.items = p.items || {};
-      if ((p.items.masterBalls | 0) < 1) return;
-      p.items.masterBalls = (p.items.masterBalls | 0) - 1;
-      store.commit();
+      if (((p.items && p.items.masterBalls) | 0) < 1) return;
     }
+    lastBall = key;
     act({ kind: 'ball', ball: key });
   }
 
@@ -421,7 +434,18 @@ export function mount(root, ctx) {
     }
     if (e.type === 'catch') {
       await playCatch(e);
+      return;
     }
+    if (e.type === 'hold') {
+      // The legendary sways on 1 HP instead of fainting: throw a ball now.
+      foeHeld = true;
+      restart(ui.foeSprite, 'hit-soft');
+      ui.foeSprite.classList.add('bt-held');
+      sfx.phase2?.();
+      await pause(500);
+      return;
+    }
+    // 'choose': nothing to animate; act() opens the team picker after the turn.
   }
 
   async function playCatch(e) {
@@ -480,6 +504,8 @@ export function mount(root, ctx) {
     busy = false;
     setControls(true);
     renderIntent();
+    // His Pokemon fainted: he picks who comes in (the team drawer opens).
+    if (battle.state.me.mustChoose) openTeam();
     hook('onTurn', coopApi);
   }
 
@@ -579,6 +605,10 @@ export function mount(root, ctx) {
     if (result === 'lose') bump('battlesLost');
     if (result === 'caught') {
       bump('catches');
+      if (reader && lastBall === 'master') {
+        p.items = p.items || {};
+        p.items.masterBalls = Math.max(0, (p.items.masterBalls | 0) - 1);
+      }
       const foe = battle.state.foe.team[battle.state.foe.active];
       const id = ev.caughtId ?? foe.id;
       if (!p.caught.includes(id)) p.caught.push(id);
@@ -653,16 +683,26 @@ export function mount(root, ctx) {
     await pause(result === 'lose' ? 400 : 250);
     if (!alive) return;
 
-    const stars = result === 'lose' ? [] : [0, 1, 2].map(i => h('span', { class: 'bt-star', style: { '--i': i } }, '⭐'));
+    // Stars tell how the win went: 3 with nobody fainted, 2 with half the
+    // team or fewer down, 1 otherwise. Never 0 on a win.
+    const team = battle.state.me.team;
+    const down = team.filter(f => f.fainted).length;
+    const nStars = down === 0 ? 3 : down <= team.length / 2 ? 2 : 1;
+    const stars = result === 'lose' ? [] : Array.from({ length: nStars }, (_, i) => h('span', { class: 'bt-star', style: { '--i': i } }, '⭐'));
+    const caughtShiny = wild && params.shiny === true;
+    const cardBall = (BALLS.find(b => b.key === lastBall) || {}).item || 'poke-ball';
     const hero = result === 'caught'
-      ? h('div', { class: 'bt-card-hero caught' }, spriteImg(ev.caughtId ?? fighter('foe').id, { animated: true, shiny: wild && params.shiny === true, class: 'bt-card-sprite' }), h('img', { class: 'bt-card-ball', src: ITEM('poke-ball'), alt: '' }))
+      ? h('div', { class: ['bt-card-hero', 'caught', { 'is-shiny': caughtShiny }] },
+        spriteImg(ev.caughtId ?? fighter('foe').id, { animated: true, shiny: caughtShiny, class: 'bt-card-sprite' }),
+        h('img', { class: 'bt-card-ball', src: ITEM(cardBall), alt: '' }),
+        caughtShiny ? h('span', { class: 'bt-card-shiny', attrs: { 'aria-hidden': 'true' } }, '✨') : null)
       : result === 'lose'
         ? h('div', { class: 'bt-card-hero lose' }, spriteImg(battle.state.me.team[0].id, { class: 'bt-card-sprite' }), h('span', { class: 'bt-zzz' }, '💤'))
         : null;
     const xpRows = rows.map(r => {
       const fill = h('span', { class: 'bt-xp-fill', style: { width: (xpProgress(r.before) * 100) + '%' } });
       const lv = h('span', { class: 'bt-xp-lv' }, lvText(r.before.level));
-      return { r, fill, lv, node: h('div', { class: 'bt-xp-row' }, spriteImg(r.id, { class: 'bt-xp-sprite' }), lv, h('span', { class: 'bt-xp-bar' }, fill)) };
+      return { r, fill, lv, node: h('div', { class: 'bt-xp-row' }, spriteImg(r.id, { class: 'bt-xp-sprite', shiny: (store.player().shinies || []).includes(r.id) }), lv, h('span', { class: 'bt-xp-bar' }, fill)) };
     });
     let cardAt = Infinity;
     ok = h('button', { class: 'bt-ok', type: 'button', attrs: { 'aria-label': 'OK' }, on: { click: e => { if (fresh(e, cardAt)) leave(); } } }, '▶');
@@ -717,11 +757,23 @@ export function mount(root, ctx) {
     return ids.map(id => ({ id, level: lvl(id) }));
   }
 
+  // Postgame foes (Wild Chapters, the shrines: params.postgame) never fall
+  // far below a reader's team: a trainer's Pokemon rise to at least 8 below
+  // his team's average level, a leader's to 5 below, a legendary to the
+  // average; capped at 100 and never lowered. A real fight, still winnable.
+  // A prereader's fights are left exactly as authored.
+  function postgameLift(enemy, mine) {
+    if (!reader || params.postgame !== true || !mine.length) return enemy;
+    const avg = Math.round(mine.reduce((a, m) => a + (m.level | 0), 0) / mine.length);
+    const floor = avg - (wild ? 0 : trainer && trainer.leader ? 5 : 8);
+    return enemy.map(m => ({ ...m, level: Math.min(100, Math.max(m.level | 0, floor)) }));
+  }
+
   async function boot() {
     try {
       try { await movesReady; } catch (e) { /* buildFighter copes */ }
       const mine = teamSpec();
-      const enemy = (params.enemyTeam || []).slice(0, 6);
+      const enemy = postgameLift((params.enemyTeam || []).slice(0, 6), mine);
       if (!enemy.length) throw new Error('no enemy team');
       const [myTeam, enemyTeam] = await Promise.all([
         Promise.all(mine.map(m => buildFighter(m.id, m.level, { seed: moveSeed(store.current, m.id) }))),
@@ -737,7 +789,9 @@ export function mount(root, ctx) {
         moveLookup: moveInfo,
         wild,
         leader: !!(trainer && trainer.leader),
-        gimmick: r2Gimmick                        // round2: null unless a ROUND 2 leader
+        gimmick: r2Gimmick,                       // round2: null unless a ROUND 2 leader
+        chooseOnFaint: reader && !coop,           // he picks who comes in after a faint
+        legendary: wild && params.legendary === true
       });
     } catch (err) {
       if (!alive) return;

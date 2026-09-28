@@ -195,10 +195,11 @@ export function mount(root, ctx) {
     return spriteImg(m.id, { class: ['rt-mon', cls, resting ? 'is-resting' : 'is-shadow'] });
   }
 
+  const caughtId = (p, id) => Array.isArray(p.caught) && p.caught.includes(id);
+
   function shrineCard(s) {
     const p = player();
     const done = shrineDone(p, s);
-    const n = shrineCount(p, s);
     const card = h('button', {
       class: ['rt-shrine', done && 'is-done', 'n' + s.mons.length], type: 'button',
       dataset: { shrine: s.key }, attrs: { 'aria-label': s.name },
@@ -207,8 +208,16 @@ export function mount(root, ctx) {
     },
     h('span', { class: 'rt-shrine-emoji', ...hidden }, s.emoji),
     pre ? null : h('span', { class: 'rt-shrine-name' }, s.name.replace(' SHRINE', '')),
-    h('span', { class: 'rt-shrine-mons', ...hidden }, s.mons.map(m => silhouette(m, isResting(p, m.key)))),
-    h('span', { class: 'rt-pips', ...hidden }, s.mons.map((m, k) => h('span', { class: ['rt-pip', k < n && 'is-full'] }))),
+    h('span', { class: 'rt-shrine-mons', ...hidden }, s.mons.map(m => {
+      const img = silhouette(m, isResting(p, m.key));
+      // Beaten but not caught: drawn a little dimmer, so the grid shows
+      // which ones are still out there to catch.
+      if (isResting(p, m.key) && !caughtId(p, m.id)) img.classList.add('is-again');
+      return img;
+    })),
+    // One pip per legendary: gold when it rests, a little ball when caught.
+    h('span', { class: 'rt-pips', ...hidden }, s.mons.map(m => h('span', {
+      class: ['rt-pip', isResting(p, m.key) && 'is-full', caughtId(p, m.id) && 'is-caught'] }))),
     done ? h('span', { class: 'rt-shrine-star', ...hidden }, '★') : null);
     return card;
   }

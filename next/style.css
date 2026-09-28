@@ -4019,3 +4019,79 @@ body.calm .gd-dc.play .gd-dc-art-pinwheel i:nth-child(2) { animation-duration: 3
   padding: 6px 8px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink);
   border-radius: var(--radius); font-family: var(--pixel-font); font-size: 10px; pointer-events: none;
 }
+/* the Everstone switches on after a hold: a ring fills round it */
+.gd-stone { overflow: hidden; touch-action: none; -webkit-touch-callout: none; }
+.gd-stone-ring { position: absolute; left: 0; bottom: 0; width: 100%; height: 0; background: var(--gold); opacity: .55; pointer-events: none; }
+.gd-stone.holding .gd-stone-ring { height: 100%; transition: height 1.5s linear; }
+.gd-stone img { position: relative; }
+/* Art can reach these: prereader-sized targets (60px phone, 76px iPad) */
+.road-pre .road-home, .road-pre .road-tool { width: var(--tap-xl); height: var(--tap-xl); }
+.tg-home, .ft-home, .tg-swap { width: var(--tap-xl); height: var(--tap-xl); }
+/* Art's road peek: the title capsule is a big chapter picture, not an empty pill */
+.road-pre .road-title { display: flex; align-items: center; justify-content: center; padding: 2px 10px; }
+.road-pre .road-title-emoji { font-size: 34px; line-height: 1.2; }
+/* the finished Road on a phone: "SAVED!" instead of a cut-off sentence */
+.road-title-short { display: none; }
+@media (max-width: 420px) {
+  .road-title.is-saved .road-title-long { display: none; }
+  .road-title.is-saved .road-title-short { display: inline; }
+}
+/* FARAWAY LAND grid: legendaries stay inside their card; caught vs beaten */
+.rt-shrine-mons { width: 100%; overflow: hidden; }
+.rt-mon { flex: 0 1 auto; min-width: 0; object-fit: contain; }
+.rt-mon.is-again { opacity: .6; filter: grayscale(.6) drop-shadow(0 0 3px rgba(255, 255, 255, .5)); }
+.rt-pip.is-caught { background: linear-gradient(180deg, #e8403a 0 42%, #0b0706 42% 58%, #fff 58%); border-color: #0b0706; width: 10px; height: 10px; }
+/* a shiny in the fight and on the catch card: sparkle + ✨ badge */
+.bt-sprite.is-shiny { filter: drop-shadow(0 0 4px #fff4a0) drop-shadow(0 0 10px #ffd040); }
+.bt-shiny, .bt-card-shiny {
+  position: absolute; z-index: 2; top: 4%; right: 8%; font-family: var(--emoji-font); font-size: 26px; line-height: 1;
+  pointer-events: none; animation: bt-twinkle 1.4s ease-in-out infinite;
+}
+.bt-card-shiny { top: -6px; left: -6px; right: auto; }
+.bt.calm .bt-shiny { animation: none; }
+@keyframes bt-twinkle { 0%, 100% { transform: scale(1) rotate(0); opacity: 1; } 50% { transform: scale(1.3) rotate(15deg); opacity: .7; } }
+/* a legendary swaying on 1 HP, and the ball button asking to be thrown */
+.bt-sprite-wrap.bt-held { animation: bt-sway 1.6s ease-in-out infinite; }
+.bt.calm .bt-sprite-wrap.bt-held { animation: none; }
+@keyframes bt-sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+.bt-act.bt-act-glow { border-color: #b8952a; box-shadow: 0 0 0 3px #ffd040, 0 0 14px 4px rgba(255, 208, 64, .7); animation: bt-ballglow 1.2s ease-in-out infinite; }
+@keyframes bt-ballglow { 0%, 100% { box-shadow: 0 0 0 3px #ffd040, 0 0 6px 2px rgba(255, 208, 64, .5); } 50% { box-shadow: 0 0 0 3px #ffd040, 0 0 18px 6px rgba(255, 208, 64, .9); } }
+/* SWITCH: the team minis stay inside the button and off the label */
+.bt-act-switch { overflow: hidden; }
+.bt-team-mini { flex-shrink: 0; padding-left: 6px; }
+@media (max-width: 400px) { .bt-mini { width: 26px; height: 26px; margin: 0 -5px; } }
+@media (max-width: 359px) { .bt-act-switch .bt-act-label { display: none; } }
+/* GROWN-UPS: SAVE CODE / LOAD CODE */
+.gu-panel { max-height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.gu-code {
+  width: 100%; box-sizing: border-box; min-height: 64px; max-height: 30vh; resize: vertical;
+  font-family: ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.3; word-break: break-all;
+  background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: var(--radius); padding: 6px;
+  -webkit-user-select: text; user-select: text;
+}
+.gu-save-note { font-family: var(--pixel-font); font-size: 9px; line-height: 1.5; text-align: center; }
+.gu-save, .gu-share, .gu-copy, .gu-load, .gu-undo-load, .gu-load-go { font-family: var(--pixel-font); }
+/* the grown-up picture-lock picker: sprites fill their tiles */
+.gu-lock-pic { overflow: hidden; }
+.gu-lock-pic .gu-lock-sprite { width: 100%; height: 100%; transform: scale(1.3); }
+/* the picture lock: small species' 96px frames are mostly empty; zoom in */
+.lk-pic { overflow: hidden; }
+.lk-sprite { transform: scale(1.2); }
+/* the big moments fill an iPad */
+.evo-glow-sprite { object-fit: contain; image-rendering: pixelated; }
+@media (min-width: 700px) and (min-height: 1000px) {
+  .evo-from-sprite { width: 200px; height: 200px; }
+  .evo-glow { width: 240px; height: 240px; }
+  .evo-option { width: 150px; }
+  .evo-option-art, .evo-option-sprite { width: 120px; height: 120px; }
+  .evo-options.branch .evo-option { width: 128px; }
+  .evo-options.branch .evo-option-art, .evo-options.branch .evo-option-sprite { width: 96px; height: 96px; }
+  .evo-options { max-width: 680px; }
+  .rest-mon, .rest-sprite { width: 160px; height: 160px; }
+}
+/* Round 2 / locked trainer cards: fade the contents, not the card, so the
+   dotted path never shows through the words */
+.trainer-card.is-locked { opacity: 1; background: #ecebe2; }
+.trainer-card.is-locked > * { opacity: .62; }
+/* Family Table: the foe's HUD sits clear of the (bigger) house button */
+.ft .fs-hud-foe { left: calc(8px + var(--tap-xl) + 8px); }

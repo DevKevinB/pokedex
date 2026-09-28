@@ -185,8 +185,10 @@ export function mount(root, ctx) {
     clear(stage);
     stage.dataset.step = 'evolving';
     stage.dataset.to = String(opt.id);
-    const from = spriteImg(item.id, { class: 'evo-glow-sprite old', shiny });
-    const to = spriteImg(opt.id, { class: 'evo-glow-sprite new', shiny });
+    // Animated (tight-cropped) art, so the new form fills the glow at least
+    // as big as the one he had before, never a small figure in a big frame.
+    const from = spriteImg(item.id, { class: 'evo-glow-sprite old', shiny, animated: true });
+    const to = spriteImg(opt.id, { class: 'evo-glow-sprite new', shiny, animated: true });
     const glow = h('div', { class: 'evo-glow' }, h('span', { class: 'evo-halo', attrs: { 'aria-hidden': 'true' } }), from, to);
     stage.append(...[glow, words].filter(Boolean));
     await wait(pre ? 600 : 900, { signal: ac.signal });

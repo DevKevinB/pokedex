@@ -83,7 +83,9 @@ export function mount(root, ctx) {
 
   function smallLead(p) {
     const lead = leadOf(p);
-    return spriteImg(lead.id, { shiny: lead.shiny, class: 'who-tg-sprite' });
+    // Animated sprites are cropped tight, so object-fit scales each one to
+    // fill its slot: Art's small Bulbasaur is as big as Gabe's Charizard.
+    return spriteImg(lead.id, { animated: true, shiny: lead.shiny, class: 'who-tg-sprite' });
   }
 
   const locked = p => p.profile !== 'prereader' && !!(p.lock && Array.isArray(p.lock.pics) && p.lock.pics.length);
@@ -118,12 +120,12 @@ export function mount(root, ctx) {
   // A quick tap does nothing on purpose (the boys tap everything), but a
   // grown-up who taps needs to know why: show a small HOLD hint.
   let downAt = 0;
-  const hint = h('span', { class: 'who-gear-hint', hidden: true, attrs: { 'aria-hidden': 'true' } }, 'HOLD ⚙');
+  const hint = h('span', { class: 'who-gear-hint', hidden: true, attrs: { 'aria-hidden': 'true' } }, 'HOLD ⚙ 2 SEC');
   let hintT = null;
   const showHint = () => {
     hint.hidden = false;
     if (hintT) { clearTimeout(hintT); timers.delete(hintT); }
-    hintT = setTimeout(() => { timers.delete(hintT); hintT = null; hint.hidden = true; }, 1600);
+    hintT = setTimeout(() => { timers.delete(hintT); hintT = null; hint.hidden = true; }, 2600);
     timers.add(hintT);
   };
   scene.appendChild(hint);
@@ -131,14 +133,22 @@ export function mount(root, ctx) {
   const startHold = e => {
     e.preventDefault();
     cancelHold();
+    // Keep the finger's pointer on the gear for the whole hold: a small
+    // wobble off its 44px edge must not end the hold (pointerleave).
+    try { if (e.pointerId != null) gear.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
     downAt = performance.now();
     gear.classList.add('holding');
     holdT = setTimeout(() => { timers.delete(holdT); holdT = null; gear.classList.remove('holding'); openGrownUps(); }, HOLD_MS);
     timers.add(holdT);
   };
   gear.addEventListener('pointerdown', startHold);
-  for (const evt of ['pointerup', 'pointerleave', 'pointercancel']) gear.addEventListener(evt, cancelHold);
+  for (const evt of ['pointerup', 'pointercancel']) gear.addEventListener(evt, cancelHold);
+  // A mouse that slides off ends the hold; a captured finger never "leaves".
+  gear.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') cancelHold(); });
   gear.addEventListener('contextmenu', e => e.preventDefault());
+  // iOS: stop Safari treating a long press on the gear as its own gesture
+  // (text loupe, callout, scroll), which cancels the pointer mid-hold.
+  gear.addEventListener('touchstart', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
 
   function openGrownUps() {
     if (overlay) return;
@@ -207,14 +217,18 @@ export function mount(root, ctx) {
             draw();
             if (typed.length === String(a * b).length) {
               if (Number(typed) === a * b) { fn(); return; }
+              // Wrong: a shake and a low note, then try again.
               typed = ''; draw();
+              q.classList.remove('shake'); void q.offsetWidth; q.classList.add('shake');
+              play('notYet');
             }
           }
         },
       }, String(d));
+      const q = h('div', { class: 'gu-check-q', dataset: { a: String(a), b: String(b) } }, a + ' × ' + b + ' = ', shown);
       clear(rows).append(
         h('div', { class: 'gu-lock-head' }, '🔒 GROWN-UPS'),
-        h('div', { class: 'gu-check-q', dataset: { a: String(a), b: String(b) } }, a + ' × ' + b + ' = ', shown),
+        q,
         h('div', { class: 'gu-check-keys' }, [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(key)),
         h('div', { class: 'gu-lock-actions' },
           h('button', { class: 'btn gu-lock-back', type: 'button', on: { click: () => { play('tap'); drawPanel(); } } }, '\u25C0\uFE0E BACK')));
@@ -264,6 +278,85 @@ export function mount(root, ctx) {
           h('button', { class: 'btn gu-lock-back', type: 'button', on: { click: () => { play('tap'); drawPanel(); } } }, '\u25C0\uFE0E BACK')));
     }
 
+    // ---- SAVE CODE: back up, load, undo (a grown-up screen: words are fine)
+    // Everything lives in one localStorage key; this is the way to keep a
+    // copy somewhere else (Notes, AirDrop, email) and to bring it back.
+    function withGrownUpCheck(fn) {
+      const ln = [1, 2].find(n => store.save.players[n] && store.save.players[n].lock);
+      if (ln) guarded(ln, fn); else fn();
+    }
+    function openSaveTools(msg) {
+      let code = '';
+      try { code = store.exportCode(); } catch (e) { code = ''; }
+      const out = h('textarea', { class: 'gu-code', attrs: { readonly: 'readonly', rows: '3', spellcheck: 'false', 'aria-label': 'SAVE CODE' } });
+      out.value = code;
+      out.addEventListener('focus', () => { try { out.select(); } catch (e) { /* ok */ } });
+      const note = h('div', { class: 'gu-save-note' }, msg || 'KEEP THIS CODE SOMEWHERE SAFE');
+      const say = t => { clear(note); note.append(t); };
+      const canShare = !!(navigator && typeof navigator.share === 'function');
+      const share = async () => {
+        play('tap');
+        try {
+          const file = typeof File === 'function' ? new File([code], 'sprout-road-save.txt', { type: 'text/plain' }) : null;
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Sprout Road save' });
+          else await navigator.share({ title: 'Sprout Road save', text: code });
+        } catch (e) { /* the grown-up closed the share sheet */ }
+      };
+      const copy = async () => {
+        play('tap');
+        try { await navigator.clipboard.writeText(code); say('COPIED ✓'); }
+        catch (e) { try { out.focus(); out.select(); } catch (err) { /* ok */ } say('SELECTED: COPY IT'); }
+      };
+      const undo = store.hasPrevious() ? h('button', {
+        class: 'btn gu-undo-load', type: 'button',
+        on: { click: () => { play('tap'); withGrownUpCheck(() => {
+          try { store.restorePrevious(); drawCards(); openSaveTools('UNDONE ✓'); }
+          catch (e) { openSaveTools('NOTHING TO UNDO'); }
+        }); } },
+      }, '↩ UNDO LOAD') : null;
+      clear(rows).append(
+        h('div', { class: 'gu-lock-head' }, '💾 SAVE CODE'),
+        out, note,
+        h('div', { class: 'gu-lock-actions' },
+          canShare ? h('button', { class: 'btn gu-share', type: 'button', on: { click: share } }, '📤 SHARE') : null,
+          h('button', { class: 'btn gu-copy', type: 'button', on: { click: copy } }, '📋 COPY'),
+          h('button', { class: 'btn gu-load', type: 'button', on: { click: () => { play('tap'); withGrownUpCheck(openLoad); } } }, '📥 LOAD CODE'),
+          undo,
+          h('button', { class: 'btn gu-lock-back', type: 'button', on: { click: () => { play('tap'); drawPanel(); } } }, '\u25C0\uFE0E BACK')));
+    }
+    function openLoad() {
+      const inp = h('textarea', { class: 'gu-code gu-code-in', attrs: { rows: '3', spellcheck: 'false', autocapitalize: 'off', autocomplete: 'off', 'aria-label': 'PASTE A CODE' } });
+      const note = h('div', { class: 'gu-save-note' }, 'PASTE A CODE. IT REPLACES THIS SAVE.');
+      let armed = false;
+      const go = h('button', { class: 'btn btn-danger gu-load-go', type: 'button' }, 'LOAD');
+      go.addEventListener('click', () => {
+        play('tap');
+        const text = inp.value.trim();
+        clear(note);
+        if (!text) { note.append('PASTE A CODE FIRST'); return; }
+        // Two taps: the first only asks. The old save is kept for UNDO LOAD.
+        if (!armed) { armed = true; clear(go).append('TAP AGAIN: REPLACE'); note.append('THE OLD SAVE CAN BE UNDONE'); return; }
+        try {
+          store.importCode(text);
+          drawCards();
+          openSaveTools('LOADED ✓  (UNDO LOAD PUTS IT BACK)');
+        } catch (e) {
+          armed = false; clear(go).append('LOAD');
+          const why = e && e.message;
+          note.append(why === 'EMPTY_SAVE' ? 'THAT CODE HAS NO POKEMON' : why === 'SNAPSHOT_FAILED' || why === 'SAVE_FAILED' ? 'COULD NOT SAVE: STORAGE FULL?' : 'THAT CODE IS NOT RIGHT');
+          inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake');
+          play('notYet');
+        }
+      });
+      inp.addEventListener('input', () => { if (armed) { armed = false; clear(go).append('LOAD'); } });
+      clear(rows).append(
+        h('div', { class: 'gu-lock-head' }, '📥 LOAD CODE'),
+        inp, note,
+        h('div', { class: 'gu-lock-actions' },
+          go,
+          h('button', { class: 'btn gu-lock-back', type: 'button', on: { click: () => { play('tap'); openSaveTools(); } } }, '\u25C0\uFE0E BACK')));
+    }
+
     drawPanel();
 
     // Close on a tap on the dark backdrop, but ONLY a tap that also STARTED
@@ -283,10 +376,13 @@ export function mount(root, ctx) {
           class: 'btn gu-challenge', type: 'button',
           on: { click: () => { play('tap'); closeGrownUps(); ctx.go('challenge', { returnTo: 'who' }); } },
         }, "🏆 DAD'S CHALLENGE"),
+        // Back up / move the whole family save (both boys, Bulba, the Road).
+        h('button', { class: 'btn gu-save', type: 'button', on: { click: () => { play('tap'); openSaveTools(); } } }, '💾 SAVE CODE'),
         h('div', { class: 'dialog-actions' }, muteBtn, close),
         // The classic game stays one tap away until the cutover. Same site,
         // same saves: anything caught there shows up here on the next visit.
-        h('a', { class: 'btn gu-classic', attrs: { href: '../classic/' } }, '📟 OLD POKÉDEX')));
+        // No accent: the pixel font draws a capital É like a small é.
+        h('a', { class: 'btn gu-classic', attrs: { href: '../classic/' } }, '📟 OLD POKEDEX')));
     scene.appendChild(overlay);
   }
 

@@ -56,19 +56,20 @@ test('level info and shown name', () => {
   assert.equal(L.shownName(p, 7), 'SQUIRTLE');
 });
 
-test('nickname: keypad and cleaning (like cleanName, max 10)', () => {
+test('nickname: keypad and cleaning (like cleanName, max 12, the classic limit)', () => {
+  assert.equal(L.NICK_MAX, 12);
   let d = '';
-  for (const k of [' ', 'S', 'P', ' ', ' ', 'A', 'R', 'K', 'Y', 'Z', 'Z', 'Z', 'Q', 'Q']) d = L.typeKey(d, k);
-  assert.equal(d, 'SP ARKYZZZ');
-  assert.equal(d.length, 10);
-  assert.equal(L.typeKey(d, 'DEL'), 'SP ARKYZZ');
+  for (const k of [' ', 'S', 'P', ' ', ' ', 'A', 'R', 'K', 'Y', 'Z', 'Z', 'Z', 'Q', 'Q', 'W', 'W']) d = L.typeKey(d, k);
+  assert.equal(d, 'SP ARKYZZZQQ');
+  assert.equal(d.length, 12);
+  assert.equal(L.typeKey(d, 'DEL'), 'SP ARKYZZZQ');
   assert.equal(L.typeKey(d, 'CLR'), '');
   assert.equal(L.typeKey('AB', '<'), 'AB');
   assert.equal(L.typeKey('AB', 'a'), 'AB');
   for (const s of ['<b>HI</b>', 'A&amp;B', '  SPARKY  ', 'X'.repeat(40), '\u0000BAD', 42]) {
     const n = L.cleanNick(s);
-    assert.ok(n.length <= 10);
-    assert.equal(n, cleanName(s).slice(0, 10).trim());
+    assert.ok(n.length <= 12);
+    assert.equal(n, cleanName(s).slice(0, 12).trim());
   }
   const p = player({ caught: [25] });
   assert.equal(L.setNick(p, 25, 'SPARKY'), 'SPARKY');
@@ -142,4 +143,17 @@ test('the scenes build DOM only through h(): no markup strings, no speech', () =
     assert.ok(!new RegExp('speech' + 'Synthesis', 'i').test(src), f);
     assert.ok(!/setTimeout\([^)]*,\s*([3-9]\d\d|\d{4,})\)/.test(src), f + ': long waits go through wait()');
   }
+});
+
+test('search: his own nicknames are found first', () => {
+  const ids = L.searchIds('blaze', { 6: 'BLAZE', 25: 'SPARKY' });
+  assert.equal(ids[0], 6);
+  assert.deepEqual(L.searchIds('spark', { 25: 'SPARKY' }).slice(0, 1), [25]);
+  assert.deepEqual(L.gridIds({ query: 'blaze', caught: [6], nicks: { 6: 'BLAZE' } }).slice(0, 1), [6]);
+  assert.deepEqual(L.searchIds('blaze'), [], 'no nicks: species names only');
+});
+
+test('nickname: an 11-12 letter classic name fits', () => {
+  assert.equal(L.cleanNick("MISTER ZAP'S").length <= 12, true);
+  assert.equal(L.cleanNick('THUNDERBOLTS'), 'THUNDERBOLTS');
 });

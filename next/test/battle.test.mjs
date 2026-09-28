@@ -395,5 +395,99 @@ test('movePictures: glyphs avoid type emoji and stars; names pick a fitting shap
   assert.equal(pics[1].glyph, '\u{1F9B6}');   // kick -> foot
   assert.equal(pics[2].glyph, '\u{1F9B7}');   // bite -> tooth
   assert.equal(pics[5].glyph, '\u270A');      // punch -> fist
-  assert.equal(pics[13].glyph, '\u{1F300}');  // plain special -> swirl
+  // plain special -> swirl (on its own: in one moveset a glyph is used once)
+  assert.equal(movePictures([{ name: 'ember', type: 'fire', power: 40, damage_class: 'special' }])[0].glyph, '\u{1F300}');
+});
+
+test('movePictures: two plain special moves of different types never share the swirl', () => {
+  const pics = movePictures([
+    { name: 'giga-drain', type: 'grass', power: 75, damage_class: 'special' },
+    { name: 'razor-leaf', type: 'normal', power: 55, damage_class: 'physical' },
+    { name: 'venoshock', type: 'poison', power: 65, damage_class: 'special' },
+    { name: 'mega-punch', type: 'normal', power: 80, damage_class: 'physical' },
+  ]);
+  assert.equal(new Set(pics.map(p => p.glyph)).size, 4, pics.map(p => p.glyph).join(' '));
+});
+
+test('party XP: the KO-er gets full XP, a teammate that fought the foe gets half', async () => {
+  // A slow tank leads and takes a hit, then a fast striker switches in and KOs.
+  const tank = mon(7, 20, ['water'], { hp: 300, atk: 5, spatk: 5, def: 200, spdef: 200, spe: 1 }, [TACKLE]);
+  const striker = mon(4, 20, ['fire'], { hp: 200, atk: 200, spatk: 200, spe: 90 }, [EMBER]);
+  const foe = mon(1, 5, ['grass'], { hp: 30, def: 5, spdef: 5, spe: 10 }, [TACKLE], { base_experience: 64 });
+  const b = createBattle({ myTeam: [tank, striker], enemyTeam: [foe], profile: 'reader', rng: seededRng(3) });
+  await b.choose({ kind: 'switch', index: 1 });
+  const ev = await playOut(b);
+  const end = ev.find(e => e.type === 'end');
+  assert.equal(end.winner, 'me');
+  const full = Math.floor(64 / 2 + 5 * 3);
+  const byId = Object.fromEntries(end.xp.map(x => [x.id, x.gained]));
+  assert.equal(byId[4], full);
+  assert.equal(byId[7], Math.floor(full / 2));
+});
+
+test('party XP: a Pokemon that never faced the foe gets nothing', async () => {
+  const me = [mon(4, 20, ['fire'], { hp: 200, atk: 200, spatk: 200, spe: 90 }, [EMBER]), mon(7, 20, ['water'], { hp: 50 }, [TACKLE])];
+  const b = createBattle({ myTeam: me, enemyTeam: [mon(1, 5, ['grass'], { hp: 20 }, [TACKLE], { base_experience: 64 })], profile: 'reader', rng: seededRng(1) });
+  const end = (await playOut(b)).find(e => e.type === 'end');
+  assert.deepEqual(end.xp.map(x => x.id), [4]);
+});
+
+test('chooseOnFaint: a reader picks who comes in, for free; auto-send without it and for a prereader', async () => {
+  const team = () => [
+    mon(1, 5, ['grass'], { hp: 10, atk: 8, def: 8, spatk: 8, spdef: 8, spe: 5 }, [VINE]),
+    mon(2, 5, ['grass'], { hp: 10, atk: 8, def: 8, spatk: 8, spdef: 8, spe: 5 }, [VINE]),
+    mon(3, 5, ['grass'], { hp: 10, atk: 8, def: 8, spatk: 8, spdef: 8, spe: 5 }, [VINE]),
+  ];
+  const b = createBattle({ myTeam: team(), enemyTeam: strongFoes(), profile: 'reader', rng: seededRng(2), chooseOnFaint: true });
+  let ev = [];
+  for (let i = 0; i < 10 && !ev.some(e => e.type === 'choose'); i++) ev = await b.choose({ kind: 'move', index: 0 });
+  const ch = ev.find(e => e.type === 'choose');
+  assert.ok(ch, 'a choose event after the faint');
+  assert.deepEqual(ch.options, [1, 2]);
+  assert.ok(!ev.some(e => e.type === 'send' && e.side === 'me'));
+  assert.equal(b.state.me.mustChoose, true);
+  assert.deepEqual(await b.choose({ kind: 'move', index: 0 }), [], 'no move while choosing');
+  const hpBefore = b.state.me.team[2].hp;
+  const sent = await b.choose({ kind: 'switch', index: 2 });
+  assert.deepEqual(sent, [{ type: 'send', side: 'me', index: 2 }]);
+  assert.equal(b.state.me.active, 2);
+  assert.equal(b.state.me.team[2].hp, hpBefore, 'the send is free: no foe hit');
+  assert.equal(b.state.me.mustChoose, false);
+
+  const auto = createBattle({ myTeam: team(), enemyTeam: strongFoes(), profile: 'reader', rng: seededRng(2) });
+  const ev2 = await playOut(auto, undefined, 3);
+  assert.ok(ev2.some(e => e.type === 'send' && e.side === 'me' && e.index === 1));
+  assert.ok(!ev2.some(e => e.type === 'choose'));
+
+  const pre = createBattle({ myTeam: team(), enemyTeam: strongFoes(), profile: 'prereader', rng: seededRng(2), chooseOnFaint: true });
+  const ev3 = await playOut(pre, undefined, 50);
+  assert.ok(!ev3.some(e => e.type === 'choose'));
+});
+
+test('legendary: the first KO blow leaves it on 1 HP with a hold event, then balls catch at least half the time', async () => {
+  const me = [mon(6, 100, ['fire'], { hp: 400, atk: 400, spatk: 400, spe: 300 }, [EMBER])];
+  const legend = () => [mon(150, 70, ['psychic'], { hp: 60, spe: 10 }, [TACKLE], { captureRate: 3 })];
+  const b = createBattle({ myTeam: me, enemyTeam: legend(), profile: 'reader', rng: seededRng(4), wild: true, legendary: true });
+  const toHold = async x => { let all = []; for (let i = 0; i < 5 && !all.some(e => e.type === 'hold'); i++) all = all.concat(await x.choose({ kind: 'move', index: 0 })); return all; };
+  const ev = await toHold(b);
+  assert.ok(ev.some(e => e.type === 'hold' && e.side === 'foe'));
+  assert.equal(b.state.foe.team[0].hp, 1);
+  assert.equal(b.state.over, false);
+  let caught = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const c = createBattle({ myTeam: me, enemyTeam: legend(), profile: 'reader', rng: seededRng(seed), wild: true, legendary: true });
+    await toHold(c);
+    const e2 = await c.choose({ kind: 'ball', ball: 'poke' });
+    if (e2.some(e => e.type === 'catch' && e.success)) caught++;
+  }
+  assert.ok(caught >= 70, 'caught ' + caught + '/200');
+  // a second KO blow is a normal win (it rests; he can meet it again)
+  const d = createBattle({ myTeam: me, enemyTeam: legend(), profile: 'reader', rng: seededRng(4), wild: true, legendary: true });
+  await toHold(d);
+  const e3 = await d.choose({ kind: 'move', index: 0 });
+  assert.ok(e3.some(e => e.type === 'end' && e.winner === 'me'));
+  // not a legendary: no hold
+  const w = createBattle({ myTeam: me, enemyTeam: legend(), profile: 'reader', rng: seededRng(4), wild: true });
+  const e4 = await playOut(w);
+  assert.ok(!e4.some(e => e.type === 'hold') && e4.some(e => e.type === 'end' && e.winner === 'me'));
 });
