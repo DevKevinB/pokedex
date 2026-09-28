@@ -4095,3 +4095,12 @@ body.calm .gd-dc.play .gd-dc-art-pinwheel i:nth-child(2) { animation-duration: 3
 .trainer-card.is-locked > * { opacity: .62; }
 /* Family Table: the foe's HUD sits clear of the (bigger) house button */
 .ft .fs-hud-foe { left: calc(8px + var(--tap-xl) + 8px); }
+
+/* == who: rename a player (v20.2.1) == */
+.gu-rename { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 6px 10px; background: var(--paper); border: 2px dashed var(--ink); border-radius: var(--radius); }
+.gu-pen { font-family: var(--emoji-font); font-size: 14px; }
+.gu-rename-box { display: flex; flex-direction: column; gap: var(--s3); }
+.gu-rename-title { font-family: var(--pixel-font); font-size: 11px; }
+/* 16px or more, or iOS Safari zooms the whole page in on focus */
+.gu-rename-input { font: 16px/1.2 var(--pixel-font); text-transform: uppercase; padding: 12px; min-height: var(--tap); border: 3px solid var(--ink); border-radius: var(--radius); background: #fff; color: var(--ink); width: 100%; box-sizing: border-box; }
+.gu-rename-acts { display: flex; gap: var(--s2); justify-content: space-between; }

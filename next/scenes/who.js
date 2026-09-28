@@ -21,6 +21,7 @@ import { spriteImg } from '../ui/sprite.js';
 import { sfx, isMuted, toggleMute } from '../audio/audio.js';
 import { stageId } from './garden-logic.js';
 import { openLock } from './lock.js';
+import { cleanName } from '../core/validate.js';
 
 const HOLD_MS = 2000;
 const play = name => { try { const f = sfx && sfx[name]; if (typeof f === 'function') f(); } catch (e) { /* silent */ } };
@@ -164,7 +165,11 @@ export function mount(root, ctx) {
         const name = (p.name || '').trim() || 'PLAYER ' + n;
         const pre = p.profile === 'prereader';
         rows.appendChild(h('div', { class: 'gu-row' },
-          h('span', { class: 'gu-name' }, name),
+          h('button', {
+            class: 'btn gu-rename', type: 'button', dataset: { player: n },
+            attrs: { 'aria-label': 'RENAME ' + name },
+            on: { click: () => { play('tap'); openRename(n); } },
+          }, h('span', { class: 'gu-name' }, name), h('span', { class: 'gu-pen', attrs: { 'aria-hidden': 'true' } }, '✏️')),
           h('button', {
             class: ['btn', 'gu-profile', pre ? 'is-pre' : 'is-reader'], type: 'button',
             dataset: { player: n },
@@ -235,6 +240,36 @@ export function mount(root, ctx) {
     }
 
     // ---- SET PICTURE LOCK: a grown-up taps 3 pictures in order ----------
+    // ---- rename a player (v20.2.1). A grown-up surface, so it uses the
+    // device keyboard, cleaned exactly like every other name in the save
+    // (cleanName: no markup characters, 12 letters). An empty box keeps the
+    // old name; nothing else in the save is touched.
+    function openRename(n) {
+      clear(rows);
+      const q = store.save.players[n];
+      const input = h('input', {
+        class: 'gu-rename-input', attrs: {
+          type: 'text', maxlength: '12', autocomplete: 'off', autocapitalize: 'characters',
+          spellcheck: 'false', enterkeyhint: 'done', 'aria-label': 'NEW NAME',
+          value: (q.name || '').trim(),
+        },
+      });
+      const save = () => {
+        const nm = cleanName(input.value).toUpperCase();
+        if (nm && nm !== q.name) { q.name = nm; store.commit(); drawCards(); play('levelUp'); }
+        else play('tap');
+        drawPanel();
+      };
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+      rows.appendChild(h('div', { class: 'gu-rename-box' },
+        h('div', { class: 'gu-rename-title' }, '✏️ NAME FOR PLAYER ' + n),
+        input,
+        h('div', { class: 'gu-rename-acts' },
+          h('button', { class: 'btn gu-rename-back', type: 'button', on: { click: () => { play('tap'); drawPanel(); } } }, '◀ BACK'),
+          h('button', { class: 'btn btn-primary gu-rename-save', type: 'button', on: { click: save } }, 'SAVE'))));
+      setTimeout(() => { try { input.focus(); input.select(); } catch (e) { /* ignore */ } }, 50);
+    }
+
     function openLockPicker(n) {
       const p = store.save.players[n];
       const picks = [];

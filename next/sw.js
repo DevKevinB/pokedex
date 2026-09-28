@@ -10,7 +10,7 @@
 // the root sw.js and are never touched from here.
 // ============================================================
 
-const NEXT_CACHE = 'sprout-20.2.0';
+const NEXT_CACHE = 'sprout-20.2.1';
 const ASSET_CACHE = 'sprout-assets';
 const ASSET_MAX = 800;
 const SHELL_TIMEOUT_MS = 2500;

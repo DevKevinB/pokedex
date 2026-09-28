@@ -337,8 +337,25 @@ const sz = v => `${v.width}x${v.height}`;
   await page.locator('.gu-mute').click();
   check('gear: mute toggles', (await page.locator('.gu-mute').innerText()).includes('OFF'));
   await page.locator('.gu-mute').click();
+  // v20.2.1: a grown-up can rename a player; markup is cleaned out, 12 max.
+  await page.locator('.gu-rename[data-player="1"]').click();
+  await page.locator('.gu-rename-input').fill('<b>Gabriel</b>!!xyz');
+  await page.locator('.gu-rename-save').click();
+  {
+    const nm = (await v3(page))?.players?.[1]?.name;
+    check('rename: player 1 renamed, cleaned and uppercased', nm === 'BGABRIEL/', JSON.stringify(nm));   // the box stops at 12 typed characters, then markup is stripped
+    check('rename: the panel shows the new name', (await page.locator('.gu-rename[data-player="1"] .gu-name').innerText()).includes('GABRIEL'));
+  }
+  {
+    const before = (await v3(page))?.players?.[2]?.name ?? '';
+    await page.locator('.gu-rename[data-player="2"]').click();
+    await page.locator('.gu-rename-input').fill('   ');
+    await page.locator('.gu-rename-save').click();
+    check('rename: an empty box keeps the old name', ((await v3(page))?.players?.[2]?.name ?? '') === before);
+  }
   await page.locator('.gu-close').click();
   check('gear: DONE closes the panel', (await page.locator('.gu-panel').count()) === 0);
+  check('rename: the WHO\'S PLAYING card shows the new name', (await page.locator('.who-card.p1').innerText()).includes('GABRIEL'));
   check('who: player 2 card shows the leaf', (await page.locator('.who-card.p2 .who-leaf').count()) === 1);
   void mutedBefore;
   await finishPage('empty boot', P);

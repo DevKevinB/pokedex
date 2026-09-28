@@ -2,6 +2,16 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [20.2.1] - NAME TAGS
+
+### What Kevin will notice
+
+- **Rename the players.** Hold ⚙ on the WHO'S PLAYING screen for two
+  seconds, then tap a boy's name (it has a ✏️). Type the new name with the
+  iPad keyboard and tap SAVE. Names can be up to 12 letters. Leaving the box
+  empty keeps the old name. The new name shows on his card straight away and
+  changes nothing else in the save.
+
 ## [20.2.0] - PLAYTESTED
 
 Six pretend players (Art on the iPad and on a phone, Gabe mid-game and as
