@@ -20,7 +20,7 @@ familiarity with git, npm, or build tooling.
 
 **The tiebreaker for every design argument is the boys' fun.** Not correctness,
 not authenticity to the real games, not architectural purity. When two good
-options conflict, pick the one that makes a 4- and a 7-year-old happier.
+options conflict, pick the one that makes a 4- and an 8-year-old happier.
 
 ## The boys' devices
 
@@ -30,7 +30,8 @@ plays on a phone too). Consequences that decide real code:
 - `dvh` is supported — the `vh` fallbacks are belt-and-braces, keep them but
   don't design around missing `dvh`.
 - `navigator.share({files})` works, so a save file can go out via AirDrop.
-- **375x667 is a hard requirement**, not a nicety. `npm run scenes` enforces it.
+- **375x667 is a hard requirement**, not a nicety. `test/next-smoke.mjs` enforces
+  it for Sprout Road and `npm run scenes` for classic.
 - **Safari does not play Ogg Vorbis, and PokeAPI serves cries as `.ogg` only.**
   Anything that plays a cry must feature-detect (`canPlayType('audio/ogg')`)
   and fall back, or it is a silent no-op nobody will ever report.
@@ -38,8 +39,9 @@ plays on a phone too). Consequences that decide real code:
 ## Hard product rules
 
 1. **The game does not talk.** No `SpeechSynthesis`, no TTS, no synthesised voice,
-   anywhere, ever. This was removed in v18.3.0 and there is a permanent guard in
-   `test/smoke.mjs` that fails the suite if `speechSynthesis.speak` is ever called.
+   anywhere, ever. This was removed in v18.3.0 and there are permanent guards in
+   `test/smoke.mjs` and `test/next-smoke.mjs` that fail the suite if
+   `speechSynthesis` is ever used.
    Meaning is carried by **picture, colour and motion**. Chiptune music, sound
    effects and real Pokémon cries from PokeAPI are fine and encouraged.
 2. **Junior Mode never punishes.** Art's Pokémon do not faint, his balls do not
@@ -49,21 +51,19 @@ plays on a phone too). Consequences that decide real code:
 3. **Never take something away from a child.** No timers on fleeing legendaries,
    no currency they can't afford, no daily streaks to break, no removing a
    Pokémon they already earned.
-4. **Saves are sacred.** Two boys' entire collections live in one localStorage
-   key. Any change touching `state.js` persistence needs extreme care — data loss
-   here is a real-world crisis, not a bug report.
+4. **Saves are sacred.** Two boys' entire collections live in localStorage. Any
+   change touching persistence (`next/core/save.js`, `migrate.js`, `validate.js`,
+   or `classic/js/state.js`) needs extreme care — data loss here is a real-world
+   crisis, not a bug report.
 
 ## v20 LAYOUT: READ THIS FIRST (switchover 2026-09-27)
 
 The site root is now a **doorway** (`index.html`, `doorway.js`, `doorway.css`,
 `sw.js`) that forwards to **Sprout Road in `next/`**, the clean rewrite. Its
 binding contract is **`next/ARCHITECTURE.md`**, and the plan and Kevin's
-rulings are in **`ROADMAP-v20.md`**. The classic app below moved unchanged to
-**`classic/`**, which is why every path in the table below now lives under
-`classic/`. Saves: Sprout Road writes `pokedexos_save_v3` and only ever READS
+rulings are in **`ROADMAP-v20.md`**. The classic app moved unchanged to
+**`classic/`**. Saves: Sprout Road writes `pokedexos_save_v3` and only ever READS
 `pokedexos_save_v2`, merging it in whenever the classic app changes it.
-`npm test` runs every suite: classic, next unit tests, next smoke, and the
-doorway. `release.mjs` bumps the classic anchors plus `next/sw.js`'s `NEXT_CACHE`.
 
 ## Architecture
 
@@ -73,104 +73,136 @@ Do not introduce a build step without asking Kevin — it would put a CI pipelin
 in front of a non-developer's weekly push.
 
 ```
-index.html      329  markup only, no logic — all behaviour lives in js/
-css/main.css    161  layout primitives
-css/gba.css     711  GBA theme, junior overrides, responsive breakpoints
-js/config.js     65  MAX_POKEMON=649, APP_VERSION, type chart, type colours
-js/state.js     210  save schema v2, players, mons, levels, XP, export/import
-js/api.js       134  PokeAPI v2 + localStorage slim-projection cache
-js/dex.js       203  the main Pokédex screen
-js/catch.js     140  dex-screen catching + ball drawer
-js/battle.js   1376  THE HOTSPOT — wild, gym and versus battles on one
-                     mutable battleState singleton. Most bugs live here.
-js/gym.js       154  gym screens, endurance HP, Poké Center
-js/gymdata.js   135  58 hand-authored trainers across 12 stops, Lv8 → Lv80
-js/pc.js        182  PC Box: collection, search, team management
-js/explore.js   145  habitat exploration
-js/progression.js 193 badges, quests, trainer card
-js/settings.js  151  the gear menu: names, junior toggle, save/export
-js/devtools.js  228  Parent Tools behind a PIN
-js/audio.js      74  cries, beeps, mute. NO SPEECH.
-js/music.js     114  procedural chiptune (square lead + triangle bass)
-js/engine.js    198  DOM-free battle maths (unit-tested)
-js/dialog.js    127  the in-world replacement for alert/confirm/prompt
-js/nickname.js   56  the NAME ME prompt
-js/habitatfill.js 57 generated: every species' home habitat
-js/main.js      301  bootstrap and event wiring
-tools/release.mjs    version bump + checks + the git commands to run
-sw.js            72  service worker: network-first shell, cache-first assets
+index.html, doorway.js, doorway.css, sw.js
+            the doorway: forwards to next/
+next/       SPROUT ROAD (active). Full file map + owners: next/ARCHITECTURE.md
+            core/   save v3, migrate, validate, store, api, pace, rng, evo
+            scenes/ who, garden, road, battle, dex, team, together, versus, ...
+            battle/ createBattle.js (no DOM), rules-pro.js
+            ui/h.js build DOM with h(); never interpolate values into innerHTML
+                    (a test greps for it)
+            audio/  cries with ogg->synth fallback, chiptune
+            data/   chapters, gymdata, rival, engine, moves.json
+classic/    the v19 app, kept running for old saves (map below)
+tools/      release.mjs, check-imports.mjs, bake-moves.mjs,
+            forum-*.mjs (backlog ranking: node tools/forum-rank.mjs)
+test/       classic + doorway + next smoke suites (next unit tests: next/test/)
 ```
 
-**Save schema:** `localStorage['pokedexos_save_v2']` → `{version, players: {1, 2}}`.
-Each player: `{name, caught, team, mons, badges, shinies, nicks, items, quests,
-gyms, settings, stats}`. `state.js` migrates legacy v1 keys on load. Never write
-a save shape that older code can't read without checking the migration path.
+Classic app, all under `classic/`:
+
+```
+index.html          markup only, no logic — all behaviour lives in js/
+css/main.css        layout primitives
+css/gba.css         GBA theme, junior overrides, responsive breakpoints
+js/config.js        MAX_POKEMON=649, APP_VERSION, type chart, awaitOrTap()
+js/state.js         save schema v2, players, mons, levels, XP, export/import
+js/api.js           PokeAPI v2 + localStorage slim-projection cache
+js/dex.js           the main Pokédex screen
+js/catch.js         dex-screen catching + ball drawer
+js/battle.js        THE HOTSPOT (~2100 lines) — wild, gym and versus battles
+                    on one mutable battleState singleton. Most bugs live here.
+js/gym.js           gym screens, endurance HP, Poké Center
+js/gymdata.js       58 hand-authored trainers across 12 stops, Lv8 → Lv80
+js/pc.js            PC Box: collection, search, team management
+js/explore.js       habitat exploration
+js/progression.js   badges, quests, trainer card
+js/settings.js      the gear menu: names, junior toggle, save/export
+js/devtools.js      Parent Tools behind a PIN
+js/audio.js         cries, beeps, mute. NO SPEECH.
+js/music.js         procedural chiptune (square lead + triangle bass)
+js/engine.js        DOM-free battle maths (unit-tested)
+js/fx.js            sprite life: battle sprite motion and overlays
+js/dialog.js        the in-world replacement for alert/confirm/prompt
+js/nickname.js      the NAME ME prompt
+js/habitatfill.js   generated: every species' home habitat
+js/main.js          bootstrap and event wiring
+sw.js               service worker: network-first shell, cache-first assets
+```
+
+**Save schemas.** Classic: `localStorage['pokedexos_save_v2']` → `{version,
+players: {1, 2}}`. Each player: `{name, caught, team, mons, badges, shinies,
+nicks, items, quests, gyms, settings, stats}`; `state.js` migrates legacy v1 keys
+on load. Sprout Road: `pokedexos_save_v3` (`next/core/save.js`); v2→v3 lives in
+`next/core/migrate.js`, and every loaded player passes through
+`next/core/validate.js`. Never write a save shape that older code can't read
+without checking the migration path.
 
 ## Working in this repo
 
 **Release ritual — do all of it, in order:**
 
 1. Make the change.
-2. Bump the version in **four** places or the boys will get a stale cached app:
-   `js/config.js` (`APP_VERSION`), `sw.js` (`CACHE_VERSION`), the three `?v=`
-   query strings in `index.html`, and `package.json`. Do NOT do this by hand —
-   run `node tools/release.mjs <version> "<title>"`, which writes all four and
-   verifies they agree before it starts. This file said "three" and omitted
-   `package.json` for a long time; a hand-bump that followed it left
-   `package.json` a version behind, which is why release.mjs now checks four.
-3. Add a `CHANGELOG.md` entry written **for Kevin, not for engineers** — describe
-   what the kids will notice.
-4. Run the smoke suite (below). All checks must pass.
+2. Run `node tools/release.mjs <version> "<title>"` (add `--dry-run` to preview).
+   Never bump versions by hand: a stale number means the boys get a stale cached
+   app. It bumps `classic/js/config.js` (`APP_VERSION`), `classic/sw.js`
+   (`CACHE_VERSION`), the `?v=` strings in `classic/index.html`, `package.json`
+   AND `next/sw.js` (`NEXT_CACHE`); refuses to start if they already disagree;
+   checks `next/sw.js` lists every Sprout Road module for offline play; adds a
+   CHANGELOG stub; runs `npm test`; and prints the git commands to run.
+3. Fill in the `CHANGELOG.md` stub, written **for Kevin, not for engineers** —
+   describe what the kids will notice.
+4. All of `npm test` must pass (release.mjs runs it; rerun after any fix).
 5. For anything visual, take a screenshot at **375×667** (small iPhone) and at
-   **390×844**, in **both** normal and Junior mode, and actually look at it.
-   Junior Mode has overflowed off-screen twice; the tests do not catch layout.
+   **390×844**, as **both** Gabe and Art (`prereader` profile; Junior mode in
+   classic), and actually look at it. Junior Mode has overflowed off-screen
+   twice; the tests do not catch everything.
 
 **Running the tests:**
 
 ```bash
-npm install                      # first time only — installs playwright
-python3 -m http.server 8321 &    # the suite expects a server on :8321
-node test/smoke.mjs              # ~165 checks, exits non-zero on failure
-npm run scenes                   # layout harness: 15 screens x 2 sizes x 2 modes
+npm run setup                    # first time only: playwright + chromium
+npm run serve &                  # every browser suite expects a server on :8321
+npm test                         # import check, engine, classic smoke, next unit,
+                                 # next smoke (+ layout net), doorway
+npm run test:next                # Sprout Road only: the faster loop
+npm run scenes                   # CLASSIC layout harness only
 ```
 
-The suite **fully mocks PokeAPI and the sprite CDN**, so it runs with no network
+The suites **fully mock PokeAPI and the sprite CDN**, so they run with no network
 access to those hosts. If you add a feature that fetches something new, add a
 route mock for it or the suite will hang.
 
-**`test/scenes.mjs` is the layout net.** It walks the real app to every screen at
-375x667 and 390x844 in both modes and fails if a button leaves the screen, the
-Pokeball becomes unreachable in a fight, or any visible text drops below 8px.
-Known-but-scheduled bugs live in `test/known-issues.json` so only NEW breakage
-fails; delete entries as fixes land. `UPDATE_KNOWN=1 UPDATE_BASELINE=1 npm run
-scenes` re-records. Screenshots land in `test/shots/` — actually look at them.
-
-Every battle wait must go through `awaitOrTap()` from config.js, never `sleep()`,
-so a tap can hurry it and `?fast=1` can run the suite quickly.
+**Layout nets.** Sprout Road's lives inside `test/next-smoke.mjs`, at 375x667,
+390x844 and 1024x1366 (iPad), with screenshots. Classic's is `test/scenes.mjs`:
+it walks `/classic` to every screen at 375x667 and 390x844 in both modes and
+fails if a button leaves the screen, the Pokeball becomes unreachable in a
+fight, or any visible text drops below 8px. Known-but-scheduled classic bugs
+live in `test/known-issues.json` so only NEW breakage fails; delete entries as
+fixes land. `npm run scenes:update` re-records. Screenshots land in
+`test/shots/` — actually look at them.
 
 ## Conventions
 
 - Kid-facing text is **short, uppercase, and ≤6 words** where possible, and should
   lead with a sprite or an icon. The pixel font is unreadable in long sentences.
+  Prereader scenes show no words except names and numbers.
 - 8px is the **minimum** font size. Several styles still violate this; don't add more.
+- **Waits:** Sprout Road routes every wait over 250ms through `wait()` from
+  `next/core/pace.js`; classic routes every battle wait through `awaitOrTap()`
+  from `classic/js/config.js`. Never a bare `sleep()`, so a tap can hurry it and
+  `?fast=1` can run the suite quickly.
 - Prefer the existing overlay/modal system over `alert()`, `confirm()` and
   `prompt()`. Native dialogs are suppressed in iOS standalone PWA mode — they
   return `null` instead of throwing, which fails silently.
-- `battle.js` is a 979-line file with a mutable singleton and three battle modes
-  sharing it. Read the surrounding function before editing. Async races here are
-  the single most common source of real bugs.
+- `classic/js/battle.js` (~2100 lines) has a mutable singleton and three battle
+  modes sharing it. Read the surrounding function before editing. Async races
+  here are the single most common source of real bugs.
 
 ## Where the plan lives
 
-- **`ROADMAP.md`** — the authoritative 4-week plan. Start here before proposing work.
-- **`COUNCIL-REPORT.md`** — 50 expert audits and 8 debate panels behind the roadmap.
-  Note the ruling banner at the top: every narration recommendation in it is dead.
+- **`ROADMAP-v20.md`** — the current plan and Kevin's 2026-09-26 rulings. Start
+  here before proposing work.
+- `ROADMAP.md` / `ROADMAP-v19.md` — the finished v19 arc, history only.
+- **`COUNCIL-REPORT.md`** — 50 expert audits and 8 debate panels behind the v19
+  roadmap. Note the ruling banner at the top: every narration recommendation in
+  it is dead.
 - **`CHANGELOG.md`** — what shipped, in Kevin's language.
 
 ## Ask before you
 
 - Add a build step, a bundler, or a CI pipeline.
-- Change the save schema.
-- Rewrite `battle.js` wholesale (the roadmap deliberately chose targeted guards
-  plus an `engine.js` extraction over a kernel rewrite).
+- Change either save schema (v2 or v3).
+- Rewrite `classic/js/battle.js` wholesale (the roadmap deliberately chose
+  targeted guards plus an `engine.js` extraction over a kernel rewrite).
 - Add a dependency. There are currently zero runtime dependencies. Keep it that way.
