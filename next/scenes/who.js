@@ -168,7 +168,9 @@ export function mount(root, ctx) {
           h('button', {
             class: 'btn gu-rename', type: 'button', dataset: { player: n },
             attrs: { 'aria-label': 'RENAME ' + name },
-            on: { click: () => { play('tap'); openRename(n); } },
+            // A locked card's name is behind the same grown-up sum as its
+            // profile and lock, so the panel can't be used to rename Gabe.
+            on: { click: () => { play('tap'); guarded(n, () => openRename(n)); } },
           }, h('span', { class: 'gu-name' }, name), h('span', { class: 'gu-pen', attrs: { 'aria-hidden': 'true' } }, '✏️')),
           h('button', {
             class: ['btn', 'gu-profile', pre ? 'is-pre' : 'is-reader'], type: 'button',
@@ -201,7 +203,7 @@ export function mount(root, ctx) {
       clear(muteBtn);
       muteBtn.append(isMuted() ? '🔇 SOUND OFF' : '🔊 SOUND ON');
     }
-    // ---- grown-up check: changing or clearing a lock, or flipping a
+    // ---- grown-up check: changing or clearing a lock, renaming, or flipping a
     // locked card's profile, needs a sum a pre-reader can't do. The panel
     // itself only needs a hold, so it must not be a way past the lock.
     function guarded(n, fn) {
@@ -255,7 +257,9 @@ export function mount(root, ctx) {
         },
       });
       const save = () => {
-        const nm = cleanName(input.value).toUpperCase();
+        // Upper-case BEFORE cleaning: a few letters grow (ß → SS), and the
+        // 12-letter cut must apply to what is actually saved.
+        const nm = cleanName(String(input.value).toUpperCase());
         if (nm && nm !== q.name) { q.name = nm; store.commit(); drawCards(); play('levelUp'); }
         else play('tap');
         drawPanel();

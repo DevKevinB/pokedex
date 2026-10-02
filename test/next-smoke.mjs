@@ -923,6 +923,13 @@ const clickEl = (page, sel) => page.evaluate(s => { const el = document.querySel
   const [qa, qb] = await page.locator('.gu-check-q').evaluate(el => [Number(el.dataset.a), Number(el.dataset.b)]);
   for (const d of String(qa * qb)) await page.locator(`.gu-check-key[data-key="${d}"]`).click();
   check('gear: the right answer flips the profile', (await v3(page))?.players?.[1]?.profile === 'prereader');
+  // v20.2.2: renaming a locked card is behind the same grown-up sum.
+  await page.locator('.gu-rename[data-player="1"]').click();
+  check('gear: renaming a locked card needs a grown-up check', (await page.locator('.gu-check-q').count()) === 1 &&
+    (await page.locator('.gu-rename-input').count()) === 0);
+  const [ra, rb] = await page.locator('.gu-check-q').evaluate(el => [Number(el.dataset.a), Number(el.dataset.b)]);
+  for (const d of String(ra * rb)) await page.locator(`.gu-check-key[data-key="${d}"]`).click();
+  check('gear: the right answer opens the name box', (await page.locator('.gu-rename-input').count()) === 1);
   await finishPage('picture lock', P);
 }
 

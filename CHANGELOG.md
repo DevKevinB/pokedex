@@ -2,6 +2,17 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [20.2.2] - NAME LOCK
+
+### What Kevin will notice
+
+- **A locked card's name is locked too.** Renaming a boy whose card has a
+  picture lock now asks the same grown-up sum first (the "3 × 7" check),
+  just like changing his lock or his reader setting. Before, anyone who
+  managed the two-second hold on ⚙ could rename Gabe's card. Art's card has
+  no lock, so renaming him works exactly as before.
+- Very rare letters such as ß no longer let a name sneak past 12 letters.
+
 ## [20.2.1] - NAME TAGS
 
 ### What Kevin will notice
