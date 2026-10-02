@@ -172,6 +172,15 @@ live in `test/known-issues.json` so only NEW breakage fails; delete entries as
 fixes land. `npm run scenes:update` re-records. Screenshots land in
 `test/shots/` — actually look at them.
 
+**Claude automations (`.claude/`).** Two hooks run by themselves:
+`hooks/check-imports-after-edit.mjs` re-runs the import checker after any edit
+to game JS and reports a broken import at once (fix it before moving on), and
+`hooks/guard-save-files.mjs` makes Kevin approve any write to the four save
+files. `/ship` (`skills/ship/`) is the whole release ritual; only Kevin starts
+it. Reviewers in `agents/`: **`art-advocate`** for anything a player sees or
+hears, **`save-guardian`** for anything touching saves or localStorage. Use
+them before pushing.
+
 ## Conventions
 
 - Kid-facing text is **short, uppercase, and ≤6 words** where possible, and should
