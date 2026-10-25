@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm test)",
       "Bash(npm run scenes)",
-      "Bash(fc-list*)"
+      "Bash(fc-list*)",
+      "Bash(node test/next-smoke.mjs)",
+      "Bash(node tools/check-imports.mjs)",
+      "Bash(git fetch *)"
     ]
   },
   "hooks": {
