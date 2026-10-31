@@ -24,3 +24,12 @@ docs/forum-artifact.html
 
 # Claude Code session reports (/session-report): local usage data, never published
 session-report-*.html
+
+# Third-party agent skills (web-quality-skills @ afa8da9), reviewed 2026-10-24.
+# Kept local on purpose; see the HTML craft plan, Phase 3. Listed one by one
+# because .claude/skills/ also holds this repo's own tracked skills (ship/).
+.claude/skills/accessibility/
+.claude/skills/best-practices/
+.claude/skills/core-web-vitals/
+.claude/skills/performance/
+.claude/skills/web-quality-audit/
