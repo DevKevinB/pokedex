@@ -1003,6 +1003,7 @@
         .gen-filter-btn, .pc-sort-btn { scroll-snap-align: start; }
         /* V11: battle title never wraps */
         #battle-header-title { white-space: nowrap; letter-spacing: 0; }
+        #badge-toast { width: max-content; max-width: 92vw; }
         @media (max-width: 380px) { #battle-header-title { font-size: 12px; } html[data-theme="mono"] #battle-header-title { font-size: 8px; } }
         /* V4: small phones, full deck: give the sprite the room (search stays reachable in MORE) */
         @media (max-height: 700px) { html[data-deck="full"] #search { display: none; } }
@@ -1012,6 +1013,16 @@
         /* A11Y-8 small text floor */
         .pc-nick, .pc-lvl { font-size: 10px; }
         .status-badge { font-size: 10px; }
+        /* V8: dark theme gets dark cards (data sheet, ball drawer, HP cards, dialogs, popups) */
+        :root[data-theme="dark"] { --card-bg: #14221a; --card-ink: #f2f4ee; --card-sub: #b9d0b3; --card-accent: #ffcb05; }
+        html[data-theme="dark"] .info-box { background: #0e1a12; border-color: #3a5a3c; }
+        html[data-theme="dark"] .stat-bar-bg { background: #0e1a12; border-color: #3a5a3c; }
+        html[data-theme="dark"] .handle { background: rgba(255,255,255,.35); }
+        html[data-theme="dark"] .sheet-handle-area { border-bottom-color: rgba(255,255,255,.15); }
+        html[data-theme="dark"] .hp-box-wild, html[data-theme="dark"] .hp-box-player, html[data-theme="dark"] .egg-card, html[data-theme="dark"] .type-popup-card { border-color: #3a5a3c; }
+        html[data-theme="dark"] .egg-card.egg-hatched { background: #1d3a24; }
+        html[data-theme="dark"] #wild-name.shiny-label { color: #ffcb05; }
+        html[data-theme="dark"] .type-popup-close { background: #f2f4ee; color: #0b1410; }
         /* A11Y-1 reduced motion: silence every animation, not just the partner */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
@@ -1847,7 +1858,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     function showBadgeToast(badge) {
         const toast = document.getElementById('badge-toast');
         if (!toast) return;
-        if (toastQueue.length < 6) toastQueue.push(badge);
+        if (toastQueue.length < 4) toastQueue.push(badge);
         if (!toastBusy) toastNext();
     }
     function toastNext() {
@@ -3505,8 +3516,8 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         const code = prompt("PASTE YOUR SAVE CODE HERE:"); if (!code) return;
         try {
             const s = JSON.parse(atob(code));
-            if (s.p1) { caughtData[1] = s.p1; localStorage.setItem('pokedex_caught_p1', JSON.stringify(s.p1)); }
-            if (s.p2) { caughtData[2] = s.p2; localStorage.setItem('pokedex_caught_p2', JSON.stringify(s.p2)); }
+            if (Array.isArray(s.p1)) { caughtData[1] = s.p1.filter(x => x != null); localStorage.setItem('pokedex_caught_p1', JSON.stringify(caughtData[1])); }
+            if (Array.isArray(s.p2)) { caughtData[2] = s.p2.filter(x => x != null); localStorage.setItem('pokedex_caught_p2', JSON.stringify(caughtData[2])); }
             if (s.f1) { favesData[1] = s.f1; localStorage.setItem('pokedex_faves_p1', JSON.stringify(s.f1)); }
             if (s.f2) { favesData[2] = s.f2; localStorage.setItem('pokedex_faves_p2', JSON.stringify(s.f2)); }
             if (s.r1) { battleRecord[1] = s.r1; localStorage.setItem('pokedex_record_p1', JSON.stringify(s.r1)); }
