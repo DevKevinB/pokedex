@@ -70,7 +70,7 @@
           --well-bg: #9bbc0f;
           --cell-bd: #0f380f;
           --cell-bg: #8bac0f;
-          --cell-ink: #0f380f;
+          --cell-ink: #072207;
           --cell-off-ink: #2f4a0d;
           --cell-off-filter: grayscale(1) brightness(0.45) contrast(1.2);
           --sprite-filter: drop-shadow(0 6px 0 rgba(15,56,15,0.35));
@@ -247,7 +247,7 @@
           --well-bg: #9bbc0f;
           --cell-bd: #0f380f;
           --cell-bg: #8bac0f;
-          --cell-ink: #0f380f;
+          --cell-ink: #072207;
           --cell-off-ink: #2f4a0d;
           --cell-off-filter: grayscale(1) brightness(0.45) contrast(1.2);
           --sprite-filter: grayscale(1) contrast(1.6) sepia(1) hue-rotate(40deg) saturate(2.4) brightness(0.8);
@@ -489,7 +489,7 @@
 
         /* --- CONTROL DECK: one DOM, three layouts via html[data-deck] --- */
         .control-deck { flex-shrink: 0; padding: 16px 14px calc(14px + env(safe-area-inset-bottom)); display: grid; gap: 12px; z-index: 10; }
-        input#search { width: 100%; height: 48px; padding: 0 14px; border-radius: 14px; border: 3px var(--bd-style) #1a1a1a; font-family: var(--f-nunito); font-size: 16px; text-align: center; font-weight: 800; background: #fff; color: #1a1a1a; box-shadow: inset 0 3px 0 rgba(0,0,0,0.12); }
+        input#search { -webkit-user-select: text; user-select: text; width: 100%; height: 48px; padding: 0 14px; border-radius: 14px; border: 3px var(--bd-style) #1a1a1a; font-family: var(--f-nunito); font-size: 16px; text-align: center; font-weight: 800; background: #fff; color: #1a1a1a; box-shadow: inset 0 3px 0 rgba(0,0,0,0.12); }
         input#search::placeholder { color: #6b6b6b; }
         .tool-btn { padding: 6px 2px; font-size: 11px; letter-spacing: 0.5px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
         .btn-icon { font-size: 24px; line-height: 1.25; }
@@ -497,9 +497,8 @@
         .btn-ball { display: none; width: 52px; height: 52px; image-rendering: pixelated; }
         #dpad { display: none; }
         #shiny-count { display: block; font-size: 10px; opacity: 1; letter-spacing: 0.5px; min-height: 10px; }
-        .auto-label { position: relative; font-size: 10px; opacity: 0.85; letter-spacing: 0.5px; display: block; min-height: 10px; margin: -6px -10px; padding: 6px 10px; cursor: pointer; }
-        .auto-label::after { content: ''; position: absolute; inset: -10px -14px -10px -14px; }
-        .auto-label.on { opacity: 1; }
+        .auto-label::before { content: '🔁'; display: block; font-size: 18px; line-height: 1.2; }
+        html[data-deck="full"] .auto-label.on { background: var(--green-bg); color: var(--green-ink); }
 
         /* KID deck (default): 3 giant buttons + MORE */
         html[data-deck="kid"] .control-deck { grid-template-columns: 1fr 1fr; grid-template-areas: "catch catch" "battle pc" "more more"; }
@@ -520,8 +519,7 @@
         html[data-deck="full"] .deck-secondary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         html[data-deck="full"] .deck-secondary .tool-btn { min-height: 54px; border-radius: 14px; font-size: 11px; padding: 4px 2px; }
         html[data-deck="full"] .deck-secondary .btn-icon { font-size: 18px; }
-        html[data-deck="full"] #more-btn { grid-column: span 2; }
-        html[data-deck="full"] #dpad, html[data-deck="full"] .btn-ball { display: none; }
+                html[data-deck="full"] #dpad, html[data-deck="full"] .btn-ball { display: none; }
 
         /* CONSOLE deck: D-pad + round B/A + pills */
         html[data-deck="console"] .control-deck { grid-template-columns: 138px 1fr 78px 78px; column-gap: 12px; row-gap: 12px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); grid-template-areas: "dpad . b a" "more more pc pc"; }
@@ -1018,7 +1016,6 @@
         }
         /* V7 pass + result overlays: nearly opaque, blurred */
         #pvp-pass-overlay, #battle-result-overlay { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-        #pvp-pass-overlay { background: rgba(6,8,12,.96); }
         /* A11Y-8 small text floor */
         .pc-nick, .pc-lvl { font-size: 10px; }
         .status-badge { font-size: 10px; }
@@ -1036,6 +1033,55 @@
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
         }
+
+        /* ============ FIX ROUND 2 ============ */
+        /* V1: big-name themes keep a left gutter for the partner so it never covers the first letter */
+        :root { --pg: 52px; }
+        .visual-display.ln-mid:not(.ln-xl) .partner-btn:not(.partner-btn-battle) { transform: scale(.7); transform-origin: 0 0; }
+        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) .visual-display.ln-mid:not(.ln-xl) .partner-btn:not(.partner-btn-battle) { transform: scale(.6); transform-origin: 0 0; }
+        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) .visual-display.ln-mid:not(.ln-xl) .identity { padding-inline: var(--pg); }
+        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) .visual-display.ln-mid:not(.ln-xl) #poke-name { font-size: max(11px, min(var(--name-size), calc(220px / var(--len, 1)))); }
+        /* V3: identity (type chips) sits above the sprite box so the padded chip hit area (>=44px) is never stolen */
+        .identity { z-index: 3; }
+        .tags .tag::after { inset: -11px -4px; }
+        /* V2: short phones: big-name themes use the compact LCD text sizes so the Pokémon keeps its room */
+        @media (max-height: 700px) {
+            :root[data-theme="classic"], :root[data-theme="toy"], :root[data-theme="dark"] { --name-size: 17px; --name-fit: 240px; }
+            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) .visual-display .tag { font-size: 10px; padding: 5px 10px; }
+            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) #poke-id { font-size: 12px; }
+            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) #nick-sub { font-size: 10px; }
+            .screen-bezel { padding: 8px 8px 14px; }
+            .visual-display { padding: 8px 10px 4px; }
+            #nick-sub { min-height: 12px; }
+            /* V8: full deck keeps a comfortable bottom margin */
+            html[data-deck="full"] .control-deck { padding-top: 6px; padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+            html[data-deck="full"] .deck-secondary .tool-btn { min-height: 44px; }
+        }
+        /* V7: console deck: smaller, unscaled partner so it hugs the corner */
+        html[data-deck="console"] .partner-btn:not(.partner-btn-battle), html[data-deck="console"] .visual-display.ln-xl .partner-btn:not(.partner-btn-battle), html[data-deck="console"] .visual-display.ln-mid:not(.ln-xl) .partner-btn:not(.partner-btn-battle) { width: 48px; height: 48px; transform: none; }
+        /* V4: sort chips fit one row (shorter labels); gen chips get a pinned arrow so kids can see there is more */
+        @media (max-width: 430px) { .lbl-x { display: none; } }
+        .pc-sort-row { -webkit-mask-image: none; mask-image: none; padding-right: 0; }
+        .gen-filter-row { -webkit-mask-image: none; mask-image: none; padding-right: 0; }
+        .gen-filter-row::after { content: '›'; position: sticky; right: 2px; flex: 0 0 32px; width: 32px; height: 32px; align-self: center; display: flex; align-items: center; justify-content: center; padding-bottom: 3px; border-radius: 50%; border: 3px var(--bd-style) var(--line); background: var(--yel-bg); color: var(--yel-ink); font-size: 24px; font-weight: 900; line-height: 1; box-shadow: 0 3px 0 var(--line); pointer-events: none; }
+        /* V5: shiny star + sleeping z keep contrast on any background */
+        .pc-star { -webkit-text-stroke: 1px #0f380f; paint-order: stroke fill; text-shadow: 0 1px 0 #0f380f, 0 0 3px #0f380f; }
+        html[data-theme="mono"] .pc-star { color: #0f380f; text-shadow: none; -webkit-text-stroke: 0; }
+        .partner-btn-battle .partner-z { color: var(--txt); text-shadow: none; }
+        /* V6 / A11Y-3: raise the tiny text floor for the kids */
+        html[data-theme="blend"] .pc-lbl, html[data-theme="mono"] .pc-lbl { font-size: 10px; }
+        html[data-theme="blend"] .pc-nick, html[data-theme="mono"] .pc-nick, html[data-theme="blend"] .pc-lvl, html[data-theme="mono"] .pc-lvl { font-size: 9px; }
+        html[data-theme="blend"] #nick-sub, html[data-theme="mono"] #nick-sub { font-size: 10px; }
+        .look-opt small { font-size: 11px; }
+        .look-grid.g4 { grid-template-columns: 1fr 1fr; }
+        .look-opt[data-look="partner"] { flex-direction: row; gap: 8px; min-height: 56px; padding: 4px 8px; font-size: 12px; letter-spacing: 0; }
+        html[data-deck="console"] #battle-btn::before, html[data-deck="console"] #catch-btn::before { font-size: 14px; }
+        html[data-deck="console"] #battle-btn, html[data-deck="console"] #catch-btn { font-size: 12px; }
+        html[data-theme="mono"] .type-badge, html[data-theme="mono"] .move-eff, html[data-theme="mono"] .more-tool, html[data-theme="mono"] .look-opt[data-look="partner"], html[data-theme="mono"] .look-opt small, html[data-theme="mono"] .gen-filter-btn, html[data-theme="mono"] .pc-sort-btn { font-size: 8px; }
+        html[data-theme="mono"][data-deck="console"] #battle-btn, html[data-theme="mono"][data-deck="console"] #catch-btn { font-size: 8px; }
+        html[data-theme="mono"][data-deck="console"] #battle-btn::before, html[data-theme="mono"][data-deck="console"] #catch-btn::before { font-size: 10px; }
+        /* F3: HEAL only works between fights */
+        #heal-btn.not-now { opacity: .5; box-shadow: none; }
     </style>
     <script>(function(){try{var L=JSON.parse(localStorage.getItem('pokedex_look_v1')),d=document.documentElement;if(L&&typeof L==='object'){
 if(/^(blend|classic|toy|mono|dark)$/.test(L.theme))d.setAttribute('data-theme',L.theme);
@@ -1125,7 +1171,8 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             <button class="tool-btn btn-blue btn-pc" id="pc-btn" onclick="openPC('dex')"><span class="btn-icon">💻</span><span class="btn-lbl">PC</span></button>
         </div>
         <div class="deck-secondary">
-            <button class="tool-btn" id="cry-btn" onclick="playCry()"><span class="btn-icon" id="cry-icon">🔊</span><span class="btn-lbl">CRY</span><span class="auto-label" id="auto-cry-label" role="button" tabindex="0" onclick="event.stopPropagation(); toggleAutoCry();">AUTO ✓</span></button>
+            <button class="tool-btn" id="cry-btn" onclick="playCry()"><span class="btn-icon" id="cry-icon">🔊</span><span class="btn-lbl">CRY</span></button>
+            <button type="button" class="tool-btn auto-label" id="auto-cry-label" aria-pressed="false" aria-label="Auto cry" onclick="toggleAutoCry()">AUTO ✗</button>
             <button class="tool-btn" id="voice-btn" onclick="toggleVoice()"><span class="btn-icon">🎙️</span><span class="btn-lbl">VOICE</span></button>
             <button class="tool-btn" id="shiny-btn" onclick="toggleShiny()"><span class="btn-icon">✨</span><span class="btn-lbl">SHINY</span><span id="shiny-count"></span></button>
             <button class="tool-btn" id="rndm-btn" onclick="randomPoke()"><span class="btn-icon">🎲</span><span class="btn-lbl">RNDM</span></button>
@@ -1144,7 +1191,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     </div>
     <div id="ball-scrim" onclick="closeBag()"></div>
 
-    <div class="bottom-sheet" id="data-sheet">
+    <div class="bottom-sheet" id="data-sheet" role="dialog" aria-label="Pokémon data">
         <div class="sheet-handle-area" onclick="toggleSheet()">
             <div class="handle"></div>
             <div class="quick-stats">
@@ -1164,7 +1211,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 </div>
 
 <!-- FEATURE 5: Type Matchup Helper Popup -->
-<div id="type-popup" onclick="closeTypePopup()">
+<div id="type-popup" onclick="closeTypePopup()" role="dialog" aria-modal="true" aria-label="Type matchups">
     <div class="type-popup-card" onclick="event.stopPropagation()">
         <button class="type-popup-close" onclick="closeTypePopup()" aria-label="Close">✕</button>
         <div id="type-popup-title"></div>
@@ -1184,7 +1231,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         <div class="battle-bg-overlay"></div>
         <div class="catch-msg" id="battle-catch-msg" style="z-index: 20;">CAUGHT!</div>
         <!-- SPRINT 4: PvP pass overlay -->
-        <div id="pvp-pass-overlay">
+        <div id="pvp-pass-overlay" role="dialog" aria-modal="true" aria-label="Pass the phone">
             <div class="pvp-pass-title">🤜 PASS TO P2!</div>
             <div class="pvp-pass-sub">P1 has locked in their move.<br>Hand the phone to P2.</div>
             <button class="pvp-ready-btn" onclick="pvpP2Ready()">✅ P2 IS READY</button>
@@ -1234,23 +1281,23 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     </div>
 </div>
 
-<div id="pc-modal">
+<div id="pc-modal" role="dialog" aria-modal="true" aria-label="Pokémon PC box">
     <div class="pc-header" id="pc-title">P1'S PC BOX</div>
     <div id="pc-record">W: 0 | L: 0</div>
 
     <!-- Sprint 5: Tab navigation (hidden during battle team-pick) -->
     <div id="pc-tab-row">
-        <button class="pc-tab-btn active" data-tab="box" onclick="switchPCTab('box')">📦 BOX</button>
-        <button class="pc-tab-btn" data-tab="quiz" onclick="switchPCTab('quiz')">🎮 QUIZ</button>
-        <button class="pc-tab-btn" data-tab="trade" onclick="switchPCTab('trade')">🔄 TRADE</button>
-        <button class="pc-tab-btn" data-tab="badges" onclick="switchPCTab('badges')">🏅 BADGES</button>
+        <button class="pc-tab-btn active" data-tab="box" aria-pressed="true" onclick="switchPCTab('box')">📦 BOX</button>
+        <button class="pc-tab-btn" data-tab="quiz" aria-pressed="false" onclick="switchPCTab('quiz')">🎮 QUIZ</button>
+        <button class="pc-tab-btn" data-tab="trade" aria-pressed="false" onclick="switchPCTab('trade')">🔄 TRADE</button>
+        <button class="pc-tab-btn" data-tab="badges" aria-pressed="false" onclick="switchPCTab('badges')">🏅 BADGES</button>
     </div>
 
     <!-- BOX tab — grid only, maximum Pokémon space -->
     <div id="pc-tab-box">
         <div id="pc-instruction"></div>
         <div class="gen-filter-row" id="gen-filter-row">
-            <button class="gen-filter-btn active" onclick="filterPC(0)"><span class="gen-ring" aria-hidden="true"></span>ALL</button>
+            <button class="gen-filter-btn active" aria-pressed="true" onclick="filterPC(0)"><span class="gen-ring" aria-hidden="true"></span>ALL</button>
             <button class="gen-filter-btn" onclick="filterPC(1)"><span class="gen-ring" aria-hidden="true"></span>GEN I</button>
             <button class="gen-filter-btn" onclick="filterPC(2)"><span class="gen-ring" aria-hidden="true"></span>GEN II</button>
             <button class="gen-filter-btn" onclick="filterPC(3)"><span class="gen-ring" aria-hidden="true"></span>GEN III</button>
@@ -1263,9 +1310,9 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             <button class="gen-filter-btn" onclick="filterPC(-1)"><span class="gen-ring" aria-hidden="true"></span>❤️ FAVES</button>
         </div>
         <div class="pc-sort-row" id="pc-sort-row">
-            <button class="pc-sort-btn active" onclick="sortPC('dex')">📋 DEX ORDER</button>
+            <button class="pc-sort-btn active" aria-pressed="true" onclick="sortPC('dex')">📋 DEX<span class="lbl-x"> ORDER</span></button>
             <button class="pc-sort-btn" onclick="sortPC('newest')">⏰ NEWEST</button>
-            <button class="pc-sort-btn" onclick="sortPC('caught')">✅ CAUGHT FIRST</button>
+            <button class="pc-sort-btn" onclick="sortPC('caught')">✅ CAUGHT<span class="lbl-x"> FIRST</span></button>
         </div>
         <div class="pc-grid" id="pc-grid"></div>
     </div>
@@ -1295,7 +1342,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 </div>
 
 <!-- MORE SCREEN — achievements, egg, tools, look, save, gift -->
-<div class="overlay-screen page-screen" id="more-modal" style="display:none;">
+<div class="overlay-screen page-screen" id="more-modal" role="dialog" aria-modal="true" aria-label="More" style="display:none;">
     <div class="more-col">
         <div class="pc-header">⋯ MORE</div>
         <div id="more-record" class="more-record"></div>
@@ -1362,7 +1409,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 </div>
 
 <!-- SPRINT 4: Battle mode selector -->
-<div class="overlay-screen" id="battle-mode-modal">
+<div class="overlay-screen" id="battle-mode-modal" role="dialog" aria-modal="true" aria-label="Choose battle mode">
     <div class="modal-box">
         <h2>⚔️ CHOOSE A BATTLE</h2>
         <button class="battle-mode-btn battle-mode-wild" onclick="initWildBattle()">🌿 VS WILD<small>Grind • Catch • Repeat</small></button>
@@ -1371,7 +1418,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     </div>
 </div>
 
-<div class="overlay-screen" id="variant-modal">
+<div class="overlay-screen" id="variant-modal" role="dialog" aria-modal="true" aria-label="Choose variant">
     <div class="modal-box">
         <h2 class="dlg-title">CHOOSE VARIANT</h2>
         <p class="dlg-sub" style="margin-bottom:12px;">🎲 Lucky variants appear randomly!</p>
@@ -1380,14 +1427,14 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     </div>
 </div>
 
-<div class="overlay-screen" id="loading-modal">
+<div class="overlay-screen" id="loading-modal" role="dialog" aria-modal="true" aria-label="Loading">
     <div class="modal-box">
         <h2 class="dlg-title" style="margin:0 0 6px;">TRAINER PREPARING...</h2>
         <p class="dlg-sub" style="margin:0;">Fetching Move Data & Stats</p>
     </div>
 </div>
 
-<div class="overlay-screen" id="gift-modal">
+<div class="overlay-screen" id="gift-modal" role="dialog" aria-modal="true" aria-label="Send a gift">
     <div class="modal-box">
         <div class="dlg-icon">🎁</div>
         <h2 class="dlg-title" id="gift-title">SEND A GIFT?</h2>
@@ -1399,7 +1446,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 </div>
 
 <!-- SPRINT 1: WHO'S THAT POKEMON GAME -->
-<div id="wtp-modal">
+<div id="wtp-modal" role="dialog" aria-modal="true" aria-label="Who's that Pokémon quiz">
     <button class="wtp-exit-btn" onclick="closeWTP()">✕ EXIT</button>
     <div class="wtp-title">🎮 WHO'S THAT POKÉMON?</div>
     <div class="wtp-score" id="wtp-score">SCORE: 0 / 0</div>
@@ -1413,13 +1460,13 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 </div>
 
 <!-- PvP: pass the phone between team picks -->
-<div class="overlay-screen page-screen" id="team-pass-screen" style="display:none;z-index:2500">
+<div class="overlay-screen page-screen" id="team-pass-screen" role="dialog" aria-modal="true" aria-label="Pass the phone" style="display:none;z-index:2500">
     <div class="pass-title" id="team-pass-title">PASS TO P2!</div>
     <div class="pass-sub" id="team-pass-sub"></div>
     <button class="btn-yel pass-btn" id="team-pass-btn" onclick="teamPassReady()">P2 IS READY</button>
 </div>
 <!-- Battle result (replaces native alert) -->
-<div class="overlay-screen" id="battle-result-overlay" style="display:none;z-index:2600">
+<div class="overlay-screen" id="battle-result-overlay" role="dialog" aria-modal="true" aria-label="Battle result" style="display:none;z-index:2600">
     <div class="result-title" id="battle-result-title"></div>
     <div class="result-sub" id="battle-result-sub"></div>
     <button class="btn-yel pass-btn" onclick="battleResultDone()">BACK TO DEX</button>
@@ -1579,7 +1626,9 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         activeSlot: 0,
         player: createFighterObj(),
         wild:   createFighterObj(),
-        isBattling: false,
+        _isBattling: false,
+        get isBattling() { return this._isBattling; },
+        set isBattling(v) { this._isBattling = v; syncHealBtn(); },
         // Sprint 4 PvP
         pvpTeam: [],
         pvpSlot: 0,
@@ -1760,7 +1809,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         }
         if (renBtn) renBtn.style.display = isCaught ? 'inline-flex' : 'none';
         const lcd = nameEl.closest('.visual-display'), nlen = nameEl.innerText.length;
-        if (lcd) { lcd.classList.toggle('ln-long', nlen > 8); lcd.classList.toggle('ln-xl', nlen > 13); }
+        if (lcd) { lcd.classList.toggle('ln-mid', nlen > 6); lcd.classList.toggle('ln-long', nlen > 8); lcd.classList.toggle('ln-xl', nlen > 13); }
     }
     function promptNickname(pokeName, pokeId) {
         // Don't prompt if they already named it
@@ -1841,7 +1890,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         const icon = document.getElementById('cry-icon');
         const label = document.getElementById('auto-cry-label');
         if (icon) icon.innerText = autoCryEnabled ? '🔊' : '💥';
-        if (label) { label.innerText = autoCryEnabled ? 'AUTO ✓' : 'AUTO ✗'; label.classList.toggle('on', autoCryEnabled); }
+        if (label) { label.innerText = autoCryEnabled ? 'AUTO ✓' : 'AUTO ✗'; label.classList.toggle('on', autoCryEnabled); label.setAttribute('aria-pressed', autoCryEnabled ? 'true' : 'false'); }
     }
     function autoCrySafe() {
         if (!autoCryEnabled || !cryAudio || isCatching || appMode !== 'dex') return;
@@ -1867,7 +1916,9 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     function showBadgeToast(badge) {
         const toast = document.getElementById('badge-toast');
         if (!toast) return;
-        if (toastQueue.length < 4) toastQueue.push(badge);
+        // a toast caused by the kid's last tap (plain) jumps ahead of waiting badge toasts
+        if (badge.plain) toastQueue.unshift(badge); else toastQueue.push(badge);
+        while (toastQueue.length > 4) toastQueue.pop();
         if (!toastBusy) toastNext();
     }
     function toastNext() {
@@ -1875,7 +1926,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         const badge = toastQueue.shift();
         if (!badge || !toast) { toastBusy = false; return; }
         toastBusy = true;
-        toast.innerText = /!$/.test(badge.name) ? `${badge.icon} ${badge.name}` : `${badge.icon} NEW BADGE: ${badge.name}!`;
+        toast.innerText = (badge.plain || /!$/.test(badge.name)) ? `${badge.icon} ${badge.name}` : `${badge.icon} NEW BADGE: ${badge.name}!`;
         toast.classList.add('show');
         triggerVibration([50, 30, 100]);
         if (!partnerSayText) partnerReact('cheer', 'NICE!', 1600);
@@ -2034,7 +2085,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         if (challengeData[p].progress >= c.goal) {
             challengeData[p].done = true;
             challengeData[p].totalCompleted = (challengeData[p].totalCompleted || 0) + 1;
-            showBadgeToast({ icon: '🎯', name: 'DAILY CHALLENGE COMPLETE!' });
+            showBadgeToast({ icon: '🎯', name: 'DAILY CHALLENGE COMPLETE!' , plain: true });
             triggerVibration([100, 50, 200]);
             launchConfetti();
             checkBadges();
@@ -2113,7 +2164,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         renderEggSection();
         updateCompletionBar();
         checkBadges();
-        showBadgeToast({ icon: '🥚', name: `EGG HATCHED! #${targetId.toString().padStart(3,'0')}` });
+        showBadgeToast({ icon: '🥚', name: `EGG HATCHED! #${targetId.toString().padStart(3,'0')}`, plain: true });
     }
 
     // --- SPRINT 2 #8: BATTLE STATUS EFFECTS ---
@@ -2201,6 +2252,12 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     }
 
     // --- SPRINT 4: POKÉMON CENTER (HEAL BETWEEN BATTLES) ---
+    // HEAL only works between fights: dim it while a fight is on so it never looks tappable-but-dead
+    function syncHealBtn() {
+        const hb = document.getElementById('heal-btn');
+        if (!hb) return;
+        hb.classList.toggle('not-now', !!battleState.isBattling);
+    }
     function healTeam() {
         if (battleState.isBattling) { logMsg('⚕️ HEAL works after the fight. Use a POTION now!'); return; } // only after a win
         let anyHealed = false;
@@ -2212,7 +2269,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         updatePlayerSideUI();
         triggerVibration([30, 20, 30]);
         logMsg('⚕️ POKÉMON CENTER: Team fully healed!');
-        showBadgeToast({ icon: '⚕️', name: 'TEAM HEALED!' });
+        showBadgeToast({ icon: '⚕️', name: 'TEAM HEALED!' , plain: true });
     }
 
     // --- SPRINT 4: BATTLE BAG ---
@@ -2392,6 +2449,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         document.querySelectorAll('.pc-sort-btn').forEach(btn => {
             const m = btn.getAttribute('onclick').match(/sortPC\('(.+?)'\)/);
             btn.classList.toggle('active', m && m[1] === mode);
+            btn.setAttribute('aria-pressed', (m && m[1] === mode) ? 'true' : 'false');
         });
         renderPCGrid();
     }
@@ -2474,7 +2532,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     function openPC(context = 'dex') {
         if(isCatching) return;
         pcContext = context; currentGenFilter = 0; currentPCSort = 'dex';
-        document.querySelectorAll('.pc-sort-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
+        document.querySelectorAll('.pc-sort-btn').forEach((btn, i) => { btn.classList.toggle('active', i === 0); btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false'); });
         // Sprint 4: PvP phase 2 shows P2's PC
         const displayPlayer = (context === 'battle' && pvpBuildPhase === 2) ? 2 : currentPlayer;
         pcTargetPlayer = displayPlayer;
@@ -2488,7 +2546,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         const streak = battleStreak[displayPlayer];
         document.getElementById('pc-record').innerText = `W: ${rec.w} | L: ${rec.l}${streak > 1 ? `  🔥 ${streak} STREAK` : ''}`;
         resetPCInstr();
-        document.querySelectorAll('.gen-filter-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
+        document.querySelectorAll('.gen-filter-btn').forEach((btn, i) => { btn.classList.toggle('active', i === 0); btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false'); });
         giftModeActive = false; pendingGiftId = null;
         const otherP = currentPlayer === 1 ? 2 : 1;
         const giftBtn = document.getElementById('gift-btn');
@@ -2577,6 +2635,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         document.querySelectorAll('.gen-filter-btn').forEach(btn => {
             const m = btn.getAttribute('onclick').match(/-?\d+/);
             btn.classList.toggle('active', m && parseInt(m[0]) === gen);
+            btn.setAttribute('aria-pressed', (m && parseInt(m[0]) === gen) ? 'true' : 'false');
         });
         renderPCGrid();
     }
@@ -2712,7 +2771,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         localStorage.setItem(`pokedex_xp_p${playerNum}`, JSON.stringify(xpData[playerNum]));
         for (const lu of levelUps) {
             logMsg(`⬆️ ${lu.name.toUpperCase()} leveled up to Lv.${lu.level}!`);
-            showBadgeToast({ icon: '⬆️', name: `${lu.name.toUpperCase()} Lv.${lu.level}!` });
+            showBadgeToast({ icon: '⬆️', name: `${lu.name.toUpperCase()} Lv.${lu.level}!`, plain: true });
             partnerReact('cheer', 'LEVEL UP!', 1600);
             triggerVibration([50, 50, 100]);
             await sleep(400);
@@ -2729,7 +2788,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             const el = document.getElementById(`pc-tab-${t}`);
             if (el) el.style.display = t === tab ? 'flex' : 'none';
             const btn = document.querySelector(`.pc-tab-btn[data-tab="${t}"]`);
-            if (btn) btn.classList.toggle('active', t === tab);
+            if (btn) { btn.classList.toggle('active', t === tab); btn.setAttribute('aria-pressed', t === tab ? 'true' : 'false'); }
         });
         if (tab === 'trade') renderTradeInPC();
         if (tab === 'badges') renderBadgesInPC();
@@ -2797,7 +2856,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         tradeCount[giver]++; tradeCount[receiver]++;
         localStorage.setItem(`pokedex_trades_p${giver}`, JSON.stringify(tradeCount[giver]));
         localStorage.setItem(`pokedex_trades_p${receiver}`, JSON.stringify(tradeCount[receiver]));
-        showBadgeToast({ icon: '🔄', name: 'TRADE COMPLETE!' });
+        showBadgeToast({ icon: '🔄', name: 'TRADE COMPLETE!' , plain: true });
         logMsg(`🔄 P${giver} traded #${pendingTradeId.toString().padStart(3,'0')} to P${receiver}!`);
         pendingTradeId = null;
         updateCatchUI(); checkBadges();
@@ -2950,6 +3009,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         document.getElementById('battle-header-title').innerText = battleState.mode === 'pvp' ? 'P1 vs P2' : 'BATTLE ARENA';
         const healBtn = document.getElementById('heal-btn');
         if (healBtn) healBtn.style.display = battleState.mode === 'wild' ? 'block' : 'none';
+        syncHealBtn();
         // Sprint 4: init bag buttons
         renderBagRow();
         logMsg(battleState.mode === 'pvp' ? `P2 sent out ${battleState.wild.name.toUpperCase()}! P1's TURN!` : `WILD ${battleState.wild.name.toUpperCase()} APPEARED!`);
@@ -3557,6 +3617,32 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             e.preventDefault(); e.target.click();
         }
     });
+
+    // a11y: dialogs move focus to their first control when shown and give it back when hidden
+    (function dialogFocus() {
+        const els = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+        const state = new Map();
+        const shown = el => { const cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden' && el.getClientRects().length > 0; };
+        const check = el => {
+            const now = shown(el), was = state.get(el) || false;
+            if (now === was) return;
+            state.set(el, now);
+            try {
+                if (now) {
+                    el._opener = document.activeElement;
+                    const target = [...el.querySelectorAll('button:not([disabled])')].find(b => b.offsetParent !== null || getComputedStyle(b).position === 'fixed');
+                    if (target) { if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true }); }
+                } else {
+                    const op = el._opener; el._opener = null;
+                    if (op && op !== document.body && document.contains(op) && typeof op.focus === 'function' && shown(op)) op.focus({ preventScroll: true });
+                }
+            } catch (e) {}
+        };
+        els.forEach(el => {
+            new MutationObserver(() => check(el)).observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+            check(el);
+        });
+    })();
 
     // --- INIT ---
     loadLook(); applyLook();
