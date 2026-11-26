@@ -1006,7 +1006,16 @@
         #badge-toast { width: max-content; max-width: 92vw; }
         @media (max-width: 380px) { #battle-header-title { font-size: 12px; } html[data-theme="mono"] #battle-header-title { font-size: 8px; } }
         /* V4: small phones, full deck: give the sprite the room (search stays reachable in MORE) */
-        @media (max-height: 700px) { html[data-deck="full"] #search { display: none; } }
+        @media (max-height: 700px) {
+            html[data-deck="full"] .control-deck { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); gap: 6px; }
+            html[data-deck="full"] .deck-primary, html[data-deck="full"] .deck-secondary { gap: 6px; }
+            html[data-deck="full"] input#search { height: 44px; }
+            html[data-deck="full"] .deck-secondary .tool-btn { min-height: 46px; padding-top: 3px; padding-bottom: 3px; gap: 1px; }
+            html[data-deck="full"] .deck-secondary .btn-icon { font-size: 15px; line-height: 1.1; }
+            #ball-drawer { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+            .ball-opt { min-height: 76px; padding: 2px 0; }
+            .ball-opt img { width: 50px; height: 50px; }
+        }
         /* V7 pass + result overlays: nearly opaque, blurred */
         #pvp-pass-overlay, #battle-result-overlay { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
         #pvp-pass-overlay { background: rgba(6,8,12,.96); }
