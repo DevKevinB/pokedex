@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#fff6df">
+    <meta name="theme-color" content="#d63a30">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Fredoka:wght@500;600;700&family=Press+Start+2P&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'">
@@ -38,8 +38,10 @@
           --name-size: 17px;
           --name-fit: 240px;
           --hp-name: 14px;
-          --page-bg: #fff6df;
-          --page-ink: #2b2b3a;
+          --page-bg: linear-gradient(180deg,#d63a30,#b71c1c);
+          --page-ink: #fff;
+          --on-page: #fff;
+          --on-page-sub: #fff;
           --hdr-bg: #ffe9b0;
           --txt: #2b2b3a;
           --sub: #a8350a;
@@ -71,7 +73,7 @@
           --cell-bd: #0f380f;
           --cell-bg: #8bac0f;
           --cell-ink: #072207;
-          --cell-off-ink: #2f4a0d;
+          --cell-off-ink: #213608;
           --cell-off-filter: grayscale(1) brightness(0.45) contrast(1.2);
           --sprite-filter: drop-shadow(0 6px 0 rgba(15,56,15,0.35));
           --sky-bg: linear-gradient(180deg,#8fd0ff 0%,#bfe8ff 45%,#9fd36a 46%,#6fae3c 100%);
@@ -99,6 +101,8 @@
           --hp-name: 14px;
           --page-bg: linear-gradient(180deg,var(--p-primary),var(--p-dark));
           --page-ink: #fff;
+          --on-page: #fff;
+          --on-page-sub: #fff;
           --hdr-bg: linear-gradient(180deg,var(--p-primary),var(--p-dark));
           --txt: #fff;
           --sub: #ffffff;
@@ -156,8 +160,10 @@
           --name-size: 34px;
           --name-fit: 380px;
           --hp-name: 14px;
-          --page-bg: #fff6df;
-          --page-ink: #2b2b3a;
+          --page-bg: linear-gradient(180deg,#d63a30,#b71c1c);
+          --page-ink: #fff;
+          --on-page: #fff;
+          --on-page-sub: #fff;
           --hdr-bg: #ffe9b0;
           --txt: #2b2b3a;
           --sub: #a8350a;
@@ -217,6 +223,8 @@
           --hp-name: 9px;
           --page-bg: #c9c7bd;
           --page-ink: #0f380f;
+          --on-page: #0f380f;
+          --on-page-sub: #5e1427;
           --hdr-bg: #aaa89d;
           --txt: #0f380f;
           --sub: #5e1427;
@@ -248,7 +256,7 @@
           --cell-bd: #0f380f;
           --cell-bg: #8bac0f;
           --cell-ink: #072207;
-          --cell-off-ink: #2f4a0d;
+          --cell-off-ink: #213608;
           --cell-off-filter: grayscale(1) brightness(0.45) contrast(1.2);
           --sprite-filter: grayscale(1) contrast(1.6) sepia(1) hue-rotate(40deg) saturate(2.4) brightness(0.8);
           --sky-bg: #9bbc0f;
@@ -276,6 +284,8 @@
           --hp-name: 14px;
           --page-bg: radial-gradient(ellipse at 50% 30%,#1d3b22,#0b1410 60%);
           --page-ink: #f2f4ee;
+          --on-page: #f2f4ee;
+          --on-page-sub: #ffcb05;
           --hdr-bg: #0f1c14;
           --txt: #f2f4ee;
           --sub: #ffcb05;
@@ -335,6 +345,8 @@
           --hp-name: 14px;
           --page-bg: #ececec;
           --page-ink: #222;
+          --on-page: #222;
+          --on-page-sub: #555;
           --hdr-bg: #e0e0e0;
           --txt: #222;
           --sub: #555;
@@ -444,7 +456,7 @@
         .completion-strip { display: flex; align-items: center; padding: 0 18px 8px; gap: 10px; flex-shrink: 0; }
         .comp-bar-bg { flex: 1; height: 10px; background: rgba(0,0,0,0.3); border-radius: 5px; overflow: hidden; border: 2px var(--bd-style) var(--line); }
         .comp-bar-fill { height: 100%; width: 2%; background: var(--fill); transition: width 0.6s ease-out; }
-        #comp-text { font-size: 12px; font-weight: 900; color: var(--txt); white-space: nowrap; min-width: 76px; text-align: right; }
+        #comp-text { font-size: 12px; font-weight: 900; color: var(--on-page); white-space: nowrap; min-width: 76px; text-align: right; }
         #challenge-strip { display: flex; align-items: center; margin: 0 16px 8px; padding: 5px 12px; gap: 8px; flex-shrink: 0; min-height: 34px; background: var(--panel-bg); color: var(--panel-ink); border: 2px var(--bd-style) var(--line); border-radius: 12px; }
         #challenge-strip.done { background: var(--catch-own-bg); color: var(--catch-own-ink); }
         #challenge-icon { font-size: 14px; flex-shrink: 0; }
@@ -519,7 +531,7 @@
         html[data-deck="full"] .deck-secondary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         html[data-deck="full"] .deck-secondary .tool-btn { min-height: 54px; border-radius: 14px; font-size: 11px; padding: 4px 2px; }
         html[data-deck="full"] .deck-secondary .btn-icon { font-size: 18px; }
-                html[data-deck="full"] #dpad, html[data-deck="full"] .btn-ball { display: none; }
+        html[data-deck="full"] #dpad, html[data-deck="full"] .btn-ball { display: none; }
 
         /* CONSOLE deck: D-pad + round B/A + pills */
         html[data-deck="console"] .control-deck { grid-template-columns: 138px 1fr 78px 78px; column-gap: 12px; row-gap: 12px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); grid-template-areas: "dpad . b a" "more more pc pc"; }
@@ -592,7 +604,7 @@
 
         /* ============ PASS B: OVERLAYS (shared dialog / page screens) ============ */
         .overlay-screen { position: fixed; inset: 0; background: var(--scrim); z-index: 2000; display: none; flex-direction: column; justify-content: center; align-items: center; color: var(--card-ink); padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)); }
-        .page-screen { background: var(--page-bg); color: var(--txt); }
+        .page-screen { background: var(--page-bg); color: var(--on-page); }
         .modal-box { background: var(--card-bg); color: var(--card-ink); border: 4px var(--bd-style) var(--line); border-radius: 24px; padding: 24px 20px; text-align: center; max-width: 92%; width: 350px; box-shadow: var(--shadow); }
         .dlg-title { color: var(--card-accent); margin: 0 0 8px; font-size: 22px; font-weight: 900; line-height: 1.2; }
         .dlg-sub { color: var(--card-sub); font-size: 13px; margin: 0 0 6px; font-weight: 800; }
@@ -679,18 +691,18 @@
         .pvp-ready-btn:active, .pass-btn:active { transform: translateY(var(--press)); box-shadow: 0 0 0 var(--line); }
         /* team pass screen + result overlay (full screen) */
         #team-pass-screen, #battle-result-overlay { gap: 18px; text-align: center; }
-        .pass-title { font-size: 36px; color: var(--sub); line-height: 1.1; text-align: center; font-weight: 900; }
-        .pass-sub { font-size: 15px; color: var(--txt); font-weight: 800; text-align: center; max-width: 300px; line-height: 1.4; }
+        .pass-title { font-size: 36px; color: var(--on-page-sub); line-height: 1.1; text-align: center; font-weight: 900; }
+        .pass-sub { font-size: 15px; color: var(--on-page); font-weight: 800; text-align: center; max-width: 300px; line-height: 1.4; }
         #battle-result-overlay { background: var(--scrim-strong); color: #fff; }
         .result-title { font-size: clamp(26px, 9vw, 40px); color: var(--gold); line-height: 1.15; font-weight: 900; text-align: center; }
         .result-sub { font-size: 15px; color: #fff; font-weight: 800; text-align: center; line-height: 1.5; white-space: pre-line; }
 
         /* ============ PC BOX / TEAM PICKER ============ */
-        #pc-modal { position: fixed; inset: 0; background: var(--page-bg); color: var(--txt); z-index: 1000; display: none; flex-direction: column; padding: calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
-        .pc-header { color: var(--txt); font-size: 20px; font-weight: 900; text-align: center; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 2px; line-height: 1.2; flex-shrink: 0; }
-        #pc-record, .more-record { text-align: center; color: var(--txt); font-weight: 900; font-size: 13px; margin-bottom: 6px; flex-shrink: 0; }
-        #pc-record { color: var(--sub); }
-        #pc-instruction, .pc-instr { text-align: center; color: var(--sub); font-weight: 900; font-size: 13px; margin-bottom: 6px; flex-shrink: 0; }
+        #pc-modal { position: fixed; inset: 0; background: var(--page-bg); color: var(--on-page); z-index: 1000; display: none; flex-direction: column; padding: calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
+        .pc-header { color: var(--on-page); font-size: 20px; font-weight: 900; text-align: center; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 2px; line-height: 1.2; flex-shrink: 0; }
+        #pc-record, .more-record { text-align: center; color: var(--on-page); font-weight: 900; font-size: 13px; margin-bottom: 6px; flex-shrink: 0; }
+        #pc-record { color: var(--on-page-sub); }
+        #pc-instruction, .pc-instr { text-align: center; color: var(--on-page-sub); font-weight: 900; font-size: 13px; margin-bottom: 6px; flex-shrink: 0; }
         #pc-instruction:empty { display: none; }
         .pc-instr.gift { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
         .gift-cancel { min-height: 44px; padding: 6px 14px; font-size: 13px; border-radius: 12px; cursor: pointer; }
@@ -761,7 +773,7 @@
         #pc-modal[data-ctx="dex"] .close-pc-btn { min-height: 80px; }
 
         /* ============ MORE ============ */
-        #more-modal { background: var(--page-bg); color: var(--txt); padding: 0; justify-content: flex-start; align-items: stretch; padding-top: env(safe-area-inset-top); }
+        #more-modal { background: var(--page-bg); color: var(--on-page); padding: 0; justify-content: flex-start; align-items: stretch; padding-top: env(safe-area-inset-top); }
         .more-col { display: flex; flex-direction: column; width: 100%; height: 100%; overflow-y: auto; padding: 16px 16px calc(env(safe-area-inset-bottom) + 16px); gap: 12px; }
         .more-card { flex-shrink: 0; background: var(--panel-bg); color: var(--panel-ink); border: 3px var(--bd-style) var(--line); border-radius: 18px; padding: 12px; box-shadow: var(--shadow); }
         .more-card-title, #badge-section-title, .egg-section-title { font-size: 12px; color: var(--panel-ink); font-weight: 900; text-align: center; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
@@ -801,9 +813,9 @@
         .look-opt small { display: block; font-size: 9px; font-weight: 800; margin-top: 2px; }
         .look-opt.sel { background: var(--yel-bg); color: var(--yel-ink); transform: translateY(3px); box-shadow: 0 2px 0 var(--line); outline: 3px solid var(--line); outline-offset: 1px; }
         .look-opt[data-look="theme"]::before { content: ''; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #1a1a1a; flex-shrink: 0; background: #ccc; }
-        #look-theme-blend::before { background: linear-gradient(90deg,#fff6df 50%,#9bbc0f 50%); }
+        #look-theme-blend::before { background: linear-gradient(90deg,#d63a30 50%,#9bbc0f 50%); }
         #look-theme-classic::before { background: linear-gradient(90deg,#d32f2f 50%,#cfe8a0 50%); }
-        #look-theme-toy::before { background: linear-gradient(90deg,#fff6df 50%,#7fd05b 50%); }
+        #look-theme-toy::before { background: linear-gradient(90deg,#d63a30 50%,#7fd05b 50%); }
         #look-theme-mono::before { background: linear-gradient(90deg,#c9c7bd 50%,#7a7d86 50%); }
         #look-theme-dark::before { background: linear-gradient(90deg,#0b1410 50%,#7fd05b 50%); }
         .look-opt[data-look="partner"] { flex-direction: column; gap: 2px; padding: 4px 1px; min-height: 72px; font-size: 9px; letter-spacing: -0.2px; }
@@ -815,9 +827,9 @@
         html[data-deck="full"] #more-tools { display: none; }
 
         /* ============ DIALOGS: battle mode, variants, loading, gift ============ */
-        #battle-mode-modal { background: var(--page-bg); color: var(--txt); }
-        #battle-mode-modal .modal-box { background: transparent; border: 0; box-shadow: none; padding: 0; width: 100%; max-width: 342px; color: var(--txt); }
-        #battle-mode-modal h2 { font-size: 28px; color: var(--txt); margin: 0 0 18px; font-weight: 900; }
+        #battle-mode-modal { background: var(--page-bg); color: var(--on-page); }
+        #battle-mode-modal .modal-box { background: transparent; border: 0; box-shadow: none; padding: 0; width: 100%; max-width: 342px; color: var(--on-page); }
+        #battle-mode-modal h2 { font-size: 28px; color: var(--on-page); margin: 0 0 18px; font-weight: 900; }
         .battle-mode-btn { display: block; width: 100%; min-height: 88px; padding: 16px 12px; margin-bottom: 14px; border: 3px var(--bd-style) var(--line); border-radius: 20px; font-size: 20px; font-weight: 900; cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 1px; box-shadow: var(--shadow); transition: transform .08s, box-shadow .08s; }
         .battle-mode-btn:active { transform: translateY(var(--press)); box-shadow: 0 0 0 var(--line); }
         .battle-mode-btn small { display: block; font-size: 12px; font-weight: 800; margin-top: 4px; text-transform: none; letter-spacing: 0; }
@@ -849,15 +861,15 @@
         .type-none { color: var(--card-sub); }
 
         /* ============ WHO'S THAT POKEMON ============ */
-        #wtp-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: var(--page-bg); color: var(--txt); z-index: 3000; display: none; flex-direction: column; align-items: center; padding: calc(env(safe-area-inset-top) + 10px) 20px calc(20px + env(safe-area-inset-bottom)) 20px; overflow-y: auto; }
+        #wtp-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: var(--page-bg); color: var(--on-page); z-index: 3000; display: none; flex-direction: column; align-items: center; padding: calc(env(safe-area-inset-top) + 10px) 20px calc(20px + env(safe-area-inset-bottom)) 20px; overflow-y: auto; }
         .wtp-exit-btn { align-self: flex-end; min-height: 44px; background: var(--btn-bg); color: var(--btn-ink); border: 3px var(--bd-style) var(--line); box-shadow: 0 3px 0 var(--line); padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 900; cursor: pointer; margin-bottom: 8px; }
         .wtp-exit-btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--line); }
-        .wtp-title { font-size: 18px; font-weight: 900; color: var(--txt); text-align: center; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; width: 100%; }
-        .wtp-score { font-size: 14px; color: var(--sub); font-weight: 900; text-align: center; margin-bottom: 8px; }
+        .wtp-title { font-size: 18px; font-weight: 900; color: var(--on-page); text-align: center; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; width: 100%; }
+        .wtp-score { font-size: 14px; color: var(--on-page-sub); font-weight: 900; text-align: center; margin-bottom: 8px; }
         .wtp-sprite-box { width: 240px; max-width: 70vw; height: 240px; max-height: 32dvh; display: flex; align-items: center; justify-content: center; margin: 0 auto; flex-shrink: 0; background: var(--lcd-bg); border: 4px var(--bd-style) var(--line); border-radius: 20px; box-shadow: var(--lcd-inset); font-family: var(--font-lcd); color: var(--lcd-ink); }
         #wtp-sprite { max-width: 85%; max-height: 85%; image-rendering: pixelated; filter: brightness(0); transition: filter 0.6s ease-out; }
         #wtp-sprite.revealed { filter: brightness(1) drop-shadow(0 4px 4px rgba(20,50,10,0.5)); }
-        #wtp-loading { font-size: 14px; color: var(--txt); text-align: center; font-weight: 800; padding: 12px; }
+        #wtp-loading { font-size: 14px; color: var(--on-page); text-align: center; font-weight: 800; padding: 12px; }
         .wtp-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 14px; }
         .wtp-btn { background: var(--btn-bg); border: 3px var(--bd-style) var(--line); color: var(--btn-ink); min-height: 60px; padding: 10px 6px; border-radius: 16px; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; box-shadow: var(--shadow); transition: transform .08s, box-shadow .08s; overflow-wrap: anywhere; }
         .wtp-btn:active { transform: translateY(var(--press)); box-shadow: 0 0 0 var(--line); }
@@ -866,7 +878,7 @@
         .wtp-btn.correct::before { content: '✓ '; }
         .wtp-btn.wrong::before { content: '✗ '; }
         .wtp-btn:disabled { opacity: 1; }
-        .wtp-result, .wtp-ok, .wtp-bad { font-size: 17px; font-weight: 900; text-align: center; margin-top: 10px; min-height: 24px; text-transform: uppercase; letter-spacing: 1px; color: var(--txt); }
+        .wtp-result, .wtp-ok, .wtp-bad { font-size: 17px; font-weight: 900; text-align: center; margin-top: 10px; min-height: 24px; text-transform: uppercase; letter-spacing: 1px; color: var(--on-page); }
         .wtp-next-btn { margin-top: 12px; min-height: 80px; width: 100%; max-width: 320px; background: var(--yel-bg); color: var(--yel-ink); border: 3px var(--bd-style) var(--line); border-radius: 22px; font-size: 20px; font-weight: 900; cursor: pointer; display: none; box-shadow: var(--shadow); transition: transform .08s, box-shadow .08s; }
         .wtp-next-btn:active { transform: translateY(var(--press)); box-shadow: 0 0 0 var(--line); }
 
@@ -876,7 +888,7 @@
 
         @media (max-height: 700px) {
             #pc-record { display: none; }
-            #pc-modal[data-ctx="dex"] .close-pc-btn { min-height: 72px; }
+            #pc-modal[data-ctx="dex"] .close-pc-btn { min-height: 76px; }
             #pc-fight-btn { height: 76px; }
             .battle-sprite-player { height: clamp(110px, 22dvh, 180px); }
             .battle-sprite-wild { height: clamp(90px, 18dvh, 150px); }
@@ -1038,18 +1050,18 @@
         /* V1: big-name themes keep a left gutter for the partner so it never covers the first letter */
         :root { --pg: 52px; }
         .visual-display.ln-mid:not(.ln-xl) .partner-btn:not(.partner-btn-battle) { transform: scale(.7); transform-origin: 0 0; }
-        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) .visual-display.ln-mid:not(.ln-xl) .partner-btn:not(.partner-btn-battle) { transform: scale(.6); transform-origin: 0 0; }
-        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) .visual-display.ln-mid:not(.ln-xl) .identity { padding-inline: var(--pg); }
-        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) .visual-display.ln-mid:not(.ln-xl) #poke-name { font-size: max(11px, min(var(--name-size), calc(220px / var(--len, 1)))); }
+        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"],[data-wire="1"]) .visual-display.ln-mid:not(.ln-xl) .partner-btn:not(.partner-btn-battle) { transform: scale(.6); transform-origin: 0 0; }
+        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"],[data-wire="1"]) .visual-display.ln-mid:not(.ln-xl) .identity { padding-inline: var(--pg); }
+        html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"],[data-wire="1"]) .visual-display.ln-mid:not(.ln-xl) #poke-name { font-size: max(11px, min(var(--name-size), calc(220px / var(--len, 1)))); }
         /* V3: identity (type chips) sits above the sprite box so the padded chip hit area (>=44px) is never stolen */
         .identity { z-index: 3; }
         .tags .tag::after { inset: -11px -4px; }
         /* V2: short phones: big-name themes use the compact LCD text sizes so the Pokémon keeps its room */
         @media (max-height: 700px) {
-            :root[data-theme="classic"], :root[data-theme="toy"], :root[data-theme="dark"] { --name-size: 17px; --name-fit: 240px; }
-            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) .visual-display .tag { font-size: 10px; padding: 5px 10px; }
-            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) #poke-id { font-size: 12px; }
-            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"]) #nick-sub { font-size: 10px; }
+            :root[data-theme="classic"], :root[data-theme="toy"], :root[data-theme="dark"], :root[data-wire="1"] { --name-size: 17px; --name-fit: 240px; }
+            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"],[data-wire="1"]) .visual-display .tag { font-size: 10px; padding: 5px 10px; }
+            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"],[data-wire="1"]) #poke-id { font-size: 12px; }
+            html:is([data-theme="classic"],[data-theme="toy"],[data-theme="dark"],[data-wire="1"]) #nick-sub { font-size: 10px; }
             .screen-bezel { padding: 8px 8px 14px; }
             .visual-display { padding: 8px 10px 4px; }
             #nick-sub { min-height: 12px; }
@@ -1080,8 +1092,106 @@
         html[data-theme="mono"] .type-badge, html[data-theme="mono"] .move-eff, html[data-theme="mono"] .more-tool, html[data-theme="mono"] .look-opt[data-look="partner"], html[data-theme="mono"] .look-opt small, html[data-theme="mono"] .gen-filter-btn, html[data-theme="mono"] .pc-sort-btn { font-size: 8px; }
         html[data-theme="mono"][data-deck="console"] #battle-btn, html[data-theme="mono"][data-deck="console"] #catch-btn { font-size: 8px; }
         html[data-theme="mono"][data-deck="console"] #battle-btn::before, html[data-theme="mono"][data-deck="console"] #catch-btn::before { font-size: 10px; }
-        /* F3: HEAL only works between fights */
-        #heal-btn.not-now { opacity: .5; box-shadow: none; }
+        /* F3: HEAL only works between fights (R4 restyles .not-now below) */
+
+        /* ============ ROUND 4 ============ */
+        /* R4-P1: blend + toy page is Pokedex red; text sitting directly on it uses --on-page, text on cream cards keeps --txt */
+        html:is([data-theme="blend"],[data-theme="toy"]) .comp-bar-bg { background: rgba(0,0,0,.38); }
+        html:is([data-theme="blend"],[data-theme="toy"]) .comp-bar-fill { background: var(--gold); }
+        :root[data-theme="blend"], :root[data-theme="toy"] { --focus: #fff; }
+        :root:is([data-theme="blend"],[data-theme="toy"]) :is(.more-card, .battle-header, .battle-controls, .pc-grid, #pc-tab-quiz, #pc-tab-trade, #pc-tab-badges, .modal-box, #ball-drawer, .bottom-sheet, .hp-box-wild, .hp-box-player, .egg-card, .type-popup-card) { --focus: #1a1a1a; }
+
+        /* ---- V2: type pill. The element is a real >=44px tap target; the visible pill sits inside it. ---- */
+        .visual-display .tags .tag.tag-btn { background: transparent !important; color: inherit; border: 0; border-radius: 0; padding: 0; min-width: 44px; min-height: 44px; margin: -9px 0; display: inline-flex; align-items: center; justify-content: center; position: relative; z-index: 4; cursor: pointer; }
+        .visual-display .tags .tag.tag-btn::after { content: none; }
+        .tag-btn .pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; min-height: 26px; border-radius: 20px; border: 2px solid rgba(0,0,0,.55); background: var(--tc, #666); color: var(--ti, #fff); line-height: 1.15; white-space: nowrap; }
+        .tag-btn .tag-i { display: inline-block; font-style: normal; font-size: 1.15em; line-height: 1; }
+        html[data-wire="1"] .tag-btn .pill { background: #666; color: #fff; }
+
+        /* ---- V9 / F11: gen chips: chevron lives on the wrapper, chips fade out before it ---- */
+        .gen-wrap { position: relative; flex-shrink: 0; }
+        .gen-wrap .gen-filter-row { padding-right: 46px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent calc(100% - 42px)); mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent calc(100% - 42px)); }
+        .gen-wrap::after { content: '\203A'; position: absolute; right: 2px; top: 2px; bottom: 8px; margin: auto 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; padding-bottom: 3px; border-radius: 50%; border: 3px var(--bd-style) var(--line); background: var(--yel-bg); color: var(--yel-ink); font: 900 26px/1 system-ui, -apple-system, Arial, sans-serif; box-shadow: 0 3px 0 var(--line); pointer-events: none; }
+        .gen-wrap.at-end::after { display: none; }
+        .gen-wrap.at-end .gen-filter-row { -webkit-mask-image: none; mask-image: none; }
+        .gen-filter-row::after { content: none; }
+
+        /* ---- F1 / V3: MORE > TOOLS tiles (incl. the AUTO switch) ---- */
+        .more-tool { position: relative; }
+        .more-tool .t-state { position: absolute; top: 3px; right: 3px; width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #6b6b6b; color: #fff; border: 2px solid var(--line); font: 900 11px/1 system-ui, -apple-system, Arial, sans-serif; letter-spacing: 0; }
+        .more-tool.on { background: var(--green-bg); color: var(--green-ink); }
+        .more-tool.on .t-state { background: #1b7a34; }
+        html[data-theme="mono"] .more-tool { min-height: 72px; gap: 8px; padding: 10px 2px 8px; line-height: 1.4; }
+        html[data-theme="mono"] .more-tool .t-ico { font-size: 16px; line-height: 1.2; }
+        html[data-theme="mono"] .look-opt[data-look="deck"] { flex-direction: column; min-height: 64px; padding: 10px 3px; line-height: 1.5; gap: 4px; }
+        html[data-theme="mono"] .look-opt[data-look="deck"] span { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        html[data-theme="mono"] .look-opt[data-look="deck"] small { margin: 0; font-size: 7px; line-height: 1.4; }
+        html[data-theme="mono"] .look-opt[data-look="theme"] { min-height: 52px; line-height: 1.4; }
+
+        /* ---- F10: SEARCH in MORE peeks the search box on the kid / console decks without touching the saved deck ---- */
+        html.search-peek[data-deck="kid"] .control-deck { grid-template-areas: "search search" "catch catch" "battle pc" "more more"; }
+        html.search-peek[data-deck="console"] .control-deck { grid-template-areas: "search search search search" "dpad . b a" "more more pc pc"; }
+        html.search-peek[data-deck="kid"] #search, html.search-peek[data-deck="console"] #search { display: block; grid-area: search; }
+
+        /* ---- V10: search input follows the theme ---- */
+        html[data-theme="dark"] input#search { background: var(--panel-bg); color: var(--panel-ink); border-color: #3a5a3c; box-shadow: inset 0 3px 0 rgba(0,0,0,.35); }
+        html[data-theme="dark"] input#search::placeholder { color: #a9c0a4; }
+        html[data-theme="mono"] input#search { background: #9bbc0f; color: #0f380f; border-color: #0f380f; }
+        html[data-theme="mono"] input#search::placeholder { color: #25400a; }
+
+        /* ---- V11: mono boot logo ---- */
+        html[data-theme="mono"] .boot-logo { font-size: 20px; line-height: 1.5; letter-spacing: 0; padding: 18px 20px; white-space: nowrap; }
+        html[data-theme="mono"] .boot-copy { font-size: 8px; line-height: 1.6; }
+        html[data-theme="mono"] .tap-start { font-size: 12px; line-height: 1.6; letter-spacing: 1px; }
+
+        /* ---- V7: shiny star on a dark chip so it reads on any cell ---- */
+        .pc-star { left: 3px; top: 3px; padding: 1px 3px 2px; border-radius: 8px; background: #0f380f; color: var(--gold); font-size: 11px; line-height: 1; -webkit-text-stroke: 0; text-shadow: none; }
+        html[data-theme="mono"] .pc-star { background: #0f380f; color: #c8e04a; text-shadow: none; -webkit-text-stroke: 0; }
+
+        /* ---- F5: dimmed things still read ---- */
+        .badge-shelf-item.locked .b-icon { filter: grayscale(1) drop-shadow(0 0 1px rgba(0,0,0,.65)); opacity: .78; }
+        .badge-item.unearned { filter: grayscale(100%) drop-shadow(0 0 1px rgba(0,0,0,.65)); opacity: .72; }
+        .tool-btn.dim .btn-icon { opacity: .9; filter: drop-shadow(0 0 1px #2b2b3a) drop-shadow(0 0 1px #2b2b3a); }
+
+        /* ---- V8: PASS TO P2 covers the whole screen (header included) and hides the last player's moves ---- */
+        #pvp-pass-overlay { position: fixed; inset: 0; width: auto; height: auto; z-index: 60; background: #070a10; padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)); }
+
+        /* ---- R3-N1: HEAL is clearly "not now" mid-fight: stripes + dashed edge + hourglass, label ink untouched ---- */
+        #heal-btn.not-now { opacity: 1; box-shadow: none; border-style: dashed; cursor: not-allowed; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.62) 0 5px, rgba(255,255,255,0) 5px 10px); }
+        #heal-btn.not-now::after { content: '\23F3'; margin-left: 4px; }
+        #heal-btn.not-now:active { transform: none; }
+        html[data-theme="dark"] #heal-btn.not-now { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,.42) 0 5px, rgba(0,0,0,0) 5px 10px); }
+
+        /* ---- F8: closed off-screen surfaces leave the tab order / accessibility tree once their slide-out ends ---- */
+        #ball-drawer:not(.open) { visibility: hidden; transition: transform .3s ease-out, visibility 0s linear .3s; }
+        .bottom-sheet:not(.open) { visibility: hidden; transition: transform .4s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear .4s; }
+        #battle-container:not(.active) { visibility: hidden; transition: top .4s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear .4s; }
+        #type-popup:not(.open) { visibility: hidden; transition: opacity .2s, visibility 0s linear .2s; }
+
+        /* ---- V4 / V13: mono battle chrome on one line; effectiveness badges never wrap ---- */
+        .btn-escape, #heal-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; line-height: 1.3; }
+        #heal-btn { display: none; }
+        html[data-theme="mono"] .battle-header { gap: 6px; }
+        html[data-theme="mono"] .move-eff { font-size: 7px; letter-spacing: 0; white-space: nowrap; padding: 3px 4px; line-height: 1.3; }
+        html[data-theme="mono"] .move-btn .type-badge { line-height: 1.4; }
+        /* ---- V5: data sheet reads comfortably in mono ---- */
+        .info-box strong { line-height: 1.5; }
+        html[data-theme="mono"] .info-box { font-size: 8px; line-height: 1.6; }
+        html[data-theme="mono"] .info-box strong { font-size: 10px; line-height: 1.8; margin-top: 6px; }
+        html[data-theme="mono"] .desc-text { font-size: 9px; line-height: 1.8; min-height: 0; }
+        /* ---- V6: mono ball drawer as a 2x2 grid with room for the pixel labels ---- */
+        .ball-opt span { white-space: nowrap; }
+        html[data-theme="mono"] #ball-drawer { grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+        html[data-theme="mono"] .ball-opt { gap: 6px; min-height: 92px; }
+        html[data-theme="mono"] .ball-opt span { font-size: 9px; line-height: 1.5; }
+
+        /* ---- V12: mono full-deck tool buttons: AUTO mark sits on the baseline, SHINY count clears the border ---- */
+        .auto-label .ac-t { display: inline-flex; align-items: baseline; gap: .35em; line-height: 1.2; }
+        .auto-label .ac-s { font-family: system-ui, -apple-system, Arial, sans-serif; font-size: 1.25em; line-height: 1; }
+        html[data-theme="mono"][data-deck="full"] .deck-secondary .tool-btn { min-height: 60px; padding-top: 5px; padding-bottom: 6px; gap: 3px; }
+        html[data-theme="mono"][data-deck="full"] .deck-secondary .btn-icon { font-size: 15px; line-height: 1.2; }
+        html[data-theme="mono"][data-deck="full"] #shiny-count { font-size: 8px; line-height: 1.3; min-height: 0; }
+        html[data-theme="mono"] .auto-label::before { font-size: 15px; }
     </style>
     <script>(function(){try{var L=JSON.parse(localStorage.getItem('pokedex_look_v1')),d=document.documentElement;if(L&&typeof L==='object'){
 if(/^(blend|classic|toy|mono|dark)$/.test(L.theme))d.setAttribute('data-theme',L.theme);
@@ -1157,7 +1267,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
     <!-- Control deck: one DOM, three layouts (html[data-deck] = kid | full | console) -->
     <div class="control-deck" id="control-deck">
-        <input type="text" id="search" placeholder="Search name or number…" aria-label="Search name or number" onkeydown="if(event.key==='Enter') loadPoke(this.value)">
+        <input type="text" id="search" placeholder="Search name or number…" aria-label="Search name or number" onkeydown="if(event.key==='Enter'){ loadPoke(this.value); this.blur(); }" onblur="searchPeekEnd()">
         <div id="dpad" role="group" aria-label="Directional pad">
             <i class="dp-v"></i><i class="dp-h"></i>
             <button type="button" id="dpad-left" aria-label="Previous Pokémon" onclick="nav(-1)">◀</button>
@@ -1189,10 +1299,10 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         <button type="button" class="ball-opt" onclick="executeCatch(2, 'ultra-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png" alt=""><span>ULTRA BALL</span><small>2x RATE</small></button>
         <button type="button" class="ball-opt" onclick="executeCatch(99, 'master-ball')"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" alt=""><span>LEGEND BALL</span><small>90% CATCH</small></button>
     </div>
-    <div id="ball-scrim" onclick="closeBag()"></div>
+    <div id="ball-scrim" onclick="closeBag()" aria-hidden="true"></div>
 
     <div class="bottom-sheet" id="data-sheet" role="dialog" aria-label="Pokémon data">
-        <div class="sheet-handle-area" onclick="toggleSheet()">
+        <div class="sheet-handle-area" onclick="toggleSheet()" role="button" tabindex="0" aria-label="Pokémon data panel: tap to open or close" aria-expanded="false">
             <div class="handle"></div>
             <div class="quick-stats">
                 <span>HT <strong id="ht">--</strong></span>
@@ -1296,7 +1406,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     <!-- BOX tab — grid only, maximum Pokémon space -->
     <div id="pc-tab-box">
         <div id="pc-instruction"></div>
-        <div class="gen-filter-row" id="gen-filter-row">
+        <div class="gen-wrap" id="gen-wrap"><div class="gen-filter-row" id="gen-filter-row">
             <button class="gen-filter-btn active" aria-pressed="true" onclick="filterPC(0)"><span class="gen-ring" aria-hidden="true"></span>ALL</button>
             <button class="gen-filter-btn" onclick="filterPC(1)"><span class="gen-ring" aria-hidden="true"></span>GEN I</button>
             <button class="gen-filter-btn" onclick="filterPC(2)"><span class="gen-ring" aria-hidden="true"></span>GEN II</button>
@@ -1308,7 +1418,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             <button class="gen-filter-btn" onclick="filterPC(8)"><span class="gen-ring" aria-hidden="true"></span>GEN VIII</button>
             <button class="gen-filter-btn" onclick="filterPC(9)"><span class="gen-ring" aria-hidden="true"></span>GEN IX</button>
             <button class="gen-filter-btn" onclick="filterPC(-1)"><span class="gen-ring" aria-hidden="true"></span>❤️ FAVES</button>
-        </div>
+        </div></div>
         <div class="pc-sort-row" id="pc-sort-row">
             <button class="pc-sort-btn active" aria-pressed="true" onclick="sortPC('dex')">📋 DEX<span class="lbl-x"> ORDER</span></button>
             <button class="pc-sort-btn" onclick="sortPC('newest')">⏰ NEWEST</button>
@@ -1366,6 +1476,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
                 <button type="button" class="chunk more-tool" id="more-rndm" onclick="moreTool('rndm')"><span class="t-ico">🎲</span>RNDM</button>
                 <button type="button" class="chunk more-tool" id="more-fave" onclick="moreTool('fave')"><span class="t-ico">❤️</span>FAVE</button>
                 <button type="button" class="chunk more-tool" id="more-data" onclick="moreTool('data')"><span class="t-ico">📊</span>DATA</button>
+                <button type="button" class="chunk more-tool" id="more-auto" aria-pressed="false" aria-label="Auto cry: off" onclick="moreTool('auto')"><span class="t-ico">🔇</span>AUTO<span class="t-state" aria-hidden="true">✕</span></button>
                 <button type="button" class="chunk more-tool" id="more-search" onclick="moreTool('search')"><span class="t-ico">🔎</span>SEARCH</button>
             </div>
         </section>
@@ -1383,9 +1494,9 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             </div>
             <div class="look-label">DECK</div>
             <div class="look-grid g3">
-                <button type="button" class="look-opt chunk" data-look="deck" data-val="kid" id="look-deck-kid" aria-pressed="false" onclick="setLook('deck','kid')"><span>KID<small>3 BIG BUTTONS</small></span></button>
-                <button type="button" class="look-opt chunk" data-look="deck" data-val="full" id="look-deck-full" aria-pressed="false" onclick="setLook('deck','full')"><span>FULL<small>ALL BUTTONS</small></span></button>
-                <button type="button" class="look-opt chunk" data-look="deck" data-val="console" id="look-deck-console" aria-pressed="false" onclick="setLook('deck','console')"><span>CONSOLE<small>D-PAD + A/B</small></span></button>
+                <button type="button" class="look-opt chunk" data-look="deck" data-val="kid" id="look-deck-kid" aria-pressed="false" aria-label="KID deck: 3 big buttons" onclick="setLook('deck','kid')"><span>KID<small>3 BIG</small></span></button>
+                <button type="button" class="look-opt chunk" data-look="deck" data-val="full" id="look-deck-full" aria-pressed="false" aria-label="FULL deck: all buttons" onclick="setLook('deck','full')"><span>FULL<small>ALL</small></span></button>
+                <button type="button" class="look-opt chunk" data-look="deck" data-val="console" id="look-deck-console" aria-pressed="false" aria-label="CONSOLE deck: D-pad and A B buttons" onclick="setLook('deck','console')"><span>CONSOLE<small>D-PAD A/B</small></span></button>
             </div>
             <div class="look-label">PARTNER</div>
             <div class="look-grid g4">
@@ -1559,6 +1670,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         eggData[2] = JSON.parse(localStorage.getItem('pokedex_egg_p2')) || eggData[2];
     } catch(e) { console.warn("Save corrupted or blocked by PWA settings."); }
 
+    const aq = x => String(x).replace(/[<>"&]/g, '');
     const typeColors = { fire: '#fd7d24', water: '#4592c4', grass: '#9bcc50', electric: '#eed535', ice: '#51c4e7', fighting: '#d56723', poison: '#b97fc9', ground: '#ab9842', flying: '#3dc7ef', psychic: '#f366b9', bug: '#729f3f', rock: '#a38c21', ghost: '#7b62a3', dragon: '#f16e57', dark: '#707070', steel: '#9eb7b8', fairy: '#fdb9e9', normal: '#a4acaf' };
 
     // readable ink for a type-colour background (>= 4.5:1 for every typeColors entry)
@@ -1569,7 +1681,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     const LOOK_KEY = 'pokedex_look_v1';
     const LOOK_DEFAULT = { theme: 'blend', deck: 'kid', partner: 'pikachu', wire: false };
     const LOOK_OK = { theme: ['blend', 'classic', 'toy', 'mono', 'dark'], deck: ['kid', 'full', 'console'], partner: ['pikachu', 'bulbasaur', 'charmander', 'squirtle'] };
-    const THEME_COLOR = { blend: '#fff6df', classic: '#d32f2f', toy: '#fff6df', mono: '#c9c7bd', dark: '#0b1410', wire: '#ececec' };
+    const THEME_COLOR = { blend: '#d63a30', classic: '#d32f2f', toy: '#d63a30', mono: '#c9c7bd', dark: '#0b1410', wire: '#ececec' };
     let look = { ...LOOK_DEFAULT };
     function loadLook() { try { const o = JSON.parse(localStorage.getItem(LOOK_KEY)); if (o && typeof o === 'object') { for (const k of ['theme', 'deck', 'partner']) if (LOOK_OK[k].includes(o[k])) look[k] = o[k]; look.wire = o.wire === true; } } catch (e) {} }
     function saveLook() { try { localStorage.setItem(LOOK_KEY, JSON.stringify(look)); } catch (e) {} }
@@ -1577,6 +1689,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         const d = document.documentElement; d.dataset.theme = look.theme; d.dataset.deck = look.deck; d.dataset.partner = look.partner;
         if (look.wire) d.setAttribute('data-wire', '1'); else d.removeAttribute('data-wire');
         try { const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = THEME_COLOR[look.wire ? 'wire' : look.theme]; } catch (e) {}
+        try { const sc = document.getElementById('scanner-container'); if (sc) { if (look.deck !== 'full') { sc.setAttribute('role', 'button'); sc.setAttribute('tabindex', '0'); sc.setAttribute('aria-label', 'Hear its cry'); } else { sc.removeAttribute('role'); sc.removeAttribute('tabindex'); sc.removeAttribute('aria-label'); } } } catch (e) {}
         if (typeof partnerRender === 'function') partnerRender();      // Pass C
         if (typeof renderLookPanel === 'function') renderLookPanel();  // Pass B
     }
@@ -1890,7 +2003,13 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         const icon = document.getElementById('cry-icon');
         const label = document.getElementById('auto-cry-label');
         if (icon) icon.innerText = autoCryEnabled ? '🔊' : '💥';
-        if (label) { label.innerText = autoCryEnabled ? 'AUTO ✓' : 'AUTO ✗'; label.classList.toggle('on', autoCryEnabled); label.setAttribute('aria-pressed', autoCryEnabled ? 'true' : 'false'); }
+        if (label) { label.innerHTML = autoCryEnabled ? '<span class="ac-t">AUTO <span class="ac-s">✓</span></span>' : '<span class="ac-t">AUTO <span class="ac-s">✗</span></span>'; label.classList.toggle('on', autoCryEnabled); label.setAttribute('aria-pressed', autoCryEnabled ? 'true' : 'false'); }
+        // F1: the same switch lives in MORE > TOOLS (kid + console decks have no AUTO button on the main screen)
+        const mt = document.getElementById('more-auto');
+        if (mt) {
+            mt.classList.toggle('on', autoCryEnabled); mt.setAttribute('aria-pressed', autoCryEnabled ? 'true' : 'false'); mt.setAttribute('aria-label', 'Auto cry: ' + (autoCryEnabled ? 'on' : 'off'));
+            const ti = mt.querySelector('.t-ico'), ts = mt.querySelector('.t-state'); if (ti) ti.textContent = autoCryEnabled ? '🔊' : '🔇'; if (ts) ts.textContent = autoCryEnabled ? '✓' : '✕';
+        }
     }
     function autoCrySafe() {
         if (!autoCryEnabled || !cryAudio || isCatching || appMode !== 'dex') return;
@@ -2257,6 +2376,8 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         const hb = document.getElementById('heal-btn');
         if (!hb) return;
         hb.classList.toggle('not-now', !!battleState.isBattling);
+        hb.setAttribute('aria-disabled', battleState.isBattling ? 'true' : 'false');
+        hb.title = battleState.isBattling ? 'HEAL works after the fight' : 'Heal team between battles';
     }
     function healTeam() {
         if (battleState.isBattling) { logMsg('⚕️ HEAL works after the fight. Use a POTION now!'); return; } // only after a win
@@ -2437,6 +2558,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             document.getElementById('loading-modal').style.display = 'none';
             if (sess !== battleSession) return;
             logMsg('CONNECTION ERROR. ESCAPING...');
+            battleOffline();
             await sleep(1500);
             if (sess !== battleSession) return;
             exitBattleMode();
@@ -2587,12 +2709,15 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         if (w) { w.classList.toggle('sel', !!look.wire); w.setAttribute('aria-checked', look.wire ? 'true' : 'false'); w.innerText = 'WIREFRAME: ' + (look.wire ? 'ON' : 'OFF'); }
     }
     function moreTool(k) {
+        if (k === 'auto') { toggleAutoCry(); return; }   // F1: a switch, so MORE stays open and shows its new state
         closeMore();
+        // F10: SEARCH only PEEKS the search box for this visit (html.search-peek). It never rewrites the saved pokedex_look_v1 deck.
         const m = { cry: playCry, voice: toggleVoice, shiny: toggleShiny, rndm: randomPoke, fave: toggleFave, data: toggleSheet,
-            search: () => { setLook('deck', 'full'); setTimeout(() => { const el = document.getElementById('search'); if (el) el.focus(); }, 60); } };
+            search: () => { document.documentElement.classList.add('search-peek'); setTimeout(() => { const el = document.getElementById('search'); if (el) el.focus(); }, 60); } };
         if (m[k]) m[k]();
     }
 
+    function searchPeekEnd() { setTimeout(() => { const el = document.getElementById('search'); if (!el || document.activeElement !== el) document.documentElement.classList.remove('search-peek'); }, 120); }
     function closeMore() {
         document.getElementById('more-modal').style.display = 'none';
     }
@@ -2679,7 +2804,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
                     const sh = isShinyOwned(pcTargetPlayer, id);
                     const fSrc = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + (sh ? 'shiny/' : '') + id + '.png';
                     const fFb = sh ? ` onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png'"` : '';
-                    html += `<div role="button" tabindex="0" class="pc-item faved${sh ? ' shiny' : ''}${giftClass}" onclick="handlePCSelect(${id})">${sh ? '<span class="pc-star" aria-label="shiny">★</span>' : ''}<img src="${fSrc}" loading="lazy"${fFb}>${label}</div>`;
+                    html += `<div role="button" tabindex="0" aria-label="${nick ? aq(nick) : 'number ' + id}${sh ? ', shiny' : ''}, favorite" class="pc-item faved${sh ? ' shiny' : ''}${giftClass}" onclick="handlePCSelect(${id})">${sh ? '<span class="pc-star" aria-label="shiny">★</span>' : ''}<img src="${fSrc}" loading="lazy"${fFb}>${label}</div>`;
                 });
             }
         } else {
@@ -2714,9 +2839,9 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
                     const cellSrc = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + (isShinyCell ? 'shiny/' : '') + i + '.png';
                     const cellFallback = isShinyCell ? ` onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png'"` : '';
                     const star = isShinyCell ? '<span class="pc-star" aria-label="shiny">★</span>' : '';
-                    html += `<div role="button" tabindex="0" class="${classes}" onclick="handlePCSelect(${i})">${teamNum}${star}<img src="${cellSrc}" loading="lazy"${cellFallback}>${label}</div>`;
+                    html += `<div role="button" tabindex="0" aria-label="${nick ? aq(nick) : 'number ' + i}${isShinyCell ? ', shiny' : ''}${teamIdx >= 0 ? ', team slot ' + (teamIdx + 1) : ''}" class="${classes}" onclick="handlePCSelect(${i})">${teamNum}${star}<img src="${cellSrc}" loading="lazy"${cellFallback}>${label}</div>`;
                 } else if (pcContext === 'dex') {
-                    html += `<div role="button" tabindex="0" class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span class="pc-lbl">#${i.toString().padStart(3,'0')}</span></div>`;
+                    html += `<div role="button" tabindex="0" aria-label="number ${i}, not caught yet" class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span class="pc-lbl">#${i.toString().padStart(3,'0')}</span></div>`;
                 }
             }
         }
@@ -2954,10 +3079,15 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             startBattleUI();
         } catch(e) {
             document.getElementById('loading-modal').style.display = 'none';
-            alert("Error loading battle data. Network issue?"); exitBattleMode();
+            exitBattleMode(); battleOffline();
         }
     }
 
+    // R3-N2: no connection while a battle was starting: a friendly toast (icon first, short words), never a native alert
+    function battleOffline() {
+        partnerSay('OOPS!', 1800);   // first, so the toast does not add its own cheering "NICE!"
+        showBadgeToast({ icon: '☁️🚫', name: 'NO INTERNET. LET\'S TRY AGAIN!', plain: true });
+    }
     function renderMoveButtons() {
         // Sprint 4: PvP phase p2 shows P2's moves vs P1; all other cases show P1's moves vs wild/P2
         const isPvpP2Turn = battleState.mode === 'pvp' && battleState.pvpTurnPhase === 'p2';
@@ -3008,7 +3138,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         // Sprint 4: battle header title + heal btn
         document.getElementById('battle-header-title').innerText = battleState.mode === 'pvp' ? 'P1 vs P2' : 'BATTLE ARENA';
         const healBtn = document.getElementById('heal-btn');
-        if (healBtn) healBtn.style.display = battleState.mode === 'wild' ? 'block' : 'none';
+        if (healBtn) healBtn.style.display = battleState.mode === 'wild' ? 'inline-flex' : 'none';
         syncHealBtn();
         // Sprint 4: init bag buttons
         renderBagRow();
@@ -3505,7 +3635,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
             // FEATURE 5: Type tags are now tappable — opens type matchup helper
             document.getElementById('types').innerHTML = (curData.types || []).map(t =>
-                { const tc = typeColors[t.type?.name] || '#666'; return `<span class="tag" role="button" tabindex="0" style="background:${tc}; color:${tagInk(tc)}; cursor:pointer;" onclick="showTypeMatchup('${t.type?.name}')">${t.type?.name} ℹ</span>`; }
+                { const tn = t.type?.name, tc = typeColors[tn] || '#666'; return `<span class="tag tag-btn" role="button" tabindex="0" style="--tc:${tc}; --ti:${tagInk(tc)};" aria-label="${tn} type: tap to see matchups" onclick="showTypeMatchup('${tn}')"><span class="pill">${tn}<i class="tag-i" aria-hidden="true">ℹ\uFE0E</i></span></span>`; }
             ).join('');
             // FEATURE 4: Daily badge
             const dailyBadge = document.getElementById('daily-badge');
@@ -3642,6 +3772,29 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             new MutationObserver(() => check(el)).observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
             check(el);
         });
+    })();
+
+
+    // ---------- ROUND 4 wiring ----------
+    // V9: the pinned chevron beside the gen chips goes away once the row is scrolled to its end
+    (function () {
+        const row = document.getElementById('gen-filter-row'), wrap = document.getElementById('gen-wrap'); if (!row || !wrap) return;
+        const sync = () => wrap.classList.toggle('at-end', row.scrollLeft + row.clientWidth >= row.scrollWidth - 4);
+        row.addEventListener('scroll', sync, { passive: true }); window.addEventListener('resize', sync); sync();
+        const pc = document.getElementById('pc-modal'); if (pc) new MutationObserver(() => setTimeout(sync, 0)).observe(pc, { attributes: true, attributeFilter: ['style'] });
+    })();
+    // F9: data sheet handle reports open/closed
+    (function () {
+        const sh = document.getElementById('data-sheet'), hd = sh && sh.querySelector('.sheet-handle-area'); if (!sh || !hd) return;
+        const sync = () => hd.setAttribute('aria-expanded', sh.classList.contains('open') ? 'true' : 'false');
+        new MutationObserver(sync).observe(sh, { attributes: true, attributeFilter: ['class'] }); sync();
+    })();
+    // V8: while the PASS TO P2 hand-off is showing, nothing behind it can be tabbed to or read out
+    (function () {
+        const ov = document.getElementById('pvp-pass-overlay'); if (!ov) return;
+        const behind = () => ['.battle-header', '.battle-arena', '.battle-controls'].map(q => document.querySelector('#battle-container ' + q)).filter(Boolean);
+        const sync = () => { const on = ov.classList.contains('show'); behind().forEach(el => { if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert'); }); };
+        new MutationObserver(sync).observe(ov, { attributes: true, attributeFilter: ['class'] }); sync();
     })();
 
     // --- INIT ---
