@@ -1469,6 +1469,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         <!-- Quick tools (kid + console decks hide these buttons on the main screen) -->
         <section id="more-tools" class="more-card">
             <div class="more-card-title">TOOLS</div>
+            <button type="button" class="chunk more-tool" id="more-sound" role="switch" aria-checked="false" aria-label="Sound: off. Tap to turn on" onclick="toggleSound()" style="width:100%;min-height:76px;flex-direction:row;gap:12px;font-size:16px;margin-bottom:10px"><span class="t-ico" id="more-sound-ico" style="font-size:34px">🔇</span><span id="more-sound-txt">SOUND OFF</span></button>
             <div class="look-grid g4">
                 <button type="button" class="chunk more-tool" id="more-cry" onclick="moreTool('cry')"><span class="t-ico">🔊</span>CRY</button>
                 <button type="button" class="chunk more-tool" id="more-voice" onclick="moreTool('voice')"><span class="t-ico">🎙️</span>VOICE</button>
@@ -1588,6 +1589,10 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     let audioCtx = null; let cryAudio = null; let galleryTimer = null;
     let currentPlayer = 1; let isCatching = false; let appMode = 'dex';
     let autoCryEnabled = false;
+    // MASTER SOUND SWITCH: OFF by default on a fresh install. It silences every sound: beeps, cries (CRY button,
+    // tapping the Pokemon, auto-cry, quiz cry) and VOICE. A parent/kid turns it on from MORE > TOOLS; the choice is remembered.
+    let soundOn = false;
+    try { soundOn = localStorage.getItem('pokedex_sound_v1') === '1'; } catch(e) {}
     let currentPCSort = 'dex';
     let seenBadges = { 1: [], 2: [] };
     let xpData = { 1: {}, 2: {} };      // Sprint 5: { pokeId: { xp, level } }
@@ -1779,13 +1784,14 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
     // --- PWA SAFE AUDIO SYNTHESIZER ---
     function initAudio() {
+        if (!soundOn) return;
         try {
             if(!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
             if (audioCtx.state === 'suspended') audioCtx.resume();
         } catch(e) { console.warn("Audio Context blocked."); }
     }
     function playBeep(freq, type, duration, vol=0.1) {
-        if(!audioCtx) return;
+        if(!soundOn || !audioCtx) return;
         try {
             let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
             osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
@@ -1993,6 +1999,32 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     // --- SPRINT 1 FEATURES ---
     // =========================================================
 
+    // --- MASTER SOUND SWITCH ---
+    function toggleSound() {
+        soundOn = !soundOn;
+        try { localStorage.setItem('pokedex_sound_v1', soundOn ? '1' : '0'); } catch(e) {}
+        if (soundOn) { initAudio(); soundCatch(); }
+        else { try { stopAllAudio(); } catch(e) {} try { if (wtpState && wtpState.cryAudio) { wtpState.cryAudio.pause(); } } catch(e) {} }
+        updateSoundUI();
+        triggerVibration(30);
+    }
+    function updateSoundUI() {
+        const b = document.getElementById('more-sound');
+        if (b) {
+            b.classList.toggle('on', soundOn); b.setAttribute('aria-checked', soundOn ? 'true' : 'false');
+            b.setAttribute('aria-label', soundOn ? 'Sound: on. Tap to turn off' : 'Sound: off. Tap to turn on');
+            const ic = document.getElementById('more-sound-ico'), tx = document.getElementById('more-sound-txt');
+            if (ic) ic.textContent = soundOn ? '🔊' : '🔇'; if (tx) tx.textContent = soundOn ? 'SOUND ON' : 'SOUND OFF';
+        }
+        updateAutoCryUI();
+    }
+    // A deliberate tap on CRY / the Pokemon while sound is off: show it clearly (picture + bubble) instead of silently doing nothing.
+    function soundOffHint() {
+        try { partnerSay('🔇', 1400); } catch(e) {}
+        const ic = document.getElementById('cry-icon'); if (ic) { ic.textContent = '🔇'; }
+        triggerVibration(20);
+    }
+
     // --- SPRINT 1 #1: AUTO-CRY ---
     function toggleAutoCry() {
         autoCryEnabled = !autoCryEnabled;
@@ -2002,7 +2034,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     function updateAutoCryUI() {
         const icon = document.getElementById('cry-icon');
         const label = document.getElementById('auto-cry-label');
-        if (icon) icon.innerText = autoCryEnabled ? '🔊' : '💥';
+        if (icon) icon.innerText = !soundOn ? '🔇' : (autoCryEnabled ? '🔊' : '💥');
         if (label) { label.innerHTML = autoCryEnabled ? '<span class="ac-t">AUTO <span class="ac-s">✓</span></span>' : '<span class="ac-t">AUTO <span class="ac-s">✗</span></span>'; label.classList.toggle('on', autoCryEnabled); label.setAttribute('aria-pressed', autoCryEnabled ? 'true' : 'false'); }
         // F1: the same switch lives in MORE > TOOLS (kid + console decks have no AUTO button on the main screen)
         const mt = document.getElementById('more-auto');
@@ -2012,7 +2044,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         }
     }
     function autoCrySafe() {
-        if (!autoCryEnabled || !cryAudio || isCatching || appMode !== 'dex') return;
+        if (!soundOn || !autoCryEnabled || !cryAudio || isCatching || appMode !== 'dex') return;
         cryAudio.volume = 0.4;
         cryAudio.play().catch(() => {});
     }
@@ -2145,7 +2177,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             resultEl.innerText = `❌ IT WAS ${wtpState.currentData.name.replace(/-/g,' ').toUpperCase()}!`;
             soundBreak(); triggerVibration([200]);
         }
-        if (wtpState.cryAudio) { wtpState.cryAudio.volume = 0.5; wtpState.cryAudio.play().catch(()=>{}); }
+        if (soundOn && wtpState.cryAudio) { wtpState.cryAudio.volume = 0.5; wtpState.cryAudio.play().catch(()=>{}); }
         document.getElementById('wtp-score').innerText = `SCORE: ${wtpState.correct} / ${wtpState.total}`;
         nextBtn.style.display = 'block';
     }
@@ -3403,6 +3435,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
     function toggleVoice() {
         if (!curData || isCatching || appMode === 'battle') return;
+        if (!soundOn) { soundOffHint(); return; }
         try {
             if (!('speechSynthesis' in window)) return;
             if (window.speechSynthesis.speaking) { stopAllAudio(); }
@@ -3424,6 +3457,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     // That would start reading the dex entry aloud — wrong behaviour. Now fails silently.
     function playCry() {
         if(isCatching || appMode === 'battle') return;
+        if (!soundOn) { soundOffHint(); return; }
         stopAllAudio();
         if(cryAudio) { cryAudio.volume = 0.5; cryAudio.play().catch(() => {}); }
     }
@@ -3803,7 +3837,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     updateCompletionBar();
     updateShinyCount();
     updateStreakDisplay();
-    updateAutoCryUI();       // Sprint 1: set CRY button state
+    updateSoundUI();         // master sound switch (default OFF) + CRY button state
     checkBadges(true);       // Sprint 1: silently mark any pre-existing achievements
     renderChallengeStrip();  // Sprint 2: show today's challenge
     // Sprint 2: ensure egg state is seeded for today
