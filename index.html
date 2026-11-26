@@ -475,7 +475,7 @@
         .name-row { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px; min-width: 0; }
         #poke-name { font-size: max(11px, min(var(--name-size), calc(var(--name-fit) / var(--len, 1)))); line-height: 1.25; white-space: nowrap; max-width: 100%; min-width: 0; overflow: hidden; text-transform: uppercase; font-weight: 900; margin: 0; color: var(--lcd-ink); }
         #nick-sub { font-size: 11px; color: var(--lcd-ink); opacity: 0.8; margin: 2px 0 0; letter-spacing: 1px; min-height: 14px; text-transform: uppercase; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #rename-btn { display: none; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; margin: -12px -8px; font-size: 18px; background: none; border: none; padding: 0; line-height: 1; color: inherit; }
+        #rename-btn { position: relative; z-index: 2; display: none; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; margin: -12px -8px; font-size: 18px; background: none; border: none; padding: 0; line-height: 1; color: inherit; }
         .tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; min-height: 26px; }
         .tag { position: relative; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 900; text-transform: uppercase; color: #fff; border: 2px solid rgba(0,0,0,0.55); white-space: nowrap; }
         .tags .tag::after { content: ''; position: absolute; inset: -12px -4px; }
@@ -1012,7 +1012,8 @@
         .gen-filter-row, .pc-sort-row { padding-right: 28px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); scroll-snap-type: x proximity; scroll-padding: 0 28px; }
         .gen-filter-btn, .pc-sort-btn { scroll-snap-align: start; }
         /* V11: battle title never wraps */
-        #battle-header-title { white-space: nowrap; letter-spacing: 0; }
+        #battle-header-title { white-space: nowrap; letter-spacing: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+        .battle-header .btn-escape, .battle-header #heal-btn, #battle-streak { flex-shrink: 0; }
         #badge-toast { width: max-content; max-width: 92vw; }
         @media (max-width: 380px) { #battle-header-title { font-size: 12px; } html[data-theme="mono"] #battle-header-title { font-size: 8px; } }
         /* V4: small phones, full deck: give the sprite the room (search stays reachable in MORE) */
