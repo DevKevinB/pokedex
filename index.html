@@ -9,7 +9,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Fredoka:wght@500;600;700&family=Press+Start+2P&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Fredoka:wght@500;600;700&family=Press+Start+2P&family=Space+Grotesk:wght@500;700&display=swap"></noscript>
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
     <title>Pokédex OS v16.0</title>
     <style>
@@ -23,7 +22,7 @@
             --card-bg: #f4f2ec; --card-ink: #1a1a1a; --card-sub: #5a564e; --card-accent: #a8350a; /* sheets, HP cards, ball drawer, popups: same in every theme */
             --gold: #ffcb05; --gold-glow: 0 0 12px #ffcb05, inset 0 0 8px rgba(255,203,5,.5);
             --hp-hi: #4caf50; --hp-mid: #ffeb3b; --hp-lo: #f44336;
-            --scrim: rgba(0,0,0,.55); --scrim-strong: rgba(0,0,0,.88);
+            --scrim: rgba(0,0,0,.55); --scrim-strong: rgba(6,8,12,.95);
             --ok: #1b7a34; --bad: #b3261e;
             --fave-bg: #ff8fb3;
             --giant: clamp(76px, 11dvh, 92px);
@@ -394,7 +393,7 @@
         body, html { margin: 0; padding: 0; height: 100dvh; width: 100vw; background: var(--page-bg); color: var(--page-ink); font-family: var(--font-ui); font-weight: 900; overflow: hidden; touch-action: none; }
         button { font-family: inherit; cursor: pointer; }
         [hidden] { display: none !important; }
-        :focus-visible { outline: 3px solid var(--line); outline-offset: 2px; }
+        :focus-visible { outline: 3px solid var(--focus, var(--line)); outline-offset: 2px; }
         html[data-theme="blend"] .visual-display, html[data-theme="mono"] * { font-synthesis: none; }
 
         @keyframes pk-pop { 0%{transform:scale(.6);opacity:0} 100%{transform:scale(1);opacity:1} }
@@ -414,7 +413,7 @@
         .btn-catch { background: var(--catch-new-bg); color: var(--catch-new-ink); }
         .btn-catch.owned { background: var(--catch-own-bg); color: var(--catch-own-ink); }
         .tool-btn.faved { background: var(--fave-bg); color: #1a1a1a; }
-        .tool-btn.dim { opacity: .45; }
+        .tool-btn.dim .btn-icon { opacity: .45; }
         html[data-wire="1"] .tag, html[data-wire="1"] .type-badge { background: #666 !important; color: #fff !important; }
         html[data-wire="1"] .ball-opt img, html[data-wire="1"] .partner-img { filter: grayscale(1); }
 
@@ -497,8 +496,9 @@
         .btn-lbl { line-height: 1.1; }
         .btn-ball { display: none; width: 52px; height: 52px; image-rendering: pixelated; }
         #dpad { display: none; }
-        #shiny-count { display: block; font-size: 9px; opacity: 0.85; letter-spacing: 0.5px; min-height: 10px; }
-        .auto-label { font-size: 9px; opacity: 0.75; letter-spacing: 0.5px; display: block; min-height: 10px; margin: -6px -10px; padding: 6px 10px; cursor: pointer; }
+        #shiny-count { display: block; font-size: 10px; opacity: 1; letter-spacing: 0.5px; min-height: 10px; }
+        .auto-label { position: relative; font-size: 10px; opacity: 0.85; letter-spacing: 0.5px; display: block; min-height: 10px; margin: -6px -10px; padding: 6px 10px; cursor: pointer; }
+        .auto-label::after { content: ''; position: absolute; inset: -10px -14px -10px -14px; }
         .auto-label.on { opacity: 1; }
 
         /* KID deck (default): 3 giant buttons + MORE */
@@ -561,7 +561,7 @@
         .ball-opt:active { transform: scale(0.9); }
         .ball-opt img { width: 58px; height: 58px; image-rendering: pixelated; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.4)); }
         .ball-opt span { font-size: 10px; font-weight: 900; color: var(--card-ink); text-transform: uppercase; }
-        .ball-opt small { font-size: 9px; color: var(--card-sub); font-weight: 800; }
+        .ball-opt small { font-size: 11px; color: var(--card-sub); font-weight: 800; }
 
         /* BOTTOM SHEET (data) */
         .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; height: 75dvh; background: var(--card-bg); color: var(--card-ink); border-radius: 28px 28px 0 0; border-top: 4px solid var(--line); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); transform: translateY(calc(100% + 30px)); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; z-index: 20; }
@@ -607,7 +607,6 @@
         .btn-large.btn-green { background: var(--green-bg); color: var(--green-ink); }
         .btn-large.btn-blue { background: var(--blue-bg); color: var(--blue-ink); }
         .btn-danger, .btn-large.btn-danger { background: var(--red-bg); color: var(--red-ink); }
-        .btn-giant { min-height: var(--giant); font-size: 20px; border-radius: 20px; }
 
         /* ============ BATTLE ============ */
         #battle-container { position: fixed; top: 100dvh; left: 0; width: 100vw; height: 100dvh; z-index: 500; display: flex; flex-direction: column; background: var(--page-bg); color: var(--txt); transition: top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
@@ -646,8 +645,8 @@
         .move-btn { background: var(--btn-bg); color: var(--btn-ink); border: 3px var(--bd-style) var(--line); border-radius: 16px; padding: 10px 6px; min-height: 66px; font-weight: 900; font-size: 13px; text-transform: uppercase; cursor: pointer; box-shadow: var(--shadow); transition: transform 0.08s, box-shadow 0.08s; overflow-wrap: anywhere; }
         .move-btn:active { transform: translateY(var(--press)); box-shadow: 0 0 0 var(--line); }
         .move-btn:disabled { opacity: 0.55; }
-        .type-badge { display: block; font-size: 9px; margin-top: 4px; padding: 2px 8px; border-radius: 6px; width: fit-content; margin-inline: auto; border: 1.5px solid rgba(0,0,0,0.5); }
-        .move-eff { font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 4px; margin-top: 3px; display: block; width: fit-content; margin-inline: auto; letter-spacing: 0.5px; text-transform: uppercase; }
+        .type-badge { display: block; font-size: 10px; margin-top: 4px; padding: 2px 8px; border-radius: 6px; width: fit-content; margin-inline: auto; border: 1.5px solid rgba(0,0,0,0.5); }
+        .move-eff { font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 4px; margin-top: 3px; display: block; width: fit-content; margin-inline: auto; letter-spacing: 0.5px; text-transform: uppercase; }
         .eff-super  { background: #1b7a34; color: #fff; }
         .eff-weak   { background: #b3261e; color: #fff; }
         .eff-immune { background: #3a3a3a; color: #fff; }
@@ -752,7 +751,7 @@
         .badge-shelf-item.locked .b-icon { filter: grayscale(1); opacity: .45; }
         .badge-shelf-item .b-icon { font-size: 24px; min-width: 32px; text-align: center; }
         .badge-shelf-item .b-info .b-name { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cell-ink); }
-        .badge-shelf-item .b-info .b-desc { font-size: 11px; color: var(--cell-ink); opacity: .9; margin-top: 1px; font-weight: 800; }
+        .badge-shelf-item .b-info .b-desc { font-size: 11px; color: var(--cell-ink); margin-top: 1px; font-weight: 800; }
         .badge-shelf-item .b-check { margin-left: auto; font-size: 14px; color: var(--cell-ink); font-weight: 900; }
         /* footer buttons */
         #pc-fight-btn { flex-shrink: 0; margin-top: 10px; height: var(--giant); background: var(--yel-bg); color: var(--yel-ink); border: 3px var(--bd-style) var(--line); border-radius: 24px; font-size: 20px; font-weight: 900; cursor: pointer; letter-spacing: 1px; display: none; text-transform: uppercase; box-shadow: var(--shadow); transition: transform .08s, box-shadow .08s; }
@@ -874,9 +873,8 @@
         .wtp-next-btn:active { transform: translateY(var(--press)); box-shadow: 0 0 0 var(--line); }
 
         /* ============ TOAST ============ */
-        #badge-toast { position: fixed; top: calc(env(safe-area-inset-top) + 60px); left: 50%; transform: translateX(-50%); background: var(--yel-bg); color: var(--yel-ink); border: 3px var(--bd-style) var(--line); box-shadow: var(--shadow); padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 900; z-index: 5000; pointer-events: none; opacity: 0; transition: opacity 0.3s; max-width: 92vw; white-space: normal; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        #badge-toast { position: fixed; top: auto; bottom: calc(env(safe-area-inset-bottom) + 14px); left: 50%; transform: translateX(-50%); background: var(--yel-bg); color: var(--yel-ink); border: 3px var(--bd-style) var(--line); box-shadow: var(--shadow); padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 900; z-index: 5000; pointer-events: none; opacity: 0; transition: opacity 0.3s; max-width: 92vw; white-space: normal; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
         #badge-toast.show { opacity: 1; }
-        @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1} 100%{transform:translateY(100dvh) rotate(720deg) scale(0.3);opacity:0} }
 
         @media (max-height: 700px) {
             #pc-record { display: none; }
@@ -975,7 +973,48 @@
         @media (prefers-reduced-motion: reduce) {
             .partner-img, .partner-z, .partner-say { animation: none !important; }
             #confetti-layer { display: none !important; }
-            .pc-item.gift-mode-item, .pc-item.shiny { animation: none; }
+            .pc-item.gift-mode-item { animation: none; }
+        }
+
+        /* ============ FIX ROUND 1 ============ */
+        /* focus ring: dedicated token so it is visible on every theme (WCAG 2.4.11) */
+        :root[data-theme="classic"] { --focus: #ffffff; }
+        :root[data-theme="dark"] { --focus: #ffcb05; }
+        :root[data-theme="classic"] :is(#ball-drawer, .bottom-sheet, .modal-box, .hp-box-wild, .hp-box-player, .egg-card, .type-popup-card) { --focus: #1a1a1a; }
+        [role="button"]:not(button) { cursor: pointer; }
+        /* V1: partner bubble sits under the partner, never over the name / number */
+        .partner-say { left: 6px; top: 82px; max-width: 55%; }
+        .visual-display.ln-xl .partner-say { top: auto; bottom: 20px; left: 72px; }
+        /* V2/V3/V9/V5 mono pixel-font fit */
+        html[data-theme="mono"] .stat-name { width: 88px; font-size: 7px; line-height: 1.4; flex-shrink: 0; }
+        html[data-theme="mono"] .stat-val { flex-shrink: 0; font-size: 11px; }
+        .quick-stats span { white-space: nowrap; }
+        html[data-theme="mono"] .quick-stats { font-size: 8px; gap: 4px; }
+        html[data-theme="mono"] .quick-stats strong { font-size: 10px; }
+        html[data-theme="mono"] .gen-filter-btn, html[data-theme="mono"] .pc-sort-btn { font-size: 7px; padding-left: 8px; padding-right: 8px; gap: 4px; }
+        html[data-theme="mono"] .ball-opt span { font-size: 8px; line-height: 1.5; }
+        html[data-theme="mono"] .ball-opt small { font-size: 8px; line-height: 1.4; }
+        html[data-theme="mono"][data-deck="full"] .deck-primary .tool-btn { gap: 6px; }
+        html[data-theme="mono"][data-deck="full"] .deck-primary .btn-icon, html[data-theme="mono"][data-deck="full"] .deck-secondary .btn-icon { line-height: 1.3; }
+        html[data-theme="mono"][data-deck="full"] .deck-secondary .tool-btn { gap: 4px; }
+        html[data-theme="mono"] .pc-star { color: #0f380f; text-shadow: none; -webkit-text-stroke: 0; }
+        /* V12: chip rows show a fade at the right edge so a cut-off chip reads as "scroll" */
+        .gen-filter-row, .pc-sort-row { padding-right: 28px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); scroll-snap-type: x proximity; scroll-padding: 0 28px; }
+        .gen-filter-btn, .pc-sort-btn { scroll-snap-align: start; }
+        /* V11: battle title never wraps */
+        #battle-header-title { white-space: nowrap; letter-spacing: 0; }
+        @media (max-width: 380px) { #battle-header-title { font-size: 12px; } html[data-theme="mono"] #battle-header-title { font-size: 8px; } }
+        /* V4: small phones, full deck: give the sprite the room (search stays reachable in MORE) */
+        @media (max-height: 700px) { html[data-deck="full"] #search { display: none; } }
+        /* V7 pass + result overlays: nearly opaque, blurred */
+        #pvp-pass-overlay, #battle-result-overlay { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+        #pvp-pass-overlay { background: rgba(6,8,12,.96); }
+        /* A11Y-8 small text floor */
+        .pc-nick, .pc-lvl { font-size: 10px; }
+        .status-badge { font-size: 10px; }
+        /* A11Y-1 reduced motion: silence every animation, not just the partner */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
         }
     </style>
     <script>(function(){try{var L=JSON.parse(localStorage.getItem('pokedex_look_v1')),d=document.documentElement;if(L&&typeof L==='object'){
@@ -988,7 +1027,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
 <div id="badge-toast" role="status" aria-live="polite"></div>
 
-<div id="boot-screen" onclick="startApp()">
+<div id="boot-screen" onclick="startApp()" role="button" tabindex="0" aria-label="Tap to start">
     <div class="boot-logo">POKÉDEX OS</div>
     <div class="boot-copy">© 2026 GAME FREAK INC.</div>
     <div class="tap-start" id="tap-msg">TAP TO START</div>
@@ -1003,7 +1042,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             <div class="led green" id="led-green"></div>
         </div>
         <div class="header-spacer"></div>
-        <button class="player-toggle chunk btn-yel" id="player-btn" onclick="togglePlayer()" aria-label="Switch player">P1</button>
+        <button class="player-toggle chunk btn-yel" id="player-btn" onclick="togglePlayer()" aria-label="P1, switch player">P1</button>
     </div>
 
     <!-- Progress + daily challenge -->
@@ -1066,7 +1105,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             <button class="tool-btn btn-blue btn-pc" id="pc-btn" onclick="openPC('dex')"><span class="btn-icon">💻</span><span class="btn-lbl">PC</span></button>
         </div>
         <div class="deck-secondary">
-            <button class="tool-btn" id="cry-btn" onclick="playCry()"><span class="btn-icon" id="cry-icon">🔊</span><span class="btn-lbl">CRY</span><span class="auto-label" id="auto-cry-label" onclick="event.stopPropagation(); toggleAutoCry();">AUTO ✓</span></button>
+            <button class="tool-btn" id="cry-btn" onclick="playCry()"><span class="btn-icon" id="cry-icon">🔊</span><span class="btn-lbl">CRY</span><span class="auto-label" id="auto-cry-label" role="button" tabindex="0" onclick="event.stopPropagation(); toggleAutoCry();">AUTO ✓</span></button>
             <button class="tool-btn" id="voice-btn" onclick="toggleVoice()"><span class="btn-icon">🎙️</span><span class="btn-lbl">VOICE</span></button>
             <button class="tool-btn" id="shiny-btn" onclick="toggleShiny()"><span class="btn-icon">✨</span><span class="btn-lbl">SHINY</span><span id="shiny-count"></span></button>
             <button class="tool-btn" id="rndm-btn" onclick="randomPoke()"><span class="btn-icon">🎲</span><span class="btn-lbl">RNDM</span></button>
@@ -1317,7 +1356,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         <h2 class="dlg-title">CHOOSE VARIANT</h2>
         <p class="dlg-sub" style="margin-bottom:12px;">🎲 Lucky variants appear randomly!</p>
         <div id="variant-options"></div>
-        <button class="btn-large btn-danger" style="margin-top:2px;" onclick="document.getElementById('variant-modal').style.display='none';">CANCEL</button>
+        <button class="btn-large btn-danger" style="margin-top:2px;" onclick="exitBattleMode()">CANCEL</button>
     </div>
 </div>
 
@@ -1425,8 +1464,8 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     let pendingGiftId = null;
     let currentGenFilter = 0;
     try {
-        caughtData[1] = JSON.parse(localStorage.getItem('pokedex_caught_p1')) || [];
-        caughtData[2] = JSON.parse(localStorage.getItem('pokedex_caught_p2')) || [];
+        caughtData[1] = (JSON.parse(localStorage.getItem('pokedex_caught_p1')) || []).filter(x => x != null);
+        caughtData[2] = (JSON.parse(localStorage.getItem('pokedex_caught_p2')) || []).filter(x => x != null);
         favesData[1] = JSON.parse(localStorage.getItem('pokedex_faves_p1')) || [];
         favesData[2] = JSON.parse(localStorage.getItem('pokedex_faves_p2')) || [];
         battleRecord[1] = JSON.parse(localStorage.getItem('pokedex_record_p1')) || { w: 0, l: 0 };
@@ -1803,14 +1842,24 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         if (seenBadges[p].length > 0) localStorage.setItem(`pokedex_badges_p${p}`, JSON.stringify(seenBadges[p]));
         newlyEarned.forEach((badge, i) => setTimeout(() => showBadgeToast(badge), i * 2800));
     }
+    // toasts are queued so TRADE COMPLETE / EGG HATCHED are readable before the badge toast
+    const toastQueue = []; let toastBusy = false;
     function showBadgeToast(badge) {
         const toast = document.getElementById('badge-toast');
         if (!toast) return;
-        toast.innerText = `${badge.icon} NEW BADGE: ${badge.name}!`;
+        if (toastQueue.length < 6) toastQueue.push(badge);
+        if (!toastBusy) toastNext();
+    }
+    function toastNext() {
+        const toast = document.getElementById('badge-toast');
+        const badge = toastQueue.shift();
+        if (!badge || !toast) { toastBusy = false; return; }
+        toastBusy = true;
+        toast.innerText = /!$/.test(badge.name) ? `${badge.icon} ${badge.name}` : `${badge.icon} NEW BADGE: ${badge.name}!`;
         toast.classList.add('show');
         triggerVibration([50, 30, 100]);
         if (!partnerSayText) partnerReact('cheer', 'NICE!', 1600);
-        setTimeout(() => toast.classList.remove('show'), 2600);
+        setTimeout(() => { toast.classList.remove('show'); setTimeout(toastNext, 350); }, 2200);
     }
     function renderBadgeRow() {
         const row = document.getElementById('badge-row');
@@ -2005,7 +2054,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         } else {
             const warmth = d.taps === 0 ? 'TAP TO WARM IT UP!' : d.taps < 4 ? '🌡️ WARMING...' : d.taps < 8 ? "👀 IT'S MOVING!" : '💥 ALMOST!';
             section.innerHTML = `<div class="egg-section-title">🥚 TODAY'S EGG</div>
-            <div class="egg-card" id="egg-card" onclick="tapEgg()">
+            <div class="egg-card" id="egg-card" onclick="tapEgg()" role="button" tabindex="0">
                 <div class="egg-ico">🥚</div>
                 <div class="egg-body">
                     <div class="egg-warm">${warmth}</div>
@@ -2133,7 +2182,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
     // --- SPRINT 4: POKÉMON CENTER (HEAL BETWEEN BATTLES) ---
     function healTeam() {
-        if (battleState.isBattling) return; // only between turns / after a win
+        if (battleState.isBattling) { logMsg('⚕️ HEAL works after the fight. Use a POTION now!'); return; } // only after a win
         let anyHealed = false;
         battleState.team.forEach(f => {
             if (f.hp < f.maxHp || f.status) anyHealed = true;
@@ -2263,6 +2312,8 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
     // Sprint 3 #2: Continuous battle — loads the next wild opponent after a win
     async function loadNextWild() {
+        if (appMode !== 'battle') return;
+        const sess = battleSession;
         enableMoves(false);
         document.getElementById('loading-modal').style.display = 'flex';
         try {
@@ -2270,6 +2321,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             battleState.wild.id = Math.floor(Math.random() * maxPokemon) + 1;
             const isShinyEncounter = Math.random() < 0.05; // 1/20 chance
             await loadFighterDataInto(battleState.wild, battleState.wild.id, false, false, isShinyEncounter);
+            if (sess !== battleSession) return;
             document.getElementById('loading-modal').style.display = 'none';
             // Reset wild-side UI
             const wildNameEl = document.getElementById('wild-name');
@@ -2306,8 +2358,10 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             enableMoves(true);
         } catch(e) {
             document.getElementById('loading-modal').style.display = 'none';
+            if (sess !== battleSession) return;
             logMsg('CONNECTION ERROR. ESCAPING...');
             await sleep(1500);
+            if (sess !== battleSession) return;
             exitBattleMode();
         }
     }
@@ -2345,12 +2399,17 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     }
 
     // --- BATTLE FOLDER SWITCHING ---
+    let battleSession = 0; // bumped on every exit so pending async win/lose flows can bail out
     function exitBattleMode() {
+        battleSession++;
         appMode = 'dex'; battleState.isBattling = false;
         ['battle-mode-modal','variant-modal','loading-modal'].forEach(id => { document.getElementById(id).style.display = 'none'; });
         document.getElementById('pvp-pass-overlay').classList.remove('show');
         ['team-pass-screen','battle-result-overlay'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
         document.getElementById('battle-container').classList.remove('active');
+        // a pending win animation may have been cut short: reset the wild sprite / ball / catch message
+        { const ws = document.getElementById('wild-sprite'), tb = document.getElementById('battle-throw-ball'), cm = document.getElementById('battle-catch-msg');
+          if (ws) ws.classList.remove('sucked-in'); if (tb) { tb.style.opacity = '0'; tb.style.transform = 'translateY(-150px) scale(2)'; } if (cm) cm.style.opacity = 0; }
         // Reset all battle + team builder state
         selectedTeam = []; pvpSelectedTeam = []; pvpBuildPhase = 0; pcTargetPlayer = currentPlayer;
         battleState.team = []; battleState.pvpTeam = [];
@@ -2376,7 +2435,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     function initPvPBattle() {
         document.getElementById('battle-mode-modal').style.display = 'none';
         if (caughtData[1].length === 0 || caughtData[2].length === 0) {
-            alert('Both P1 and P2 need caught Pokémon to battle each other!'); return;
+            alert('Both P1 and P2 need caught Pokémon to battle each other!'); appMode = 'dex'; return;
         }
         battleState.mode = 'pvp'; pvpBuildPhase = 1;
         selectedTeam = []; pvpSelectedTeam = []; pcTargetPlayer = 1;
@@ -2541,7 +2600,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
                     const sh = isShinyOwned(pcTargetPlayer, id);
                     const fSrc = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + (sh ? 'shiny/' : '') + id + '.png';
                     const fFb = sh ? ` onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png'"` : '';
-                    html += `<div class="pc-item faved${sh ? ' shiny' : ''}${giftClass}" onclick="handlePCSelect(${id})">${sh ? '<span class="pc-star" aria-label="shiny">★</span>' : ''}<img src="${fSrc}" loading="lazy"${fFb}>${label}</div>`;
+                    html += `<div role="button" tabindex="0" class="pc-item faved${sh ? ' shiny' : ''}${giftClass}" onclick="handlePCSelect(${id})">${sh ? '<span class="pc-star" aria-label="shiny">★</span>' : ''}<img src="${fSrc}" loading="lazy"${fFb}>${label}</div>`;
                 });
             }
         } else {
@@ -2576,9 +2635,9 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
                     const cellSrc = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + (isShinyCell ? 'shiny/' : '') + i + '.png';
                     const cellFallback = isShinyCell ? ` onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png'"` : '';
                     const star = isShinyCell ? '<span class="pc-star" aria-label="shiny">★</span>' : '';
-                    html += `<div class="${classes}" onclick="handlePCSelect(${i})">${teamNum}${star}<img src="${cellSrc}" loading="lazy"${cellFallback}>${label}</div>`;
+                    html += `<div role="button" tabindex="0" class="${classes}" onclick="handlePCSelect(${i})">${teamNum}${star}<img src="${cellSrc}" loading="lazy"${cellFallback}>${label}</div>`;
                 } else if (pcContext === 'dex') {
-                    html += `<div class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span class="pc-lbl">#${i.toString().padStart(3,'0')}</span></div>`;
+                    html += `<div role="button" tabindex="0" class="pc-item uncaught" onclick="handlePCSelect(${i})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png" loading="lazy"><span class="pc-lbl">#${i.toString().padStart(3,'0')}</span></div>`;
                 }
             }
         }
@@ -2670,7 +2729,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         ids.forEach(id => {
             const lvl = getLevel(currentPlayer, id);
             const lvlTxt = lvl > 1 ? ` Lv${lvl}` : '';
-            grid += `<div class="pc-item caught" onclick="tradeSelectOfferInPC(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span class="pc-lbl">#${id.toString().padStart(3,'0')}${lvlTxt}</span></div>`;
+            grid += `<div role="button" tabindex="0" class="pc-item caught" onclick="tradeSelectOfferInPC(${id})"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" loading="lazy"><span class="pc-lbl">#${id.toString().padStart(3,'0')}${lvlTxt}</span></div>`;
         });
         el.innerHTML = `<div class="pc-sub">P${currentPlayer} → P${receiver}: TAP TO OFFER</div>
             <div class="pc-grid">${grid}</div>`;
@@ -2722,6 +2781,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         logMsg(`🔄 P${giver} traded #${pendingTradeId.toString().padStart(3,'0')} to P${receiver}!`);
         pendingTradeId = null;
         updateCatchUI(); checkBadges();
+        renderPCGrid(); updateGenRings();
         switchPCTab('box');
     }
 
@@ -2990,18 +3050,20 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     }
 
     async function checkWinCondition() {
+        if (appMode !== 'battle') return;
+        const sess = battleSession;
         // Sprint 4: PvP win conditions
         if (battleState.mode === 'pvp') {
             if (battleState.wild.hp <= 0) {
                 // P2's active fainted
                 battleState.isBattling = false;
                 logMsg(`P2's ${battleState.wild.name.toUpperCase()} FAINTED! 😵`); triggerVibration([100,100,100]);
-                await sleep(1200);
+                await sleep(1200); if (sess !== battleSession) return;
                 const nextP2 = battleState.pvpTeam.findIndex((f, i) => i > battleState.pvpSlot && f.hp > 0);
                 if (nextP2 >= 0) {
                     battleState.pvpSlot = nextP2;
                     battleState.wild = battleState.pvpTeam[nextP2];
-                    logMsg(`P2 sent out ${battleState.wild.name.toUpperCase()}! 💪`); await sleep(800);
+                    logMsg(`P2 sent out ${battleState.wild.name.toUpperCase()}! 💪`); await sleep(800); if (sess !== battleSession) return;
                     document.getElementById('wild-name').innerText = `P2: ${battleState.wild.name}`;
                     document.getElementById('wild-sprite').src = battleState.wild.sprite;
                     updateHP('wild'); renderStatusBadge('wild'); renderPvpWildTeamSlots();
@@ -3015,23 +3077,23 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
                     localStorage.setItem('pokedex_record_p1', JSON.stringify(battleRecord[1]));
                     localStorage.setItem('pokedex_record_p2', JSON.stringify(battleRecord[2]));
                     localStorage.setItem('pokedex_pvpw_p1', JSON.stringify(pvpWins[1]));
-                    await awardBattleXP(1, battleState.team, 50);
+                    await awardBattleXP(1, battleState.team, 50); if (sess !== battleSession) return;
                     checkBadges();
-                    await sleep(2500);
+                    await sleep(2500); if (sess !== battleSession) return;
                     partnerReact('cheer', 'GG!', 2400); launchConfetti();
-                    await showBattleResult(`🏆 P1 WINS!\nGreat battle!\nP1: W${battleRecord[1].w} / P2: W${battleRecord[2].w}`);
+                    await showBattleResult(`🏆 P1 WINS!\nGreat battle!\nP1: W${battleRecord[1].w} / P2: W${battleRecord[2].w}`); if (sess !== battleSession) return;
                     exitBattleMode();
                 }
             } else if (battleState.player.hp <= 0) {
                 // P1's active fainted
                 battleState.isBattling = false;
                 logMsg(`P1's ${battleState.player.name.toUpperCase()} FAINTED! 😵`); triggerVibration([500]);
-                await sleep(1200);
+                await sleep(1200); if (sess !== battleSession) return;
                 const nextP1 = battleState.team.findIndex((f, i) => i > battleState.activeSlot && f.hp > 0);
                 if (nextP1 >= 0) {
                     battleState.activeSlot = nextP1;
                     battleState.player = battleState.team[nextP1];
-                    logMsg(`P1 sent out ${battleState.player.name.toUpperCase()}! 💪`); await sleep(800);
+                    logMsg(`P1 sent out ${battleState.player.name.toUpperCase()}! 💪`); await sleep(800); if (sess !== battleSession) return;
                     updatePlayerSideUI();
                     battleState.isBattling = true;
                     pvpNextTurn();
@@ -3042,11 +3104,11 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
                     localStorage.setItem('pokedex_record_p1', JSON.stringify(battleRecord[1]));
                     localStorage.setItem('pokedex_record_p2', JSON.stringify(battleRecord[2]));
                     localStorage.setItem('pokedex_pvpw_p2', JSON.stringify(pvpWins[2]));
-                    await awardBattleXP(2, battleState.pvpTeam, 50);
+                    await awardBattleXP(2, battleState.pvpTeam, 50); if (sess !== battleSession) return;
                     checkBadges();
-                    await sleep(2500);
+                    await sleep(2500); if (sess !== battleSession) return;
                     partnerReact('cheer', 'GG!', 2400); launchConfetti();
-                    await showBattleResult(`🏆 P2 WINS!\nGreat battle!\nP2: W${battleRecord[2].w} / P1: W${battleRecord[1].w}`);
+                    await showBattleResult(`🏆 P2 WINS!\nGreat battle!\nP2: W${battleRecord[2].w} / P1: W${battleRecord[1].w}`); if (sess !== battleSession) return;
                     exitBattleMode();
                 }
             } else {
@@ -3059,20 +3121,20 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         if (battleState.wild.hp <= 0) {
             battleState.isBattling = false;
             logMsg(`${battleState.wild.name.toUpperCase()} FAINTED!`); triggerVibration([100, 100, 100]);
-            await sleep(1500);
+            await sleep(1500); if (sess !== battleSession) return;
             logMsg(`AUTO-CATCHING ${battleState.wild.name.toUpperCase()}...`);
             const sprite = document.getElementById('wild-sprite');
             const ball   = document.getElementById('battle-throw-ball');
             const msg    = document.getElementById('battle-catch-msg');
             ball.style.opacity = 1; ball.style.transform = 'translateY(0px) scale(1)';
-            await sleep(500);
+            await sleep(500); if (sess !== battleSession) return;
             sprite.classList.add('sucked-in'); playBeep(400, 'sine', 0.3);
-            await sleep(500);
+            await sleep(500); if (sess !== battleSession) return;
             soundCatch(); launchConfetti(); triggerVibration([100, 50, 100]);
             partnerReact('cheer', 'YAY!', 1900);
             if (battleState.wild.isShinyWild) markShiny(currentPlayer, battleState.wild.id);
             msg.style.opacity = 1;
-            if (!caughtData[currentPlayer].includes(battleState.wild.id)) {
+            if (battleState.wild.id != null && !caughtData[currentPlayer].includes(battleState.wild.id)) {
                 caughtData[currentPlayer].push(battleState.wild.id);
                 localStorage.setItem(`pokedex_caught_p${currentPlayer}`, JSON.stringify(caughtData[currentPlayer]));
                 updateDailyChallenge('catch_any');
@@ -3082,23 +3144,23 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             battleStreak[currentPlayer]++;
             localStorage.setItem(`pokedex_streak_p${currentPlayer}`, JSON.stringify(battleStreak[currentPlayer]));
             updateDailyChallenge('win_battles');
-            await awardBattleXP(currentPlayer, battleState.team, 30);
-            await sleep(1500);
+            await awardBattleXP(currentPlayer, battleState.team, 30); if (sess !== battleSession) return;
+            await sleep(1500); if (sess !== battleSession) return;
             msg.style.opacity = 0; ball.style.opacity = 0; ball.style.transform = 'translateY(-150px) scale(2)'; sprite.classList.remove('sucked-in');
             // Sprint 3: continuous grind — load the next wild instead of exiting
-            await loadNextWild();
+            await loadNextWild(); if (sess !== battleSession) return;
 
         } else if (battleState.player.hp <= 0) {
             battleState.isBattling = false;
             logMsg(`${battleState.player.name.toUpperCase()} FAINTED! 😵`); triggerVibration([500]);
-            await sleep(1200);
+            await sleep(1200); if (sess !== battleSession) return;
             // Sprint 3: try next team member
             const nextSlot = battleState.team.findIndex((f, i) => i > battleState.activeSlot && f.hp > 0);
             if (nextSlot >= 0) {
                 battleState.activeSlot = nextSlot;
                 battleState.player = battleState.team[nextSlot];
                 logMsg(`GO ${battleState.player.name.toUpperCase()}! 💪`);
-                await sleep(800);
+                await sleep(800); if (sess !== battleSession) return;
                 updatePlayerSideUI();
                 battleState.isBattling = true;
                 enableMoves(true);
@@ -3110,8 +3172,8 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
                 localStorage.setItem(`pokedex_streak_p${currentPlayer}`, '0');
                 partnerReact('ouch', 'AW...', 1200);
                 checkBadges();
-                await sleep(2500);
-                await showBattleResult(`BLACKED OUT!\nFinal record: W ${battleRecord[currentPlayer].w} / L ${battleRecord[currentPlayer].l}`);
+                await sleep(2500); if (sess !== battleSession) return;
+                await showBattleResult(`BLACKED OUT!\nFinal record: W ${battleRecord[currentPlayer].w} / L ${battleRecord[currentPlayer].l}`); if (sess !== battleSession) return;
                 exitBattleMode();
             }
         } else {
@@ -3181,7 +3243,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
     function togglePlayer() {
         if(isCatching || appMode === 'battle') return; currentPlayer = currentPlayer === 1 ? 2 : 1; triggerVibration();
-        document.getElementById('player-btn').innerText = `P${currentPlayer}`;
+        document.getElementById('player-btn').innerText = `P${currentPlayer}`; document.getElementById('player-btn').setAttribute('aria-label', `P${currentPlayer}, switch player`);
         document.documentElement.style.setProperty('--p-primary', currentPlayer === 1 ? '#d32f2f' : '#1976d2');
         document.documentElement.style.setProperty('--p-dark', currentPlayer === 1 ? '#831d1d' : '#0f4982');
         document.documentElement.dataset.player = String(currentPlayer);
@@ -3339,7 +3401,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             // tapped an evolution, which felt broken. Now just loads the pokemon.
             evoBox.innerHTML = chain.map((poke, index) =>
                 `${index > 0 ? '<div class="evo-arrow">▶</div>' : ''}` +
-                `<div class="evo-item" onclick="loadPoke(${poke.id})">` +
+                `<div class="evo-item" role="button" tabindex="0" onclick="loadPoke(${poke.id})">` +
                 `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.id}.png">` +
                 `<span>${poke.name}</span></div>`
             ).join('');
@@ -3363,7 +3425,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
 
             // FEATURE 5: Type tags are now tappable — opens type matchup helper
             document.getElementById('types').innerHTML = (curData.types || []).map(t =>
-                { const tc = typeColors[t.type?.name] || '#666'; return `<span class="tag" style="background:${tc}; color:${tagInk(tc)}; cursor:pointer;" onclick="showTypeMatchup('${t.type?.name}')">${t.type?.name} ℹ</span>`; }
+                { const tc = typeColors[t.type?.name] || '#666'; return `<span class="tag" role="button" tabindex="0" style="background:${tc}; color:${tagInk(tc)}; cursor:pointer;" onclick="showTypeMatchup('${t.type?.name}')">${t.type?.name} ℹ</span>`; }
             ).join('');
             // FEATURE 4: Daily badge
             const dailyBadge = document.getElementById('daily-badge');
@@ -3457,7 +3519,7 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
             if (s.n2) { nicknameData[2] = s.n2; localStorage.setItem('pokedex_nicks_p2', JSON.stringify(s.n2)); }
             if (Array.isArray(s.sh1)) { shinyData[1] = s.sh1; localStorage.setItem('pokedex_shinyset_p1', JSON.stringify(s.sh1)); }
             if (Array.isArray(s.sh2)) { shinyData[2] = s.sh2; localStorage.setItem('pokedex_shinyset_p2', JSON.stringify(s.sh2)); }
-            alert("SAVE IMPORTED!"); openPC('dex'); updateCatchUI();
+            alert("SAVE IMPORTED!"); if (typeof closeMore === 'function') closeMore(); openPC('dex'); updateCatchUI();
         } catch(e) { alert("ERROR: INVALID CODE."); }
     }
 
@@ -3466,6 +3528,13 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
     document.addEventListener('keydown', e => {
         if (look.deck === 'console' && appMode === 'dex' && !(e.target && e.target.tagName === 'INPUT')) {
             if (e.key === 'ArrowLeft') nav(-1); else if (e.key === 'ArrowRight') nav(1);
+        }
+    });
+
+    // a11y: Enter / Space activates any role="button" element that is not a native button
+    document.addEventListener('keydown', e => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.getAttribute && e.target.getAttribute('role') === 'button' && e.target.tagName !== 'BUTTON') {
+            e.preventDefault(); e.target.click();
         }
     });
 
