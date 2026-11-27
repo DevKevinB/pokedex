@@ -1467,10 +1467,14 @@ if(L.wire===true)d.setAttribute('data-wire','1');}}catch(e){}})();</script>
         <!-- Mystery egg -->
         <div id="egg-section" class="more-card"></div>
 
+        <!-- SOUND: its own card so it is reachable on every deck (the TOOLS card is hidden on the FULL deck) -->
+        <section id="more-sound-card" class="more-card">
+            <button type="button" class="chunk more-tool" id="more-sound" role="switch" aria-checked="false" aria-label="Sound: off. Tap to turn on" onclick="toggleSound()" style="width:100%;min-height:76px;flex-direction:row;gap:12px;font-size:16px;margin-bottom:0"><span class="t-ico" id="more-sound-ico" style="font-size:34px">🔇</span><span id="more-sound-txt">SOUND OFF</span></button>
+        </section>
+
         <!-- Quick tools (kid + console decks hide these buttons on the main screen) -->
         <section id="more-tools" class="more-card">
             <div class="more-card-title">TOOLS</div>
-            <button type="button" class="chunk more-tool" id="more-sound" role="switch" aria-checked="false" aria-label="Sound: off. Tap to turn on" onclick="toggleSound()" style="width:100%;min-height:76px;flex-direction:row;gap:12px;font-size:16px;margin-bottom:10px"><span class="t-ico" id="more-sound-ico" style="font-size:34px">🔇</span><span id="more-sound-txt">SOUND OFF</span></button>
             <div class="look-grid g4">
                 <button type="button" class="chunk more-tool" id="more-cry" onclick="moreTool('cry')"><span class="t-ico">🔊</span>CRY</button>
                 <button type="button" class="chunk more-tool" id="more-voice" onclick="moreTool('voice')"><span class="t-ico">🎙️</span>VOICE</button>
