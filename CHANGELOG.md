@@ -2,6 +2,59 @@
 
 All notable changes to the Pokédex OS project will be documented in this file.
 
+## [20.3.0] - POKÉDEX PAGE
+
+### What the boys will notice
+
+**Gabe**
+- **A big red Pokédex, on its own page.** Add `/pokedex/` to the end of the
+  usual web address to open it. Pikachu is the partner on the screen by
+  default; Bulba and two others (Charmander, Squirtle) are one tap away in
+  MORE. The partner naps, cheers and goes "ouch".
+- **Look up any Pokémon** by name or number (on the FULL layout, or MORE
+  then SEARCH), hop through the list, catch them, battle, trade between P1
+  and P2, hatch the daily egg, take on the daily challenge, and keep a PC
+  box.
+- **Five looks plus a wireframe.** Under MORE he can switch between BLEND,
+  CLASSIC, TOY, MONO and DARK (and turn the wireframe look on), and between
+  three button layouts: KID, FULL (everything on screen) and CONSOLE (a
+  little game-pad with A and B).
+- **The kid layout is simple:** three huge buttons (CATCH, BATTLE, PC) and a
+  small MORE button.
+
+### What Kevin will notice
+
+- **Read this first: this is the older-style Pokédex, not Sprout Road.**
+  Catches can miss (the ball shows its chance), battles can be lost
+  ("BLACKED OUT!" counts as a loss and ends a win streak), and a trade
+  moves the Pokémon from one player to the other (the giver no longer has
+  it). There is a daily egg and a daily challenge. That is knowingly
+  different from the house rules about never punishing and never taking
+  something away: it is the Pokédex exactly as it was played and approved.
+  It does **not** have Sprout Road's protections for kids who cannot read
+  yet, so **Art (4) should keep using Sprout Road**. This page is for Gabe,
+  or for playing together.
+- **Sound is OFF until you turn it on.** Go to MORE and tap the big SOUND
+  switch at the top (it is there on every layout). It remembers your choice.
+- **The VOICE (reading-aloud) button is left out on purpose.** The game does
+  not talk, so this page never reads anything aloud.
+- **Its saves are completely separate.** This page keeps its own
+  collections under its own names, so it never reads or changes the Sprout
+  Road or classic saves. No game code in Sprout Road or classic was changed
+  (only their version numbers, see the last bullet). A pasted save code is
+  checked and cleaned on the way in, so it can only ever fill this page's own
+  saves.
+- **Reachable only by its address.** Nothing links to it, it has no
+  home-screen icon of its own, and it does not work offline: it needs the
+  internet to fetch Pokémon. The existing home-screen icon still opens
+  Sprout Road as before.
+- **Small safety touches:** the fonts now come from this site instead of
+  Google, nothing pops up in a way the iPad's home-screen mode ignores (name
+  and save-code boxes are on the page itself), and the page only talks to
+  the sites it needs for Pokémon and pictures.
+- The version number went up (it always does) so the iPad notices there is
+  something new.
+
 ## [20.2.2] - NAME LOCK
 
 ### What Kevin will notice
